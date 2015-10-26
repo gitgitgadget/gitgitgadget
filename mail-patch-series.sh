@@ -9,11 +9,15 @@ test -n "$(git config alias.send-mbox)" ||
 die "Need an 'send-mbox' alias"
 
 redo=
+publishtoremote="$(git config mail.publishtoremote)"
 while test $# -gt 0
 do
 	case "$1" in
 	--redo)
 		redo=t
+		;;
+	--publish-to-remote=*)
+		publishtoremote=${1#*=}
 		;;
 	*)
 		break
@@ -23,7 +27,11 @@ do
 done
 
 test $# = 0 ||
-die "Usage: $0 [--redo]"
+die "Usage: $0 [--redo] [--publish-to-remote=<remote>]"
+
+test -z "$publishtoremote" ||
+test -n "$(git config remote."$publishtoremote".url)" ||
+die "No valid remote: $publishtoremote"
 
 # For now, only the Git and Cygwin projects are supported
 if git rev-parse --verify e83c5163316f89bfbde >/dev/null
@@ -89,6 +97,12 @@ else
 				git checkout $rebasedtag^0 &&
 				git rebase $upstreambranch &&
 				git tag -f -a ${rebasedtag#refs/tags/} &&
+				if test -n "$publishtoremote"
+				then
+					git push "$publishtoremote" \
+						+"$rebasedtag" ||
+					echo "Couldn't publish $rebasedtag" >&2
+				fi &&
 				git checkout $shortname ||
 				die "Could not re-rebase $rebasedtag"
 			fi
@@ -100,6 +114,11 @@ else
 			git cat-file tag $latesttag |
 			sed '1,/^$/d' |
 			git tag -F - -a ${rebasedtag#refs/tags/} &&
+			if test -n "$publishtoremote"
+			then
+				git push "$publishtoremote" "$rebasedtag" ||
+				echo "Couldn't publish $rebasedtag" >&2
+			fi &&
 			git checkout $shortname ||
 			die "Could not re-rebase $rebasedtag"
 		fi
@@ -189,3 +208,9 @@ mbox="$(echo "$mbox" |
 
 # Automatically add to drafts
 echo "$mbox" | git send-mbox
+
+# Publish
+test -z "$publishtoremote" ||
+git push "$publishtoremote" +"$branchname" \
+	$(test -z "$redo" || echo +)"$shortname-v$patch_no" ||
+die "Could not publish $branchname and $shortname-v$patch_no"
