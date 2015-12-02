@@ -5,6 +5,11 @@ die () {
 	exit 1
 }
 
+# Example for alias.send-mbox:
+#
+# [alias]
+#    send-mbox = !ssh my-machine \"bin/git mailsplit -oMail/Drafts/new\"
+
 test -n "$(git config alias.send-mbox)" ||
 die "Need an 'send-mbox' alias"
 
