@@ -205,9 +205,9 @@ die "Could not tag $shortname-v$patch_no"
 # Insert interdiff
 test -z "$interdiff" ||
 mbox="$(echo "$mbox" |
-	sed '/^-- $/{i'"Interdiff vs v$(($patch_no-1)):"'\
+	sed '/^---$/{:2;n;/./b2;i'"Interdiff vs v$(($patch_no-1)):"'\
 \
-'"$(echo "$interdiff" | sed -e 's/\\/&&/g' -e 's/$/\\/')"'
+'"$(echo "$interdiff" | sed -e 's/^/ /' -e 's/\\/&&/g' -e 's/$/\\/')"'
 
 :1;n;b1}')"
 
