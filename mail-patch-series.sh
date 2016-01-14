@@ -13,6 +13,12 @@ die () {
 test -n "$(git config alias.send-mbox)" ||
 die "Need an 'send-mbox' alias"
 
+# figure out the iteration of this patch series
+branchname="$(git rev-parse --symbolic-full-name HEAD)" &&
+shortname=${branchname#refs/heads/} &&
+test "a$branchname" != "a$shortname" ||
+die "Not on a branch? $branchname"
+
 redo=
 publishtoremote="$(git config mail.publishtoremote)"
 while test $# -gt 0
@@ -24,6 +30,10 @@ do
 	--publish-to-remote=*)
 		publishtoremote=${1#*=}
 		;;
+	--cc)
+		shift
+		exec git config --add branch."$shortname".cc "$*"
+		;;
 	*)
 		break
 		;;
@@ -32,7 +42,8 @@ do
 done
 
 test $# = 0 ||
-die "Usage: $0 [--redo] [--publish-to-remote=<remote>]"
+die "Usage: $0"' [--redo] [--publish-to-remote=<remote>] |
+	--cc <email-address>'
 
 test -z "$publishtoremote" ||
 test -n "$(git config remote."$publishtoremote".url)" ||
@@ -54,12 +65,6 @@ then
 else
 	die "Unrecognized project"
 fi
-
-# figure out the iteration of this patch series
-branchname="$(git rev-parse --symbolic-full-name HEAD)" &&
-shortname=${branchname#refs/heads/} &&
-test "a$branchname" != "a$shortname" ||
-die "Not on a branch? $branchname"
 
 test -z "$(git rev-list $branchname..$upstreambranch)" ||
 die "Branch $shortname is not rebased to $upstreambranch"
