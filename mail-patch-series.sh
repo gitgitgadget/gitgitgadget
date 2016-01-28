@@ -149,6 +149,7 @@ fi
 
 mbox="$(eval git format-patch $subject_prefix $in_reply_to \
 	$cover_letter $to $cc \
+	--add-header='"Content-Type: text/plain; charset=UTF-8"' \
 	--add-header='"Fcc: Sent"' --thread --stdout \
 	$upstreambranch..$branchname)" ||
 die "Could not generate mailbox"
