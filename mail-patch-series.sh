@@ -56,6 +56,8 @@ then
 	to="--to=\"Junio C Hamano <gitster@pobox.com>\""
 	cc="--cc=git@vger.kernel.org"
 	upstreambranch=junio/next
+	test -z "$(git rev-list $branchname..$upstreambranch)" ||
+	upstreambranch=junio/master
 elif git rev-parse --verify a3acbf46947e52ff596 >/dev/null
 then
 	# Cygwin
