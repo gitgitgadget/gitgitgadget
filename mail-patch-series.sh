@@ -32,7 +32,19 @@ do
 		;;
 	--cc)
 		shift
-		exec git config --add branch."$shortname".cc "$*"
+		case "$*" in
+		*\>*\>*|*\>,)
+			echo "$*" |
+			sed -e 's/[^ ]*: //g' -e 'y/,/\n/' -e 's/> />\n/g' |
+			sed -e 's/ *//' -e 's/ $//' -e 's/^ //' -e '/^$/d' |
+			xargs -r -n 1 -d \\n \
+				git config --add branch."$shortname".cc
+			exit
+			;;
+		*)
+			exec git config --add branch."$shortname".cc "$*"
+			;;
+		esac
 		;;
 	*)
 		break
