@@ -212,6 +212,35 @@ else
 		sed -n -e 's/^Subject: [^]]*] //p' \
 			 -e '/^$/{:1;p;n;/./b1;p;n;/^-- $/q;b1}')"
 fi
+
+# insert public link into mail
+if test -n "$publishtoremote"
+then
+	url="$(git config remote."$publishtoremote".url)"
+	case "$url" in
+	http://github.com/*|https://github.com/*)
+		url="https:${url#*:}"
+		;;
+	github.com:*|git@github.com:*)
+		url="https://github.com/${url#*:}"
+		;;
+	*)
+		url=
+		;;
+	esac
+	if test -n "$url"
+	then
+		url="Published-As: $url/releases/tag/$shortname-v$patch_no"
+		mbox="$(echo "$mbox" |
+			if test -z "$cover_letter"
+			then
+				sed "/^---$/i$url"
+			else
+				echo "/^-- $/i$url"
+			fi)"
+	fi
+fi
+
 printf "%s\n\nSubmitted-As: http://mid.gmane.org/%s\n%s" \
 	"$tagmessage" \
 	"$(echo "$mbox" | sed -n \
