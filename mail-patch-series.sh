@@ -234,7 +234,7 @@ then
 		mbox="$(echo "$mbox" |
 			if test -z "$cover_letter"
 			then
-				sed "/^---$/i$url"
+				sed "/^---$/a$url"
 			else
 				echo "/^-- $/i$url"
 			fi)"
