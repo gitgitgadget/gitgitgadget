@@ -236,7 +236,10 @@ then
 			then
 				sed "/^---$/a$url"
 			else
-				echo "/^-- $/i$url"
+				sed '/^-- $/{
+					i'"$url"'
+					:1;n;b1
+				}'
 			fi)"
 	fi
 fi
