@@ -65,8 +65,8 @@ die "No valid remote: $publishtoremote"
 if git rev-parse --verify e83c5163316f89bfbde >/dev/null
 then
 	# Git
-	to="--to=\"Junio C Hamano <gitster@pobox.com>\""
-	cc="--cc=git@vger.kernel.org"
+	to="--to=git@vger.kernel.org"
+	cc="--cc=\"Junio C Hamano <gitster@pobox.com>\""
 	upstreambranch=junio/next
 	test -z "$(git rev-list $branchname..$upstreambranch)" ||
 	upstreambranch=junio/master
