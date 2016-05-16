@@ -23,8 +23,8 @@ To make use of this script, you first have to have a topic branch. It
 needs to be rebased to the latest `master` (or `next` in the case of Git).
 
 Further, you need an alias called `send-mbox` that takes an mbox on stdin and
-puts the individual mails into the Drafts folder of your maildir, ready to
-send. Example for alias.send-mbox:
+processes them appropriately. For example, it could put the individual mails
+into the Drafts folder of your maildir, ready to, by setting it thusly:
 
 ```ini
 [alias]
