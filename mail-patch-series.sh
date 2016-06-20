@@ -328,7 +328,8 @@ mbox="$(echo "$mbox" |
 :1;n;b1}')"
 
 # Send (originally: automatically add to drafts)
-echo "$mbox" | git send-mbox
+echo "$mbox" | git send-mbox ||
+die "Error running 'send-mbox'"
 
 # Publish
 test -z "$publishtoremote" ||
