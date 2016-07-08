@@ -125,6 +125,8 @@ then
 	# Git
 	to="--to=git@vger.kernel.org"
 	cc="--cc=\"Junio C Hamano <gitster@pobox.com>\""
+	upstreambranch=junio/pu
+	test -z "$(git rev-list $branchname..$upstreambranch)" ||
 	upstreambranch=junio/next
 	test -z "$(git rev-list $branchname..$upstreambranch)" ||
 	upstreambranch=junio/master
