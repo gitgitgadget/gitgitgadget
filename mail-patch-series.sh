@@ -291,14 +291,16 @@ then
 	esac
 	if test -n "$url"
 	then
-		url="Published-As: $url/releases/tag/$shortname-v$patch_no"
+		insert="$(printf 'Published-As: %s\\nFetch-It-Via: %s' \
+			"$url/releases/tag/$shortname-v$patch_no" \
+			"git fetch $url $shortname-v$patch_no")"
 		mbox="$(echo "$mbox" |
 			if test -z "$cover_letter"
 			then
-				sed "/^---$/a$url"
+				sed "/^---$/a$insert"
 			else
 				sed '/^-- $/{
-					i'"$url"'
+					i'"$insert"'
 					:1;n;b1
 				}'
 			fi)"
