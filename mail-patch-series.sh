@@ -291,7 +291,7 @@ then
 	esac
 	if test -n "$url"
 	then
-		insert="$(printf 'Published-As: %s\\nFetch-It-Via: %s\n' \
+		insert="$(printf 'Published-As: %s\\nFetch-It-Via: %s\\n' \
 			"$url/releases/tag/$shortname-v$patch_no" \
 			"git fetch $url $shortname-v$patch_no")"
 		mbox="$(echo "$mbox" |
