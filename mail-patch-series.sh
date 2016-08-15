@@ -165,7 +165,8 @@ else
 	subject_prefix="--subject-prefix=\"PATCH v$patch_no\""
 	in_reply_to="$(git cat-file tag "$latesttag" |
 		tac | sed '/^$/q' |
-		sed -n 's|.*http://mid.gmane.org/|--in-reply-to=|p')"
+		sed -n -e 's|.*https://public-inbox.org/git/|--in-reply-to=|p' \
+			-e 's|.*http://mid.gmane.org/|--in-reply-to=|p')"
 
 	if test -z "$(git rev-list $latesttag..$upstreambranch)"
 	then
@@ -307,12 +308,12 @@ then
 	fi
 fi
 
-printf "%s\n\nSubmitted-As: http://mid.gmane.org/%s\n%s" \
+printf "%s\n\nSubmitted-As: https://public-inbox.org/git/%s\n%s" \
 	"$tagmessage" \
 	"$(echo "$mbox" | sed -n \
 		'/^Message-Id: /{s/[^:]*: <\(.*\)>/\1/p;q}')" \
 	"$(echo "$in_reply_to" | tr ' ' '\n' | sed -n \
-		's|--in-reply-to=|In-Reply-To: http://mid.gmane.org/|p')" |
+	   's|--in-reply-to=|In-Reply-To: https://public-inbox.org/git/|p')" |
 git tag -F - $(test -z "$redo" || echo "-f") -a \
 	"$shortname-v$patch_no" ||
 die "Could not tag $shortname-v$patch_no"
