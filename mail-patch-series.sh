@@ -103,7 +103,12 @@ do
 			exec git config --add branch."$shortname".cc "$*"
 			;;
 		*)
-			die "Not an email address: $*"
+			if test -z "$*"
+			then
+				exec git config --get-all branch."$shortname".cc
+			else
+				die "Not an email address: $*"
+			fi
 			;;
 		esac
 		;;
