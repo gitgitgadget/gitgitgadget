@@ -99,8 +99,11 @@ do
 				git config --add branch."$shortname".cc
 			exit
 			;;
-		*)
+		*@*)
 			exec git config --add branch."$shortname".cc "$*"
+			;;
+		*)
+			die "Not an email address: $*"
 			;;
 		esac
 		;;
