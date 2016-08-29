@@ -112,6 +112,13 @@ do
 			;;
 		esac
 		;;
+	--basedon=*)
+		exec git config branch."$shortname".basedon "${1#*=}"
+		;;
+	--basedon)
+		shift
+		exec git config branch."$shortname".basedon "$@"
+		;;
 	*)
 		break
 		;;
@@ -121,7 +128,7 @@ done
 
 test $# = 0 ||
 die "Usage: $0"' [--redo] [--publish-to-remote=<remote>] |
-	--cc <email-address>'
+	--cc [<email-address>] | --basedon [<branch>]'
 
 test -z "$publishtoremote" ||
 test -n "$(git config remote."$publishtoremote".url)" ||
@@ -146,6 +153,22 @@ then
 	upstreambranch=cygwin/master
 else
 	die "Unrecognized project"
+fi
+
+basedon="$(git config branch."$shortname".basedon)"
+if test -n "$basedon" && git rev-parse -q --verify "$basedon" >/dev/null
+then
+	test -n "$publishtoremote" ||
+	die "Need a remote to publish to"
+
+	commit="$(git rev-parse -q --verify \
+		"refs/remotes/$publishtoremote/$basedon")" ||
+	die "$basedon not pushed to $publishtoremote"
+
+	test "$(git rev-parse "$basedon")" = "$commit" ||
+	die "$basedon on $publishtoremote disagrees with local branch"
+
+	upstreambranch="$basedon"
 fi
 
 test -z "$(git rev-list $branchname..$upstreambranch)" ||
@@ -300,7 +323,12 @@ then
 	esac
 	if test -n "$url"
 	then
-		insert="$(printf 'Published-As: %s\\nFetch-It-Via: %s\\n' \
+		insert=
+		test -z "$basedon" ||
+		insert="$(printf '%sBased-On: %s at %s\\nFetch-Base-Via: %s\\n' \
+			"$insert" "$basedon" "$url" "git fetch $url $basedon")"
+		insert="$(printf '%sPublished-As: %s\\nFetch-It-Via: %s\\n' \
+			"$insert" \
 			"$url/releases/tag/$shortname-v$patch_no" \
 			"git fetch $url $shortname-v$patch_no")"
 		mbox="$(echo "$mbox" |
