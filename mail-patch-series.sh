@@ -78,12 +78,16 @@ test "a$branchname" != "a$shortname" ||
 die "Not on a branch? $branchname"
 
 redo=
+rfc=
 publishtoremote="$(git config mail.publishtoremote)"
 while test $# -gt 0
 do
 	case "$1" in
 	--redo)
 		redo=t
+		;;
+	--rfc)
+		rfc=t
 		;;
 	--publish-to-remote=*)
 		publishtoremote=${1#*=}
@@ -186,6 +190,8 @@ if test -z "$latesttag"
 then
 	patch_no=1
 	subject_prefix=
+	test -z "$rfc" ||
+	subject_prefix="--subject-prefix=\"PATCH/RFC\""
 	in_reply_to=
 	interdiff=
 else
@@ -194,6 +200,8 @@ else
 
 	patch_no=$((${latesttag##*-v}+1))
 	subject_prefix="--subject-prefix=\"PATCH v$patch_no\""
+	test -z "$rfc" ||
+	subject_prefix="--subject-prefix=\"PATCH/RFC v$patch_no\""
 	in_reply_to="$(git cat-file tag "$latesttag" |
 		tac | sed '/^$/q' |
 		sed -n -e 's|.*https://public-inbox.org/git/|--in-reply-to=|p' \
