@@ -80,6 +80,7 @@ die "Not on a branch? $branchname"
 redo=
 rfc=
 publishtoremote="$(git config mail.publishtoremote)"
+patience=
 while test $# -gt 0
 do
 	case "$1" in
@@ -91,6 +92,9 @@ do
 		;;
 	--publish-to-remote=*)
 		publishtoremote=${1#*=}
+		;;
+	--patience)
+		patience=--patience
 		;;
 	--cc)
 		shift
@@ -262,7 +266,7 @@ then
 fi
 
 mbox="$(eval git format-patch $subject_prefix $in_reply_to \
-	$cover_letter $to $cc \
+	$cover_letter $to $cc $patience \
 	--add-header='"Content-Type: text/plain; charset=UTF-8"' \
 	--add-header='"Fcc: Sent"' --thread --stdout \
 	--base $upstreambranch \
