@@ -316,7 +316,7 @@ then
 else
 	tagmessage="$(echo "$mbox" |
 		sed -n -e 's/^Subject: [^]]*] //p' \
-			 -e '/^$/{:1;p;n;/./b1;p;n;/^-- $/q;b1}')"
+		 -e '/^$/{:1;p;n;/./b1;p;n;/^$/n;/^base/{p;n};/^-- $/q;b1}')"
 fi
 
 # insert public link into mail
