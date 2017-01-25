@@ -224,7 +224,8 @@ else
 				echo "Re-rebasing $rebasedtag" >&2
 				git checkout $rebasedtag^0 &&
 				git rebase $upstreambranch &&
-				git tag -f -a ${rebasedtag#refs/tags/} &&
+				git -c core.editor=true \
+					tag -f -a ${rebasedtag#refs/tags/} &&
 				if test -n "$publishtoremote"
 				then
 					git push "$publishtoremote" \
