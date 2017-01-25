@@ -15,7 +15,7 @@
 #
 # Currently, this script supports submitting patch series (or single
 # patches) to only two projects: Git and Cygwin, with the upstream remotes
-# being called 'junio' and 'cygwin', respectively.
+# being called 'upstream' and 'cygwin', respectively.
 #
 # To make use of this script, you first have to have a topic branch. It
 # needs to be rebased to the latest `master` (or `next` in the case of Git).
@@ -148,11 +148,11 @@ then
 	# Git
 	to="--to=git@vger.kernel.org"
 	cc="--cc=\"Junio C Hamano <gitster@pobox.com>\""
-	upstreambranch=junio/pu
+	upstreambranch=upstream/pu
 	test -z "$(git rev-list $branchname..$upstreambranch)" ||
-	upstreambranch=junio/next
+	upstreambranch=upstream/next
 	test -z "$(git rev-list $branchname..$upstreambranch)" ||
-	upstreambranch=junio/master
+	upstreambranch=upstream/master
 elif git rev-parse --verify a3acbf46947e52ff596 >/dev/null
 then
 	# Cygwin
