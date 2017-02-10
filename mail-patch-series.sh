@@ -115,7 +115,12 @@ do
 			then
 				exec git config --get-all branch."$shortname".cc
 			else
+				id="$(git log -1 --format='%an <%ae>' \
+					--author="$*")" &&
+				test -n "$id" ||
 				die "Not an email address: $*"
+				exec git config --add \
+					branch."$shortname".cc "$id"
 			fi
 			;;
 		esac
