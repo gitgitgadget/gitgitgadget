@@ -189,6 +189,10 @@ if (commitExists('e83c5163316f89bfbde')) {
 	// Cygwin
 	to = '--to=cygwin-patches@cygwin.com';
 	upstreambranch = 'cygwin/master';
+} else if (commitExists('cc8ed39b240180b5881')) {
+	// BusyBox
+	to = '--to=busybox@busybox.net';
+	upstreambranch = 'busybox/master';
 } else
 	die('Unrecognized project');
 
