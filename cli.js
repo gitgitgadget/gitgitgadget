@@ -95,71 +95,79 @@ gitConfig('alias.send-mbox') ||
 die("Need an 'send-mbox' alias");
 
 // figure out the iteration of this patch series
-var branchname = callGitSync(['rev-parse', '--symbolic-full-name', 'HEAD']);
-var match = branchname.match(/^refs\/heads\/(.*)/);
-match ||
-die('Not on a branch (' + branchname + ')?');
-var shortname = match[1];
+var branchname;
+var shortname;
+
+var getBranchName = function() {
+	branchname = callGitSync(['rev-parse', '--symbolic-full-name', 'HEAD']);
+	var match = branchname.match(/^refs\/heads\/(.*)/);
+	match ||
+	die('Not on a branch (' + branchname + ')?');
+	shortname = match[1];
+};
 
 var redo = false;
 var rfc = false;
 var publishtoremote = gitConfig('mail.publishtoremote');
 var patience = null;
-var i, match;
-for (i = 2; i < process.argv.length; i++) {
-	var arg = process.argv[i];
-	if (arg == '--redo') redo = true;
-	else if (arg == '--rfc') rfc = true;
-	else if (match = arg.match(/^--publish-to-remote=.*/))
-		publishtoremote = match[1];
-	else if (arg == '--patience') patience = '--patience';
-	else if (arg == '--cc') {
-		var key = 'branch.' + shortname + '.cc';
-		arg = i + 1 < process.argv.length ? process.argv[++i] : '';
-		i + 1 == process.argv.length ||
-		die('Too many arguments');
-		if (!arg)
-			console.log(callGitSync(['config', '--get-all', key]));
-		else if (arg.match(/>.*>/) || arg.match(/>,/)) {
-			arg.replaceAll(/> /, '>,').map(function(email) {
-				email = email.trim();
-				!email ||
-				callGitSync(['config', '--add', key, email]);
-			});
-		} else if (arg.match(/@/))
-			callGitSync(['config', '--add', key, arg]);
-		else {
-			var id = callGitSync(['log', '-1', '--format=%an <%ae>',
-					     '--author=' + arg]);
-			id ||
-			die('Not an email address: ' + arg);
-			callGitSync(['config', '--add', key, id]);
-		}
-		process.exit(0);
-	} else if (match = arg.match(/^--basedon=(.*)/)) {
-		var key = 'branch.' + shortname + '.basedon';
-		callGitSync(['config', key, arg]);
-		process.exit(0);
-	} else if (arg == '--basedon') {
-		var key = 'branch.' + shortname + '.basedon';
-		if (i + 1 == process.argv.length)
-			console.log(gitConfig(key));
-		else if (i + 2 == process.argv.length)
-			callGitSync(['config', key, process.argv[++i]]);
-		else
+
+var parseCommandLineOptions = function(argv) {
+	var i, match;
+	for (i = 2; i < argv.length; i++) {
+		var arg = argv[i];
+		if (arg == '--redo') redo = true;
+		else if (arg == '--rfc') rfc = true;
+		else if (match = arg.match(/^--publish-to-remote=.*/))
+			publishtoremote = match[1];
+		else if (arg == '--patience') patience = '--patience';
+		else if (arg == '--cc') {
+			var key = 'branch.' + shortname + '.cc';
+			arg = i + 1 < argv.length ? argv[++i] : '';
+			i + 1 == argv.length ||
 			die('Too many arguments');
-		process.exit(0);
-	} else
-		break;
-}
+			if (!arg)
+				console.log(callGitSync(['config', '--get-all', key]));
+			else if (arg.match(/>.*>/) || arg.match(/>,/)) {
+				arg.replaceAll(/> /, '>,').map(function(email) {
+					email = email.trim();
+					!email ||
+					callGitSync(['config', '--add', key, email]);
+				});
+			} else if (arg.match(/@/))
+				callGitSync(['config', '--add', key, arg]);
+			else {
+				var id = callGitSync(['log', '-1', '--format=%an <%ae>',
+						     '--author=' + arg]);
+				id ||
+				die('Not an email address: ' + arg);
+				callGitSync(['config', '--add', key, id]);
+			}
+			process.exit(0);
+		} else if (match = arg.match(/^--basedon=(.*)/)) {
+			var key = 'branch.' + shortname + '.basedon';
+			callGitSync(['config', key, arg]);
+			process.exit(0);
+		} else if (arg == '--basedon') {
+			var key = 'branch.' + shortname + '.basedon';
+			if (i + 1 == argv.length)
+				console.log(gitConfig(key));
+			else if (i + 2 == argv.length)
+				callGitSync(['config', key, argv[++i]]);
+			else
+				die('Too many arguments');
+			process.exit(0);
+		} else
+			break;
+	}
 
-if (i < process.argv.length)
-	die('Usage: ' + process.argv[1] +
-	    ' [--redo] [--publish-to-remote=<remote>] |\n' +
-	    '--cc [<email-address>] | --basedon [<branch>]');
+	if (i < argv.length)
+		die('Usage: ' + argv[1] +
+		    ' [--redo] [--publish-to-remote=<remote>] |\n' +
+		    '--cc [<email-address>] | --basedon [<branch>]');
 
-if (!publishtoremote || !gitConfig('remote.' + publishtoremote + '.url'))
-	die('No valid remote: ' + publishtoremote);
+	if (!publishtoremote || !gitConfig('remote.' + publishtoremote + '.url'))
+		die('No valid remote: ' + publishtoremote);
+};
 
 var commitExists = function(commit) {
 	try {
@@ -176,234 +184,265 @@ var commitExists = function(commit) {
 
 // For now, only the Git and Cygwin projects are supported
 var to, cc = [], upstreamBranch;
-if (commitExists('e83c5163316f89bfbde')) {
-	// Git
-	to = '--to=git@vger.kernel.org';
-	cc.push('Junio C Hamano <gitster@pobox.com>');
-	upstreambranch = 'upstream/pu';
-	if (callGitSync(['rev-list', branchname + '..' + upstreambranch]))
-		upstreambranch = 'upstream/next';
-	if (callGitSync(['rev-list', branchname + '..' + upstreambranch]))
-		upstreambranch = 'upstream/master';
-} else if (commitExists('a3acbf46947e52ff596')) {
-	// Cygwin
-	to = '--to=cygwin-patches@cygwin.com';
-	upstreambranch = 'cygwin/master';
-} else if (commitExists('cc8ed39b240180b5881')) {
-	// BusyBox
-	to = '--to=busybox@busybox.net';
-	upstreambranch = 'busybox/master';
-} else
-	die('Unrecognized project');
 
-var basedon = gitConfig('branch.' + shortname + '.basedon');
-if (basedon && commitExists(basedon)) {
-	publishtoremote ||
-	die('Need a remote to publish to');
+var determineProject = function() {
+	if (commitExists('e83c5163316f89bfbde')) {
+		// Git
+		to = '--to=git@vger.kernel.org';
+		cc.push('Junio C Hamano <gitster@pobox.com>');
+		upstreambranch = 'upstream/pu';
+		if (callGitSync(['rev-list', branchname + '..' + upstreambranch]))
+			upstreambranch = 'upstream/next';
+		if (callGitSync(['rev-list', branchname + '..' + upstreambranch]))
+			upstreambranch = 'upstream/master';
+	} else if (commitExists('a3acbf46947e52ff596')) {
+		// Cygwin
+		to = '--to=cygwin-patches@cygwin.com';
+		upstreambranch = 'cygwin/master';
+	} else if (commitExists('cc8ed39b240180b5881')) {
+		// BusyBox
+		to = '--to=busybox@busybox.net';
+		upstreambranch = 'busybox/master';
+	} else
+		die('Unrecognized project');
+};
 
-	var remoteRef = 'refs/remotes/' + publishtoremote + '/' + basedon;
-	if (!commitExists(remoteRef))
-		die(basedon + ' not pushed to ' + publishtoremote);
+var basedon;
 
-	var commit = callGitSync(['rev-parse', '-q', '--verify', remoteRef]);
-	callGitSync(['rev-parse', basedon]) == commit ||
-	die(basedon + ' on ' + publishtoremote +
-	    ' disagrees with local branch');
+var determineBaseBranch = function() {
+	basedon = gitConfig('branch.' + shortname + '.basedon');
+	if (basedon && commitExists(basedon)) {
+		publishtoremote ||
+		die('Need a remote to publish to');
 
-	upstreambranch = basedon;
-}
+		var remoteRef = 'refs/remotes/' + publishtoremote + '/' + basedon;
+		if (!commitExists(remoteRef))
+			die(basedon + ' not pushed to ' + publishtoremote);
 
-!callGitSync(['rev-list', branchname + '..' + upstreambranch]) ||
-die('Branch ' + shortname + ' is not rebased to ' + upstreambranch);
+		var commit = callGitSync(['rev-parse', '-q', '--verify', remoteRef]);
+		callGitSync(['rev-parse', basedon]) == commit ||
+		die(basedon + ' on ' + publishtoremote +
+		    ' disagrees with local branch');
 
-// Cc: from config
-callGitSync(['config', '--get-all',
-	    'branch.' + shortname + '.cc']).split('\n').map(function(email) {
-	!email ||
-	cc.push(email);
-});
+		upstreambranch = basedon;
+	}
 
-var latesttag = callGitSync(['for-each-ref', '--format=%(refname)',
+	!callGitSync(['rev-list', branchname + '..' + upstreambranch]) ||
+	die('Branch ' + shortname + ' is not rebased to ' + upstreambranch);
+};
+
+var getCc = function() {
+	// Cc: from config
+	callGitSync(['config', '--get-all',
+		    'branch.' + shortname + '.cc']).split('\n').map(function(email) {
+		!email ||
+		cc.push(email);
+	});
+};
+
+var patch_no, subject_prefix = null, in_reply_to = [], interdiff;
+
+var determineIteration = function() {
+	var latesttag = callGitSync(['for-each-ref', '--format=%(refname)',
 			    '--sort=-taggerdate',
 			    'refs/tags/' + shortname + '-v*[0-9]']).split('\n');
-if (redo)
-	latesttag = latesttag.length > 1 ? latesttag[1] : '';
-else
-	latesttag = latesttag.length > 0 ? latesttag[0] : '';
-var patch_no, subject_prefix = null, in_reply_to = [], interdiff;
-if (!latesttag) {
-	patch_no = 1;
-	subject_prefix = rfc ? '--subject-prefix=PATCH/RFC' : null;
-	interdiff = '';
-} else {
-	callGitSync(['rev-list', branchname + '...' + latesttag]) ||
-	die('Branch ' + shortname + ' was already submitted: ' + latesttag);
+	if (redo)
+		latesttag = latesttag.length > 1 ? latesttag[1] : '';
+	else
+		latesttag = latesttag.length > 0 ? latesttag[0] : '';
+	if (!latesttag) {
+		patch_no = 1;
+		subject_prefix = rfc ? '--subject-prefix=PATCH/RFC' : null;
+		interdiff = '';
+	} else {
+		callGitSync(['rev-list', branchname + '...' + latesttag]) ||
+		die('Branch ' + shortname + ' was already submitted: ' + latesttag);
 
-	patch_no = parseInt(latesttag.match(/-v([1-9][0-9]*)$/)[1]) + 1;
-	subject_prefix = '--subject-prefix=PATCH' + (rfc ? '/RFC' : '') +
-		' v' + patch_no;
-	var tagMessage = callGitSync(['cat-file', 'tag', latesttag]);
-	match = tagMessage.match(/.*\n\n(.*)/);
-	(match ? match[1] : tagMessage).split('\n').map(function(line) {
-		match = line.match(/https:\/\/public-inbox.org\/git\/(.*)/);
-		if (!match)
-			match = line.match(/http:\/\/mid.gmane.org\/(.*)/);
-		if (match)
-			in_reply_to.shift('--in-reply-to=' + match[1]);
-	});
+		patch_no = parseInt(latesttag.match(/-v([1-9][0-9]*)$/)[1]) + 1;
+		subject_prefix = '--subject-prefix=PATCH' + (rfc ? '/RFC' : '') +
+			' v' + patch_no;
+		var tagMessage = callGitSync(['cat-file', 'tag', latesttag]);
+		match = tagMessage.match(/.*\n\n(.*)/);
+		(match ? match[1] : tagMessage).split('\n').map(function(line) {
+			match = line.match(/https:\/\/public-inbox.org\/git\/(.*)/);
+			if (!match)
+				match = line.match(/http:\/\/mid.gmane.org\/(.*)/);
+			if (match)
+				in_reply_to.shift('--in-reply-to=' + match[1]);
+		});
 
-	if (!callGitSync(['rev-list', latesttag + '..' + upstreambranch]))
-		interdiff =  callGitSync(['diff',
-					 latesttag + '..' + branchname]);
-	else {
-		var rebasedtag = latesttag + '-rebased';
-		if (commitExists(rebasedtag)) {
-			if (callGitSync(['rev-list',
-					rebasedtag + '..' + upstreambranch])) {
-				console.log('Re-rebasing ' + rebasedtag);
-				callGitSync(['checkout', rebasedtag + '^0']);
+		if (!callGitSync(['rev-list', latesttag + '..' + upstreambranch]))
+			interdiff =  callGitSync(['diff',
+						 latesttag + '..' + branchname]);
+		else {
+			var rebasedtag = latesttag + '-rebased';
+			if (commitExists(rebasedtag)) {
+				if (callGitSync(['rev-list',
+						rebasedtag + '..' + upstreambranch])) {
+					console.log('Re-rebasing ' + rebasedtag);
+					callGitSync(['checkout', rebasedtag + '^0']);
+					callGitSync(['rebase', upstreambranch]);
+					var tagName =
+						rebasedtag.match(/^refs\/tags\/(.*)/)[1];
+					callGitSync(['-c', 'core.editor=true', 'tag',
+						    '-f', '-a', tagName]);
+					if (publishtoremote)
+						callGitSync(['push', publishtoremote,
+							    '+' + rebasedtag]);
+					callGitSync(['checkout', shortname]);
+				}
+			} else {
+				// Need rebasing
+				console.log('Rebasing ' + latesttag);
+				callGitSync(['checkout', latesttag + '^0']);
 				callGitSync(['rebase', upstreambranch]);
-				var tagName =
-					rebasedtag.match(/^refs\/tags\/(.*)/)[1];
-				callGitSync(['-c', 'core.editor=true', 'tag',
-					    '-f', '-a', tagName]);
+				var msg = callGitSync(['cat-file', 'tag', latesttag]);
+				msg = msg.match(/\n\n(.*)/)[1];
+				var tagName = rebasedtag.match(/^refs\/tags\/(.*)/)[1];
+				callGitSync(['tag', '-F', '-', '-a', tagName],
+					{ input: msg });
 				if (publishtoremote)
 					callGitSync(['push', publishtoremote,
-						    '+' + rebasedtag]);
+						    rebasedtag]);
 				callGitSync(['checkout', shortname]);
 			}
-		} else {
-			// Need rebasing
-			console.log('Rebasing ' + latesttag);
-			callGitSync(['checkout', latesttag + '^0']);
-			callGitSync(['rebase', upstreambranch]);
-			var msg = callGitSync(['cat-file', 'tag', latesttag]);
-			msg = msg.match(/\n\n(.*)/)[1];
-			var tagName = rebasedtag.match(/^refs\/tags\/(.*)/)[1];
-			callGitSync(['tag', '-F', '-', '-a', tagName],
-				{ input: msg });
-			if (publishtoremote)
-				callGitSync(['push', publishtoremote,
-					    rebasedtag]);
-			callGitSync(['checkout', shortname]);
+			interdiff = callGitSync(['diff',
+						rebasedtag + '..' + branchname]);
 		}
-		interdiff = callGitSync(['diff',
-					rebasedtag + '..' + branchname]);
 	}
-}
 
-console.log('Submitting ' + shortname + ' v' + patch_no);
+	console.log('Submitting ' + shortname + ' v' + patch_no);
+};
 
-// Auto-detect whether we need a cover letter
 var cover_letter = null;
-if (gitConfig('branch.' + shortname + '.description'))
-	cover_letter = '--cover-letter';
-else if (1 < parseInt(callGitSync(['rev-list', '--count',
-			     upstreambranch + '..' + branchname])))
-	die('Branch ' + shortname + ' needs a description');
 
-var commitRange = upstreambranch + '..' + branchname;
-var args = [ 'format-patch', '--thread', '--stdout', '--add-header=Fcc: Sent',
-    '--add-header=Content-Type: text/plain; charset=UTF-8',
-    '--base', upstreambranch, to ];
-cc.map(email => { args.push('--cc=' + email); });
-in_reply_to.map(email => { args.push('--in-reply-to=' + email); });
-[ subject_prefix, cover_letter, patience]
-    .map(o => { o === null || args.push(o); });
+var generateMBox = function() {
+	// Auto-detect whether we need a cover letter
+	if (gitConfig('branch.' + shortname + '.description'))
+		cover_letter = '--cover-letter';
+	else if (1 < parseInt(callGitSync(['rev-list', '--count',
+				     upstreambranch + '..' + branchname])))
+		die('Branch ' + shortname + ' needs a description');
 
-args.push(commitRange);
-console.log('Generating mbox');
-var lines = callGitSync(args).split('\n');
+	var commitRange = upstreambranch + '..' + branchname;
+	var args = [ 'format-patch', '--thread', '--stdout', '--add-header=Fcc: Sent',
+	    '--add-header=Content-Type: text/plain; charset=UTF-8',
+	    '--base', upstreambranch, to ];
+	cc.map(email => { args.push('--cc=' + email); });
+	in_reply_to.map(email => { args.push('--in-reply-to=' + email); });
+	[ subject_prefix, cover_letter, patience]
+	    .map(o => { o === null || args.push(o); });
 
-var ident = callGitSync(['var', 'GIT_AUTHOR_IDENT']);
-var thisauthor = ident.match(/.*>/)[0];
-thisauthor || die('Could not determine author ident from ' + ident);
-var separatorRegex = /^From [0-9a-f]{40} Mon Sep 17 00:00:00 2001$/;
-console.log('Adding Cc: and explict From: lines for other authors, if needed');
-for (var i = 0; i < lines.length; i++) {
-	if (!lines[i].match(separatorRegex))
-		continue;
-	var from = -1, cc = -1, author = null, cced = null;
-	for (i = i + 1; i < lines.length && lines[i] != ''; i++) {
-		var match = lines[i].match(/^(From|Cc): (.*)/);
-		if (match && match[1] == 'From') {
-			from < 0 || die('Duplicate From: header');
-			from = i;
-			author = match[2];
-		} else if (match && match[2] == 'Cc') {
-			cc < 0 || die('Duplicate Cc: header');
-			cc = i;
-			cced = match[2];
+	args.push(commitRange);
+	console.log('Generating mbox');
+
+	return callGitSync(args);
+};
+
+var insertCcAndFromLines = function() {
+	var ident = callGitSync(['var', 'GIT_AUTHOR_IDENT']);
+	var thisauthor = ident.match(/.*>/)[0];
+	thisauthor || die('Could not determine author ident from ' + ident);
+	var separatorRegex = /^From [0-9a-f]{40} Mon Sep 17 00:00:00 2001$/;
+
+	console.log('Adding Cc: and explict From: lines for other authors, if needed');
+
+	for (var i = 0; i < lines.length; i++) {
+		if (!lines[i].match(separatorRegex))
+			continue;
+		var from = -1, cc = -1, author = null, cced = null;
+		for (i = i + 1; i < lines.length && lines[i] != ''; i++) {
+			var match = lines[i].match(/^(From|Cc): (.*)/);
+			if (match && match[1] == 'From') {
+				from < 0 || die('Duplicate From: header');
+				from = i;
+				author = match[2];
+			} else if (match && match[2] == 'Cc') {
+				cc < 0 || die('Duplicate Cc: header');
+				cc = i;
+				cced = match[2];
+			}
+		}
+		from >= 0 || die('Missing From: line');
+		if (author !== thisauthor) {
+			lines[from] = 'From: ' + thisauthor;
+			if (cc < 0) {
+				lines.splice(from + 1, 0, 'Cc: ' + author);
+				i++;
+			} else
+				lines[cc] = 'Cc: ' + author + ', ' + cced;
+			lines.splice(i, 0, 'From: ' + author, '');
 		}
 	}
-	from >= 0 || die('Missing From: line');
-	if (author !== thisauthor) {
-		lines[from] = 'From: ' + thisauthor;
-		if (cc < 0) {
-			lines.splice(from + 1, 0, 'Cc: ' + author);
-			i++;
-		} else
-			lines[cc] = 'Cc: ' + author + ', ' + cced;
-		lines.splice(i, 0, 'From: ' + author, '');
-	}
-}
+};
 
-if (cover_letter) {
-	console.log('Fixing Subject: line of the cover letter');
-	var subjectRegex = /^(Subject:.*) \*\*\* SUBJECT HERE \*\*\*$/;
-	for (var i = 0; i < lines.length; i++) {
-		var match = lines[i].match(subjectRegex);
-		if (!match)
-			continue;
-		var subject = i;
-		lines[subject] = match[1];
+var adjustCoverLetter = function() {
+	if (cover_letter) {
+		console.log('Fixing Subject: line of the cover letter');
+		var subjectRegex = /^(Subject:.*) \*\*\* SUBJECT HERE \*\*\*$/;
+		for (var i = 0; i < lines.length; i++) {
+			var match = lines[i].match(subjectRegex);
+			if (!match)
+				continue;
+			var subject = i;
+			lines[subject] = match[1];
 
-		while (i < lines.length && lines[i] !== '')
-			i++;
-		var body = i++;
-		i + 3 < lines.length || die('Could not find cover letter');
-		lines[i++] === '*** BLURB HERE ***' || die('No BLURB line?');
-		lines[i++] === '' || die('Line after BLURB not empty');
-		while (i < lines.length && lines[i] !== '') {
-			lines[subject] += ' ' + lines[i];
-			i++;
+			while (i < lines.length && lines[i] !== '')
+				i++;
+			var body = i++;
+			i + 3 < lines.length || die('Could not find cover letter');
+			lines[i++] === '*** BLURB HERE ***' || die('No BLURB line?');
+			lines[i++] === '' || die('Line after BLURB not empty');
+			while (i < lines.length && lines[i] !== '') {
+				lines[subject] += ' ' + lines[i];
+				i++;
+			}
+			lines.splice(body, i - body);
 		}
-		lines.splice(body, i - body);
 	}
-}
+};
 
-console.log("Generating tag message");
-var tagmessage;
-if (!cover_letter)
-	tagmessage = callGitSync(['cat-file', 'commit', branchname])
-		.replace(/\n\n.*/, '');
-else {
-	tagmessage = '';
-	for (var i = 0; i < lines.length; i++) {
-		var match = lines[i].match(/^Subject: (.*)/);
-		if (!match)
-			continue;
-		tagmessage = match[1];
-		while (i < lines.length && lines[i] != '')
-			i++;
-		while (i < lines.length && lines[i] != '-- ')
-			tagmessage += '\n' + lines[i++];
-		break;
+var generateTagMessage = function() {
+	console.log("Generating tag message");
+	var tagmessage;
+
+	if (!cover_letter)
+		tagmessage = callGitSync(['cat-file', 'commit', branchname])
+			.replace(/\n\n.*/, '');
+	else {
+		tagmessage = '';
+		for (var i = 0; i < lines.length; i++) {
+			var match = lines[i].match(/^Subject: (.*)/);
+			if (!match)
+				continue;
+			tagmessage = match[1];
+			while (i < lines.length && lines[i] != '')
+				i++;
+			while (i < lines.length && lines[i] != '-- ')
+				tagmessage += '\n' + lines[i++];
+			break;
+		}
 	}
-}
 
-console.log("Finding location for the footers");
-var dashdash = 0;
-if (cover_letter)
-	while (dashdash < lines.length && lines[dashdash] !== '-- ')
-		dashdash++;
-else
-	while (++dashdash < lines.length && lines[dashdash - 1] !== '---')
-		dashdash++;
+	return tagmessage;
+};
 
-var tagname = shortname + '-v' + patch_no;
+var findFooter = function() {
+	console.log("Finding location for the footers");
+	var dashdash = 0;
+	if (cover_letter)
+		while (dashdash < lines.length && lines[dashdash] !== '-- ')
+			dashdash++;
+	else
+		while (++dashdash < lines.length && lines[dashdash - 1] !== '---')
+			dashdash++;
+	return dashdash;
+};
 
-if (publishtoremote) {
+var insertLinks = function() {
+	if (!publishtoremote)
+		return;
+
 	console.log('Inserting links');
 	var url = gitConfig('remote.' + publishtoremote + '.url');
 	var match = url.match(/^https?(:\/\/github\.com\/.*)/);
@@ -427,47 +466,71 @@ if (publishtoremote) {
 			     'Fetch-It-Via: git fetch ' + url + ' ' + tagname);
 		dashdash += 2;
 	}
-}
+};
 
-console.log('Generating tag object');
-var messageID = null;
-for (var i = 0; i < lines.length; i++) {
-	var match = lines[i].match(/^Message-ID: <(.*)>/);
-	if (match) {
-		messageID = match[1];
-		break;
+var generateTagObject = function() {
+	console.log('Generating tag object');
+	var messageID = null;
+	for (var i = 0; i < lines.length; i++) {
+		var match = lines[i].match(/^Message-ID: <(.*)>/);
+		if (match) {
+			messageID = match[1];
+			break;
+		}
 	}
-}
 
-tagmessage += '\n\nSubmitted-As: https://public-inbox.org/git/'
-	+ messageID;
-in_reply_to.map(id => {
-	tagmessage += '\nIn-Reply-To: https://public-inbox.org/git/' + id;
-});
-args = ['tag', '-F', '-', '-a'];
-!redo || args.push('-f');
-args.push(tagname);
-callGitSync(args, { 'input': tagmessage });
+	tagmessage += '\n\nSubmitted-As: https://public-inbox.org/git/'
+		+ messageID;
+	in_reply_to.map(id => {
+		tagmessage += '\nIn-Reply-To: https://public-inbox.org/git/' + id;
+	});
+	args = ['tag', '-F', '-', '-a'];
+	!redo || args.push('-f');
+	args.push(tagname);
+	callGitSync(args, { 'input': tagmessage });
 
-if (interdiff) {
-	console.log('Inserting interdiff');
-	// construct the arguments for split():
-	// first, split the interdiff and prefix with a space
-	var args = interdiff.split('\n').map(line => { return ' ' + line; });
-	// now, shift in the (start, count) parameters, an empty line and the
-	// "Interdiff vs v$(($patch_no-1)):" label
-	args.splice(0, 0, dashdash, 0,
-		'', 'Interdiff vs v' + (patch_no-1) + ':');
-	// and finally call splice() using the apply() method on the prototype
-	[].splice.apply(lines, args);
-}
+	if (interdiff) {
+		console.log('Inserting interdiff');
+		// construct the arguments for split():
+		// first, split the interdiff and prefix with a space
+		var args = interdiff.split('\n').map(line => { return ' ' + line; });
+		// now, shift in the (start, count) parameters, an empty line and the
+		// "Interdiff vs v$(($patch_no-1)):" label
+		args.splice(0, 0, dashdash, 0,
+			'', 'Interdiff vs v' + (patch_no-1) + ':');
+		// and finally call splice() using the apply() method on the prototype
+		[].splice.apply(lines, args);
+	}
+};
 
-console.log('Calling the `send-mbox` alias');
-callGitSync(['send-mbox'], { 'input': lines.join('\n') });
+var sendMBox = function() {
+	console.log('Calling the `send-mbox` alias');
+	callGitSync(['send-mbox'], { 'input': lines.join('\n') });
+};
 
-if (publishtoremote) {
+var publishBranch = function() {
+	if (!publishtoremote)
+		return;
+
 	console.log('Publishing branch and tag');
 	if (redo)
 		tagname = '+' + tagname;
 	callGitSync(['push', publishtoremote, '+' + branchname, tagname]);
-}
+};
+
+getBranchName();
+parseCommandLineOptions(process.argv);
+determineProject();
+determineBaseBranch();
+getCc();
+determineIteration();
+var lines = generateMBox().split('\n');
+insertCcAndFromLines();
+adjustCoverLetter();
+var tagmessage = generateTagMessage();
+var dashdash = findFooter();
+var tagname = shortname + '-v' + patch_no;
+insertLinks();
+generateTagObject();
+sendMBox();
+publishBranch();
