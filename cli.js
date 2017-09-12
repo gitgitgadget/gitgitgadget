@@ -472,7 +472,7 @@ var generateTagObject = function() {
 	console.log('Generating tag object');
 	var messageID = null;
 	for (var i = 0; i < lines.length; i++) {
-		var match = lines[i].match(/^Message-ID: <(.*)>/);
+		var match = lines[i].match(/^Message-ID: <(.*)>/i);
 		if (match) {
 			messageID = match[1];
 			break;
