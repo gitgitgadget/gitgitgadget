@@ -454,7 +454,7 @@ var insertLinks = function() {
 		url = '';
 	if (url) {
 		if (basedon) {
-			lines.splice(i, 0,
+			lines.splice(dashdash, 0,
 				     'Based-On: ' + basedon + ' at ' + url,
 				     'Fetch-Base-Via: git fetch '
 				     + url + ' ' + basedon);
