@@ -262,13 +262,13 @@ var determineIteration = function() {
 		subject_prefix = '--subject-prefix=PATCH' + (rfc ? '/RFC' : '') +
 			' v' + patch_no;
 		var tagMessage = callGitSync(['cat-file', 'tag', latesttag]);
-		match = tagMessage.match(/.*\n\n(.*)/);
+		match = tagMessage.match(/^[\s\S]*?\n\n([\s\S]*)/);
 		(match ? match[1] : tagMessage).split('\n').map(function(line) {
 			match = line.match(/https:\/\/public-inbox.org\/git\/(.*)/);
 			if (!match)
 				match = line.match(/http:\/\/mid.gmane.org\/(.*)/);
 			if (match)
-				in_reply_to.shift('--in-reply-to=' + match[1]);
+				in_reply_to.unshift(match[1]);
 		});
 
 		if (!callGitSync(['rev-list', latesttag + '..' + upstreambranch]))
