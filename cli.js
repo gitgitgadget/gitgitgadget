@@ -379,7 +379,7 @@ var insertCcAndFromLines = function() {
 				i++;
 			} else
 				lines[cc] = 'Cc: ' + author + ', ' + cced;
-			lines.splice(i, 0, 'From: ' + author, '');
+			lines.splice(i + 1, 0, 'From: ' + author, '');
 		}
 	}
 };
