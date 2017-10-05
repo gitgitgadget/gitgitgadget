@@ -184,6 +184,7 @@ var commitExists = function(commit) {
 
 // For now, only the Git and Cygwin projects are supported
 var to, cc = [], upstreamBranch;
+var midUrlPrefix = ' Message-ID: ';
 
 var determineProject = function() {
 	if (commitExists('e83c5163316f89bfbde')) {
@@ -195,14 +196,17 @@ var determineProject = function() {
 			upstreambranch = 'upstream/next';
 		if (callGitSync(['rev-list', branchname + '..' + upstreambranch]))
 			upstreambranch = 'upstream/master';
+		midUrlPrefix = 'https://public-inbox.org/git/';
 	} else if (commitExists('a3acbf46947e52ff596')) {
 		// Cygwin
 		to = '--to=cygwin-patches@cygwin.com';
 		upstreambranch = 'cygwin/master';
+		midUrlPrefix = 'https://www.mail-archive.com/search?l=cygwin-patches@cygwin.com&q=';
 	} else if (commitExists('cc8ed39b240180b5881')) {
 		// BusyBox
 		to = '--to=busybox@busybox.net';
 		upstreambranch = 'busybox/master';
+		midUrlPrefix = 'https://www.mail-archive.com/search?l=busybox@busybox.net&q=';
 	} else
 		die('Unrecognized project');
 };
@@ -264,9 +268,13 @@ var determineIteration = function() {
 		var tagMessage = callGitSync(['cat-file', 'tag', latesttag]);
 		match = tagMessage.match(/^[\s\S]*?\n\n([\s\S]*)/);
 		(match ? match[1] : tagMessage).split('\n').map(function(line) {
-			match = line.match(/https:\/\/public-inbox.org\/git\/(.*)/);
+			match = line.match(/https:\/\/public-inbox\.org\/.*\/([^\/]+)/);
+			if (!match)
+				match = line.match(/https:\/\/www\.mail-archive\.com\/.*\/([^\/]+)/);
 			if (!match)
 				match = line.match(/http:\/\/mid.gmane.org\/(.*)/);
+			if (!match)
+				match = line.match(/^[^ :]*: Message-ID: ([^\/]+)/);
 			if (match)
 				in_reply_to.unshift(match[1]);
 		});
@@ -479,10 +487,9 @@ var generateTagObject = function() {
 		}
 	}
 
-	tagmessage += '\n\nSubmitted-As: https://public-inbox.org/git/'
-		+ messageID;
+	tagmessage += '\n\nSubmitted-As: ' + midUrlPrefix + messageID;
 	in_reply_to.map(id => {
-		tagmessage += '\nIn-Reply-To: https://public-inbox.org/git/' + id;
+		tagmessage += '\nIn-Reply-To: ' + midUrlPrefix + id;
 	});
 	args = ['tag', '-F', '-', '-a'];
 	!redo || args.push('-f');
