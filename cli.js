@@ -309,7 +309,7 @@ var determineIteration = function() {
 				callGitSync(['checkout', latesttag + '^0']);
 				callGitSync(['rebase', upstreambranch]);
 				var msg = callGitSync(['cat-file', 'tag', latesttag]);
-				msg = msg.match(/\n\n(.*)/)[1];
+				msg = msg.match(/\n\n([^\n]*)/)[1];
 				var tagName = rebasedtag.match(/^refs\/tags\/(.*)/)[1];
 				callGitSync(['tag', '-F', '-', '-a', tagName],
 					{ input: msg });
