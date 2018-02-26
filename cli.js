@@ -80,6 +80,10 @@ var callGitSync = function(args, options) {
 		var result = child_process.spawnSync('git', args, options);
 		var err = '' + result.stderr;
 		!err || process.stderr.write(err + '\n');
+		if ((typeof(options['gentle']) == 'undefined' ||
+		     !options['gentle']) && result.status !== 0)
+			die('git ' + args.join(' ') + ' failed with status ' +
+				result.status);
 
 		return ('' + result.stdout).replace(/\n$/, '');
 	} catch (err) {
@@ -88,7 +92,7 @@ var callGitSync = function(args, options) {
 };
 
 var gitConfig = function(key) {
-	return callGitSync(['config', key]);
+	return callGitSync(['config', key], { gentle: true });
 };
 
 gitConfig('alias.send-mbox') ||
