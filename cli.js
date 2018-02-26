@@ -424,10 +424,10 @@ var generateTagMessage = function() {
 	else {
 		tagmessage = '';
 		for (var i = 0; i < lines.length; i++) {
-			var match = lines[i].match(/^Subject: (.*)/);
+			var match = lines[i].match(/^Subject: (\[PATCH[^\]]*\] )?(.*)/);
 			if (!match)
 				continue;
-			tagmessage = match[1];
+			tagmessage = match[2];
 			while (i < lines.length && lines[i] != '')
 				i++;
 			while (i < lines.length && lines[i] != '-- ')
