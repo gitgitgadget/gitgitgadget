@@ -130,7 +130,7 @@ var parseCommandLineOptions = function(argv) {
 			i + 1 == argv.length ||
 			die('Too many arguments');
 			if (!arg)
-				console.log(callGitSync(['config', '--get-all', key]));
+				console.log(callGitSync(['config', '--get-all', key], { gentle: true }));
 			else if (arg.match(/>.*>/) || arg.match(/>,/)) {
 				arg.replaceAll(/> /, '>,').map(function(email) {
 					email = email.trim();
@@ -241,8 +241,8 @@ var determineBaseBranch = function() {
 
 var getCc = function() {
 	// Cc: from config
-	callGitSync(['config', '--get-all',
-		    'branch.' + shortname + '.cc']).split('\n').map(function(email) {
+	callGitSync(['config', '--get-all', 'branch.' + shortname + '.cc'],
+			{ gentle: true }).split('\n').map(function(email) {
 		!email ||
 		cc.push(email);
 	});
