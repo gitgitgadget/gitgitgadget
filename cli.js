@@ -337,8 +337,11 @@ var generateMBox = function() {
 		die('Branch ' + shortname + ' needs a description');
 
 	var commitRange = upstreambranch + '..' + branchname;
-	var args = [ 'format-patch', '--thread', '--stdout', '--add-header=Fcc: Sent',
+	var args = [ 'format-patch', '--thread', '--stdout',
+	    '--add-header=Fcc: Sent',
 	    '--add-header=Content-Type: text/plain; charset=UTF-8',
+	    '--add-header=Content-Transfer-Encoding: 8bit',
+	    '--add-header=MIME-Version: 1.0',
 	    '--base', upstreambranch, to ];
 	cc.map(email => { args.push('--cc=' + email); });
 	in_reply_to.map(email => { args.push('--in-reply-to=' + email); });
