@@ -144,6 +144,7 @@ var parseCommandLineOptions = function(argv) {
 						     '--author=' + arg]);
 				id ||
 				die('Not an email address: ' + arg);
+				console.log("Adding Cc: " + id);
 				callGitSync(['config', '--add', key, id]);
 			}
 			process.exit(0);
