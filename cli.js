@@ -520,6 +520,23 @@ var publishBranch = function() {
 
 getBranchName();
 parseCommandLineOptions(process.argv);
+var finishDryRun = false;
+if (dryRun && typeof(process.env['GIT_PAGER_IN_USE']) === 'undefined') {
+	var child_process = require('child_process');
+	var args = [];
+	if (typeof(process.env['LESS']) === 'undefined')
+		args.push('-FRX');
+	var options = { stdio: [ 'pipe', 'inherit', 'inherit' ] };
+	var less = child_process.spawn('less', args, options);
+	console.log = msg => {
+		less.stdin.write(msg + '\n');
+	};
+	finishDryRun = () => {
+		less.stdin.end();
+		less.on('exit', () => { process.exit(); });
+	};
+	process.env['GIT_PAGER_IN_USE'] = 'true';
+}
 determineProject();
 determineBaseBranch();
 getCc();
@@ -534,3 +551,5 @@ insertLinks();
 generateTagObject();
 sendMBox();
 publishBranch();
+if (finishDryRun)
+	finishDryRun();
