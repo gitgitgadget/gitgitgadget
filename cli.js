@@ -109,6 +109,7 @@ var getBranchName = function() {
 };
 
 var redo = false;
+var dryRun = false;
 var rfc = false;
 var publishtoremote = gitConfig('mail.publishtoremote');
 var patience = null;
@@ -118,6 +119,7 @@ var parseCommandLineOptions = function(argv) {
 	for (i = 2; i < argv.length; i++) {
 		var arg = argv[i];
 		if (arg == '--redo') redo = true;
+		else if (arg == '--dry-run' || arg == '-n') dryRun = true;
 		else if (arg == '--rfc') rfc = true;
 		else if (match = arg.match(/^--publish-to-remote=.*/))
 			publishtoremote = match[1];
@@ -286,7 +288,10 @@ var determineIteration = function() {
 		branchdiff = callGitSync(['tbdiff', '--no-color', range]);
 	}
 
-	console.log('Submitting ' + shortname + ' v' + patch_no);
+	if (dryRun)
+		console.log('Dry-run ' + shortname + ' v' + patch_no);
+	else
+		console.log('Submitting ' + shortname + ' v' + patch_no);
 };
 
 var cover_letter = null;
@@ -447,7 +452,11 @@ var insertLinks = function() {
 };
 
 var generateTagObject = function() {
-	console.log('Generating tag object');
+	if (dryRun)
+		console.log('Would generate tag object');
+	else
+		console.log('Generating tag object');
+
 	var messageID = null;
 	for (var i = 0; i < lines.length; i++) {
 		var match = lines[i].match(/^Message-ID: <(.*)>/i);
@@ -464,7 +473,14 @@ var generateTagObject = function() {
 	args = ['tag', '-F', '-', '-a'];
 	!redo || args.push('-f');
 	args.push(tagname);
-	callGitSync(args, { 'input': tagmessage });
+	if (dryRun)
+		console.log("Tag name would be " + tagname
+			    + " with message:\n\n"
+			    + tagmessage.split('\n').map(line => {
+				return '    ' + line;
+			    }).join('\n'));
+	else
+		callGitSync(args, { 'input': tagmessage });
 
 	if (branchdiff) {
 		console.log('Inserting branch-diff');
@@ -481,12 +497,19 @@ var generateTagObject = function() {
 };
 
 var sendMBox = function() {
+	if (dryRun) {
+		console.log("Would send this mbox:\n\n"
+			    + lines.map(line => {
+				return '    ' + line;
+			    }).join('\n'));
+		return;
+	}
 	console.log('Calling the `send-mbox` alias');
 	callGitSync(['send-mbox'], { 'input': lines.join('\n') });
 };
 
 var publishBranch = function() {
-	if (!publishtoremote)
+	if (!publishtoremote || dryRun)
 		return;
 
 	console.log('Publishing branch and tag');
