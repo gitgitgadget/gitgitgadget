@@ -1,0 +1,22 @@
+{
+  "name": "mail-patch-series",
+  "version": "1.0.0",
+  "description": "This script is intended to help submit patch series to projects which\r want contributions to be sent to a mailing list. The process is not\r quite as painless for the contributor as opening Pull Requests, but at\r least it is much less painful than having to all the steps manually.",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dscho/mail-patch-series.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dscho/mail-patch-series/issues"
+  },
+  "homepage": "https://github.com/dscho/mail-patch-series#readme"
+}
