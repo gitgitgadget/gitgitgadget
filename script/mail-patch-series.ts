@@ -63,16 +63,19 @@
  * `--redo` option.
  */
 
-var die = function(err) {
+function die(err: string): void {
 	process.stderr.write(err + '\n');
 	process.exit(1);
 };
 
-var callGitSync = function(args, options) {
+interface GitOptions {
+	input: string;
+	gentle: boolean;
+}
+
+function callGitSync(args: String[], options: GitOptions = {} as GitOptions): string {
 	try {
 		var child_process = require('child_process');
-		if (typeof(options) == 'undefined')
-			options = {};
 		if (typeof(options['input']) == 'undefined')
 			options['input'] = '';
 		var result = child_process.spawnSync('git', args, options);
@@ -87,34 +90,34 @@ var callGitSync = function(args, options) {
 	} catch (err) {
 		die(err);
 	}
+	return '';
 };
 
-var gitConfig = function(key) {
-	return callGitSync(['config', key], { gentle: true });
+function gitConfig(key: string): string {
+	return callGitSync(['config', key], { gentle: true } as GitOptions);
 };
 
 gitConfig('alias.send-mbox') ||
 die("Need an 'send-mbox' alias");
 
 // figure out the iteration of this patch series
-var branchname;
-var shortname;
+var branchname: string;
 
-var getBranchName = function() {
+function getBranchName(): string {
 	branchname = callGitSync(['rev-parse', '--symbolic-full-name', 'HEAD']);
 	var match = branchname.match(/^refs\/heads\/(.*)/);
 	match ||
 	die('Not on a branch (' + branchname + ')?');
-	shortname = match[1];
+	return match![1];
 };
 
 var redo = false;
 var dryRun = false;
 var rfc = false;
 var publishtoremote = gitConfig('mail.publishtoremote');
-var patience = null;
+var patience: string | null = null;
 
-var parseCommandLineOptions = function(argv) {
+function parseCommandLineOptions(argv: String[]): void {
 	var i, match;
 	for (i = 2; i < argv.length; i++) {
 		var arg = argv[i];
@@ -130,9 +133,9 @@ var parseCommandLineOptions = function(argv) {
 			i + 1 == argv.length ||
 			die('Too many arguments');
 			if (!arg)
-				console.log(callGitSync(['config', '--get-all', key], { gentle: true }));
+				console.log(callGitSync(['config', '--get-all', key], { gentle: true } as GitOptions));
 			else if (arg.match(/>.*>/) || arg.match(/>,/)) {
-				arg.replaceAll(/> /, '>,').map(function(email) {
+				arg.replace(/> /g, '>,').split(',').map(function(email: string) {
 					email = email.trim();
 					!email ||
 					callGitSync(['config', '--add', key, email]);
@@ -174,7 +177,7 @@ var parseCommandLineOptions = function(argv) {
 		die('No valid remote: ' + publishtoremote);
 };
 
-var commitExists = function(commit) {
+function commitExists(commit: string): boolean {
 	try {
 		var child_process = require('child_process');
 		var p = child_process.spawnSync('git', ['rev-parse', '--verify',
@@ -188,37 +191,37 @@ var commitExists = function(commit) {
 }
 
 // For now, only the Git and Cygwin projects are supported
-var to, cc = [], upstreamBranch;
+var to: string, cc: string[] = [], upstreamBranch: string;
 var midUrlPrefix = ' Message-ID: ';
 
-var determineProject = function() {
+function determineProject(): void {
 	if (commitExists('e83c5163316f89bfbde')) {
 		// Git
 		to = '--to=git@vger.kernel.org';
 		cc.push('Junio C Hamano <gitster@pobox.com>');
-		upstreambranch = 'upstream/pu';
-		if (callGitSync(['rev-list', branchname + '..' + upstreambranch]))
-			upstreambranch = 'upstream/next';
-		if (callGitSync(['rev-list', branchname + '..' + upstreambranch]))
-			upstreambranch = 'upstream/master';
+		upstreamBranch = 'upstream/pu';
+		if (callGitSync(['rev-list', branchname + '..' + upstreamBranch]))
+			upstreamBranch = 'upstream/next';
+		if (callGitSync(['rev-list', branchname + '..' + upstreamBranch]))
+			upstreamBranch = 'upstream/master';
 		midUrlPrefix = 'https://public-inbox.org/git/';
 	} else if (commitExists('a3acbf46947e52ff596')) {
 		// Cygwin
 		to = '--to=cygwin-patches@cygwin.com';
-		upstreambranch = 'cygwin/master';
+		upstreamBranch = 'cygwin/master';
 		midUrlPrefix = 'https://www.mail-archive.com/search?l=cygwin-patches@cygwin.com&q=';
 	} else if (commitExists('cc8ed39b240180b5881')) {
 		// BusyBox
 		to = '--to=busybox@busybox.net';
-		upstreambranch = 'busybox/master';
+		upstreamBranch = 'busybox/master';
 		midUrlPrefix = 'https://www.mail-archive.com/search?l=busybox@busybox.net&q=';
 	} else
 		die('Unrecognized project');
 };
 
-var basedon;
+var basedon: string;
 
-var determineBaseBranch = function() {
+function determineBaseBranch(): void {
 	basedon = gitConfig('branch.' + shortname + '.basedon');
 	if (basedon && commitExists(basedon)) {
 		publishtoremote ||
@@ -233,32 +236,36 @@ var determineBaseBranch = function() {
 		die(basedon + ' on ' + publishtoremote +
 		    ' disagrees with local branch');
 
-		upstreambranch = basedon;
+		upstreamBranch = basedon;
 	}
 
-	!callGitSync(['rev-list', branchname + '..' + upstreambranch]) ||
-	die('Branch ' + shortname + ' is not rebased to ' + upstreambranch);
+	!callGitSync(['rev-list', branchname + '..' + upstreamBranch]) ||
+	die('Branch ' + shortname + ' is not rebased to ' + upstreamBranch);
 };
 
-var getCc = function() {
+function getCc(): void {
 	// Cc: from config
 	callGitSync(['config', '--get-all', 'branch.' + shortname + '.cc'],
-			{ gentle: true }).split('\n').map(function(email) {
+			{ gentle: true } as GitOptions).split('\n').map(function(email) {
 		!email ||
 		cc.push(email);
 	});
 };
 
-var patch_no, subject_prefix = null, in_reply_to = [], branchdiff;
+var subject_prefix: string | null = null, in_reply_to: string[] = [], branchdiff: string;
 
-var determineIteration = function() {
-	var latesttag = callGitSync(['for-each-ref', '--format=%(refname)',
+function determineIteration(): number {
+	var latesttags: string[] = callGitSync(['for-each-ref', '--format=%(refname)',
 			    '--sort=-taggerdate',
-			    'refs/tags/' + shortname + '-v*[0-9]']).split('\n');
+				'refs/tags/' + shortname + '-v*[0-9]']).split('\n');
+	var latesttag: string;
+
 	if (redo)
-		latesttag = latesttag.length > 1 ? latesttag[1] : '';
+		latesttag = latesttags.length > 1 ? latesttags[1] : '';
 	else
-		latesttag = latesttag.length > 0 ? latesttag[0] : '';
+		latesttag = latesttags.length > 0 ? latesttags[0] : '';
+	
+	var patch_no: number;
 	if (!latesttag) {
 		patch_no = 1;
 		subject_prefix = rfc ? '--subject-prefix=PATCH/RFC' : null;
@@ -268,7 +275,8 @@ var determineIteration = function() {
 		callGitSync(['rev-list', range]) ||
 		die('Branch ' + shortname + ' was already submitted: ' + latesttag);
 
-		patch_no = parseInt(latesttag.match(/-v([1-9][0-9]*)$/)[1]) + 1;
+		var match = latesttag.match(/-v([1-9][0-9]*)$/);
+		patch_no = parseInt(match && match[1] || '0') + 1;
 		subject_prefix = '--subject-prefix=PATCH' + (rfc ? '/RFC' : '') +
 			' v' + patch_no;
 		var tagMessage = callGitSync(['cat-file', 'tag', latesttag]);
@@ -292,25 +300,27 @@ var determineIteration = function() {
 		console.log('Dry-run ' + shortname + ' v' + patch_no);
 	else
 		console.log('Submitting ' + shortname + ' v' + patch_no);
+
+	return patch_no;
 };
 
-var cover_letter = null;
+var cover_letter: string | null = null;
 
-var generateMBox = function() {
+function generateMBox(): string {
 	// Auto-detect whether we need a cover letter
 	if (gitConfig('branch.' + shortname + '.description'))
 		cover_letter = '--cover-letter';
 	else if (1 < parseInt(callGitSync(['rev-list', '--count',
-				     upstreambranch + '..' + branchname])))
+		upstreamBranch + '..' + branchname])))
 		die('Branch ' + shortname + ' needs a description');
 
-	var commitRange = upstreambranch + '..' + branchname;
+	var commitRange = upstreamBranch + '..' + branchname;
 	var args = [ 'format-patch', '--thread', '--stdout',
 	    '--add-header=Fcc: Sent',
 	    '--add-header=Content-Type: text/plain; charset=UTF-8',
 	    '--add-header=Content-Transfer-Encoding: 8bit',
 	    '--add-header=MIME-Version: 1.0',
-	    '--base', upstreambranch, to ];
+	    '--base', upstreamBranch, to ];
 	cc.map(email => { args.push('--cc=' + email); });
 	in_reply_to.map(email => { args.push('--in-reply-to=' + email); });
 	[ subject_prefix, cover_letter, patience]
@@ -322,9 +332,10 @@ var generateMBox = function() {
 	return callGitSync(args);
 };
 
-var insertCcAndFromLines = function() {
+function insertCcAndFromLines(): void {
 	var ident = callGitSync(['var', 'GIT_AUTHOR_IDENT']);
-	var thisauthor = ident.match(/.*>/)[0];
+	var match = ident.match(/.*>/);
+	var thisauthor = match && match[0];
 	thisauthor || die('Could not determine author ident from ' + ident);
 	var separatorRegex = /^From [0-9a-f]{40} Mon Sep 17 00:00:00 2001$/;
 
@@ -359,7 +370,7 @@ var insertCcAndFromLines = function() {
 	}
 };
 
-var adjustCoverLetter = function() {
+function adjustCoverLetter(): void {
 	if (cover_letter) {
 		console.log('Fixing Subject: line of the cover letter');
 		var subjectRegex = /^(Subject:.*) \*\*\* SUBJECT HERE \*\*\*$/;
@@ -385,7 +396,7 @@ var adjustCoverLetter = function() {
 	}
 };
 
-var generateTagMessage = function() {
+function generateTagMessage(): string {
 	console.log("Generating tag message");
 	var tagmessage;
 
@@ -410,7 +421,7 @@ var generateTagMessage = function() {
 	return tagmessage;
 };
 
-var findFooter = function() {
+function findFooter(): number {
 	console.log("Finding location for the footers");
 	var dashdash = 0;
 	if (cover_letter)
@@ -422,7 +433,7 @@ var findFooter = function() {
 	return dashdash;
 };
 
-var insertLinks = function() {
+function insertLinks(): void {
 	if (!publishtoremote)
 		return;
 
@@ -451,7 +462,7 @@ var insertLinks = function() {
 	}
 };
 
-var generateTagObject = function() {
+function generateTagObject(): void {
 	if (dryRun)
 		console.log('Would generate tag object');
 	else
@@ -480,13 +491,13 @@ var generateTagObject = function() {
 				return '    ' + line;
 			    }).join('\n'));
 	else
-		callGitSync(args, { 'input': tagmessage });
+		callGitSync(args, { 'input': tagmessage } as GitOptions);
 
 	if (branchdiff) {
 		console.log('Inserting branch-diff');
 		// construct the arguments for split():
 		// first, split the branch-diff and prefix with a space
-		var args = branchdiff.split('\n').map(line => { return ' ' + line; });
+		var args: any[] = branchdiff.split('\n').map(line => { return ' ' + line; });
 		// now, shift in the (start, count) parameters, an empty line and the
 		// "Branch-diff vs v$(($patch_no-1)):" label
 		args.splice(0, 0, dashdash, 0,
@@ -496,7 +507,7 @@ var generateTagObject = function() {
 	}
 };
 
-var sendMBox = function() {
+function sendMBox(): void {
 	if (dryRun) {
 		console.log("Would send this mbox:\n\n"
 			    + lines.map(line => {
@@ -505,10 +516,10 @@ var sendMBox = function() {
 		return;
 	}
 	console.log('Calling the `send-mbox` alias');
-	callGitSync(['send-mbox'], { 'input': lines.join('\n') });
+	callGitSync(['send-mbox'], { 'input': lines.join('\n') } as GitOptions);
 };
 
-var publishBranch = function() {
+function publishBranch(): void {
 	if (!publishtoremote || dryRun)
 		return;
 
@@ -518,9 +529,9 @@ var publishBranch = function() {
 	callGitSync(['push', publishtoremote, '+' + branchname, tagname]);
 };
 
-getBranchName();
+var shortname = getBranchName();
 parseCommandLineOptions(process.argv);
-var finishDryRun = false;
+var finishDryRun = () => {};
 if (dryRun && typeof(process.env['GIT_PAGER_IN_USE']) === 'undefined') {
 	var child_process = require('child_process');
 	var args = [];
@@ -528,7 +539,7 @@ if (dryRun && typeof(process.env['GIT_PAGER_IN_USE']) === 'undefined') {
 		args.push('-FRX');
 	var options = { stdio: [ 'pipe', 'inherit', 'inherit' ] };
 	var less = child_process.spawn('less', args, options);
-	console.log = msg => {
+	console.log = (msg: string) => {
 		less.stdin.write(msg + '\n');
 	};
 	finishDryRun = () => {
@@ -540,7 +551,7 @@ if (dryRun && typeof(process.env['GIT_PAGER_IN_USE']) === 'undefined') {
 determineProject();
 determineBaseBranch();
 getCc();
-determineIteration();
+var patch_no = determineIteration();
 var lines = generateMBox().split('\n');
 insertCcAndFromLines();
 adjustCoverLetter();
