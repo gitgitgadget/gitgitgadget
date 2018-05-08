@@ -64,45 +64,24 @@
  */
 
 import { git, gitConfig, gitConfigForEach } from '../lib/git';
+import { ProjectOptions, PatchSeriesOptions, PatchSeries } from '../lib/patch-series';
 
-var publishtoremote: string;
+async function main(argv: string[]) {
+	let i, match;
 
-async function init(): Promise<void> {
-	if (! await gitConfig('alias.send-mbox'))
-		throw new Error("Need an 'send-mbox' alias");
-	publishtoremote = await gitConfig('mail.publishtoremote');
-}
+	let options = new PatchSeriesOptions();
+	let publishToRemote = '';
 
-// figure out the iteration of this patch series
-var branchname: string;
-
-async function getBranchName(): Promise<string> {
-	branchname = await git(['rev-parse', '--symbolic-full-name', 'HEAD']);
-	var match = branchname.match(/^refs\/heads\/(.*)/);
-	if (!match)
-		throw new Error('Not on a branch (' + branchname + ')?');
-	return match![1];
-};
-
-var redo: boolean = false;
-var dryRun: boolean = false;
-var rfc: boolean = false;
-var patience: string | null = null;
-
-// Returns true if no further action needs to be taken (i.e. it already showed
-// the information requested by the user)
-async function parseCommandLineOptions(argv: string[]): Promise<boolean> {
-	var i, match;
 	for (i = 2; i < argv.length; i++) {
-		var arg = argv[i];
-		if (arg == '--redo') redo = true;
-		else if (arg == '--dry-run' || arg == '-n') dryRun = true;
-		else if (arg == '--rfc') rfc = true;
+		let arg = argv[i];
+		if (arg == '--redo') options.redo = true;
+		else if (arg == '--dry-run' || arg == '-n') options.dryRun = true;
+		else if (arg == '--rfc') options.rfc = true;
 		else if (match = arg.match(/^--publish-to-remote=.*/))
-			publishtoremote = match[1];
-		else if (arg == '--patience') patience = '--patience';
+			publishToRemote = match[1];
+		else if (arg == '--patience') options.patience = true;
 		else if (arg == '--cc') {
-			var key = 'branch.' + shortname + '.cc';
+			let key = 'branch.' + await ProjectOptions.getBranchName() + '.cc';
 			arg = i + 1 < argv.length ? argv[++i] : '';
 			if (i + 1 != argv.length)
 				throw new Error('Too many arguments');
@@ -117,27 +96,27 @@ async function parseCommandLineOptions(argv: string[]): Promise<boolean> {
 			} else if (arg.match(/@/))
 				await git(['config', '--add', key, arg]);
 			else {
-				var id = await git(['log', '-1', '--format=%an <%ae>',
+				let id = await git(['log', '-1', '--format=%an <%ae>',
 					'--author=' + arg]);
 				if (!id)
 					throw new Error('Not an email address: ' + arg);
 				console.log("Adding Cc: " + id);
 				await git(['config', '--add', key, id]);
 			}
-			return true;
+			return;
 		} else if (match = arg.match(/^--basedon=(.*)/)) {
-			var key = 'branch.' + shortname + '.basedon';
+			let key = 'branch.' + await ProjectOptions.getBranchName() + '.basedon';
 			await git(['config', key, arg]);
-			return true;
+			return;
 		} else if (arg == '--basedon') {
-			var key = 'branch.' + shortname + '.basedon';
+			let key = 'branch.' + await ProjectOptions.getBranchName() + '.basedon';
 			if (i + 1 == argv.length)
 				console.log(gitConfig(key));
 			else if (i + 2 == argv.length)
 				await git(['config', key, argv[++i]]);
 			else
 				throw new Error('Too many arguments');
-			return true;
+			return;
 		} else
 			break;
 	}
@@ -147,390 +126,18 @@ async function parseCommandLineOptions(argv: string[]): Promise<boolean> {
 			' [--redo] [--publish-to-remote=<remote>] |\n' +
 			'--cc [<email-address>] | --basedon [<branch>]');
 
-	if (!publishtoremote || !gitConfig('remote.' + publishtoremote + '.url'))
-		throw new Error('No valid remote: ' + publishtoremote);
+	if (!publishToRemote || ! await gitConfig('remote.' + publishToRemote + '.url'))
+		throw new Error('No valid remote: ' + publishToRemote);
 
-	// Indicate that the patch series should be prepared and possibly sent
-	return false;
-};
+	let finishDryRun = () => { };
 
-async function commitExists(commit: string): Promise<boolean> {
-	try {
-		await git(['rev-parse', '--verify', commit]);
-		return true;
-	} catch (err) {
-		return false;
-	}
-}
-
-// For now, only the Git and Cygwin projects are supported
-var to: string, cc: string[] = [], upstreamBranch: string;
-var midUrlPrefix = ' Message-ID: ';
-
-async function determineProject(): Promise<void> {
-	if (commitExists('e83c5163316f89bfbde')) {
-		// Git
-		to = '--to=git@vger.kernel.org';
-		cc.push('Junio C Hamano <gitster@pobox.com>');
-		upstreamBranch = 'upstream/pu';
-		if (await git(['rev-list', branchname + '..' + upstreamBranch]))
-			upstreamBranch = 'upstream/next';
-		if (await git(['rev-list', branchname + '..' + upstreamBranch]))
-			upstreamBranch = 'upstream/master';
-		midUrlPrefix = 'https://public-inbox.org/git/';
-	} else if (commitExists('a3acbf46947e52ff596')) {
-		// Cygwin
-		to = '--to=cygwin-patches@cygwin.com';
-		upstreamBranch = 'cygwin/master';
-		midUrlPrefix = 'https://www.mail-archive.com/search?l=cygwin-patches@cygwin.com&q=';
-	} else if (commitExists('cc8ed39b240180b5881')) {
-		// BusyBox
-		to = '--to=busybox@busybox.net';
-		upstreamBranch = 'busybox/master';
-		midUrlPrefix = 'https://www.mail-archive.com/search?l=busybox@busybox.net&q=';
-	} else
-		throw new Error('Unrecognized project');
-};
-
-var basedon: string;
-var shortname: string;
-
-async function determineBaseBranch(): Promise<void> {
-	basedon = await gitConfig('branch.' + shortname + '.basedon');
-	if (basedon && commitExists(basedon)) {
-		if (!publishtoremote)
-			throw new Error('Need a remote to publish to');
-
-		var remoteRef = 'refs/remotes/' + publishtoremote + '/' + basedon;
-		if (!commitExists(remoteRef))
-			throw new Error(basedon + ' not pushed to ' + publishtoremote);
-
-		var commit = await git(['rev-parse', '-q', '--verify', remoteRef]);
-		if (await git(['rev-parse', basedon]) != commit)
-			throw new Error(basedon + ' on ' + publishtoremote +
-				' disagrees with local branch');
-
-		upstreamBranch = basedon;
-	}
-
-	if (await git(['rev-list', branchname + '..' + upstreamBranch]))
-		throw new Error('Branch ' + shortname + ' is not rebased to ' + upstreamBranch);
-};
-
-async function getCc(): Promise<void> {
-	// Cc: from config
-	await gitConfigForEach('branch.' + shortname + '.cc',
-		email => {
-			if (email)
-				cc.push(email);
-		});
-};
-
-var subject_prefix: string | null = null, in_reply_to: string[] = [], branchdiff: string;
-
-async function determineIteration(): Promise<number> {
-	var latesttags: string[] = (await git(['for-each-ref', '--format=%(refname)',
-		'--sort=-taggerdate',
-		'refs/tags/' + shortname + '-v*[0-9]'])).split('\n');
-	var latesttag: string;
-
-	if (redo)
-		latesttag = latesttags.length > 1 ? latesttags[1] : '';
-	else
-		latesttag = latesttags.length > 0 ? latesttags[0] : '';
-
-	var patch_no: number;
-	if (!latesttag) {
-		patch_no = 1;
-		subject_prefix = rfc ? '--subject-prefix=PATCH/RFC' : null;
-		branchdiff = '';
-	} else {
-		var range = latesttag + '...' + branchname;
-		if (! await git(['rev-list', range]))
-			throw new Error('Branch ' + shortname + ' was already submitted: ' + latesttag);
-
-		var match = latesttag.match(/-v([1-9][0-9]*)$/);
-		patch_no = parseInt(match && match[1] || '0') + 1;
-		subject_prefix = '--subject-prefix=PATCH' + (rfc ? '/RFC' : '') +
-			' v' + patch_no;
-		var tagMessage = await git(['cat-file', 'tag', latesttag]);
-		match = tagMessage.match(/^[\s\S]*?\n\n([\s\S]*)/);
-		(match ? match[1] : tagMessage).split('\n').map(function (line) {
-			match = line.match(/https:\/\/public-inbox\.org\/.*\/([^\/]+)/);
-			if (!match)
-				match = line.match(/https:\/\/www\.mail-archive\.com\/.*\/([^\/]+)/);
-			if (!match)
-				match = line.match(/http:\/\/mid.gmane.org\/(.*)/);
-			if (!match)
-				match = line.match(/^[^ :]*: Message-ID: ([^\/]+)/);
-			if (match)
-				in_reply_to.unshift(match[1]);
-		});
-
-		branchdiff = await git(['tbdiff', '--no-color', range]);
-	}
-
-	if (dryRun)
-		console.log('Dry-run ' + shortname + ' v' + patch_no);
-	else
-		console.log('Submitting ' + shortname + ' v' + patch_no);
-
-	return patch_no;
-};
-
-var cover_letter: string | null = null;
-
-async function generateMBox(): Promise<string> {
-	// Auto-detect whether we need a cover letter
-	if (gitConfig('branch.' + shortname + '.description'))
-		cover_letter = '--cover-letter';
-	else if (1 < parseInt(await git(['rev-list', '--count',
-		upstreamBranch + '..' + branchname])))
-		throw new Error('Branch ' + shortname + ' needs a description');
-
-	var commitRange = upstreamBranch + '..' + branchname;
-	var args = ['format-patch', '--thread', '--stdout',
-		'--add-header=Fcc: Sent',
-		'--add-header=Content-Type: text/plain; charset=UTF-8',
-		'--add-header=Content-Transfer-Encoding: 8bit',
-		'--add-header=MIME-Version: 1.0',
-		'--base', upstreamBranch, to];
-	cc.map(email => { args.push('--cc=' + email); });
-	in_reply_to.map(email => { args.push('--in-reply-to=' + email); });
-	[subject_prefix, cover_letter, patience]
-		.map(o => { o === null || args.push(o); });
-
-	args.push(commitRange);
-	console.log('Generating mbox');
-
-	return await git(args);
-};
-
-var lines: string[];
-
-async function insertCcAndFromLines(): Promise<void> {
-	var ident = await git(['var', 'GIT_AUTHOR_IDENT']);
-	var match = ident.match(/.*>/);
-	var thisauthor = match && match[0];
-	if (!thisauthor)
-		throw new Error('Could not determine author ident from ' + ident);
-	var separatorRegex = /^From [0-9a-f]{40} Mon Sep 17 00:00:00 2001$/;
-
-	console.log('Adding Cc: and explict From: lines for other authors, if needed');
-
-	for (var i = 0; i < lines.length; i++) {
-		if (!lines[i].match(separatorRegex))
-			continue;
-		var from = -1, cc = -1, author = null, cced = null;
-		for (i = i + 1; i < lines.length && lines[i] != ''; i++) {
-			var match = lines[i].match(/^(From|Cc): (.*)/);
-			if (match && match[1] == 'From') {
-				if (from >= 0)
-					throw new Error('Duplicate From: header');
-				from = i;
-				author = match[2];
-			} else if (match && match[2] == 'Cc') {
-				if (cc >= 0)
-					throw new Error('Duplicate Cc: header');
-				cc = i;
-				cced = match[2];
-			}
-		}
-		if (from < 0)
-			throw new Error('Missing From: line');
-		if (author !== thisauthor) {
-			lines[from] = 'From: ' + thisauthor;
-			if (cc < 0) {
-				lines.splice(from + 1, 0, 'Cc: ' + author);
-				i++;
-			} else
-				lines[cc] = 'Cc: ' + author + ', ' + cced;
-			lines.splice(i + 1, 0, 'From: ' + author, '');
-		}
-	}
-};
-
-function adjustCoverLetter(): void {
-	if (cover_letter) {
-		console.log('Fixing Subject: line of the cover letter');
-		var subjectRegex = /^(Subject:.*) \*\*\* SUBJECT HERE \*\*\*$/;
-		for (var i = 0; i < lines.length; i++) {
-			var match = lines[i].match(subjectRegex);
-			if (!match)
-				continue;
-			var subject = i;
-			lines[subject] = match[1];
-
-			while (i < lines.length && lines[i] !== '')
-				i++;
-			var body = i++;
-			if (i + 3 >= lines.length)
-				throw new Error('Could not find cover letter');
-			if (lines[i++] !== '*** BLURB HERE ***')
-				throw new Error('No BLURB line?');
-			if (lines[i++] !== '')
-				throw new Error('Line after BLURB not empty');
-			while (i < lines.length && lines[i] !== '') {
-				lines[subject] += ' ' + lines[i];
-				i++;
-			}
-			lines.splice(body, i - body);
-		}
-	}
-};
-
-async function generateTagMessage(): Promise<string> {
-	console.log("Generating tag message");
-	var tagmessage;
-
-	if (!cover_letter)
-		tagmessage = (await git(['cat-file', 'commit', branchname]))
-			.replace(/\n\n.*/, '');
-	else {
-		tagmessage = '';
-		for (var i = 0; i < lines.length; i++) {
-			var match = lines[i].match(/^Subject: (\[PATCH[^\]]*\] )?(.*)/);
-			if (!match)
-				continue;
-			tagmessage = match[2];
-			while (i < lines.length && lines[i] != '')
-				i++;
-			while (i < lines.length && lines[i] != '-- ')
-				tagmessage += '\n' + lines[i++];
-			break;
-		}
-	}
-
-	return tagmessage;
-};
-
-function findFooter(): number {
-	console.log("Finding location for the footers");
-	var dashdash = 0;
-	if (cover_letter)
-		while (dashdash < lines.length && lines[dashdash] !== '-- ')
-			dashdash++;
-	else
-		while (++dashdash < lines.length && lines[dashdash - 1] !== '---')
-			dashdash++;
-	return dashdash;
-};
-
-var dashdash: number;
-var tagname: string;
-
-async function insertLinks(): Promise<void> {
-	if (!publishtoremote)
-		return;
-
-	console.log('Inserting links');
-	var url = await gitConfig('remote.' + publishtoremote + '.url');
-	var match = url.match(/^https?(:\/\/github\.com\/.*)/);
-	if (match)
-		url = 'https' + match[1];
-	else if (match = url.match(/^(git@)?github\.com(:.*)/))
-		url = 'https://github.com/' + match[1];
-	else
-		url = '';
-	if (url) {
-		if (basedon) {
-			lines.splice(dashdash, 0,
-				'Based-On: ' + basedon + ' at ' + url,
-				'Fetch-Base-Via: git fetch '
-				+ url + ' ' + basedon);
-			dashdash += 2;
-		}
-		lines.splice(dashdash, 0,
-			'Published-As: ' + url + '/releases/tag/'
-			+ tagname,
-			'Fetch-It-Via: git fetch ' + url + ' ' + tagname);
-		dashdash += 2;
-	}
-};
-
-var tagmessage: string;
-var patch_no: number;
-
-async function generateTagObject(): Promise<void> {
-	if (dryRun)
-		console.log('Would generate tag object');
-	else
-		console.log('Generating tag object');
-
-	var messageID = null;
-	for (var i = 0; i < lines.length; i++) {
-		var match = lines[i].match(/^Message-ID: <(.*)>/i);
-		if (match) {
-			messageID = match[1];
-			break;
-		}
-	}
-
-	tagmessage += '\n\nSubmitted-As: ' + midUrlPrefix + messageID;
-	in_reply_to.map(id => {
-		tagmessage += '\nIn-Reply-To: ' + midUrlPrefix + id;
-	});
-	args = ['tag', '-F', '-', '-a'];
-	!redo || args.push('-f');
-	args.push(tagname);
-	if (dryRun)
-		console.log("Tag name would be " + tagname
-			+ " with message:\n\n"
-			+ tagmessage.split('\n').map(line => {
-				return '    ' + line;
-			}).join('\n'));
-	else
-	await git(args, { stdin: tagmessage });
-
-	if (branchdiff) {
-		console.log('Inserting branch-diff');
-		// construct the arguments for split():
-		// first, split the branch-diff and prefix with a space
-		var args: any[] = branchdiff.split('\n').map(line => { return ' ' + line; });
-		// now, shift in the (start, count) parameters, an empty line and the
-		// "Branch-diff vs v$(($patch_no-1)):" label
-		args.splice(0, 0, dashdash, 0,
-			'', 'Branch-diff vs v' + (patch_no - 1) + ':');
-		// and finally call splice() using the apply() method on the prototype
-		[].splice.apply(lines, args);
-	}
-};
-
-async function sendMBox(): Promise<void> {
-	if (dryRun) {
-		console.log("Would send this mbox:\n\n"
-			+ lines.map(line => {
-				return '    ' + line;
-			}).join('\n'));
-		return;
-	}
-	console.log('Calling the `send-mbox` alias');
-	await git(['send-mbox'], { stdin: lines.join('\n') });
-};
-
-async function publishBranch(): Promise<void> {
-	if (!publishtoremote || dryRun)
-		return;
-
-	console.log('Publishing branch and tag');
-	if (redo)
-		tagname = '+' + tagname;
-		await git(['push', publishtoremote, '+' + branchname, tagname]);
-};
-
-async function main() {
-	shortname = await getBranchName();
-	if (await parseCommandLineOptions(process.argv))
-		return;
-	var finishDryRun = () => { };
-
-	if (dryRun && typeof (process.env['GIT_PAGER_IN_USE']) === 'undefined') {
-		var child_process = require('child_process');
-		var args = [];
+	if (options.dryRun && typeof (process.env['GIT_PAGER_IN_USE']) === 'undefined') {
+		let child_process = require('child_process');
+		let args = [];
 		if (typeof (process.env['LESS']) === 'undefined')
 			args.push('-FRX');
-		var options = { stdio: ['pipe', 'inherit', 'inherit'] };
-		var less = child_process.spawn('less', args, options);
+		let options = { stdio: ['pipe', 'inherit', 'inherit'] };
+		let less = child_process.spawn('less', args, options);
 		console.log = (msg: string) => {
 			less.stdin.write(msg + '\n');
 		};
@@ -541,25 +148,15 @@ async function main() {
 		process.env['GIT_PAGER_IN_USE'] = 'true';
 	}
 
-	await determineProject();
-	await determineBaseBranch();
-	await getCc();
-	patch_no = await determineIteration();
-	lines = (await generateMBox()).split('\n');
-	await insertCcAndFromLines();
-	await adjustCoverLetter();
-	tagmessage = await generateTagMessage();
-	dashdash = await findFooter();
-	tagname = shortname + '-v' + patch_no;
-	await insertLinks();
-	await generateTagObject();
-	await sendMBox();
-	await publishBranch();
+	let project = await ProjectOptions.get();
+	let patchSeries = await PatchSeries.get(options, project);
+	await patchSeries.generateAndSend();
+
 	if (finishDryRun)
 		finishDryRun();
 }
 
-main().catch(err => {
+main(process.argv).catch(err => {
 	process.stderr.write(err + '\n');
 	process.exit(1);
 });
