@@ -18,5 +18,8 @@
   "bugs": {
     "url": "https://github.com/dscho/mail-patch-series/issues"
   },
-  "homepage": "https://github.com/dscho/mail-patch-series#readme"
+  "homepage": "https://github.com/dscho/mail-patch-series#readme",
+  "devDependencies": {
+    "typescript": "^2.8.3"
+  }
 }
