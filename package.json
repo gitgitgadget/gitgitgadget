@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/dscho/mail-patch-series#readme",
   "devDependencies": {
+    "tslint": "^5.10.0",
     "typescript": "^2.8.3"
   }
 }
