@@ -8,7 +8,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "tslint -c tslint.json '{lib,script}/**/*.{ts,tsx}'",
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -20,7 +21,21 @@
     "url": "https://github.com/dscho/mail-patch-series/issues"
   },
   "homepage": "https://github.com/dscho/mail-patch-series#readme",
+  "jest": {
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js"
+    ],
+    "transform": {
+      "\\.(ts|tsx)$": "<rootDir>/node_modules/ts-jest/preprocessor.js"
+    },
+    "testRegex": "/__tests__/.*\\.(ts|tsx|js)$"
+  },
   "devDependencies": {
+    "@types/jest": "^22.2.3",
+    "jest": "^22.4.4",
+    "ts-jest": "^22.4.6",
     "ts-node": "^6.0.3",
     "tslint": "^5.10.0",
     "typescript": "^2.8.3"
