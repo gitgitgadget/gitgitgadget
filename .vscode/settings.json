@@ -1,0 +1,10 @@
+{
+    "[typescript]": {
+        "editor.detectIndentation": false,
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4,
+        "editor.wordWrap": "wordWrapColumn",
+        "editor.wordWrapColumn": 80,
+        "files.trimTrailingWhitespace": true
+    },
+}
