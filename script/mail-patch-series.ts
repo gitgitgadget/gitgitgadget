@@ -8,7 +8,7 @@
  *
  * Example usage:
  *
- *	/path/to/mail-patch-series.sh
+ *    /path/to/mail-patch-series.sh
  *
  * (All relevant information, such as the mailing list to which this patch
  * series needs to be sent, the current iteration of the patch series, etc is
@@ -63,100 +63,127 @@
  * `--redo` option.
  */
 
-import { git, gitConfig, gitConfigForEach } from '../lib/git';
-import { ProjectOptions, PatchSeriesOptions, PatchSeries } from '../lib/patch-series';
+import { git, gitConfig } from "../lib/git";
+import { PatchSeries } from "../lib/patch-series";
+import { PatchSeriesOptions } from "../lib/patch-series-options";
+import { ProjectOptions } from "../lib/project-options";
 
 async function main(argv: string[]) {
-	let i, match;
+    let i;
+    let match;
 
-	let options = new PatchSeriesOptions();
-	let publishToRemote = '';
+    const logger = console;
+    const options = new PatchSeriesOptions();
+    let publishToRemote = "";
 
-	for (i = 2; i < argv.length; i++) {
-		let arg = argv[i];
-		if (arg == '--redo') options.redo = true;
-		else if (arg == '--dry-run' || arg == '-n') options.dryRun = true;
-		else if (arg == '--rfc') options.rfc = true;
-		else if (match = arg.match(/^--publish-to-remote=.*/))
-			publishToRemote = match[1];
-		else if (arg == '--patience') options.patience = true;
-		else if (arg == '--cc') {
-			let key = 'branch.' + await ProjectOptions.getBranchName() + '.cc';
-			arg = i + 1 < argv.length ? argv[++i] : '';
-			if (i + 1 != argv.length)
-				throw new Error('Too many arguments');
-			if (!arg)
-				console.log(await git(['config', '--get-all', key]));
-			else if (arg.match(/>.*>/) || arg.match(/>,/)) {
-				await arg.replace(/> /g, '>,').split(',').map(async function (email: string) {
-					email = email.trim();
-					if (email)
-						await git(['config', '--add', key, email]);
-				});
-			} else if (arg.match(/@/))
-				await git(['config', '--add', key, arg]);
-			else {
-				let id = await git(['log', '-1', '--format=%an <%ae>',
-					'--author=' + arg]);
-				if (!id)
-					throw new Error('Not an email address: ' + arg);
-				console.log("Adding Cc: " + id);
-				await git(['config', '--add', key, id]);
-			}
-			return;
-		} else if (match = arg.match(/^--basedon=(.*)/)) {
-			let key = 'branch.' + await ProjectOptions.getBranchName() + '.basedon';
-			await git(['config', key, arg]);
-			return;
-		} else if (arg == '--basedon') {
-			let key = 'branch.' + await ProjectOptions.getBranchName() + '.basedon';
-			if (i + 1 == argv.length)
-				console.log(gitConfig(key));
-			else if (i + 2 == argv.length)
-				await git(['config', key, argv[++i]]);
-			else
-				throw new Error('Too many arguments');
-			return;
-		} else
-			break;
-	}
+    for (i = 2; i < argv.length; i++) {
+        let arg = argv[i];
+        if (arg === "--redo") {
+            options.redo = true;
+        } else if (arg === "--dry-run" || arg === "-n") {
+            options.dryRun = true;
+        } else if (arg === "--rfc") {
+            options.rfc = true;
+        // tslint:disable-next-line:no-conditional-assignment
+        } else if (match = arg.match(/^--publish-to-remote=.*/)) {
+            publishToRemote = match[1];
+        } else if (arg === "--patience") {
+            options.patience = true;
+        } else if (arg === "--cc") {
+            const key = "branch." + await ProjectOptions.getBranchName()
+                + ".cc";
+            arg = i + 1 < argv.length ? argv[++i] : "";
+            if (i + 1 !== argv.length) {
+                throw new Error("Too many arguments");
+            }
+            if (!arg) {
+                logger.log(await git(["config", "--get-all", key]));
+            } else if (arg.match(/>.*>/) || arg.match(/>,/)) {
+                await arg.replace(/> /g, ">,").split(",")
+                    .map(async (email: string) => {
+                    email = email.trim();
+                    if (email) {
+                        await git(["config", "--add", key, email]);
+                    }
+                });
+            } else if (arg.match(/@/)) {
+                await git(["config", "--add", key, arg]);
+            } else {
+                const id = await git(["log", "-1", "--format=%an <%ae>",
+                    "--author=" + arg]);
+                if (!id) {
+                    throw new Error("Not an email address: " + arg);
+                }
+                logger.log("Adding Cc: " + id);
+                await git(["config", "--add", key, id]);
+            }
+            return;
+        // tslint:disable-next-line:no-conditional-assignment
+        } else if (match = arg.match(/^--basedon=(.*)/)) {
+            const key = "branch." + await ProjectOptions.getBranchName()
+                + ".basedon";
+            await git(["config", key, arg]);
+            return;
+        } else if (arg === "--basedon") {
+            const key = "branch." + await ProjectOptions.getBranchName()
+                + ".basedon";
+            if (i + 1 === argv.length) {
+                logger.log(gitConfig(key));
+            } else if (i + 2 === argv.length) {
+                await git(["config", key, argv[++i]]);
+            } else {
+                throw new Error("Too many arguments");
+            }
+            return;
+        } else {
+            break;
+        }
+    }
 
-	if (i < argv.length)
-		throw new Error('Usage: ' + argv[1] +
-			' [--redo] [--publish-to-remote=<remote>] |\n' +
-			'--cc [<email-address>] | --basedon [<branch>]');
+    if (i < argv.length) {
+        throw new Error("Usage: " + argv[1] +
+            " [--redo] [--publish-to-remote=<remote>] |\n" +
+            "--cc [<email-address>] | --basedon [<branch>]");
+    }
 
-	if (!publishToRemote || ! await gitConfig('remote.' + publishToRemote + '.url'))
-		throw new Error('No valid remote: ' + publishToRemote);
+    if (!publishToRemote ||
+        ! await gitConfig("remote." + publishToRemote + ".url")) {
+        throw new Error("No valid remote: " + publishToRemote);
+    }
 
-	let finishDryRun = () => { };
+    let finishDryRun = () => {
+        return;
+     };
 
-	if (options.dryRun && typeof (process.env['GIT_PAGER_IN_USE']) === 'undefined') {
-		let child_process = require('child_process');
-		let args = [];
-		if (typeof (process.env['LESS']) === 'undefined')
-			args.push('-FRX');
-		let options = { stdio: ['pipe', 'inherit', 'inherit'] };
-		let less = child_process.spawn('less', args, options);
-		console.log = (msg: string) => {
-			less.stdin.write(msg + '\n');
-		};
-		finishDryRun = () => {
-			less.stdin.end();
-			less.on('exit', () => { process.exit(); });
-		};
-		process.env['GIT_PAGER_IN_USE'] = 'true';
-	}
+    if (options.dryRun &&
+        typeof (process.env.GIT_PAGER_IN_USE) === "undefined") {
+        const childProcess = require("child_process");
+        const args = [];
+        if (typeof (process.env.LESS) === "undefined") {
+            args.push("-FRX");
+        }
+        const spawnOptions = { stdio: ["pipe", "inherit", "inherit"] };
+        const less = childProcess.spawn("less", args, spawnOptions);
+        console.log = (msg: string) => {
+            less.stdin.write(msg + "\n");
+        };
+        finishDryRun = () => {
+            less.stdin.end();
+            less.on("exit", () => { process.exit(); });
+        };
+        process.env.GIT_PAGER_IN_USE = "true";
+    }
 
-	let project = await ProjectOptions.get();
-	let patchSeries = await PatchSeries.get(options, project);
-	await patchSeries.generateAndSend();
+    const project = await ProjectOptions.get();
+    const patchSeries = await PatchSeries.get(options, project);
+    await patchSeries.generateAndSend(console);
 
-	if (finishDryRun)
-		finishDryRun();
+    if (finishDryRun) {
+        finishDryRun();
+    }
 }
 
-main(process.argv).catch(err => {
-	process.stderr.write(err + '\n');
-	process.exit(1);
+main(process.argv).catch((err) => {
+    process.stderr.write(err + "\n");
+    process.exit(1);
 });
