@@ -1,0 +1,11 @@
+{
+    "extends": "tslint:recommended",
+    "rules": {
+        "max-line-length": {
+            "options": [80]
+        },
+        "no-floating-promises": true,
+        "no-unused-expression": true,
+        "no-unused-variable": true
+    }
+}
