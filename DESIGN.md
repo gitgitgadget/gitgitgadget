@@ -1,4 +1,4 @@
-# GitGitGadget
+# GitGitGadget <img alt="logo" width="128px" align="right" src="images/gitgitgadget.png">
 
 ## Goal
 

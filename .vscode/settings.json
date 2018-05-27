@@ -7,4 +7,11 @@
         "editor.wordWrapColumn": 80,
         "files.trimTrailingWhitespace": true
     },
+    "markdownlint.config": {
+        "MD033": {
+            "allowed_elements": [
+                "img"
+            ]
+        }
+    },
 }
