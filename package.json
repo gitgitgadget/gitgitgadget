@@ -45,6 +45,8 @@
   "dependencies": {
     "dugite": "^1.63.0",
     "json-stable-stringify": "^1.0.1",
-    "nodemailer": "^4.6.5"
+    "nodemailer": "^4.6.5",
+    "probot": "^6.2.0",
+    "probot-commands": "^1.0.1"
   }
 }
