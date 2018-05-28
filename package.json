@@ -34,6 +34,7 @@
   },
   "devDependencies": {
     "@types/jest": "^22.2.3",
+    "@types/nodemailer": "^4.6.0",
     "jest": "^22.4.4",
     "ts-jest": "^22.4.6",
     "ts-node": "^6.0.3",
@@ -41,6 +42,7 @@
     "typescript": "^2.8.3"
   },
   "dependencies": {
-    "dugite": "^1.63.0"
+    "dugite": "^1.63.0",
+    "nodemailer": "^4.6.5"
   }
 }
