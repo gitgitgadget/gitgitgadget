@@ -73,10 +73,12 @@ export class ProjectOptions {
         }
     }
 
-    protected static async determineBaseBranch(branchName: string,
+    protected static async determineBaseBranch(workDir: string,
+                                               branchName: string,
                                                publishToRemote: string):
                                               Promise<string> {
-        const basedOn = await gitConfig("branch." + branchName + ".basedon");
+        const basedOn =
+            await gitConfig(`branch.${branchName}.basedon`, workDir);
         if (basedOn && !await this.commitExists(basedOn)) {
             throw new Error("Base branch does not exist: " + basedOn);
         }
