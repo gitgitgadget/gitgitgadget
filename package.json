@@ -34,6 +34,7 @@
   },
   "devDependencies": {
     "@types/jest": "^22.2.3",
+    "@types/json-stable-stringify": "^1.0.32",
     "@types/nodemailer": "^4.6.0",
     "jest": "^22.4.4",
     "ts-jest": "^22.4.6",
@@ -43,6 +44,7 @@
   },
   "dependencies": {
     "dugite": "^1.63.0",
+    "json-stable-stringify": "^1.0.1",
     "nodemailer": "^4.6.5"
   }
 }
