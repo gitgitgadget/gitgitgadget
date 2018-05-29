@@ -25,6 +25,7 @@
         "mbox",
         "onelines",
         "Probot",
+        "promisify",
         "publishtoremote",
         "rebased",
         "refname",
