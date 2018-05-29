@@ -24,6 +24,25 @@ ${result.stderr}`);
         result.stdout : trimTrailingNewline(result.stdout);
 }
 
+/**
+ * Call `git rev-parse --verify` to verify an object name.
+ *
+ * Note that it will *always* return the argument back to the user if it is
+ * a hex string of length 40. This is consistent with `rev-parse`. To
+ * verify objects by full SHA-1, you have to add `^{blob}` or similar.
+ *
+ * @param { string } argument the name referring to a Git object
+ * @param { string | undefined } workDir
+ *    the working directory in which to run `git rev-parse`
+ * @returns { string | undefined } the full SHA-1, or undefined
+ */
+export async function revParse(argument: string, workDir?: string) {
+    const result = await GitProcess.exec([
+        "rev-parse", "--verify", "-q", argument,
+    ], workDir || ".");
+    return result.exitCode ? undefined : trimTrailingNewline(result.stdout);
+}
+
 export async function gitConfig(key: string, workDir?: string):
         Promise<string> {
     const result = await GitProcess.exec(["config", key], workDir || ".");
