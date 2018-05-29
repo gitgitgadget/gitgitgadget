@@ -29,5 +29,5 @@ export async function gitConfigForEach(key: string,
                                       Promise<void> {
     const result = await GitProcess.exec(["config", "--get-all", key],
                                          workDir || ".");
-    result.stdout.split("\n").map(callbackfn);
+    result.stdout.split(/\r?\n/).map(callbackfn);
 }
