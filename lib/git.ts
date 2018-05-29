@@ -4,6 +4,11 @@ import { GitProcess, IGitExecutionOptions } from "dugite";
 
 export interface IGitOptions extends IGitExecutionOptions {
     workDir?: string;
+    trimTrailingNewline?: boolean; // defaults to true
+}
+
+function trimTrailingNewline(str: string): string {
+    return str.replace(/\r?\n$/, "");
 }
 
 export async function git(args: string[],
@@ -15,12 +20,14 @@ export async function git(args: string[],
         throw new Error("git " + args.join(" ") + " failed with exit code "
             + result.exitCode);
     }
-    return result.stdout;
+    return !options || options.trimTrailingNewline === false ?
+        result.stdout : trimTrailingNewline(result.stdout);
 }
 
 export async function gitConfig(key: string, workDir?: string):
         Promise<string> {
-    return (await GitProcess.exec(["config", key], workDir || ".")).stdout;
+    const result = await GitProcess.exec(["config", key], workDir || ".");
+    return trimTrailingNewline(result.stdout);
 }
 
 export async function gitConfigForEach(key: string,
