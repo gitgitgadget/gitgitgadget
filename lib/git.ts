@@ -17,8 +17,8 @@ export async function git(args: string[],
     const workDir = options && options.workDir || ".";
     const result = await GitProcess.exec(args, workDir, options);
     if (result.exitCode) {
-        throw new Error("git " + args.join(" ") + " failed with exit code "
-            + result.exitCode);
+        throw new Error(`git ${args.join(" ")} failed: ${result.exitCode},
+${result.stderr}`);
     }
     return !options || options.trimTrailingNewline === false ?
         result.stdout : trimTrailingNewline(result.stdout);
