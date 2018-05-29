@@ -7,6 +7,8 @@ export interface IGitOptions extends IGitExecutionOptions {
     trimTrailingNewline?: boolean; // defaults to true
 }
 
+export const emptyBlobName = "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391";
+
 function trimTrailingNewline(str: string): string {
     return str.replace(/\r?\n$/, "");
 }
