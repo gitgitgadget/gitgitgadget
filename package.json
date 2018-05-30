@@ -1,26 +1,25 @@
 {
-  "name": "mail-patch-series",
+  "name": "gitgitgadget",
   "version": "1.0.0",
-  "description": "This script is intended to help submit patch series to projects which\r want contributions to be sent to a mailing list. The process is not\r quite as painless for the contributor as opening Pull Requests, but at\r least it is much less painful than having to all the steps manually.",
-  "main": "index.js",
+  "description": "This app intends to help submit patch series to projects which\r want contributions to be sent to a mailing list. The process is not\r quite as painless for the contributor as opening Pull Requests, but at\r least it is much less painful than having to all the steps manually.",
+  "author": "Johannes Schindelin <johannes.schindelin@gmx.de> (https://gitgitgadget.github.io)",
+  "license": "ISC",
+  "repository": "https://github.com/gitgitgadget/gitgitgadget.git",
   "directories": {
     "lib": "lib"
   },
   "scripts": {
     "build": "tsc",
-    "lint": "tslint -c tslint.json '{lib,script}/**/*.{ts,tsx}'",
-    "test": "jest"
+    "dev": "nodemon --exec \"npm start\"",
+    "lint": "tslint -c tslint.json '{lib,script,__tests__}/**/*.{ts,tsx}'",
+    "start": "probot run ./index.js",
+    "test": "jest && tslint",
+    "test:watch": "jest --watch --notify --notifyMode=change --coverage"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/dscho/mail-patch-series.git"
-  },
-  "author": "",
-  "license": "ISC",
   "bugs": {
-    "url": "https://github.com/dscho/mail-patch-series/issues"
+    "url": "https://github.com/gitgitgadget/gitgitgadget/issues"
   },
-  "homepage": "https://github.com/dscho/mail-patch-series#readme",
+  "homepage": "https://gitgitgadget.github.io/",
   "jest": {
     "moduleFileExtensions": [
       "ts",
@@ -37,6 +36,8 @@
     "@types/json-stable-stringify": "^1.0.32",
     "@types/nodemailer": "^4.6.0",
     "jest": "^22.4.4",
+    "nodemon": "^1.17.5",
+    "smee-client": "^1.0.1",
     "ts-jest": "^22.4.6",
     "ts-node": "^6.0.3",
     "tslint": "^5.10.0",
@@ -48,5 +49,8 @@
     "nodemailer": "^4.6.5",
     "probot": "^6.2.0",
     "probot-commands": "^1.0.1"
+  },
+  "engines": {
+    "node": ">= 8.3.0"
   }
 }
