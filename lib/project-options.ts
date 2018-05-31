@@ -37,7 +37,7 @@ export class ProjectOptions {
         let to: string;
         let midUrlPrefix: string = " Message-ID: ";
 
-        if (this.commitExists("e83c5163316f89bfbde", workDir)) {
+        if (await this.commitExists("e83c5163316f89bfbde", workDir)) {
             // Git
             to = "--to=git@vger.kernel.org";
             cc.push("Junio C Hamano <gitster@pobox.com>");
@@ -51,13 +51,13 @@ export class ProjectOptions {
                 upstreamBranch = "upstream/master";
             }
             midUrlPrefix = "https://public-inbox.org/git/";
-        } else if (this.commitExists("a3acbf46947e52ff596", workDir)) {
+        } else if (await this.commitExists("a3acbf46947e52ff596", workDir)) {
             // Cygwin
             to = "--to=cygwin-patches@cygwin.com";
             upstreamBranch = "cygwin/master";
             midUrlPrefix = "https://www.mail-archive.com/search?"
                 + "l=cygwin-patches@cygwin.com&q=";
-        } else if (this.commitExists("cc8ed39b240180b5881", workDir)) {
+        } else if (await this.commitExists("cc8ed39b240180b5881", workDir)) {
             // BusyBox
             to = "--to=busybox@busybox.net";
             upstreamBranch = "busybox/master";
