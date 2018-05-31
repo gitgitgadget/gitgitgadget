@@ -1,6 +1,7 @@
+/*.pem
+/.env
+/.test-dir/
 /build/
 /node_modules/
 /npm-debug.log
-/*.pem
-/.env
 
