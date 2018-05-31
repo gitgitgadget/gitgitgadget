@@ -1,68 +1,39 @@
-# A helper for mailing list-based patch submissions
+# A bot to serve as glue between GitHub Pull Requests and the Git mailing list
 
-This script is intended to help submit patch series to projects which
-want contributions to be sent to a mailing list. The process is not
-quite as painless for the contributor as opening Pull Requests, but at
-least it is much less painful than having to all the steps manually.
+This project intends to help submit patch series to the Git mailing list.
+The process is not quite as painless for the contributor as opening Pull
+Requests, but at least it is much less painful than having to all the steps
+manually.
 
-Example usage:
+The idea is for users to open a Pull Request at
 
-```sh
-/path/to/mail-patch-series.sh
-```
+	https://github.com/gitgitgadget/git
 
-(All relevant information, such as the mailing list to which this patch series
-needs to be sent, the current iteration of the patch series, etc is inferred
-from the current branch in the current repository.)
+with a good description of their patch series. Then, the command `/submit`,
+issued via a comment on said PR will tell GitGitGadget to send the patches as
+mail thread to [the Git mailing list](mailto:git@vger.kernel.org), with the
+Pull Request's description as cover letter.
 
-Currently, this script supports submitting patch series (or single
-patches) to only two projects: Git and Cygwin, with the upstream remotes
-being called 'junio' and 'cygwin', respectively.
+As is common, reviewers on the Git mailing list will probably ask for
+modifications. These should be folded into the respective commits (or inserted
+as stand-alone commits at an appropriate place in the patch series) via `git
+rebase -i`, followed by a force-push. Once everything is in a good shape,
+update the description to include information about changes performed relative
+to the latest patch series iteration, and then another `/submit` will ask
+GitGitGadget to send a new iteration of the patch series.
 
-To make use of this script, you first have to have a topic branch. It
-needs to be rebased to the latest `master` (or `next` in the case of Git).
+All relevant information, such as the current iteration of the patch series,
+the Message-ID of the sent mails, etc is stored in the Git notes in
+`refs/notes/gitgitgadget`.
 
-Further, you need an alias called `send-mbox` that takes an mbox on stdin and
-processes them appropriately. For example, it could put the individual mails
-into the Drafts folder of your maildir, ready to, by setting it thusly:
+Note: GitGitGadget will Cc: the original authors when sending patches on
+their behalf, and people mentioned in the Cc: footer of the Pull Request
+description.
 
-```ini
-[alias]
-   send-mbox = !git mailsplit -o\"$HOME\"/Mail/Drafts/new
-```
+Furthermore, for all iterations of a patch series but the first one,
+GitGitGadget will insert a machine-generated representation of what changed,
+and reply to the cover letter of the previous iteration.
 
-When running this script on a newer iteration of the same topic branch, it
-will detect that and use the appropriate `[PATCH v<iteration>]` prefix.
-
-This script will also use the branch description as cover letter. Unlike
-plain format-patch, the first line will be used as subject and the rest as
-mail body, without any ugly "\*\*\* Subject/Blurb here \*\*\*".
-
-Note that this script will demand a branch description (which can be added or
-edited using `git branch --edit-description`) if the current topic branch
-contains more that a single patch; For single-patch "series", the branch
-description is optional.
-
-This script will also try to Cc: original authors when sending patches on
-their behalf, and people mentioned in the Cc: footer of commit messages.
-
-To Cc: the entire patch series to, say, reviewers who commented on some
-iteration of the patch series, the script supports being called with the
-`--cc 'R E Viewer <reviewer@email.com>'` option; This information is then
-stored in the config, and used when sending the next iteration.
-
-Furthermore, for a second or later iteration of a patch series, this script
-will insert an interdiff, and reply to the cover letter of the previous
-iteration. It stores the relevant information in local tags whose names
-reflect the branch name and the iterarion. This tag is relevant in particular
-for the interdiff, as that revision may need to be rebased for a proper
-interdiff (in this case, a tag is generated whose name is of the form
-`<branch>-v<iteration>-rebased`).
-
-Lastly, if `mail.publishtoremote` is set in the config, the branch as well
-as the generated tag(s) will be (force) pushed to the remote of that name. If
-this remote's URL points to GitHub, the URL to the tag will be sent together
-with the patch series.
-
-If anything goes awry, an iteration can be regenerated/resent with the
-`--redo` option.
+For convenience of reviewers, GitGitGadget will generate tags for each
+iteration it sent, and push those to https://github.com/gitgitgadget/git. Links
+to those tags will be included in the cover letter.
