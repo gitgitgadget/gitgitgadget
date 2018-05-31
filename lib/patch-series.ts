@@ -67,7 +67,11 @@ export class PatchSeries {
             branchDiff = await git(["tbdiff", "--no-color", range]);
         }
 
-        return new PatchSeries(options, project, metadata, branchDiff);
+        const coverLetter =
+            await gitConfig(`branch.${project.branchName}.description`);
+
+        return new PatchSeries(options, project, metadata, branchDiff,
+            coverLetter);
     }
 
     protected static async getLatestTag(branchName: string, redo?: boolean):
@@ -222,13 +226,16 @@ export class PatchSeries {
     public readonly project: ProjectOptions;
     public readonly metadata: IPatchSeriesMetadata;
     public readonly branchDiff: string;
+    public readonly coverLetter?: string;
 
     protected constructor(options: PatchSeriesOptions, project: ProjectOptions,
-                          metadata: IPatchSeriesMetadata, branchDiff: string) {
+                          metadata: IPatchSeriesMetadata, branchDiff: string,
+                          coverLetter?: string) {
         this.options = options;
         this.project = project;
         this.metadata = metadata;
         this.branchDiff = branchDiff;
+        this.coverLetter = coverLetter;
     }
 
     public subjectPrefix(): string {
@@ -315,13 +322,9 @@ export class PatchSeries {
     }
 
     protected async generateMBox(): Promise<string> {
-        // Auto-detect whether we need a cover letter
-        const coverLetter =
-            await gitConfig(`branch.${this.project.branchName}.description`);
-
         const commitRange = this.project.upstreamBranch + ".."
             + this.project.branchName;
-        if (!coverLetter && 1 < parseInt(await git(["rev-list", "--count",
+        if (!this.coverLetter && 1 < parseInt(await git(["rev-list", "--count",
             commitRange]), 10)) {
             throw new Error("Branch " + this.project.branchName
                 + " needs a description");
@@ -343,7 +346,7 @@ export class PatchSeries {
         if (subjectPrefix) {
             args.push("--subject-prefix=" + subjectPrefix);
         }
-        if (coverLetter) {
+        if (this.coverLetter) {
             args.push("--cover-letter");
         }
         if (this.options.patience) {
