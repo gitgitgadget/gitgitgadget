@@ -115,7 +115,7 @@ export class ProjectOptions {
 
     public readonly branchName: string;
     public readonly upstreamBranch: string;
-    public readonly basedOn: string;
+    public readonly basedOn?: string;
     public readonly publishToRemote: string;
 
     public readonly to: string;
@@ -123,8 +123,8 @@ export class ProjectOptions {
     public readonly midUrlPrefix: string;
 
     protected constructor(branchName: string, upstreamBranch: string,
-                          basedOn: string, publishToRemote: string, to: string,
-                          cc: string[], midUrlPrefix: string) {
+                          basedOn: string | undefined, publishToRemote: string,
+                          to: string, cc: string[], midUrlPrefix: string) {
         this.branchName = branchName;
         this.upstreamBranch = upstreamBranch;
         this.basedOn = basedOn;

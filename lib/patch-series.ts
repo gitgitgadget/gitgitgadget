@@ -166,7 +166,7 @@ export class PatchSeries {
     }
 
     protected static insertLinks(tagMessage: string, url: string,
-                                 tagName: string, basedOn: string): string {
+                                 tagName: string, basedOn?: string): string {
         if (!url) {
             return tagMessage;
         }
