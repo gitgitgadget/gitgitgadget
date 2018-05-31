@@ -14,13 +14,11 @@ export class PatchSeries {
             options.redo);
 
         let iteration: number;
-        let subjectPrefix: string;
         let branchDiff: string;
         const inReplyTo: string[] = [];
 
         if (!latestTag) {
             iteration = 1;
-            subjectPrefix = options.rfc ? "PATCH/RFC" : "";
             branchDiff = "";
         } else {
             const range = latestTag + "..." + project.branchName;
@@ -31,8 +29,6 @@ export class PatchSeries {
 
             let match = latestTag.match(/-v([1-9][0-9]*)$/);
             iteration = parseInt(match && match[1] || "0", 10) + 1;
-            subjectPrefix = "PATCH" + (options.rfc ? "/RFC" : "")
-                + " v" + iteration;
 
             const tagMessage = await git(["cat-file", "tag", latestTag]);
             match = tagMessage.match(/^[\s\S]*?\n\n([\s\S]*)/);
@@ -56,7 +52,7 @@ export class PatchSeries {
             branchDiff = await git(["tbdiff", "--no-color", range]);
         }
 
-        return new PatchSeries(options, project, iteration, subjectPrefix,
+        return new PatchSeries(options, project, iteration,
             branchDiff, inReplyTo);
     }
 
@@ -209,20 +205,26 @@ export class PatchSeries {
     public readonly project: ProjectOptions;
 
     public readonly iteration: number;
-    public readonly subjectPrefix: string;
     public readonly branchDiff: string;
     public readonly inReplyTo: string[];
 
     protected constructor(options: PatchSeriesOptions, project: ProjectOptions,
-                          iteration: number, subjectPrefix: string,
+                          iteration: number,
                           branchDiff: string, inReplyTo: string[]) {
         this.options = options;
         this.project = project;
 
         this.iteration = iteration;
-        this.subjectPrefix = subjectPrefix;
         this.branchDiff = branchDiff;
         this.inReplyTo = inReplyTo;
+    }
+
+    public subjectPrefix(): string {
+        if (this.iteration === 1) {
+            return this.options.rfc ? "PATCH/RFC" : "";
+        } else {
+            return `PATCH${this.options.rfc ? "/RFC" : ""} v${this.iteration}`;
+        }
     }
 
     public async generateAndSend(logger: ILogger): Promise<void> {
@@ -318,8 +320,9 @@ export class PatchSeries {
             "--base", this.project.upstreamBranch, this.project.to];
         this.project.cc.map((email) => { args.push("--cc=" + email); });
         this.inReplyTo.map((email) => { args.push("--in-reply-to=" + email); });
-        if (this.subjectPrefix) {
-            args.push("--subject-prefix=" + this.subjectPrefix);
+        const subjectPrefix = this.subjectPrefix();
+        if (subjectPrefix) {
+            args.push("--subject-prefix=" + subjectPrefix);
         }
         if (coverLetter) {
             args.push("--cover-letter");
