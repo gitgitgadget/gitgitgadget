@@ -90,7 +90,7 @@ async function main(argv: string[]) {
         } else if (arg === "--patience") {
             options.patience = true;
         } else if (arg === "--cc") {
-            const key = "branch." + await ProjectOptions.getBranchName()
+            const key = "branch." + await ProjectOptions.getBranchName(".")
                 + ".cc";
             arg = i + 1 < argv.length ? argv[++i] : "";
             if (i + 1 !== argv.length) {
@@ -120,12 +120,12 @@ async function main(argv: string[]) {
             return;
             // tslint:disable-next-line:no-conditional-assignment
         } else if (match = arg.match(/^--basedon=(.*)/)) {
-            const key = "branch." + await ProjectOptions.getBranchName()
+            const key = "branch." + await ProjectOptions.getBranchName(".")
                 + ".basedon";
             await git(["config", key, arg]);
             return;
         } else if (arg === "--basedon") {
-            const key = "branch." + await ProjectOptions.getBranchName()
+            const key = "branch." + await ProjectOptions.getBranchName(".")
                 + ".basedon";
             if (i + 1 === argv.length) {
                 logger.log(gitConfig(key));
@@ -174,7 +174,7 @@ async function main(argv: string[]) {
         process.env.GIT_PAGER_IN_USE = "true";
     }
 
-    const project = await ProjectOptions.get();
+    const project = await ProjectOptions.getLocal();
     const patchSeries = await PatchSeries.getFromTag(options, project);
     await patchSeries.generateAndSend(console);
 

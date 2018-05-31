@@ -281,7 +281,8 @@ export class PatchSeries {
                 this.project.midUrlPrefix,
                 this.metadata.referencesMessageIds);
         const url =
-            await gitConfig(`remote.${this.project.publishToRemote}.url`);
+            await gitConfig(`remote.${this.project.publishToRemote}.url`,
+                this.project.workDir);
         const tagName =
             `${this.project.branchName}-v${this.metadata.iteration}`;
 
