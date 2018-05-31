@@ -104,7 +104,7 @@ export class ProjectOptions {
     protected static async getCc(branchName: string): Promise<string[]> {
         // Cc: from config
         const cc: string[] = [];
-        await gitConfigForEach("branch." + branchName + ".cc",
+        await gitConfigForEach(`branch.${branchName}.cc`,
             (email) => {
                 if (email) {
                     cc.push(email);

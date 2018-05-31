@@ -258,9 +258,9 @@ export class PatchSeries {
             await PatchSeries.generateTagMessage(mails[0], mails.length > 1,
                 this.project.midUrlPrefix,
                 this.inReplyTo);
-        const url = await gitConfig("remote." + this.project.publishToRemote
-            + ".url");
-        const tagName = this.project.branchName + "-v" + this.iteration;
+        const url =
+            await gitConfig(`remote.${this.project.publishToRemote}.url`);
+        const tagName = `${this.project.branchName}-v${this.iteration}`;
 
         logger.log("Inserting links");
         tagMessage = await PatchSeries.insertLinks(tagMessage, url, tagName,
@@ -280,7 +280,7 @@ export class PatchSeries {
         logger.log("Inserting branch-diff");
         if (this.branchDiff) {
             mails[0] = PatchSeries.insertBranchDiff(mails[0], mails.length > 1,
-                `Branch-diff vs v${this.iteration - 1}:`, this.branchDiff);
+                `Branch - diff vs v${this.iteration - 1}: `, this.branchDiff);
         }
 
         if (this.options.dryRun) {
@@ -299,8 +299,8 @@ export class PatchSeries {
 
     protected async generateMBox(): Promise<string> {
         // Auto-detect whether we need a cover letter
-        const coverLetter = await gitConfig("branch." + this.project.branchName
-            + ".description");
+        const coverLetter =
+            await gitConfig(`branch.${this.project.branchName}.description`);
 
         const commitRange = this.project.upstreamBranch + ".."
             + this.project.branchName;
