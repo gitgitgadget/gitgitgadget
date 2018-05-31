@@ -1,4 +1,5 @@
 import { git, gitConfig, revParse } from "./git";
+import { GitNotes } from "./git-notes";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
 import { PatchSeriesOptions } from "./patch-series-options";
 import { ProjectOptions } from "./project-options";
@@ -72,6 +73,127 @@ export class PatchSeries {
 
         return new PatchSeries(options, project, metadata, branchDiff,
             coverLetter);
+    }
+
+    public static async getFromNotes(notes: GitNotes,
+                                     pullRequestURL: string,
+                                     pullRequestDescription: string,
+                                     baseLabel: string, baseCommit: string,
+                                     headLabel: string, headCommit: string):
+        Promise<PatchSeries> {
+        const workDir = notes.workDir;
+        if (!workDir) {
+            throw new Error("Need a worktree!");
+        }
+        let metadata: IPatchSeriesMetadata | undefined =
+            await notes.get<IPatchSeriesMetadata>(pullRequestURL);
+
+        let branchDiff: string = "";
+        if (metadata === undefined) {
+            metadata = {
+                baseCommit,
+                baseLabel,
+                coverLetterMessageId: "not yet sent",
+                headCommit,
+                headLabel,
+                iteration: 1,
+                pullRequestURL,
+            };
+        } else {
+            if (!await git([
+                "rev-list", `${metadata.headCommit}...${headCommit}`,
+            ])) {
+                throw new Error(`${headCommit} was already submitted`);
+            }
+
+            const previousRange =
+                `${metadata.baseCommit}..${metadata.headCommit}`;
+            const currentRange = `${baseCommit}..${headCommit}`;
+            branchDiff = await git([
+                "tbdiff", "--no-color", previousRange, currentRange,
+            ], { workDir });
+
+            metadata.iteration++;
+            metadata.baseCommit = baseCommit;
+            metadata.baseLabel = baseLabel;
+            metadata.headCommit = headCommit;
+            metadata.headLabel = headLabel;
+            if (metadata.coverLetterMessageId) {
+                if (!metadata.referencesMessageIds) {
+                    metadata.referencesMessageIds = [];
+                }
+                metadata.referencesMessageIds
+                    .push(metadata.coverLetterMessageId);
+            }
+            metadata.coverLetterMessageId = "not yet sent";
+        }
+
+        const {
+            basedOn,
+            cc,
+            coverLetter,
+        } = PatchSeries.parsePullRequestDescription(pullRequestDescription);
+
+        if (basedOn && !revParse(basedOn, workDir)) {
+            throw new Error(`Cannot find base branch ${basedOn}`);
+        }
+
+        const options = new PatchSeriesOptions();
+        const publishToRemote = undefined;
+
+        const project = await ProjectOptions.get(workDir, headCommit, cc || [],
+            basedOn, publishToRemote);
+
+        return new PatchSeries(options, project, metadata,
+            branchDiff, coverLetter);
+    }
+
+    protected static parsePullRequestDescription(description: string): {
+        coverLetter: string,
+        basedOn?: string,
+        cc?: string[],
+    } {
+        let basedOn;
+        let cc: string[] | undefined;
+        let coverLetter = description.trim();
+
+        // parse the footers of the pullRequestDescription
+        const match = description.match(/^([^]+)\n\n([^]+)$/);
+        if (match) {
+            coverLetter = match[1];
+            cc = [];
+            const footer: string[] = [];
+            for (const line of match[2].trimRight().split("\n")) {
+                const match2 = line.match(/^([-A-Za-z]+:) (.*)\n?$/);
+                if (!match2) {
+                    footer.push(line);
+                } else {
+                    switch (match2[1]) {
+                        case "Based-On":
+                            if (basedOn) {
+                                throw new Error(`Duplicate Based-On footer: ${
+                                    basedOn} vs ${match2[2]}`);
+                            }
+                            basedOn = match2[2];
+                            break;
+                        case "Cc:":
+                            cc.push(match2[2]);
+                            break;
+                        default:
+                            footer.push(line);
+                    }
+                }
+            }
+
+            if (footer.length > 0) {
+                coverLetter += `\n\n${footer.join("\n")}`;
+            }
+        }
+        return {
+            basedOn,
+            cc,
+            coverLetter,
+        };
     }
 
     protected static async getLatestTag(branchName: string, redo?: boolean):
