@@ -30,8 +30,8 @@ export class ProjectOptions {
     }
 
     public static async get(workDir: string, branchName: string,
-                            cc: string[], basedOn: string | undefined,
-                            publishToRemote: string):
+                            cc: string[], basedOn?: string,
+                            publishToRemote?: string):
         Promise<ProjectOptions> {
         let upstreamBranch: string;
         let to: string;
@@ -136,7 +136,7 @@ export class ProjectOptions {
     public readonly branchName: string;
     public readonly upstreamBranch: string;
     public readonly basedOn?: string;
-    public readonly publishToRemote: string;
+    public readonly publishToRemote?: string;
     public readonly workDir: string;
 
     public readonly to: string;
@@ -144,7 +144,8 @@ export class ProjectOptions {
     public readonly midUrlPrefix: string;
 
     protected constructor(branchName: string, upstreamBranch: string,
-                          basedOn: string | undefined, publishToRemote: string,
+                          basedOn: string | undefined,
+                          publishToRemote: string | undefined,
                           to: string, cc: string[], midUrlPrefix: string,
                           workDir: string) {
         this.branchName = branchName;
