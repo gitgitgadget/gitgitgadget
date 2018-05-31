@@ -14,4 +14,46 @@
             ]
         }
     },
+    "cSpell.words": [
+        "Cygwin",
+        "Git's",
+        "Probot",
+        "Schindelin",
+        "amlog",
+        "basedon",
+        "busybox",
+        "coverageprocessor",
+        "dugite",
+        "gitgitgadget",
+        "gitster",
+        "googlegroups",
+        "latesttag",
+        "latesttags",
+        "maildir",
+        "mailsplit",
+        "maint",
+        "mbox",
+        "onelines",
+        "promisify",
+        "publishtoremote",
+        "rebased",
+        "refname",
+        "repo",
+        "smee",
+        "smtp",
+        "superset",
+        "taggerdate",
+        "tbdiff",
+        "worktree"
+    ],
+    "cSpell.language": "en-US",
+    "cSpell.enabledLanguageIds": [
+        "git-commit",
+        "html",
+        "javascript",
+        "json",
+        "markdown",
+        "plaintext",
+        "typescript"
+    ]
 }
