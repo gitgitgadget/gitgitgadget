@@ -1,12 +1,13 @@
 import * as fs from "fs";
 import * as util from "util";
-import { git } from "../lib/git";
+import { git, revParse } from "../lib/git";
 
 const mkdir = util.promisify(fs.mkdir);
 const readdir = util.promisify(fs.readdir);
 const realpath = util.promisify(fs.realpath);
 const rmdir = util.promisify(fs.rmdir);
 const stat = util.promisify(fs.stat);
+const writeFile = util.promisify(fs.writeFile);
 const unlink = util.promisify(fs.unlink);
 
 export async function isDirectory(path: string): Promise<boolean> {
@@ -53,4 +54,33 @@ export async function testCreateRepo(name: string) {
 
     await git(["init", dir]);
     return dir;
+}
+
+let testTickEpoch = 1234567890;
+
+function testTick(): number {
+    return testTickEpoch += 60;
+}
+
+export async function testCommit(workDir: string, message: string,
+                                 fileName?: string, contents?: string):
+    Promise<string> {
+    const tick = testTick();
+    if (!fileName) {
+        fileName = `${message}.t`;
+    }
+    await writeFile(`${workDir}/${fileName}`, contents || message);
+    await git(["add", "--", fileName], { workDir });
+    await git(["commit", "-m", message, "--", fileName], {
+        env: {
+            GIT_AUTHOR_DATE: `${tick} +0000`,
+            GIT_COMMITTER_DATE: `${tick} +0000`,
+        },
+        workDir,
+    });
+    const result = await revParse("HEAD", workDir);
+    if (!result) {
+        throw new Error(`Could not commit ${message}?!?`);
+    }
+    return result;
 }

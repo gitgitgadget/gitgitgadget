@@ -63,6 +63,11 @@ export class ProjectOptions {
             upstreamBranch = "busybox/master";
             midUrlPrefix = "https://www.mail-archive.com/search?"
                 + "l=busybox@busybox.net&q=";
+        } else if (await this.commitExists("0c16a2d9ca7a82f08f3", workDir)) {
+            // We're running in the test suite!
+            to = "--to=reviewer@example.com";
+            upstreamBranch = "master";
+            midUrlPrefix = "https://dummy.com/?mid=";
         } else {
             throw new Error("Unrecognized project");
         }
