@@ -8,7 +8,14 @@
             "name": "Tests",
             "type": "node",
             "request": "launch",
-            "runtimeArgs": [ "--inspect-brk", "${workspaceRoot}/node_modules/.bin/jest", "--runInBand" ],
+            "runtimeArgs": [
+                "--inspect-brk",
+                // "--nolazy",
+            ],
+            "args": [
+                "${workspaceRoot}/node_modules/jest/bin/jest.js",
+                "--runInBand",
+            ],
             "stopOnEntry": false,
             "cwd": "${workspaceRoot}",
             "preLaunchTask": null,
