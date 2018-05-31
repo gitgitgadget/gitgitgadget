@@ -12,13 +12,14 @@ export class GitNotes {
 
     public async get<T>(key: string): Promise<T | undefined> {
         const json = await this.getString(key);
-        if (json === undefined)
+        if (json === undefined) {
             return undefined;
+        }
         return fromJSON(json);
     }
 
     public async getString(key: string): Promise<string | undefined> {
-        const obj = await git(["hash-object", "--stdin" ], {
+        const obj = await git(["hash-object", "--stdin"], {
             stdin: key,
             workDir: this.workDir,
         });
@@ -34,7 +35,7 @@ export class GitNotes {
     }
 
     public async setString(key: string, value: string): Promise<void> {
-        const obj = await git([ "hash-object", "--stdin" ], { stdin: key });
+        const obj = await git(["hash-object", "--stdin"], { stdin: key });
         if (!await revParse(`${obj}^{blob}`, this.workDir)) {
             try {
                 /*

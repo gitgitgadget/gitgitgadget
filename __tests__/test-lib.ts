@@ -51,6 +51,6 @@ export async function testCreateRepo(name: string) {
         }
     }
 
-    await git([ "init", dir ]);
+    await git(["init", dir]);
     return dir;
 }

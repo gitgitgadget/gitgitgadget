@@ -45,11 +45,11 @@ export class ProjectOptions {
                 + "l=busybox@busybox.net&q=";
         } else {
             throw new Error("Unrecognized project");
-               }
+        }
 
         const publishToRemote = await gitConfig("mail.publishtoremote");
         const basedOn: string = await this.determineBaseBranch(branchName,
-             publishToRemote);
+            publishToRemote);
 
         if (basedOn) {
             upstreamBranch = basedOn;
@@ -57,11 +57,11 @@ export class ProjectOptions {
 
         if (await git(["rev-list", branchName + ".." + upstreamBranch])) {
             throw new Error("Branch " + branchName + " is not rebased to " +
-                            upstreamBranch);
+                upstreamBranch);
         }
 
         return new ProjectOptions(branchName, upstreamBranch, basedOn,
-                                  publishToRemote, to, cc, midUrlPrefix);
+            publishToRemote, to, cc, midUrlPrefix);
     }
 
     protected static async commitExists(commit: string): Promise<boolean> {
@@ -76,7 +76,7 @@ export class ProjectOptions {
     protected static async determineBaseBranch(workDir: string,
                                                branchName: string,
                                                publishToRemote: string):
-                                              Promise<string> {
+        Promise<string> {
         const basedOn =
             await gitConfig(`branch.${branchName}.basedon`, workDir);
         if (basedOn && !await this.commitExists(basedOn)) {

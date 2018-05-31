@@ -8,7 +8,7 @@ export interface ILogger {
 
 export class PatchSeries {
     public static async getFromTag(options: PatchSeriesOptions,
-                            project: ProjectOptions):
+                                   project: ProjectOptions):
         Promise<PatchSeries> {
         const latestTag: string = await this.getLatestTag(project.branchName,
             options.redo);
@@ -192,7 +192,7 @@ export class PatchSeries {
 
         const regex = isCoverLetter ?
             /^([^]*?\n-- \n)([^]*)$/ :
-             /^([^]*?\n---\n(?:\n[A-Za-z:]+ [^]*?\n\n)?)([^]*)$/;
+            /^([^]*?\n---\n(?:\n[A-Za-z:]+ [^]*?\n\n)?)([^]*)$/;
         const match = mail.match(regex);
         if (!match) {
             throw new Error("Failed to find branch-diff insertion "
@@ -201,7 +201,7 @@ export class PatchSeries {
 
         // split the branch-diff and prefix with a space
         return match[1] + "\n" + (branchDiffHeader ?
-                                  branchDiffHeader + "\n" : "")
+            branchDiffHeader + "\n" : "")
             + branchDiff.replace(/(^|\n(?!$))/g, "$1 ") + "\n" + match[2];
     }
 

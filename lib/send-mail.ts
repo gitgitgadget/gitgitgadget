@@ -4,7 +4,7 @@ export function sendMail(to: string, cc: string | undefined,
                          subject: string, body: string,
                          smtpHost: string, smtpUser: string, smtpPass: string,
                          from?: string, date?: string, messageId?: string):
-                         Promise<string> {
+    Promise<string> {
     return new Promise<string>((resolve, reject) => {
         const transporter = createTransport({
             auth: {

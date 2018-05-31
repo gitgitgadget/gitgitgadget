@@ -1,5 +1,5 @@
-import 'jest';
-import { PatchSeries } from '../lib/patch-series';
+import "jest";
+import { PatchSeries } from "../lib/patch-series";
 
 const mbox1 =
     `From 38d1082511bb02a709f203481c2787adc6e67c02 Mon Sep 17 00:00:00 2001
@@ -22,7 +22,7 @@ A U Thor (1):
     README.md | 5 +++++
     1 file changed, 5 insertions(+)
 
--- 
+--${ /* we really want that space: */ " "}
 2.17.0.windows.1
 
 From 34042ac7b177e6e5ae2d12f7a39ca3ab5993d817 Mon Sep 17 00:00:00 2001
@@ -52,7 +52,7 @@ index fa400f1..daf4bc3 100755
 2.17.0.windows.1
 `;
 const tagMessage1 =
-`This is the subject of the cover letter that wraps around
+    `This is the subject of the cover letter that wraps around
 
 This is the actual body of the cover letter.
 
@@ -68,44 +68,66 @@ In-Reply-To: https://mid.lookup/cover.2.git.author@example.com
 In-Reply-To: https://mid.lookup/cover.1.git.author@example.com`;
 
 class PatchSeriesTest extends PatchSeries {
-    static runTests() {
+    public static runTests() {
         const mails = PatchSeries.splitMails(mbox1);
 
-        test('mails are split correctly', () => {
+        test("mails are split correctly", () => {
             expect(mails.length).toBe(2);
-            expect(mails[0]).toMatch(/^From [^]*\n-- \n2\.17\.0\.windows\.1\n$/);
-            expect(mails[1]).toMatch(/^From [^]*\n---\n2\.17\.0\.windows\.1\n$/);
+            expect(mails[0]).toMatch(
+                /^From [^]*\n-- \n2\.17\.0\.windows\.1\n$/);
+            expect(mails[1]).toMatch(
+                /^From [^]*\n---\n2\.17\.0\.windows\.1\n$/);
         });
 
-        PatchSeries.insertCcAndFromLines(mails, 'A U Thor <author@example.com>');
-        test('Cc: is inserted correctly', () => {
-            expect(mails[1]).toMatch(/From: A U Thor[^]*\nCc: Some One Else[^]*\n\nFrom: Some One Else.*\n\n/);
+        PatchSeries.insertCcAndFromLines(mails,
+            "A U Thor <author@example.com>");
+        test("Cc: is inserted correctly", () => {
+            expect(mails[1]).toMatch(
+                // tslint:disable-next-line:max-line-length
+                /From: A U Thor[^]*\nCc: Some One Else[^]*\n\nFrom: Some One Else.*\n\n/);
         });
 
         const coverLetter = PatchSeries.adjustCoverLetter(mails[0]);
-        test('Subject: header in cover letter is adjusted', () => {
+        test("Subject: header in cover letter is adjusted", () => {
             expect(coverLetter).toMatch(/\nSubject: .*This is the subject/);
         });
 
-        const tagMessage = PatchSeries.generateTagMessage(coverLetter, true, 'https://mid.lookup/', [ 'cover.2.git.author@example.com', 'cover.1.git.author@example.com']);
-        test('Tag message is generated correctly', () => {
+        const tagMessage = PatchSeries.generateTagMessage(coverLetter, true,
+            "https://mid.lookup/", [
+                "cover.2.git.author@example.com",
+                "cover.1.git.author@example.com",
+            ]);
+        test("Tag message is generated correctly", () => {
             expect(tagMessage).toBe(tagMessage1);
-        })
+        });
 
-        const repoUrl = 'https://github.com/author/git';
-        const withLinks = PatchSeries.insertLinks(tagMessage, repoUrl, 'my-series-v1', 'next');
-        test('Links are inserted correctly', () => {
-            const footer = '\nBased-On: next at ' + repoUrl + '\nFetch-Base-Via: git fetch ' + repoUrl + ' next\n' +
-                'Published-As: ' + repoUrl + '/releases/tag/my-series-v1\nFetch-It-Via: git fetch ' + repoUrl + ' my-series-v1\n';
+        const repoUrl = "https://github.com/author/git";
+        const withLinks = PatchSeries.insertLinks(tagMessage, repoUrl,
+            "my-series-v1", "next");
+        test("Links are inserted correctly", () => {
+            const footer = `
+Based-On: next at ${repoUrl}
+Fetch-Base-Via: git fetch ${repoUrl} next
+Published-As: ${repoUrl}/releases/tag/my-series-v1
+Fetch-It-Via: git fetch ${repoUrl} my-series-v1
+`;
             expect(withLinks).toBe(tagMessage1 + footer);
-        })
+        });
 
-        const coverLetterWithBranchDiff = PatchSeries.insertBranchDiff(coverLetter, true, "HEADER", "This\nis\na\nfake\ncover letter\n");
-        const mailWithBranchDiff = PatchSeries.insertBranchDiff(mails[1], false, "HEADER", "This\nis\na\nfake\ncover letter\n");
-        test('Branch diff is inserted correctly', () => {
-            expect(coverLetterWithBranchDiff).toMatch(/\n-- \n\nHEADER\n This\n is\n a\n fake\n cover letter\n\n2\.17/);
-            expect(mailWithBranchDiff).toMatch(/\n---\n\nHEADER\n This\n is\n a\n fake\n cover letter\n\n README/);
-        })
+        const coverLetterWithBranchDiff =
+            PatchSeries.insertBranchDiff(coverLetter, true, "HEADER",
+                "This\nis\na\nfake\ncover letter\n");
+        const mailWithBranchDiff =
+            PatchSeries.insertBranchDiff(mails[1], false, "HEADER",
+                "This\nis\na\nfake\ncover letter\n");
+        test("Branch diff is inserted correctly", () => {
+            expect(coverLetterWithBranchDiff).toMatch(
+                // tslint:disable-next-line:max-line-length
+                /\n-- \n\nHEADER\n This\n is\n a\n fake\n cover letter\n\n2\.17/);
+            expect(mailWithBranchDiff).toMatch(
+                // tslint:disable-next-line:max-line-length
+                /\n---\n\nHEADER\n This\n is\n a\n fake\n cover letter\n\n README/);
+        });
     }
 }
 

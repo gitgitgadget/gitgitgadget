@@ -84,7 +84,7 @@ async function main(argv: string[]) {
             options.dryRun = true;
         } else if (arg === "--rfc") {
             options.rfc = true;
-        // tslint:disable-next-line:no-conditional-assignment
+            // tslint:disable-next-line:no-conditional-assignment
         } else if (match = arg.match(/^--publish-to-remote=.*/)) {
             publishToRemote = match[1];
         } else if (arg === "--patience") {
@@ -101,11 +101,11 @@ async function main(argv: string[]) {
             } else if (arg.match(/>.*>/) || arg.match(/>,/)) {
                 await arg.replace(/> /g, ">,").split(",")
                     .map(async (email: string) => {
-                    email = email.trim();
-                    if (email) {
-                        await git(["config", "--add", key, email]);
-                    }
-                });
+                        email = email.trim();
+                        if (email) {
+                            await git(["config", "--add", key, email]);
+                        }
+                    });
             } else if (arg.match(/@/)) {
                 await git(["config", "--add", key, arg]);
             } else {
@@ -118,7 +118,7 @@ async function main(argv: string[]) {
                 await git(["config", "--add", key, id]);
             }
             return;
-        // tslint:disable-next-line:no-conditional-assignment
+            // tslint:disable-next-line:no-conditional-assignment
         } else if (match = arg.match(/^--basedon=(.*)/)) {
             const key = "branch." + await ProjectOptions.getBranchName()
                 + ".basedon";
@@ -153,7 +153,7 @@ async function main(argv: string[]) {
 
     let finishDryRun = () => {
         return;
-     };
+    };
 
     if (options.dryRun &&
         typeof (process.env.GIT_PAGER_IN_USE) === "undefined") {

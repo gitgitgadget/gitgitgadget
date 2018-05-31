@@ -15,7 +15,7 @@ function trimTrailingNewline(str: string): string {
 
 export async function git(args: string[],
                           options?: IGitOptions | undefined):
-                         Promise<string> {
+    Promise<string> {
     const workDir = options && options.workDir || ".";
     const result = await GitProcess.exec(args, workDir, options);
     if (result.exitCode) {
@@ -46,7 +46,7 @@ export async function revParse(argument: string, workDir?: string) {
 }
 
 export async function gitConfig(key: string, workDir?: string):
-        Promise<string> {
+    Promise<string> {
     const result = await GitProcess.exec(["config", key], workDir || ".");
     return trimTrailingNewline(result.stdout);
 }
@@ -54,8 +54,8 @@ export async function gitConfig(key: string, workDir?: string):
 export async function gitConfigForEach(key: string,
                                        callbackfn: (value: string) => void,
                                        workDir?: string):
-                                      Promise<void> {
+    Promise<void> {
     const result = await GitProcess.exec(["config", "--get-all", key],
-                                         workDir || ".");
+        workDir || ".");
     result.stdout.split(/\r?\n/).map(callbackfn);
 }
