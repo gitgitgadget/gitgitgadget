@@ -1,4 +1,4 @@
-import { git, gitConfig, gitConfigForEach } from "./git";
+import { git, gitConfig, gitConfigForEach, revParse } from "./git";
 
 // For now, only the Git, Cygwin and BusyBox projects are supported
 export class ProjectOptions {
@@ -83,12 +83,7 @@ export class ProjectOptions {
 
     protected static async commitExists(commit: string, workDir: string):
         Promise<boolean> {
-        try {
-            await git(["rev-parse", "--verify", commit], { workDir });
-            return true;
-        } catch (err) {
-            return false;
-        }
+        return await revParse(`${commit}^{commit}`, workDir) !== undefined;
     }
 
     protected static async determineBaseBranch(workDir: string,
