@@ -22,8 +22,8 @@ export class ProjectOptions {
         const publishToRemote =
             await gitConfig("mail.publishtoremote", workDir);
         const baseBranch =
-            await ProjectOptions.determineBaseBranch(branchName,
-            publishToRemote, workDir);
+            await ProjectOptions.determineBaseBranch(workDir, branchName,
+                publishToRemote);
 
         return await ProjectOptions.get(workDir, branchName, cc, baseBranch,
             publishToRemote);
@@ -88,8 +88,8 @@ export class ProjectOptions {
 
     protected static async determineBaseBranch(workDir: string,
                                                branchName: string,
-                                               publishToRemote: string):
-        Promise<string> {
+                                               publishToRemote?: string):
+        Promise<string | undefined> {
         const basedOn =
             await gitConfig(`branch.${branchName}.basedon`, workDir);
         if (!basedOn || !await this.commitExists(basedOn, workDir)) {

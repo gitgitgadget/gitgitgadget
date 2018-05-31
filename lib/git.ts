@@ -52,8 +52,11 @@ export async function revParse(argument: string, workDir?: string) {
 }
 
 export async function gitConfig(key: string, workDir?: string):
-    Promise<string> {
+    Promise<string | undefined> {
     const result = await GitProcess.exec(["config", key], workDir || ".");
+    if (result.exitCode !== 0) {
+        return undefined;
+    }
     return trimTrailingNewline(result.stdout);
 }
 

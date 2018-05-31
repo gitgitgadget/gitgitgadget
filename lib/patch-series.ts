@@ -283,6 +283,9 @@ export class PatchSeries {
         const url =
             await gitConfig(`remote.${this.project.publishToRemote}.url`,
                 this.project.workDir);
+        if (!url) {
+            throw new Error(`remote ${this.project.publishToRemote} lacks URL`);
+        }
         const tagName =
             `${this.project.branchName}-v${this.metadata.iteration}`;
 
