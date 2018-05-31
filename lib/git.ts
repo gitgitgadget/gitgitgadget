@@ -5,6 +5,7 @@ import { GitProcess, IGitExecutionOptions } from "dugite";
 export interface IGitOptions extends IGitExecutionOptions {
     workDir?: string;
     trimTrailingNewline?: boolean; // defaults to true
+    trace?: boolean;
 }
 
 export const emptyBlobName = "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391";
@@ -17,6 +18,11 @@ export async function git(args: string[],
                           options?: IGitOptions | undefined):
     Promise<string> {
     const workDir = options && options.workDir || ".";
+    if (options && options.trace) {
+        process.stderr.write(`Called 'git ${args.join(" ")}':
+${new Error().stack}
+`);
+    }
     const result = await GitProcess.exec(args, workDir, options);
     if (result.exitCode) {
         throw new Error(`git ${args.join(" ")} failed: ${result.exitCode},
