@@ -1,4 +1,5 @@
 import { emptyBlobName, git, revParse } from "./git";
+import { fromJSON, toJSON } from "./json-util";
 
 export class GitNotes {
     public readonly workDir?: string;
@@ -7,6 +8,13 @@ export class GitNotes {
     public constructor(workDir?: string, notesRef?: string) {
         this.workDir = workDir;
         this.notesRef = notesRef || "refs/notes/gitgitgadget";
+    }
+
+    public async get<T>(key: string): Promise<T | undefined> {
+        const json = await this.getString(key);
+        if (json === undefined)
+            return undefined;
+        return fromJSON(json);
     }
 
     public async getString(key: string): Promise<string | undefined> {
@@ -19,6 +27,10 @@ export class GitNotes {
         } catch (reason) {
             return undefined;
         }
+    }
+
+    public async set<T>(key: string, value: T): Promise<void> {
+        return this.setString(key, toJSON(value));
     }
 
     public async setString(key: string, value: string): Promise<void> {
