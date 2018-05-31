@@ -7,7 +7,7 @@ export interface ILogger {
 }
 
 export class PatchSeries {
-    public static async get(options: PatchSeriesOptions,
+    public static async getFromTag(options: PatchSeriesOptions,
                             project: ProjectOptions):
         Promise<PatchSeries> {
         const latestTag: string = await this.getLatestTag(project.branchName,

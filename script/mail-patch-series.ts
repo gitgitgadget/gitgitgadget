@@ -175,7 +175,7 @@ async function main(argv: string[]) {
     }
 
     const project = await ProjectOptions.get();
-    const patchSeries = await PatchSeries.get(options, project);
+    const patchSeries = await PatchSeries.getFromTag(options, project);
     await patchSeries.generateAndSend(console);
 
     if (finishDryRun) {
