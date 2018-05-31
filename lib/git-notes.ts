@@ -9,7 +9,7 @@ export class GitNotes {
         this.notesRef = notesRef || "refs/notes/gitgitgadget";
     }
 
-    public async get(key: string): Promise<string | undefined> {
+    public async getString(key: string): Promise<string | undefined> {
         const obj = await git(["hash-object", "--stdin" ], {
             stdin: key,
             workDir: this.workDir,
@@ -21,7 +21,7 @@ export class GitNotes {
         }
     }
 
-    public async set(key: string, value: string): Promise<void> {
+    public async setString(key: string, value: string): Promise<void> {
         const obj = await git([ "hash-object", "--stdin" ], { stdin: key });
         if (!await revParse(`${obj}^{blob}`, this.workDir)) {
             try {

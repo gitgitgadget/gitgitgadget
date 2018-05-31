@@ -8,10 +8,10 @@ test("set/get notes", async () => {
     expect(await isDirectory(`${workDir}/.git`)).toBeTruthy();
 
     const notes = new GitNotes(workDir);
-    expect(await notes.get("hello")).toBeUndefined();
+    expect(await notes.getString("hello")).toBeUndefined();
 
-    expect(await notes.set("hello", "world")).toBeUndefined();
-    expect(await notes.get("hello")).toEqual("world");
+    expect(await notes.setString("hello", "world")).toBeUndefined();
+    expect(await notes.getString("hello")).toEqual("world");
 
     expect(await git(["log", "-p", "refs/notes/gitgitgadget"], {
         workDir,
