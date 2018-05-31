@@ -97,8 +97,8 @@ export class ProjectOptions {
         Promise<string> {
         const basedOn =
             await gitConfig(`branch.${branchName}.basedon`, workDir);
-        if (basedOn && !await this.commitExists(basedOn, workDir)) {
-            throw new Error("Base branch does not exist: " + basedOn);
+        if (!basedOn || !await this.commitExists(basedOn, workDir)) {
+            return undefined;
         }
 
         if (!publishToRemote) {
