@@ -11,7 +11,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "nodemon --exec \"npm start\"",
-    "lint": "tslint -c tslint.json '{lib,script,__tests__}/**/*.{ts,tsx}'",
+    "lint": "tslint -c tslint.json '{lib,script,tests}/**/*.{ts,tsx}'",
     "start": "probot run ./index.js",
     "test": "jest && tslint",
     "test:watch": "jest --watch --notify --notifyMode=change --coverage"
@@ -29,7 +29,7 @@
     "transform": {
       "\\.(ts|tsx)$": "<rootDir>/node_modules/ts-jest/preprocessor.js"
     },
-    "testRegex": "/__tests__/(?!test-lib).*\\.(ts|tsx|js)$"
+    "testRegex": "/tests/(?!test-lib).*\\.(ts|tsx|js)$"
   },
   "devDependencies": {
     "@types/jest": "^22.2.3",
