@@ -1,4 +1,5 @@
-import { git, gitConfig } from "./git";
+import { git, gitConfig, revParse } from "./git";
+import { IPatchSeriesMetadata } from "./patch-series-metadata";
 import { PatchSeriesOptions } from "./patch-series-options";
 import { ProjectOptions } from "./project-options";
 
@@ -13,14 +14,24 @@ export class PatchSeries {
         const latestTag: string = await this.getLatestTag(project.branchName,
             options.redo);
 
-        let iteration: number;
-        let branchDiff: string;
-        const inReplyTo: string[] = [];
+        const baseCommit = await revParse(project.upstreamBranch);
+        if (!baseCommit) {
+            throw new Error(`Cannot determine tip of ${project.basedOn}`);
+        }
+        const headCommit = await revParse("HEAD");
+        if (!headCommit) {
+            throw new Error(`Cannot determine HEAD revision`);
+        }
+        const metadata: IPatchSeriesMetadata = {
+            baseCommit,
+            baseLabel: project.upstreamBranch,
+            headCommit,
+            headLabel: project.branchName,
+            iteration: 1,
+        };
+        let branchDiff: string = "";
 
-        if (!latestTag) {
-            iteration = 1;
-            branchDiff = "";
-        } else {
+        if (latestTag) {
             const range = latestTag + "..." + project.branchName;
             if (! await git(["rev-list", range])) {
                 throw new Error("Branch " + project.branchName
@@ -28,7 +39,7 @@ export class PatchSeries {
             }
 
             let match = latestTag.match(/-v([1-9][0-9]*)$/);
-            iteration = parseInt(match && match[1] || "0", 10) + 1;
+            metadata.iteration = parseInt(match && match[1] || "0", 10) + 1;
 
             const tagMessage = await git(["cat-file", "tag", latestTag]);
             match = tagMessage.match(/^[\s\S]*?\n\n([\s\S]*)/);
@@ -45,15 +56,18 @@ export class PatchSeries {
                     match = line.match(/^[^ :]*: Message-ID: ([^\/]+)/);
                 }
                 if (match) {
-                    inReplyTo.unshift(match[1]);
+                    if (metadata.referencesMessageIds) {
+                        metadata.referencesMessageIds.unshift(match[1]);
+                    } else {
+                        metadata.referencesMessageIds = [match[1]];
+                    }
                 }
             });
 
             branchDiff = await git(["tbdiff", "--no-color", range]);
         }
 
-        return new PatchSeries(options, project, iteration,
-            branchDiff, inReplyTo);
+        return new PatchSeries(options, project, metadata, branchDiff);
     }
 
     protected static async getLatestTag(branchName: string, redo?: boolean):
@@ -121,7 +135,8 @@ export class PatchSeries {
 
     protected static generateTagMessage(mail: string, isCoverLetter: boolean,
                                         midUrlPrefix: string,
-                                        inReplyTo: string[]): string {
+                                        inReplyTo: string[] | undefined):
+        string {
         const regex = isCoverLetter ?
             /\nSubject: (\[.*?\] )?([^]*?(?=\n[^ ]))[^]*?\n\n([^]*?)\n*-- \n/ :
             /\nSubject: (\[.*?\] )?([^]*?(?=\n[^ ]))[^]*?\n\n([^]*?)\n*---\n/;
@@ -134,9 +149,11 @@ export class PatchSeries {
         const messageID = mail.match(/\nMessage-ID: <(.*?)>\n/i);
         let footer: string = messageID ? "Submitted-As: " + midUrlPrefix
             + messageID[1] : "";
-        inReplyTo.map((id: string) => {
-            footer += "\nIn-Reply-To: " + midUrlPrefix + id;
-        });
+        if (inReplyTo) {
+            inReplyTo.map((id: string) => {
+                footer += "\nIn-Reply-To: " + midUrlPrefix + id;
+            });
+        }
 
         // Subjects can contain continuation lines; simply strip out the new
         // line and keep only the space
@@ -203,37 +220,33 @@ export class PatchSeries {
 
     public readonly options: PatchSeriesOptions;
     public readonly project: ProjectOptions;
-
-    public readonly iteration: number;
+    public readonly metadata: IPatchSeriesMetadata;
     public readonly branchDiff: string;
-    public readonly inReplyTo: string[];
 
     protected constructor(options: PatchSeriesOptions, project: ProjectOptions,
-                          iteration: number,
-                          branchDiff: string, inReplyTo: string[]) {
+                          metadata: IPatchSeriesMetadata, branchDiff: string) {
         this.options = options;
         this.project = project;
-
-        this.iteration = iteration;
+        this.metadata = metadata;
         this.branchDiff = branchDiff;
-        this.inReplyTo = inReplyTo;
     }
 
     public subjectPrefix(): string {
-        if (this.iteration === 1) {
+        if (this.metadata.iteration === 1) {
             return this.options.rfc ? "PATCH/RFC" : "";
         } else {
-            return `PATCH${this.options.rfc ? "/RFC" : ""} v${this.iteration}`;
+            return `PATCH${this.options.rfc ?
+                "/RFC" : ""} v${this.metadata.iteration}`;
         }
     }
 
     public async generateAndSend(logger: ILogger): Promise<void> {
         if (this.options.dryRun) {
             logger.log("Dry-run " + this.project.branchName
-                + " v" + this.iteration);
+                + " v" + this.metadata.iteration);
         } else {
             logger.log("Submitting " + this.project.branchName
-                + " v" + this.iteration);
+                + " v" + this.metadata.iteration);
         }
 
         logger.log("Generating mbox");
@@ -259,10 +272,11 @@ export class PatchSeries {
         let tagMessage =
             await PatchSeries.generateTagMessage(mails[0], mails.length > 1,
                 this.project.midUrlPrefix,
-                this.inReplyTo);
+                this.metadata.referencesMessageIds);
         const url =
             await gitConfig(`remote.${this.project.publishToRemote}.url`);
-        const tagName = `${this.project.branchName}-v${this.iteration}`;
+        const tagName =
+            `${this.project.branchName}-v${this.metadata.iteration}`;
 
         logger.log("Inserting links");
         tagMessage = await PatchSeries.insertLinks(tagMessage, url, tagName,
@@ -271,7 +285,7 @@ export class PatchSeries {
         if (this.options.dryRun) {
             logger.log("Would generate tag " + tagName
                 + " with message:\n\n"
-                + tagMessage.split("\n").map((line) => {
+                + tagMessage.split("\n").map((line: string) => {
                     return "    " + line;
                 }).join("\n"));
         } else {
@@ -282,7 +296,8 @@ export class PatchSeries {
         logger.log("Inserting branch-diff");
         if (this.branchDiff) {
             mails[0] = PatchSeries.insertBranchDiff(mails[0], mails.length > 1,
-                `Branch - diff vs v${this.iteration - 1}: `, this.branchDiff);
+                `Branch - diff vs v${this.metadata.iteration - 1}: `,
+                this.branchDiff);
         }
 
         if (this.options.dryRun) {
@@ -319,7 +334,11 @@ export class PatchSeries {
             "--add-header=MIME-Version: 1.0",
             "--base", this.project.upstreamBranch, this.project.to];
         this.project.cc.map((email) => { args.push("--cc=" + email); });
-        this.inReplyTo.map((email) => { args.push("--in-reply-to=" + email); });
+        if (this.metadata.referencesMessageIds) {
+            this.metadata.referencesMessageIds.map((email) => {
+                args.push("--in-reply-to=" + email);
+            });
+        }
         const subjectPrefix = this.subjectPrefix();
         if (subjectPrefix) {
             args.push("--subject-prefix=" + subjectPrefix);
