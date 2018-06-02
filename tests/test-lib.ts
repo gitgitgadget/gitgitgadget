@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as util from "util";
-import { git, revParse } from "../lib/git";
+import { git, IGitOptions, revParse } from "../lib/git";
 
 const mkdir = util.promisify(fs.mkdir);
 const readdir = util.promisify(fs.readdir);
@@ -62,23 +62,60 @@ function testTick(): number {
     return testTickEpoch += 60;
 }
 
-export async function testCommit(workDir: string, message: string,
+export interface ITestCommitOptions {
+    workDir: string;
+    author?: string;
+    committer?: string;
+}
+export async function testCommit(options: ITestCommitOptions, message: string,
                                  fileName?: string, contents?: string):
     Promise<string> {
     const tick = testTick();
-    if (!fileName) {
-        fileName = `${message}.t`;
-    }
-    await writeFile(`${workDir}/${fileName}`, contents || message);
-    await git(["add", "--", fileName], { workDir });
-    await git(["commit", "-m", message, "--", fileName], {
+    const gitOpts = {
         env: {
             GIT_AUTHOR_DATE: `${tick} +0000`,
             GIT_COMMITTER_DATE: `${tick} +0000`,
         },
-        workDir,
-    });
-    const result = await revParse("HEAD", workDir);
+        workDir: options.workDir,
+    } as IGitOptions;
+
+    if (options.committer) {
+        const match = options.committer.match(/^(.*)<(.*)>$/);
+        if (match) {
+            Object.assign(gitOpts.env, {
+                GIT_COMMITTER_EMAIL: match[2],
+                GIT_COMMITTER_NAME: match[1],
+            });
+        }
+    }
+
+    if (options.author) {
+        const match = options.author.match(/^(.*)<(.*)>$/);
+        if (match) {
+            Object.assign(gitOpts.env, {
+                GIT_AUTHOR_EMAIL: match[2],
+                GIT_AUTHOR_NAME: match[1],
+            });
+        }
+        if (!options.committer) {
+            const match2 = options.author.match(/^(.*)<(.*)>$/);
+            if (match2) {
+                Object.assign(gitOpts.env, {
+                    GIT_COMMITTER_EMAIL: match2[2],
+                    GIT_COMMITTER_NAME: match2[1],
+                });
+            }
+        }
+    }
+
+    if (!fileName) {
+        fileName = `${message}.t`;
+    }
+
+    await writeFile(`${options.workDir}/${fileName}`, contents || message);
+    await git(["add", "--", fileName], gitOpts);
+    await git(["commit", "-m", message, "--", fileName], gitOpts);
+    const result = await revParse("HEAD", options.workDir);
     if (!result) {
         throw new Error(`Could not commit ${message}?!?`);
     }
