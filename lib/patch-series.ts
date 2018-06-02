@@ -102,7 +102,7 @@ export class PatchSeries {
         } else {
             if (!await git([
                 "rev-list", `${metadata.headCommit}...${headCommit}`,
-            ])) {
+            ], { workDir })) {
                 throw new Error(`${headCommit} was already submitted`);
             }
 
@@ -382,7 +382,9 @@ export class PatchSeries {
         const mbox = await this.generateMBox();
         const mails: string[] = PatchSeries.splitMails(mbox);
 
-        const ident = await git(["var", "GIT_AUTHOR_IDENT"]);
+        const ident = await git(["var", "GIT_AUTHOR_IDENT"], {
+            workDir: this.project.workDir,
+        });
         const match = ident.match(/.*>/);
         const thisAuthor = match && match[0];
         if (!thisAuthor) {
@@ -451,7 +453,7 @@ export class PatchSeries {
         const commitRange = this.project.upstreamBranch + ".."
             + this.project.branchName;
         if (!this.coverLetter && 1 < parseInt(await git(["rev-list", "--count",
-            commitRange]), 10)) {
+            commitRange], { workDir: this.project.workDir }), 10)) {
             throw new Error("Branch " + this.project.branchName
                 + " needs a description");
         }
@@ -481,7 +483,7 @@ export class PatchSeries {
 
         args.push(commitRange);
 
-        return await git(args);
+        return await git(args, { workDir: this.project.workDir });
     }
 
     protected async generateTagObject(tagName: string, tagMessage: string):
@@ -491,11 +493,14 @@ export class PatchSeries {
             args.push("-f");
         }
         args.push(tagName);
-        await git(args, { stdin: tagMessage });
+        await git(args, { stdin: tagMessage, workDir: this.project.workDir });
     }
 
     protected async sendMBox(mbox: string): Promise<void> {
-        await git(["send-mbox"], { stdin: mbox });
+        await git(["send-mbox"], {
+            stdin: mbox,
+            workDir: this.project.workDir,
+        });
     }
 
     protected async publishBranch(tagName: string): Promise<void> {
@@ -507,6 +512,9 @@ export class PatchSeries {
             tagName = "+" + tagName;
         }
         await git(["push", this.project.publishToRemote, "+"
-            + this.project.branchName, tagName]);
+            + this.project.branchName, tagName], {
+                workDir: this.project.workDir,
+            },
+        );
     }
 }
