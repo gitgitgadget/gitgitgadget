@@ -186,8 +186,8 @@ finished. Here are a few features that may materialize at some stage:
   time this branch is pushed.
 - Sometimes, the patches are amended before they are applied. In these cases, it
   is really helpful to know about that, therefore GitGitGadget should use
-  [`tbdiff`](https://github.com/trast/tbdiff) (or the upcoming
-  [`branch-diff`](https://public-inbox.org/git/cover.1525361419.git.johannes.schindelin@gmx.de/)
+  the upcoming
+  [`range-diff`](https://public-inbox.org/git/cover.1525361419.git.johannes.schindelin@gmx.de/)
   or whatever the builtin will be called) to inform the contributor about this,
   so that subsequent iterations of the patch submission do not revert those
   amendments.

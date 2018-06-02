@@ -114,17 +114,17 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             expect(withLinks).toBe(tagMessage1 + footer);
         });
 
-        const coverLetterWithBranchDiff =
-            PatchSeries.insertBranchDiff(coverLetter, true, "HEADER",
+        const coverLetterWithRangeDiff =
+            PatchSeries.insertRangeDiff(coverLetter, true, "HEADER",
                 "This\nis\na\nfake\ncover letter\n");
-        const mailWithBranchDiff =
-            PatchSeries.insertBranchDiff(mails[1], false, "HEADER",
+        const mailWithRangeDiff =
+            PatchSeries.insertRangeDiff(mails[1], false, "HEADER",
                 "This\nis\na\nfake\ncover letter\n");
-        test("Branch diff is inserted correctly", () => {
-            expect(coverLetterWithBranchDiff).toMatch(
+        test("range-diff is inserted correctly", () => {
+            expect(coverLetterWithRangeDiff).toMatch(
                 // tslint:disable-next-line:max-line-length
                 /\n-- \n\nHEADER\n This\n is\n a\n fake\n cover letter\n\n2\.17/);
-            expect(mailWithBranchDiff).toMatch(
+            expect(mailWithRangeDiff).toMatch(
                 // tslint:disable-next-line:max-line-length
                 /\n---\n\nHEADER\n This\n is\n a\n fake\n cover letter\n\n README/);
         });

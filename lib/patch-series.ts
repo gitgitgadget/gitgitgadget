@@ -30,7 +30,7 @@ export class PatchSeries {
             headLabel: project.branchName,
             iteration: 1,
         };
-        let branchDiff: string = "";
+        let rangeDiff: string = "";
 
         if (latestTag) {
             const range = latestTag + "..." + project.branchName;
@@ -65,13 +65,13 @@ export class PatchSeries {
                 }
             });
 
-            branchDiff = await git(["tbdiff", "--no-color", range]);
+            rangeDiff = await git(["range-diff", "--no-color", range]);
         }
 
         const coverLetter =
             await gitConfig(`branch.${project.branchName}.description`);
 
-        return new PatchSeries(options, project, metadata, branchDiff,
+        return new PatchSeries(options, project, metadata, rangeDiff,
             coverLetter);
     }
 
@@ -88,7 +88,7 @@ export class PatchSeries {
         let metadata: IPatchSeriesMetadata | undefined =
             await notes.get<IPatchSeriesMetadata>(pullRequestURL);
 
-        let branchDiff: string = "";
+        let rangeDiff: string = "";
         if (metadata === undefined) {
             metadata = {
                 baseCommit,
@@ -109,8 +109,8 @@ export class PatchSeries {
             const previousRange =
                 `${metadata.baseCommit}..${metadata.headCommit}`;
             const currentRange = `${baseCommit}..${headCommit}`;
-            branchDiff = await git([
-                "tbdiff", "--no-color", previousRange, currentRange,
+            rangeDiff = await git([
+                "range-diff", "--no-color", previousRange, currentRange,
             ], { workDir });
 
             metadata.iteration++;
@@ -145,7 +145,7 @@ export class PatchSeries {
             basedOn, publishToRemote);
 
         return new PatchSeries(options, project, metadata,
-            branchDiff, coverLetter);
+            rangeDiff, coverLetter);
     }
 
     protected static parsePullRequestDescription(description: string): {
@@ -322,10 +322,10 @@ export class PatchSeries {
         return tagMessage + insert;
     }
 
-    protected static insertBranchDiff(mail: string, isCoverLetter: boolean,
-                                      branchDiffHeader: string,
-                                      branchDiff: string): string {
-        if (!branchDiff) {
+    protected static insertRangeDiff(mail: string, isCoverLetter: boolean,
+                                     rangeDiffHeader: string,
+                                     rangeDiff: string): string {
+        if (!rangeDiff) {
             return mail;
         }
 
@@ -334,29 +334,29 @@ export class PatchSeries {
             /^([^]*?\n---\n(?:\n[A-Za-z:]+ [^]*?\n\n)?)([^]*)$/;
         const match = mail.match(regex);
         if (!match) {
-            throw new Error("Failed to find branch-diff insertion "
+            throw new Error("Failed to find range-diff insertion "
                 + "point for\n\n" + mail);
         }
 
-        // split the branch-diff and prefix with a space
-        return match[1] + "\n" + (branchDiffHeader ?
-            branchDiffHeader + "\n" : "")
-            + branchDiff.replace(/(^|\n(?!$))/g, "$1 ") + "\n" + match[2];
+        // split the range-diff and prefix with a space
+        return match[1] + "\n" + (rangeDiffHeader ?
+            rangeDiffHeader + "\n" : "")
+            + rangeDiff.replace(/(^|\n(?!$))/g, "$1 ") + "\n" + match[2];
     }
 
     public readonly options: PatchSeriesOptions;
     public readonly project: ProjectOptions;
     public readonly metadata: IPatchSeriesMetadata;
-    public readonly branchDiff: string;
+    public readonly rangeDiff: string;
     public readonly coverLetter?: string;
 
     protected constructor(options: PatchSeriesOptions, project: ProjectOptions,
-                          metadata: IPatchSeriesMetadata, branchDiff: string,
+                          metadata: IPatchSeriesMetadata, rangeDiff: string,
                           coverLetter?: string) {
         this.options = options;
         this.project = project;
         this.metadata = metadata;
-        this.branchDiff = branchDiff;
+        this.rangeDiff = rangeDiff;
         this.coverLetter = coverLetter;
     }
 
@@ -426,11 +426,11 @@ export class PatchSeries {
             await this.generateTagObject(tagName, tagMessage);
         }
 
-        logger.log("Inserting branch-diff");
-        if (this.branchDiff) {
-            mails[0] = PatchSeries.insertBranchDiff(mails[0], mails.length > 1,
-                `Branch - diff vs v${this.metadata.iteration - 1}: `,
-                this.branchDiff);
+        logger.log("Inserting range-diff");
+        if (this.rangeDiff) {
+            mails[0] = PatchSeries.insertRangeDiff(mails[0], mails.length > 1,
+                `Range-diff vs v${this.metadata.iteration - 1}:\n`,
+                this.rangeDiff);
         }
 
         if (this.options.dryRun) {
