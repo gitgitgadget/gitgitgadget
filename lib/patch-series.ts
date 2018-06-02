@@ -404,18 +404,21 @@ export class PatchSeries {
             await PatchSeries.generateTagMessage(mails[0], mails.length > 1,
                 this.project.midUrlPrefix,
                 this.metadata.referencesMessageIds);
-        const url =
-            await gitConfig(`remote.${this.project.publishToRemote}.url`,
-                this.project.workDir);
-        if (!url) {
-            throw new Error(`remote ${this.project.publishToRemote} lacks URL`);
-        }
         const tagName =
             `${this.project.branchName}-v${this.metadata.iteration}`;
+        if (this.project.publishToRemote) {
+            const url =
+                await gitConfig(`remote.${this.project.publishToRemote}.url`,
+                    this.project.workDir);
+            if (!url) {
+                throw new Error(`remote ${this.project.publishToRemote
+                    } lacks URL`);
+            }
 
-        logger.log("Inserting links");
-        tagMessage = await PatchSeries.insertLinks(tagMessage, url, tagName,
-            this.project.basedOn);
+            logger.log("Inserting links");
+            tagMessage = await PatchSeries.insertLinks(tagMessage, url, tagName,
+                this.project.basedOn);
+        }
 
         if (this.options.dryRun) {
             logger.log("Would generate tag " + tagName
@@ -446,7 +449,9 @@ export class PatchSeries {
         }
 
         logger.log("Publishing branch and tag");
-        await this.publishBranch(tagName);
+        if (this.project.publishToRemote && !this.options.dryRun) {
+            await this.publishBranch(tagName);
+        }
     }
 
     protected async generateMBox(): Promise<string> {
