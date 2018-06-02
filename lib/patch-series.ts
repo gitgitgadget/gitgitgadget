@@ -230,6 +230,15 @@ export class PatchSeries {
                 return;
             }
 
+            if (thisAuthor.match(/^GitGitGadget </)) {
+                // Special-case GitGitGadget to send from
+                // "<author> via GitGitGadget"
+                thisAuthor = "\""
+                    + authorMatch[2].replace(/ <.*>$/, "")
+                    + " via GitGitGadget\" "
+                    + thisAuthor.replace(/^GitGitGadget /, "");
+            }
+
             header = authorMatch[1] + thisAuthor + authorMatch[3];
             const ccMatch = header.match(/^([^]*\nCc: .*?)(\n(?! )[^]*)$/);
             if (ccMatch) {
