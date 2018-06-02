@@ -68,11 +68,7 @@ export class PatchSeries {
             rangeDiff = await git(["range-diff", "--no-color", range]);
         }
 
-        const coverLetter =
-            await gitConfig(`branch.${project.branchName}.description`);
-
-        return new PatchSeries(options, project, metadata, rangeDiff,
-            coverLetter);
+        return new PatchSeries(options, project, metadata, rangeDiff);
     }
 
     public static async getFromNotes(notes: GitNotes,
@@ -395,6 +391,15 @@ export class PatchSeries {
             + "if needed");
         await PatchSeries.insertCcAndFromLines(mails, thisAuthor);
         if (mails.length > 1) {
+            if (this.coverLetter) {
+                const match2 = mails[0].match(
+                    /^([^]*?\n\*\*\* BLURB HERE \*\*\*\n\n)([^]*)/);
+                if (!match2) {
+                    throw new Error(`Could not find blurb in ${mails[0]}`);
+                }
+                mails[0] = `${match2[1]}${this.coverLetter}\n\n${match2[2]}`;
+            }
+
             logger.log("Fixing Subject: line of the cover letter");
             mails[0] = await PatchSeries.adjustCoverLetter(mails[0]);
         }
