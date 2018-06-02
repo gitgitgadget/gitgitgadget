@@ -8,6 +8,8 @@ export interface ILogger {
     log(message: string): void;
 }
 
+export type SendFunction = (mail: string) => Promise<string>;
+
 export class PatchSeries {
     public static async getFromTag(options: PatchSeriesOptions,
                                    project: ProjectOptions):
@@ -374,7 +376,8 @@ export class PatchSeries {
         }
     }
 
-    public async generateAndSend(logger: ILogger): Promise<void> {
+    public async generateAndSend(logger: ILogger,
+                                 send?: SendFunction): Promise<void> {
         if (this.options.dryRun) {
             logger.log("Dry-run " + this.project.branchName
                 + " v" + this.metadata.iteration);
@@ -457,6 +460,10 @@ export class PatchSeries {
                 + mbox.split("\n").map((line) => {
                     return "    " + line;
                 }).join("\n"));
+        } else if (send) {
+            for (const mail of mails) {
+                await send(mail);
+            }
         } else {
             logger.log("Calling the `send-mbox` alias");
             await this.sendMBox(mails.join("\n"));
