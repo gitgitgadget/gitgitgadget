@@ -45,7 +45,9 @@
     "typescript": "^2.8.3"
   },
   "dependencies": {
+    "@types/html-to-text": "^1.4.31",
     "dugite": "^1.63.0",
+    "html-to-text": "^4.0.0",
     "json-stable-stringify": "^1.0.1",
     "marked": "^0.4.0",
     "nodemailer": "^4.6.5",
