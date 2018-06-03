@@ -1,10 +1,18 @@
+const commands = require('probot-commands');
+
 module.exports = (robot) => {
-  // Your code here
-  robot.log('Yay, the app was loaded!')
+  robot.log('Yay, the app was loaded!');
 
-  // For more information on building apps:
-  // https://probot.github.io/docs/
+  commands(robot, 'submit', async (context, command) => {
+    const addComment = (comment) => {
+      await context.github.issues.createComment(context.issue({ body: comment }))
+    }
 
-  // To get your app running against GitHub, see:
-  // https://probot.github.io/docs/development/
+    if (command.arguments) {
+      addComment('/submit does not take arguments')
+      return;
+    }
+
+    addComment(`TODO: submit this:\n\n${JSON.stringify(context.payload, null, 4)}\n`)
+  })
 }
