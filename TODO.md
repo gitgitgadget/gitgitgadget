@@ -6,12 +6,9 @@ into a few categories (listed by priority, most important tasks first).
 
 ## Tasks that need to be completed before GitGitGadget can run for the first time
 
-- wire up a Probot
 - write mail-metadata notes (possibly updating them)
 - upon Probot-type of launch, (shallow-)fetch the notes ref and the PR ref into
   the local repository (possibly initializing it)
-- maintain a list of GitHub users allowed to use this in the "global options"
-  (stored as note to the empty blob)
 
 ## These tasks should be the focus immediately after GitGitGadget works
 
