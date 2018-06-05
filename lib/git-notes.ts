@@ -19,10 +19,7 @@ export class GitNotes {
     }
 
     public async getString(key: string): Promise<string | undefined> {
-        const obj = await git(["hash-object", "--stdin"], {
-            stdin: key,
-            workDir: this.workDir,
-        });
+        const obj = await this.key2obj(key);
         try {
             return await this.notes("show", obj);
         } catch (reason) {
@@ -30,12 +27,13 @@ export class GitNotes {
         }
     }
 
-    public async set<T>(key: string, value: T): Promise<void> {
-        return this.setString(key, toJSON(value));
+    public async set<T>(key: string, value: T, force?: boolean): Promise<void> {
+        return await this.setString(key, toJSON(value), force);
     }
 
-    public async setString(key: string, value: string): Promise<void> {
-        const obj = await git(["hash-object", "--stdin"], { stdin: key });
+    public async setString(key: string, value: string, force?: boolean):
+        Promise<void> {
+        const obj = await this.key2obj(key);
         if (!await revParse(`${obj}^{blob}`, this.workDir)) {
             try {
                 /*
@@ -54,7 +52,18 @@ export class GitNotes {
                 await this.notes("remove", emptyBlobName);
             }
         }
-        await this.notes("add", "-m", value, obj);
+        if (force) {
+            await this.notes("add", "-f", "-m", value, obj);
+        } else {
+            await this.notes("add", "-m", value, obj);
+        }
+    }
+
+    protected async key2obj(key: string): Promise<string> {
+        return await git(["hash-object", "--stdin"], {
+            stdin: `${key}\n`,
+            workDir: this.workDir,
+        });
     }
 
     protected async notes(...args: string[]): Promise<string> {
