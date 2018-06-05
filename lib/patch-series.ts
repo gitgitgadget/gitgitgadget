@@ -426,8 +426,15 @@ export class PatchSeries {
             await PatchSeries.generateTagMessage(mails[0], mails.length > 1,
                 this.project.midUrlPrefix,
                 this.metadata.referencesMessageIds);
-        const tagName =
-            `${this.project.branchName}-v${this.metadata.iteration}`;
+        let tagName;
+        if (!this.metadata.pullRequestURL) {
+            tagName = `${this.project.branchName}-v${this.metadata.iteration}`;
+        } else {
+            const prNumber = this.metadata.pullRequestURL
+                .replace(/.*\/pull\/(\d+).*/, "$1");
+            const branch = this.metadata.headLabel.replace(/:/g, "/");
+            tagName = `pr-${prNumber}/${branch}-v${this.metadata.iteration}`;
+        }
         if (this.project.publishToRemote) {
             const url =
                 await gitConfig(`remote.${this.project.publishToRemote}.url`,
