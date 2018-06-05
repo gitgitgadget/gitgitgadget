@@ -8,6 +8,9 @@ import {
     isDirectory, ITestCommitOptions, testCommit, testCreateRepo,
 } from "./test-lib";
 
+// This test script might take quite a while to run
+jest.setTimeout(60000);
+
 const expectedMails = [
     `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
 Message-Id: <pull.<Message-ID>>
@@ -187,7 +190,9 @@ Cc: Some Body <somebody@example.com>
     expect(match2).toBeTruthy();
 
     const patches = await PatchSeries.getFromNotes(notes, pullRequestURL,
-        description, "next", baseCommit, "somebody:master", headCommit);
+        description,
+        "gitgitgadget:next", baseCommit,
+        "somebody:master", headCommit);
 
     expect(patches.coverLetter).toEqual(`My first Pull Request!
 
@@ -196,7 +201,7 @@ have included in git.git.`);
 
     const mails = [];
     const midRegex = new RegExp("<(pull|[0-9a-f]{40})"
-        + ".\\d+\\.git\\.gitgitgadget@example\\.com>", "g");
+        + "\\.\\d+(\\.v\\d+)?\\.git\\.gitgitgadget@example\\.com>", "g");
     async function send(mail: string): Promise<string> {
         if (mails.length === 0) {
             mail = mail.replace(/(\nDate: ).*/, "$1<Cover-Letter-Date>");
@@ -218,5 +223,19 @@ have included in git.git.`);
     mails.splice(0);
     expect(await patches2.generateAndSend(logger, send)).toBeUndefined();
     expect(mails.length).toEqual(5);
-    expect(await revParse("pr-1/somebody/master-v1", workDir)).toBeDefined();
+    expect(mails[0]).toMatch(/Range-diff vs v1:\n[^]*\n -: .* 4: /);
+    expect(await revParse("pr-1/somebody/master-v2", workDir)).toBeDefined();
+
+    expect(await notes.get(pullRequestURL)).toEqual({
+        baseCommit,
+        baseLabel: "gitgitgadget:next",
+        coverLetterMessageId: "pull.1.v2.git.gitgitgadget@example.com",
+        headCommit: headCommit2,
+        headLabel: "somebody:master",
+        iteration: 2,
+        pullRequestURL,
+        referencesMessageIds: [
+            "pull.1.git.gitgitgadget@example.com",
+        ],
+    } as IPatchSeriesMetadata);
 });
