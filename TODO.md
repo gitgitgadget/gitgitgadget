@@ -8,7 +8,6 @@ into a few categories (listed by priority, most important tasks first).
 
 - wire up a Probot
 - update the Message-IDs in the metadata
-- write the Git notes from `generateAndSend()`
 - test that iterations 2 and later work correctly (including notes)
 - add a test verifying that the tag is created
 - push the tag in GitGitGadget mode (should take an option

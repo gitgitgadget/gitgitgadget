@@ -485,6 +485,11 @@ export class PatchSeries {
         if (this.project.publishToRemote && !this.options.dryRun) {
             await this.publishBranch(tagName);
         }
+
+        if (!this.options.dryRun) {
+            await this.notes.set(this.metadata.pullRequestURL ||
+                this.project.branchName, this.metadata, true);
+        }
     }
 
     protected async generateMBox(): Promise<string> {
