@@ -7,7 +7,6 @@ into a few categories (listed by priority, most important tasks first).
 ## Tasks that need to be completed before GitGitGadget can run for the first time
 
 - wire up a Probot
-- update the Message-IDs in the metadata
 - test that iterations 2 and later work correctly (including notes)
 - add a test verifying that the tag is created
 - push the tag in GitGitGadget mode (should take an option

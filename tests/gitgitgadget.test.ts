@@ -10,7 +10,7 @@ import {
 
 const expectedMails = [
     `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
-Message-Id: <cover.<Message-ID>>
+Message-Id: <pull.<Message-ID>>
 From: GitGitGadget <gitgitgadget@example.com>
 Date: <Cover-Letter-Date>
 Subject: [PATCH 0/3] My first Pull Request!
@@ -47,8 +47,8 @@ base-commit: 0ae4d8d45ce43d7ad56faff2feeacf8ed5293518
 2.17.0.windows.1
 `, `From 44e454a6c1acb125e95d3ba9f57242445fb6beeb Mon Sep 17 00:00:00 2001
 Message-Id: <44e454a6c1acb125e95d3ba9f57242445fb6beeb.<Message-ID>>
-In-Reply-To: <cover.<Message-ID>>
-References: <cover.<Message-ID>>
+In-Reply-To: <pull.<Message-ID>>
+References: <pull.<Message-ID>>
 From: GitGitGadget <gitgitgadget@example.com>
 Date: Fri, 13 Feb 2009 23:33:30 +0000
 Subject: [PATCH 1/3] A
@@ -77,8 +77,8 @@ index 0000000..8c7e5a6
 
 `, `From 0f7ccd74ef817f36e77c07eb918ebee41f6ab9e7 Mon Sep 17 00:00:00 2001
 Message-Id: <0f7ccd74ef817f36e77c07eb918ebee41f6ab9e7.<Message-ID>>
-In-Reply-To: <cover.<Message-ID>>
-References: <cover.<Message-ID>>
+In-Reply-To: <pull.<Message-ID>>
+References: <pull.<Message-ID>>
 From: "Contributor via GitGitGadget" <gitgitgadget@example.com>
 Date: Fri, 13 Feb 2009 23:34:30 +0000
 Subject: [PATCH 2/3] B
@@ -110,8 +110,8 @@ index 0000000..7371f47
 
 `, `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
 Message-Id: <566155e00ab72541ff0ac21eab84d087b0e882a5.<Message-ID>>
-In-Reply-To: <cover.<Message-ID>>
-References: <cover.<Message-ID>>
+In-Reply-To: <pull.<Message-ID>>
+References: <pull.<Message-ID>>
 From: "Contributor via GitGitGadget" <gitgitgadget@example.com>
 Date: Fri, 13 Feb 2009 23:35:30 +0000
 Subject: [PATCH 3/3] C
@@ -195,7 +195,7 @@ This Pull Request contains some really important changes that I would love to
 have included in git.git.`);
 
     const mails = [];
-    const midRegex = new RegExp("<(cover|[0-9a-f]{40})"
+    const midRegex = new RegExp("<(pull|[0-9a-f]{40})"
         + ".\\d+\\.git\\.gitgitgadget@example\\.com>", "g");
     async function send(mail: string): Promise<string> {
         if (mails.length === 0) {

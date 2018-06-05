@@ -421,6 +421,36 @@ export class PatchSeries {
             mails[0] = await PatchSeries.adjustCoverLetter(mails[0]);
         }
 
+        const midMatch = mails[0].match(/\nMessage-ID: <(.*)>/i);
+        let coverMid = midMatch ? midMatch[1] : undefined;
+
+        if (this.metadata.pullRequestURL) {
+            if (!coverMid) {
+                throw new Error(`Could not extract cover letter Message-ID`);
+            }
+
+            const emailMatch = thisAuthor.match(/<(.*)>/);
+            if (!emailMatch) {
+                throw new Error(`Could not parse email of '${thisAuthor}`);
+            }
+            const email = emailMatch[1];
+
+            const prMatch = this.metadata.pullRequestURL
+                .match(/\/([^\/]+)\/pull\/(\d+)$/);
+            if (prMatch) {
+                const infix = this.metadata.iteration > 1 ?
+                    `.v${this.metadata.iteration}` : "";
+                const newCoverMid =
+                    `pull.${prMatch[2]}${infix}.${prMatch[1]}.${email}`;
+                mails.map((value: string, index: number): void => {
+                    // cheap replace-all
+                    mails[index] = value.split(coverMid!).join(newCoverMid);
+                });
+                coverMid = newCoverMid;
+            }
+        }
+        this.metadata.coverLetterMessageId = coverMid;
+
         logger.log("Generating tag message");
         let tagMessage =
             await PatchSeries.generateTagMessage(mails[0], mails.length > 1,
