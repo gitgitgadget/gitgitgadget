@@ -8,6 +8,7 @@ export interface IPatchSeriesMetadata {
     headLabel: string;
     iteration: number;
     coverLetterMessageId?: string;
+    latestTag?: string;
     referencesMessageIds?: string[];
     branchNameInGitsterGit?: string;
     integratedIntoGitGitBranch?: GitGitIntegrationBranch;

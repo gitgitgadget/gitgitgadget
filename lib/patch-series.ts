@@ -488,6 +488,7 @@ export class PatchSeries {
         } else {
             logger.log("Generating tag object");
             await this.generateTagObject(tagName, tagMessage);
+            this.metadata.latestTag = tagName;
         }
 
         logger.log("Inserting range-diff");

@@ -233,6 +233,7 @@ have included in git.git.`);
         headCommit: headCommit2,
         headLabel: "somebody:master",
         iteration: 2,
+        latestTag: "pr-1/somebody/master-v2",
         pullRequestURL,
         referencesMessageIds: [
             "pull.1.git.gitgitgadget@example.com",
