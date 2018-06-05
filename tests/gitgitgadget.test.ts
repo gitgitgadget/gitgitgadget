@@ -210,7 +210,8 @@ have included in git.git.`);
 
         return "Message-ID";
     }
-    expect(await patches.generateAndSend(logger, send)).toEqual("Message-ID");
+    expect(await patches.generateAndSend(logger, send))
+        .toEqual("pull.1.git.gitgitgadget@example.com");
     expect(mails).toEqual(expectedMails);
 
     expect(await testCommit(gitOpts, "D")).not.toEqual("");
@@ -221,7 +222,8 @@ have included in git.git.`);
         "gitgitgadget:next", baseCommit,
         "somebody:master", headCommit2);
     mails.splice(0);
-    expect(await patches2.generateAndSend(logger, send)).toBeUndefined();
+    expect(await patches2.generateAndSend(logger, send))
+        .toEqual("pull.1.v2.git.gitgitgadget@example.com");
     expect(mails.length).toEqual(5);
     expect(mails[0]).toMatch(/Range-diff vs v1:\n[^]*\n -: .* 4: /);
     expect(await revParse("pr-1/somebody/master-v2", workDir)).toBeDefined();

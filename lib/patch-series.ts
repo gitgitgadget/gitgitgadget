@@ -382,7 +382,8 @@ export class PatchSeries {
     }
 
     public async generateAndSend(logger: ILogger,
-                                 send?: SendFunction): Promise<void> {
+                                 send?: SendFunction):
+        Promise<string | undefined> {
         if (this.options.dryRun) {
             logger.log("Dry-run " + this.project.branchName
                 + " v" + this.metadata.iteration);
@@ -521,6 +522,8 @@ export class PatchSeries {
             await this.notes.set(this.metadata.pullRequestURL ||
                 this.project.branchName, this.metadata, true);
         }
+
+        return this.metadata.coverLetterMessageId;
     }
 
     protected async generateMBox(): Promise<string> {
