@@ -70,7 +70,9 @@ export class PatchSeries {
             rangeDiff = await git(["range-diff", "--no-color", range]);
         }
 
-        return new PatchSeries(options, project, metadata, rangeDiff);
+        const notes =
+            new GitNotes(project.workDir, "refs/notes/mail-patch-series");
+        return new PatchSeries(notes, options, project, metadata, rangeDiff);
     }
 
     public static async getFromNotes(notes: GitNotes,
@@ -142,7 +144,7 @@ export class PatchSeries {
         const project = await ProjectOptions.get(workDir, headCommit, cc || [],
             basedOn, publishToRemote);
 
-        return new PatchSeries(options, project, metadata,
+        return new PatchSeries(notes, options, project, metadata,
             rangeDiff, coverLetter);
     }
 
@@ -351,15 +353,18 @@ export class PatchSeries {
             + rangeDiff.replace(/(^|\n(?!$))/g, "$1 ") + "\n" + match[2];
     }
 
+    public readonly notes: GitNotes;
     public readonly options: PatchSeriesOptions;
     public readonly project: ProjectOptions;
     public readonly metadata: IPatchSeriesMetadata;
     public readonly rangeDiff: string;
     public readonly coverLetter?: string;
 
-    protected constructor(options: PatchSeriesOptions, project: ProjectOptions,
+    protected constructor(notes: GitNotes, options: PatchSeriesOptions,
+                          project: ProjectOptions,
                           metadata: IPatchSeriesMetadata, rangeDiff: string,
                           coverLetter?: string) {
+        this.notes = notes;
         this.options = options;
         this.project = project;
         this.metadata = metadata;
