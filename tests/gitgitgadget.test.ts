@@ -239,4 +239,36 @@ have included in git.git.`);
             "pull.1.git.gitgitgadget@example.com",
         ],
     } as IPatchSeriesMetadata);
+
+    // verify that the tag was generated correctly
+    expect((await git(["cat-file", "tag", "pr-1/somebody/master-v2"], gitOpts))
+        .replace(/^[^]*?\n\n/, "")).toEqual(`My first Pull Request!
+
+This Pull Request contains some really important changes that I would love to
+have included in git.git.
+
+Contributor (1):
+  B
+
+Developer (1):
+  C
+
+GitGitGadget (2):
+  A
+  D
+
+ A.t | 1 +
+ B.t | 1 +
+ C.t | 1 +
+ D.t | 1 +
+ 4 files changed, 4 insertions(+)
+ create mode 100644 A.t
+ create mode 100644 B.t
+ create mode 100644 C.t
+ create mode 100644 D.t
+
+base-commit: 0ae4d8d45ce43d7ad56faff2feeacf8ed5293518
+
+Submitted-As: https://dummy.com/?mid=pull.1.v2.git.gitgitgadget@example.com
+In-Reply-To: https://dummy.com/?mid=pull.1.git.gitgitgadget@example.com`);
 });

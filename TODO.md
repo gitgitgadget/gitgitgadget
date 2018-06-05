@@ -7,7 +7,6 @@ into a few categories (listed by priority, most important tasks first).
 ## Tasks that need to be completed before GitGitGadget can run for the first time
 
 - wire up a Probot
-- add a test verifying that the tag is created
 - push the tag in GitGitGadget mode (should take an option
   `pushTagAndNotesToRemote`)
 - write mail-metadata notes (possibly updating them)
