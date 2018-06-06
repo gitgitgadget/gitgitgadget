@@ -1,6 +1,7 @@
 import "jest";
 import { git, revParse } from "../lib/git";
 import { GitNotes } from "../lib/git-notes";
+import { IGitGitGadgetOptions } from "../lib/gitgitgadget";
 import { PatchSeries } from "../lib/patch-series";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata";
 import { ProjectOptions } from "../lib/project-options";
@@ -154,6 +155,14 @@ test("generate tag/notes from a Pull Request", async () => {
         },
     };
     const workDir = await testCreateRepo(__filename);
+    const notes = new GitNotes(workDir);
+
+    const gitGitGadgetOptions: IGitGitGadgetOptions = {
+        allowedUsers: ["somebody"],
+    };
+    expect(await notes.set("", gitGitGadgetOptions)).toBeUndefined();
+    expect(await notes.get("")).toEqual(gitGitGadgetOptions);
+
     const gitOpts: ITestCommitOptions = { workDir };
 
     await git(["config", "user.name", "GitGitGadget"], gitOpts);
@@ -177,7 +186,6 @@ test("generate tag/notes from a Pull Request", async () => {
     expect(await testCommit(gitOpts3, "C")).not.toEqual("");
     const headCommit = await revParse("HEAD", workDir);
 
-    const notes = new GitNotes(workDir);
     const pullRequestURL = "https://github.com/gitgitgadget/git/pull/1";
     const description = `My first Pull Request!
 

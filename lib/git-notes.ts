@@ -34,7 +34,8 @@ export class GitNotes {
     public async setString(key: string, value: string, force?: boolean):
         Promise<void> {
         const obj = await this.key2obj(key);
-        if (!await revParse(`${obj}^{blob}`, this.workDir)) {
+        if (obj !== emptyBlobName &&
+            !await revParse(`${obj}^{blob}`, this.workDir)) {
             try {
                 /*
                  * Annotate the notes ref's tip itself, just to make sure that
@@ -65,6 +66,9 @@ export class GitNotes {
     }
 
     protected async key2obj(key: string): Promise<string> {
+        if (!key) {
+            return emptyBlobName;
+        }
         return await git(["hash-object", "--stdin"], {
             stdin: `${key}\n`,
             workDir: this.workDir,
