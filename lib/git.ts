@@ -51,6 +51,18 @@ export async function revParse(argument: string, workDir?: string) {
     return result.exitCode ? undefined : trimTrailingNewline(result.stdout);
 }
 
+/**
+ * Determine whether a certain commit exists
+ *
+ * @param {string} commit the name of the commit
+ * @param {string} workDir the Git worktree where to look
+ * @returns {boolean} whether the commit exists
+ */
+export async function commitExists(commit: string, workDir: string):
+    Promise<boolean> {
+    return await revParse(`${commit}^{commit}`, workDir) !== undefined;
+}
+
 export async function gitConfig(key: string, workDir?: string):
     Promise<string | undefined> {
     const result = await GitProcess.exec(["config", key], workDir || ".");

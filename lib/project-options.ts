@@ -1,4 +1,6 @@
-import { git, gitConfig, gitConfigForEach, revParse } from "./git";
+import {
+    commitExists, git, gitConfig, gitConfigForEach,
+} from "./git";
 
 // For now, only the Git, Cygwin and BusyBox projects are supported
 export class ProjectOptions {
@@ -37,7 +39,7 @@ export class ProjectOptions {
         let to: string;
         let midUrlPrefix: string = " Message-ID: ";
 
-        if (await this.commitExists("e83c5163316f89bfbde", workDir)) {
+        if (await commitExists("e83c5163316f89bfbde", workDir)) {
             // Git
             to = "--to=git@vger.kernel.org";
             cc.push("Junio C Hamano <gitster@pobox.com>");
@@ -51,20 +53,20 @@ export class ProjectOptions {
                 upstreamBranch = "upstream/master";
             }
             midUrlPrefix = "https://public-inbox.org/git/";
-        } else if (await this.commitExists("a3acbf46947e52ff596", workDir)) {
+        } else if (await commitExists("a3acbf46947e52ff596", workDir)) {
             // Cygwin
             to = "--to=cygwin-patches@cygwin.com";
             upstreamBranch = "cygwin/master";
             midUrlPrefix = "https://www.mail-archive.com/search?"
                 + "l=cygwin-patches@cygwin.com&q=";
-        } else if (await this.commitExists("cc8ed39b240180b5881", workDir)) {
+        } else if (await commitExists("cc8ed39b240180b5881", workDir)) {
             // BusyBox
             to = "--to=busybox@busybox.net";
             upstreamBranch = "busybox/master";
             midUrlPrefix = "https://www.mail-archive.com/search?"
                 + "l=busybox@busybox.net&q=";
-        } else if (await this.commitExists("0c16a2d9ca7a82f08f3", workDir) ||
-            await this.commitExists("0ae4d8d45ce43d7ad56", workDir)) {
+        } else if (await commitExists("0c16a2d9ca7a82f08f3", workDir) ||
+            await commitExists("0ae4d8d45ce43d7ad56", workDir)) {
             // We're running in the test suite!
             to = "--to=reviewer@example.com";
             upstreamBranch = "master";
@@ -87,18 +89,13 @@ export class ProjectOptions {
             publishToRemote, to, cc, midUrlPrefix, workDir);
     }
 
-    protected static async commitExists(commit: string, workDir: string):
-        Promise<boolean> {
-        return await revParse(`${commit}^{commit}`, workDir) !== undefined;
-    }
-
     protected static async determineBaseBranch(workDir: string,
                                                branchName: string,
                                                publishToRemote?: string):
         Promise<string | undefined> {
         const basedOn =
             await gitConfig(`branch.${branchName}.basedon`, workDir);
-        if (!basedOn || !await this.commitExists(basedOn, workDir)) {
+        if (!basedOn || !await commitExists(basedOn, workDir)) {
             return undefined;
         }
 
@@ -107,7 +104,7 @@ export class ProjectOptions {
         }
 
         const remoteRef = `refs/remotes/${publishToRemote}/${basedOn}`;
-        if (!await this.commitExists(remoteRef, workDir)) {
+        if (!await commitExists(remoteRef, workDir)) {
             throw new Error(`${basedOn} not pushed to ${publishToRemote}`);
         }
 
