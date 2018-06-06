@@ -59,6 +59,11 @@ export class GitNotes {
         }
     }
 
+    public async appendCommitNote(commit: string, note: string):
+        Promise<string> {
+        return await this.notes("append", "-m", note, commit);
+    }
+
     protected async key2obj(key: string): Promise<string> {
         return await git(["hash-object", "--stdin"], {
             stdin: `${key}\n`,

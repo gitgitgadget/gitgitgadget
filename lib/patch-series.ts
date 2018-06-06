@@ -1,5 +1,6 @@
-import { git, gitConfig, revParse } from "./git";
+import { commitExists, git, gitConfig, revParse } from "./git";
 import { GitNotes } from "./git-notes";
+import { IMailMetadata } from "./mail-metadata";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
 import { PatchSeriesOptions } from "./patch-series-options";
 import { ProjectOptions } from "./project-options";
@@ -512,6 +513,26 @@ export class PatchSeries {
         } else {
             logger.log("Calling the `send-mbox` alias");
             await this.sendMBox(mails.join("\n"));
+        }
+
+        logger.log("Updating the mail metadata");
+        for (const mail of mails) {
+            const messageID = mail.match(/\nMessage-ID: <(.*?)>\n/i);
+            if (messageID) {
+                const mid = messageID[1];
+                const commitMatch = mail.match(/^From ([0-9a-f]{40}) /);
+                const originalCommit = commitMatch && commitMatch[1];
+                await this.notes.set(mid, {
+                    messageID: mid,
+                    originalCommit,
+                    pullRequestURL: this.metadata.pullRequestURL,
+                } as IMailMetadata);
+
+                if (originalCommit &&
+                    await commitExists(originalCommit, this.project.workDir)) {
+                    await this.notes.appendCommitNote(originalCommit, mid);
+                }
+            }
         }
 
         logger.log("Publishing branch and tag");

@@ -4,10 +4,6 @@ GitGitGadget is a live Open Source project. As such, it will probably never be
 finished. Here are a few features that may materialize at some stage, organized
 into a few categories (listed by priority, most important tasks first).
 
-## Tasks that need to be completed before GitGitGadget can run for the first time
-
-- write mail-metadata notes (possibly updating them)
-
 ## These tasks should be the focus immediately after GitGitGadget works
 
 - add links to the PR and the branch to-be-merged to the cover letter
