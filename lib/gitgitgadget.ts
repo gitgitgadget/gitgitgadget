@@ -1,4 +1,5 @@
-import { gitConfig } from "./git";
+import { isDirectory } from "./fs-util";
+import { git, gitConfig } from "./git";
 import { GitNotes } from "./git-notes";
 import { PatchSeries } from "./patch-series";
 import { ISMTPOptions, parseHeadersAndSendMail } from "./send-mail";
@@ -19,12 +20,6 @@ export class GitGitGadget {
             }
         }
         const notes = new GitNotes(workDir);
-        let options = await notes.get<IGitGitGadgetOptions>("");
-        if (options === undefined) {
-            options = {
-                allowedUsers: [],
-            };
-        }
 
         const smtpUser = await gitConfig("gitgitgadget.smtpUser");
         const smtpHost = await gitConfig("gitgitgadget.smtpHost");
@@ -39,25 +34,48 @@ export class GitGitGadget {
             throw new Error(`No remote to which to push configured`);
         }
 
-        return new GitGitGadget(notes, options,
+        const [options, allowedUsers] = await GitGitGadget.readOptions(notes);
+
+        return new GitGitGadget(notes,
+            options, allowedUsers,
             smtpUser, smtpHost, smtpPass,
             publishTagsAndNotesToRemote);
     }
 
+    protected static async readOptions(notes: GitNotes):
+        Promise<[IGitGitGadgetOptions, Set<string>]> {
+        let options = await notes.get<IGitGitGadgetOptions>("");
+        if (options === undefined) {
+            options = {
+                allowedUsers: [],
+            };
+        }
+        const allowedUsers = new Set<string>(options.allowedUsers);
+
+        return [options, allowedUsers];
+    }
+
+    protected readonly workDir: string;
     protected readonly notes: GitNotes;
-    protected readonly options: IGitGitGadgetOptions;
-    protected readonly allowedUsers: Set<string>;
+    protected options: IGitGitGadgetOptions;
+    protected allowedUsers: Set<string>;
 
     protected readonly smtpOptions: ISMTPOptions;
 
     protected readonly publishTagsAndNotesToRemote: string;
 
-    protected constructor(notes: GitNotes, options: IGitGitGadgetOptions,
+    protected constructor(notes: GitNotes,
+                          options: IGitGitGadgetOptions,
+                          allowedUsers: Set<string>,
                           smtpUser: string, smtpHost: string, smtpPass: string,
                           publishTagsAndNotesToRemote: string) {
+        if (!notes.workDir) {
+            throw new Error(`Could not determine Git worktree`);
+        }
+        this.workDir = notes.workDir;
         this.notes = notes;
         this.options = options;
-        this.allowedUsers = new Set<string>(options.allowedUsers);
+        this.allowedUsers = allowedUsers;
 
         this.smtpOptions = { smtpHost, smtpPass, smtpUser };
 
@@ -96,10 +114,16 @@ export class GitGitGadget {
         if (!this.isUserAllowed(gitHubUser)) {
             throw new Error(`Permission denied for user ${gitHubUser}`);
         }
-        if (!pullRequestURL
-            .startsWith("https://github.com/gitgitgadget/git/pull/")) {
+
+        const urlPrefix = "https://github.com/gitgitgadget/git/pull/";
+        if (!pullRequestURL.startsWith(urlPrefix)) {
             throw new Error(`Unsupported repository: ${pullRequestURL}`);
         }
+
+        const pullRequestNumber =
+            parseInt(pullRequestURL.substr(urlPrefix.length), 10);
+        await this.updateNotesAndPullRef(pullRequestNumber);
+
         const series = await PatchSeries.getFromNotes(this.notes,
             pullRequestURL, description, baseLabel, baseCommit, headLabel,
             headCommit);
@@ -111,5 +135,27 @@ export class GitGitGadget {
             this.publishTagsAndNotesToRemote,
         );
         return coverMid;
+    }
+
+    protected async updateNotesAndPullRef(pullRequestNumber: number):
+        Promise<string> {
+        if (!await isDirectory(this.workDir)) {
+            await git(["init", "--bare", this.workDir]);
+        }
+
+        const pullRequestRef = `refs/pull/${pullRequestNumber}/head`;
+        await git([
+            "fetch",
+            this.publishTagsAndNotesToRemote,
+            "--",
+            `+${this.notes.notesRef}:${this.notes.notesRef}`,
+            `+${pullRequestRef}:${pullRequestRef}`,
+        ], { workDir: this.workDir });
+
+        // re-read options
+        [this.options, this.allowedUsers] =
+            await GitGitGadget.readOptions(this.notes);
+
+        return pullRequestRef;
     }
 }
