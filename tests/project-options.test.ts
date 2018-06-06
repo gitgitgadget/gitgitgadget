@@ -1,9 +1,10 @@
 import "jest";
+import { isDirectory } from "../lib/fs-util";
 import { git } from "../lib/git";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata";
 import { ProjectOptions } from "../lib/project-options";
 import {
-    isDirectory, ITestCommitOptions, testCommit, testCreateRepo,
+    ITestCommitOptions, testCommit, testCreateRepo,
 } from "./test-lib";
 
 // This test script might take quite a while to run

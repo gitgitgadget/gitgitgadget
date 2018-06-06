@@ -1,25 +1,14 @@
 import * as fs from "fs";
 import * as util from "util";
+import { isDirectory } from "../lib/fs-util";
 import { git, IGitOptions, revParse } from "../lib/git";
 
 const mkdir = util.promisify(fs.mkdir);
 const readdir = util.promisify(fs.readdir);
 const realpath = util.promisify(fs.realpath);
 const rmdir = util.promisify(fs.rmdir);
-const stat = util.promisify(fs.stat);
 const writeFile = util.promisify(fs.writeFile);
 const unlink = util.promisify(fs.unlink);
-
-export async function isDirectory(path: string): Promise<boolean> {
-    try {
-        if ((await stat(path)).isDirectory()) {
-            return true;
-        }
-    } catch (reason) {
-        /* it's okay */
-    }
-    return false;
-}
 
 export async function removeRecursively(path: string): Promise<void> {
     if (!await isDirectory(path)) {

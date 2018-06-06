@@ -1,8 +1,9 @@
 import "jest";
+import { isDirectory } from "../lib/fs-util";
 import { emptyBlobName, git } from "../lib/git";
 import { GitNotes } from "../lib/git-notes";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata";
-import { isDirectory, testCreateRepo } from "./test-lib";
+import { testCreateRepo } from "./test-lib";
 
 test("set/get notes", async () => {
     const workDir = await testCreateRepo(__filename);
