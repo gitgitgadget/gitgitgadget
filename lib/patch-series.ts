@@ -382,7 +382,8 @@ export class PatchSeries {
     }
 
     public async generateAndSend(logger: ILogger,
-                                 send?: SendFunction):
+                                 send?: SendFunction,
+                                 publishTagsAndNotesToRemote?: string):
         Promise<string | undefined> {
         if (this.options.dryRun) {
             logger.log("Dry-run " + this.project.branchName
@@ -521,6 +522,15 @@ export class PatchSeries {
         if (!this.options.dryRun) {
             await this.notes.set(this.metadata.pullRequestURL ||
                 this.project.branchName, this.metadata, true);
+        }
+
+        if (!this.options.dryRun && publishTagsAndNotesToRemote) {
+            await git([
+                "push",
+                publishTagsAndNotesToRemote,
+                this.notes.notesRef,
+                `refs/tags/${tagName}`,
+            ], { workDir: this.notes.workDir });
         }
 
         return this.metadata.coverLetterMessageId;

@@ -7,8 +7,6 @@ into a few categories (listed by priority, most important tasks first).
 ## Tasks that need to be completed before GitGitGadget can run for the first time
 
 - wire up a Probot
-- push the tag in GitGitGadget mode (should take an option
-  `pushTagAndNotesToRemote`)
 - write mail-metadata notes (possibly updating them)
 - upon Probot-type of launch, (shallow-)fetch the notes ref and the PR ref into
   the local repository (possibly initializing it)
