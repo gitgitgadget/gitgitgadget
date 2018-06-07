@@ -2,12 +2,13 @@ import { emptyBlobName, git, revParse } from "./git";
 import { fromJSON, toJSON } from "./json-util";
 
 export class GitNotes {
+    public static readonly defaultNotesRef = "refs/notes/gitgitgadget";
     public readonly workDir?: string;
     public readonly notesRef: string;
 
     public constructor(workDir?: string, notesRef?: string) {
         this.workDir = workDir;
-        this.notesRef = notesRef || "refs/notes/gitgitgadget";
+        this.notesRef = notesRef || GitNotes.defaultNotesRef;
     }
 
     public async get<T>(key: string): Promise<T | undefined> {

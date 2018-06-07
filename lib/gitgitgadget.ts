@@ -19,6 +19,26 @@ export class GitGitGadget {
                 throw new Error(`Could not find GitGitGadget's work tree`);
             }
         }
+
+        const publishTagsAndNotesToRemote =
+            await gitConfig("gitgitgadget.publishRemote");
+        if (!publishTagsAndNotesToRemote) {
+            throw new Error(`No remote to which to push configured`);
+        }
+
+        // Initialize the worktree if necessary
+        if (!await isDirectory(workDir)) {
+            await git(["init", "--bare", workDir]);
+        }
+
+        // Always fetch the Git notes first thing
+        await git([
+            "fetch",
+            publishTagsAndNotesToRemote,
+            "--",
+            `${GitNotes.defaultNotesRef}:${GitNotes.defaultNotesRef}`,
+        ], { workDir });
+
         const notes = new GitNotes(workDir);
 
         const smtpUser = await gitConfig("gitgitgadget.smtpUser");
@@ -26,12 +46,6 @@ export class GitGitGadget {
         const smtpPass = await gitConfig("gitgitgadget.smtpPass");
         if (!smtpUser || !smtpHost || !smtpPass) {
             throw new Error(`No SMTP settings configured`);
-        }
-
-        const publishTagsAndNotesToRemote =
-            await gitConfig("gitgitgadget.publishRemote");
-        if (!publishTagsAndNotesToRemote) {
-            throw new Error(`No remote to which to push configured`);
         }
 
         const [options, allowedUsers] = await GitGitGadget.readOptions(notes);
