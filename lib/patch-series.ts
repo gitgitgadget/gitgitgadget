@@ -601,6 +601,7 @@ export class PatchSeries {
             args.push("-f");
         }
         args.push(tagName);
+        args.push(this.metadata.headCommit);
         await git(args, { stdin: tagMessage, workDir: this.project.workDir });
     }
 
