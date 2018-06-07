@@ -164,6 +164,10 @@ export class GitGitGadget {
             "--",
             `+${this.notes.notesRef}:${this.notes.notesRef}`,
             `+${pullRequestRef}:${pullRequestRef}`,
+            `+refs/heads/maint:refs/remotes/upstream/maint`,
+            `+refs/heads/master:refs/remotes/upstream/master`,
+            `+refs/heads/next:refs/remotes/upstream/next`,
+            `+refs/heads/pu:refs/remotes/upstream/pu`,
         ], { workDir: this.workDir });
 
         // re-read options
