@@ -41,6 +41,9 @@ into a few categories (listed by priority, most important tasks first).
 - If there is any unfinished Check, GitGitGadget should set a flag, and listen
   to the Check events and send the patch series upon success (and refuse to send
   it upon failure).
+- Add a new `/suggest reviewers` feature that will automatically generate a
+  list of potential reviewers.  An example script [git-reviewers](https://gist.github.com/alekstorm/4949628/)
+  exists that could be used as a model.
 
 ## Future work
 
