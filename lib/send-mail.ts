@@ -55,7 +55,7 @@ export async function parseMBox(mbox: string): Promise<IParsedMBox> {
     let subject: string | undefined;
     let to: string | undefined;
 
-    for (const line of header.split(/\n(?! )/)) {
+    for (const line of header.split(/\n(?![ \t])/)) {
         const colon = line.indexOf(": ");
         if (colon < 0) {
             throw new Error(`Failed to parse header line '${line}`);
