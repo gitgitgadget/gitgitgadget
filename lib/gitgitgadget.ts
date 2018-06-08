@@ -2,6 +2,7 @@ import { isDirectory } from "./fs-util";
 import { git, gitConfig } from "./git";
 import { GitNotes } from "./git-notes";
 import { PatchSeries } from "./patch-series";
+import { IPatchSeriesMetadata } from "./patch-series-metadata";
 import { ISMTPOptions, parseHeadersAndSendMail } from "./send-mail";
 
 export interface IGitGitGadgetOptions {
@@ -136,7 +137,11 @@ export class GitGitGadget {
 
         const pullRequestNumber =
             parseInt(pullRequestURL.substr(urlPrefix.length), 10);
-        await this.updateNotesAndPullRef(pullRequestNumber);
+        const metadata =
+            await this.notes.get<IPatchSeriesMetadata>(pullRequestURL);
+        const previousTag = metadata && metadata.latestTag ?
+            `refs/tags/${metadata.latestTag}` : undefined;
+        await this.updateNotesAndPullRef(pullRequestNumber, previousTag);
 
         const series = await PatchSeries.getFromNotes(this.notes,
             pullRequestURL, description, baseLabel, baseCommit, headLabel,
@@ -151,14 +156,15 @@ export class GitGitGadget {
         return coverMid;
     }
 
-    protected async updateNotesAndPullRef(pullRequestNumber: number):
+    protected async updateNotesAndPullRef(pullRequestNumber: number,
+                                          additionalRef?: string):
         Promise<string> {
         if (!await isDirectory(this.workDir)) {
             await git(["init", "--bare", this.workDir]);
         }
 
         const pullRequestRef = `refs/pull/${pullRequestNumber}/head`;
-        await git([
+        const args = [
             "fetch",
             this.publishTagsAndNotesToRemote,
             "--",
@@ -168,7 +174,11 @@ export class GitGitGadget {
             `+refs/heads/master:refs/remotes/upstream/master`,
             `+refs/heads/next:refs/remotes/upstream/next`,
             `+refs/heads/pu:refs/remotes/upstream/pu`,
-        ], { workDir: this.workDir });
+        ];
+        if (additionalRef) {
+            args.push(`+${additionalRef}:${additionalRef}`);
+        }
+        await git(args, { workDir: this.workDir });
 
         // re-read options
         [this.options, this.allowedUsers] =
