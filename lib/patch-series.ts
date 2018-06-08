@@ -526,7 +526,7 @@ export class PatchSeries {
                     messageID: mid,
                     originalCommit,
                     pullRequestURL: this.metadata.pullRequestURL,
-                } as IMailMetadata);
+                } as IMailMetadata, true);
 
                 if (originalCommit &&
                     await commitExists(originalCommit, this.project.workDir)) {
