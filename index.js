@@ -57,13 +57,25 @@ module.exports = (robot) => {
       console.log(`Could not determine PR details:\n${JSON.stringify(pr, null, 4)}`);
       return;
     }
+    let gitHubUserName = comment.user.name;
+    if (!gitHubUserName) {
+      let user = await context.github.users.getById({ id: comment.user.id });
+      if (user && !user.name && user.data && user.data.name) {
+        user = user.data;
+      }
+      gitHubUserName = user.name;
+      if (!gitHubUserName) {
+        throw new Error(`Could not determine name of ${gitHubUser}`);
+      }
+    }
+
     const baseLabel = pr.base.label;
     const baseCommit = pr.base.sha;
     const headLabel = pr.head.label;
     const headCommit = pr.head.sha;
 
     try {
-      const coverMid = await gitGitGadget.submit(gitHubUser, pullRequestURL, description,
+      const coverMid = await gitGitGadget.submit(gitHubUser, gitHubUserName, pullRequestURL, description,
         baseLabel, baseCommit, headLabel, headCommit);
       await addComment(context, `Submitted as [${coverMid}](https://public-inbox.org/git/${coverMid})`);
     } catch (reason) {

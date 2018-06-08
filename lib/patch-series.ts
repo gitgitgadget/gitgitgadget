@@ -80,7 +80,8 @@ export class PatchSeries {
                                      pullRequestURL: string,
                                      pullRequestDescription: string,
                                      baseLabel: string, baseCommit: string,
-                                     headLabel: string, headCommit: string):
+                                     headLabel: string, headCommit: string,
+                                     senderName?: string):
         Promise<PatchSeries> {
         const workDir = notes.workDir;
         if (!workDir) {
@@ -146,7 +147,7 @@ export class PatchSeries {
             basedOn, publishToRemote);
 
         return new PatchSeries(notes, options, project, metadata,
-            rangeDiff, coverLetter);
+            rangeDiff, coverLetter, senderName);
     }
 
     protected static parsePullRequestDescription(description: string): {
@@ -217,7 +218,8 @@ export class PatchSeries {
         return mbox.split(separatorRegex);
     }
 
-    protected static insertCcAndFromLines(mails: string[], thisAuthor: string):
+    protected static insertCcAndFromLines(mails: string[], thisAuthor: string,
+                                          senderName?: string):
         void {
         mails.map((mail, i) => {
             const match = mail.match(/^([^]*?)(\n\n[^]*)$/);
@@ -231,17 +233,18 @@ export class PatchSeries {
             if (!authorMatch) {
                 throw new Error("No From: line found in header:\n\n" + header);
             }
-            if (authorMatch[2] === thisAuthor) {
-                return;
-            }
 
             if (thisAuthor.match(/^GitGitGadget </)) {
+                const onBehalfOf = i === 0 && senderName ?
+                    senderName : authorMatch[2].replace(/ <.*>$/, "");
                 // Special-case GitGitGadget to send from
                 // "<author> via GitGitGadget"
                 thisAuthor = "\""
-                    + authorMatch[2].replace(/ <.*>$/, "")
+                    + onBehalfOf
                     + " via GitGitGadget\" "
                     + thisAuthor.replace(/^GitGitGadget /, "");
+            } else if (authorMatch[2] === thisAuthor) {
+                return;
             }
 
             header = authorMatch[1] + thisAuthor + authorMatch[3];
@@ -360,17 +363,19 @@ export class PatchSeries {
     public readonly metadata: IPatchSeriesMetadata;
     public readonly rangeDiff: string;
     public readonly coverLetter?: string;
+    public readonly senderName?: string;
 
     protected constructor(notes: GitNotes, options: PatchSeriesOptions,
                           project: ProjectOptions,
                           metadata: IPatchSeriesMetadata, rangeDiff: string,
-                          coverLetter?: string) {
+                          coverLetter?: string, senderName?: string) {
         this.notes = notes;
         this.options = options;
         this.project = project;
         this.metadata = metadata;
         this.rangeDiff = rangeDiff;
         this.coverLetter = coverLetter;
+        this.senderName = senderName;
     }
 
     public subjectPrefix(): string {
@@ -409,7 +414,8 @@ export class PatchSeries {
 
         logger.log("Adding Cc: and explicit From: lines for other authors, "
             + "if needed");
-        await PatchSeries.insertCcAndFromLines(mails, thisAuthor);
+        await PatchSeries.insertCcAndFromLines(mails, thisAuthor,
+            this.senderName);
         if (mails.length > 1) {
             if (this.coverLetter) {
                 const match2 = mails[0].match(

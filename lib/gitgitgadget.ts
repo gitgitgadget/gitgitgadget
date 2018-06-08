@@ -121,7 +121,7 @@ export class GitGitGadget {
         }
     }
 
-    public async submit(gitHubUser: string,
+    public async submit(gitHubUser: string, gitHubUserName: string,
                         pullRequestURL: string, description: string,
                         baseLabel: string, baseCommit: string,
                         headLabel: string, headCommit: string):
@@ -145,7 +145,7 @@ export class GitGitGadget {
 
         const series = await PatchSeries.getFromNotes(this.notes,
             pullRequestURL, description, baseLabel, baseCommit, headLabel,
-            headCommit);
+            headCommit, gitHubUserName);
 
         const coverMid = await series.generateAndSend(console,
             async (mail: string): Promise<string> => {
