@@ -236,12 +236,13 @@ export class PatchSeries {
                 throw new Error("No From: line found in header:\n\n" + header);
             }
 
+            let replaceSender = thisAuthor;
             if (isGitGitGadget) {
                 const onBehalfOf = i === 0 && senderName ?
                     senderName : authorMatch[2].replace(/ <.*>$/, "");
                 // Special-case GitGitGadget to send from
                 // "<author> via GitGitGadget"
-                thisAuthor = "\""
+                replaceSender = "\""
                     + onBehalfOf
                     + " via GitGitGadget\" "
                     + thisAuthor.replace(/^GitGitGadget /, "");
@@ -249,7 +250,7 @@ export class PatchSeries {
                 return;
             }
 
-            header = authorMatch[1] + thisAuthor + authorMatch[3];
+            header = authorMatch[1] + replaceSender + authorMatch[3];
             if (i === 0 && senderName) {
                 // skip Cc:ing and From:ing in the cover letter
                 mails[i] = header + match[2];

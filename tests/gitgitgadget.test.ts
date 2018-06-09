@@ -119,7 +119,7 @@ gitgitgadget
 Message-Id: <07f68c195159518c5777ca4a7c1d07124e7a9956.<Message-ID>>
 In-Reply-To: <pull.<Message-ID>>
 References: <pull.<Message-ID>>
-From: "Contributor via GitGitGadget" <gitgitgadget@example.com>
+From: "Developer via GitGitGadget" <gitgitgadget@example.com>
 Date: Fri, 13 Feb 2009 23:35:30 +0000
 Subject: [PATCH 3/3] C
 Fcc: Sent
