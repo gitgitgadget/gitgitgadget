@@ -48,7 +48,7 @@ Test Dev (1):
 
 base-commit: c241357a04a6f862ceef20bd148946085f3178b9
 --${" "}
-2.17.0.windows.1
+gitgitgadget
 `, `From cd048a1378e3f7b055cd467ff3a24ed0cf5e7453 Mon Sep 17 00:00:00 2001
 Message-Id: <cd048a1378e3f7b055cd467ff3a24ed0cf5e7453.<Message-ID>>
 In-Reply-To: <pull.<Message-ID>>
@@ -80,7 +80,7 @@ index 0000000..8c7e5a6
 +A
 \\ No newline at end of file
 --${" "}
-2.17.0.windows.1
+gitgitgadget
 
 `, `From b8acfa2635f9907e472d2b7396b260c6e73b1ed5 Mon Sep 17 00:00:00 2001
 Message-Id: <b8acfa2635f9907e472d2b7396b260c6e73b1ed5.<Message-ID>>
@@ -113,7 +113,7 @@ index 0000000..7371f47
 +B
 \\ No newline at end of file
 --${" "}
-2.17.0.windows.1
+gitgitgadget
 
 `, `From 07f68c195159518c5777ca4a7c1d07124e7a9956 Mon Sep 17 00:00:00 2001
 Message-Id: <07f68c195159518c5777ca4a7c1d07124e7a9956.<Message-ID>>
@@ -146,7 +146,7 @@ index 0000000..96d80cd
 +C
 \\ No newline at end of file
 --${" "}
-2.17.0.windows.1
+gitgitgadget
 `,
 ];
 

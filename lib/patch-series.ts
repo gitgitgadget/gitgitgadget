@@ -578,12 +578,14 @@ export class PatchSeries {
                 + " needs a description");
         }
 
-        const args = ["format-patch", "--thread", "--stdout",
+        const args = [
+            "format-patch", "--thread", "--stdout", "--signature=gitgitgadget",
             "--add-header=Fcc: Sent",
             "--add-header=Content-Type: text/plain; charset=UTF-8",
             "--add-header=Content-Transfer-Encoding: 8bit",
             "--add-header=MIME-Version: 1.0",
-            "--base", this.project.upstreamBranch, this.project.to];
+            "--base", this.project.upstreamBranch, this.project.to,
+        ];
         this.project.cc.map((email) => { args.push("--cc=" + email); });
         if (this.metadata.referencesMessageIds) {
             this.metadata.referencesMessageIds.map((email) => {
