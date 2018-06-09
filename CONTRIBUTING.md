@@ -9,6 +9,23 @@ Hi there! We're thrilled that you'd like to contribute to this project. Your hel
 
 Please note that this project is released with a [Contributor Code of Conduct][code-of-conduct]. By participating in this project you agree to abide by its terms.
 
+Now, if you are looking for ideas what you could improve in GitGitGadget, there is an extensive [TODO](TODO) list. If you want to add your idea to that TODO list, that's fine, too!
+
+Most likely you read this because you want to Get Started hacking on GitGitGadget, right? Probably the best way is to install [VS Code](https://code.visualstudio.com/) (no worries, it is Open Source and works out of the box on Linux, macOS and Windows).
+And if you want to dive into the source code to Get Things Done, here is a little overview what is done where:
+
+## Bird eye's view of GitGitGadget's source code
+
+The most important part of the source code lives in `lib/`, and is written in Typescript. This is where the core logic lives, from processing the Pull Request metadata (`lib/gitgitgadget.ts`) to calling Git (`lib/git.ts`) to generating the patch series (`lib/patch-series.ts`) to sending the emails (`lib/send-emails.ts`).
+
+One exception is the [Probot](https://probot.github.io/)-related code, which lives in `index.js` (and is used via `server.js` in the web app on Azure).
+
+The tests to verify that everything works as expected live in `tests/`, and use the [Jest](https://facebook.github.io/jest/) framework. Please make sure to add tests for whatever functionality you add when developing a new feature, to gain confidence that your feature or bug fix will work also in the future.
+
+If you never developed any node.js or Typescript project: you will need to get the dependencies via `npm install`, and you will want to run the tests via `npm run test`.
+
+Happy coding!
+
 ## Submitting a pull request
 
 1. [Fork][fork] and clone the repository
