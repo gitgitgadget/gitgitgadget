@@ -221,6 +221,8 @@ export class PatchSeries {
     protected static insertCcAndFromLines(mails: string[], thisAuthor: string,
                                           senderName?: string):
         void {
+        const isGitGitGadget = thisAuthor.match(/^GitGitGadget </);
+
         mails.map((mail, i) => {
             const match = mail.match(/^([^]*?)(\n\n[^]*)$/);
             if (!match) {
@@ -234,7 +236,7 @@ export class PatchSeries {
                 throw new Error("No From: line found in header:\n\n" + header);
             }
 
-            if (thisAuthor.match(/^GitGitGadget </)) {
+            if (isGitGitGadget) {
                 const onBehalfOf = i === 0 && senderName ?
                     senderName : authorMatch[2].replace(/ <.*>$/, "");
                 // Special-case GitGitGadget to send from
