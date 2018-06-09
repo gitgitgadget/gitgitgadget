@@ -14,7 +14,7 @@ Now, if you are looking for ideas what you could improve in GitGitGadget, there 
 Most likely you read this because you want to Get Started hacking on GitGitGadget, right? Probably the best way is to install [VS Code](https://code.visualstudio.com/) (no worries, it is Open Source and works out of the box on Linux, macOS and Windows).
 And if you want to dive into the source code to Get Things Done, here is a little overview what is done where:
 
-## Bird eye's view of GitGitGadget's source code
+## A bird eye's view of GitGitGadget's source code
 
 The most important part of the source code lives in `lib/`, and is written in Typescript. This is where the core logic lives, from processing the Pull Request metadata (`lib/gitgitgadget.ts`) to calling Git (`lib/git.ts`) to generating the patch series (`lib/patch-series.ts`) to sending the emails (`lib/send-emails.ts`).
 
