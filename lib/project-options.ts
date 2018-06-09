@@ -65,8 +65,7 @@ export class ProjectOptions {
             upstreamBranch = "busybox/master";
             midUrlPrefix = "https://www.mail-archive.com/search?"
                 + "l=busybox@busybox.net&q=";
-        } else if (await commitExists("0c16a2d9ca7a82f08f3", workDir) ||
-            await commitExists("0ae4d8d45ce43d7ad56", workDir)) {
+        } else if (await commitExists("7ccd18012de2e6c47e5", workDir)) {
             // We're running in the test suite!
             to = "--to=reviewer@example.com";
             upstreamBranch = "master";

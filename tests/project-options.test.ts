@@ -15,7 +15,7 @@ test("project options", async () => {
     expect(await isDirectory(`${workDir}/.git`)).toBeTruthy();
 
     const gitOpts: ITestCommitOptions = { workDir };
-    const initialCommit = "0c16a2d9ca7a82f08f3d1219f5f11642ffd329e2";
+    const initialCommit = "e073a465d0c7bf27664959bc93a9f018ac6f6f00";
     expect(await testCommit(gitOpts, "initial")).toEqual(initialCommit);
     expect(await git(["rev-parse", "--symbolic-full-name", "HEAD"],
         { workDir })).toEqual("refs/heads/master");

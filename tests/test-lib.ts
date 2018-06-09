@@ -22,6 +22,8 @@ export async function removeRecursively(path: string): Promise<void> {
     }
 }
 
+let initializedHome: boolean = false;
+
 export async function testCreateRepo(name: string) {
     let tmp = `${__dirname}/../.test-dir/`;
     if (!await isDirectory(tmp)) {
@@ -43,6 +45,25 @@ export async function testCreateRepo(name: string) {
     }
 
     await git(["init", dir]);
+
+    if (!initializedHome) {
+        initializedHome = true;
+
+        process.env.HOME = tmp;
+        await git(["config", "--global", "user.name", "Test User"]);
+        await git(["config", "--global", "user.email", "user@example.com"]);
+    }
+    await git([
+        "commit-tree", "-m", "Test commit",
+	"4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+    ], {
+        workDir: dir,
+        env: {
+            GIT_AUTHOR_DATE: `123457689 +0000`,
+            GIT_COMMITTER_DATE: `123457689 +0000`,
+        }
+    );
+
     return dir;
 }
 

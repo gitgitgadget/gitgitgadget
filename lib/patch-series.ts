@@ -248,6 +248,12 @@ export class PatchSeries {
             }
 
             header = authorMatch[1] + thisAuthor + authorMatch[3];
+            if (i === 0 && senderName) {
+                // skip Cc:ing and From:ing in the cover letter
+                mails[i] = header + match[2];
+                return;
+            }
+
             const ccMatch = header.match(/^([^]*\nCc: .*?)(\n(?![ \t])[^]*)$/);
             if (ccMatch) {
                 header = ccMatch[1] + ", " + authorMatch[2] + ccMatch[2];
