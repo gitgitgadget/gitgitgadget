@@ -1,5 +1,5 @@
 import "jest";
-import { git, revParse } from "../lib/git";
+import { git, gitCommandExists, revParse } from "../lib/git";
 import { GitNotes } from "../lib/git-notes";
 import { IGitGitGadgetOptions } from "../lib/gitgitgadget";
 import { PatchSeries } from "../lib/patch-series";
@@ -239,7 +239,9 @@ have included in git.git.`);
     expect(await patches2.generateAndSend(logger, send))
         .toEqual("pull.1.v2.git.gitgitgadget@example.com");
     expect(mails.length).toEqual(5);
-    expect(mails[0]).toMatch(/Range-diff vs v1:\n[^]*\n -: .* 4: /);
+    if (await gitCommandExists("range-diff", workDir)) {
+        expect(mails[0]).toMatch(/Range-diff vs v1:\n[^]*\n -: .* 4: /);
+    }
     expect(await revParse("pr-1/somebody/master-v2", workDir)).toBeDefined();
 
     expect(await notes.get(pullRequestURL)).toEqual({

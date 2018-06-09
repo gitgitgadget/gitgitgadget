@@ -1,4 +1,6 @@
-import { commitExists, git, gitConfig, revParse } from "./git";
+import {
+    commitExists, git, gitCommandExists, gitConfig, revParse,
+} from "./git";
 import { GitNotes } from "./git-notes";
 import { IMailMetadata } from "./mail-metadata";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
@@ -68,7 +70,9 @@ export class PatchSeries {
                 }
             });
 
-            rangeDiff = await git(["range-diff", "--no-color", range]);
+            if (await gitCommandExists("range-diff", workDir)) {
+                rangeDiff = await git(["range-diff", "--no-color", range]);
+            }
         }
 
         const notes =
@@ -111,9 +115,11 @@ export class PatchSeries {
             const previousRange =
                 `${metadata.baseCommit}..${metadata.headCommit}`;
             const currentRange = `${baseCommit}..${headCommit}`;
-            rangeDiff = await git([
-                "range-diff", "--no-color", previousRange, currentRange,
-            ], { workDir });
+            if (await gitCommandExists("range-diff", workDir)) {
+                rangeDiff = await git([
+                    "range-diff", "--no-color", previousRange, currentRange,
+                ], { workDir });
+            }
 
             metadata.iteration++;
             metadata.baseCommit = baseCommit;
