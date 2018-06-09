@@ -23,10 +23,11 @@ export async function removeRecursively(path: string): Promise<void> {
 }
 
 export async function testCreateRepo(name: string) {
-    const tmp = await realpath(`${__dirname}/../.test-dir/`);
+    let tmp = `${__dirname}/../.test-dir/`;
     if (!await isDirectory(tmp)) {
         await mkdir(tmp);
     }
+    tmp = await realpath(tmp);
 
     const match = name.match(/^(.*[\\/])?(.*?)(\.test)?\.ts$/);
     if (match) {
