@@ -37,7 +37,7 @@ export class GitGitGadget {
             "fetch",
             publishTagsAndNotesToRemote,
             "--",
-            `${GitNotes.defaultNotesRef}:${GitNotes.defaultNotesRef}`,
+            `+${GitNotes.defaultNotesRef}:${GitNotes.defaultNotesRef}`,
         ], { workDir });
 
         const notes = new GitNotes(workDir);
