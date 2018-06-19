@@ -1,4 +1,6 @@
-import { commitExists, git, gitConfig, revParse } from "./git";
+import {
+    commitExists, git, gitCommandExists, gitConfig, revParse,
+} from "./git";
 import { GitNotes } from "./git-notes";
 import { IMailMetadata } from "./mail-metadata";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
@@ -68,7 +70,9 @@ export class PatchSeries {
                 }
             });
 
-            rangeDiff = await git(["range-diff", "--no-color", range]);
+            if (await gitCommandExists("range-diff", workDir)) {
+                rangeDiff = await git(["range-diff", "--no-color", range]);
+            }
         }
 
         const notes =
@@ -111,9 +115,11 @@ export class PatchSeries {
             const previousRange =
                 `${metadata.baseCommit}..${metadata.headCommit}`;
             const currentRange = `${baseCommit}..${headCommit}`;
-            rangeDiff = await git([
-                "range-diff", "--no-color", previousRange, currentRange,
-            ], { workDir });
+            if (await gitCommandExists("range-diff", workDir)) {
+                rangeDiff = await git([
+                    "range-diff", "--no-color", previousRange, currentRange,
+                ], { workDir });
+            }
 
             metadata.iteration++;
             metadata.baseCommit = baseCommit;
@@ -221,6 +227,8 @@ export class PatchSeries {
     protected static insertCcAndFromLines(mails: string[], thisAuthor: string,
                                           senderName?: string):
         void {
+        const isGitGitGadget = thisAuthor.match(/^GitGitGadget </);
+
         mails.map((mail, i) => {
             const match = mail.match(/^([^]*?)(\n\n[^]*)$/);
             if (!match) {
@@ -234,12 +242,13 @@ export class PatchSeries {
                 throw new Error("No From: line found in header:\n\n" + header);
             }
 
-            if (thisAuthor.match(/^GitGitGadget </)) {
+            let replaceSender = thisAuthor;
+            if (isGitGitGadget) {
                 const onBehalfOf = i === 0 && senderName ?
                     senderName : authorMatch[2].replace(/ <.*>$/, "");
                 // Special-case GitGitGadget to send from
                 // "<author> via GitGitGadget"
-                thisAuthor = "\""
+                replaceSender = "\""
                     + onBehalfOf
                     + " via GitGitGadget\" "
                     + thisAuthor.replace(/^GitGitGadget /, "");
@@ -247,7 +256,13 @@ export class PatchSeries {
                 return;
             }
 
-            header = authorMatch[1] + thisAuthor + authorMatch[3];
+            header = authorMatch[1] + replaceSender + authorMatch[3];
+            if (i === 0 && senderName) {
+                // skip Cc:ing and From:ing in the cover letter
+                mails[i] = header + match[2];
+                return;
+            }
+
             const ccMatch = header.match(/^([^]*\nCc: .*?)(\n(?![ \t])[^]*)$/);
             if (ccMatch) {
                 header = ccMatch[1] + ", " + authorMatch[2] + ccMatch[2];
@@ -572,12 +587,14 @@ export class PatchSeries {
                 + " needs a description");
         }
 
-        const args = ["format-patch", "--thread", "--stdout",
+        const args = [
+            "format-patch", "--thread", "--stdout", "--signature=gitgitgadget",
             "--add-header=Fcc: Sent",
             "--add-header=Content-Type: text/plain; charset=UTF-8",
             "--add-header=Content-Transfer-Encoding: 8bit",
             "--add-header=MIME-Version: 1.0",
-            "--base", this.project.upstreamBranch, this.project.to];
+            "--base", this.project.upstreamBranch, this.project.to,
+        ];
         this.project.cc.map((email) => { args.push("--cc=" + email); });
         if (this.metadata.referencesMessageIds) {
             this.metadata.referencesMessageIds.map((email) => {

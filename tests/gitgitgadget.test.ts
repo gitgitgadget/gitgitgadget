@@ -1,5 +1,5 @@
 import "jest";
-import { git, revParse } from "../lib/git";
+import { git, gitCommandExists, revParse } from "../lib/git";
 import { GitNotes } from "../lib/git-notes";
 import { IGitGitGadgetOptions } from "../lib/gitgitgadget";
 import { PatchSeries } from "../lib/patch-series";
@@ -13,9 +13,9 @@ import {
 jest.setTimeout(60000);
 
 const expectedMails = [
-    `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
+    `From 07f68c195159518c5777ca4a7c1d07124e7a9956 Mon Sep 17 00:00:00 2001
 Message-Id: <pull.<Message-ID>>
-From: GitGitGadget <gitgitgadget@example.com>
+From: "GitHub User via GitGitGadget" <gitgitgadget@example.com>
 Date: <Cover-Letter-Date>
 Subject: [PATCH 0/3] My first Pull Request!
 Fcc: Sent
@@ -34,7 +34,7 @@ Contributor (1):
 Developer (1):
   C
 
-GitGitGadget (1):
+Test Dev (1):
   A
 
  A.t | 1 +
@@ -46,14 +46,14 @@ GitGitGadget (1):
  create mode 100644 C.t
 
 
-base-commit: 0ae4d8d45ce43d7ad56faff2feeacf8ed5293518
+base-commit: c241357a04a6f862ceef20bd148946085f3178b9
 --${" "}
-2.17.0.windows.1
-`, `From 44e454a6c1acb125e95d3ba9f57242445fb6beeb Mon Sep 17 00:00:00 2001
-Message-Id: <44e454a6c1acb125e95d3ba9f57242445fb6beeb.<Message-ID>>
+gitgitgadget
+`, `From cd048a1378e3f7b055cd467ff3a24ed0cf5e7453 Mon Sep 17 00:00:00 2001
+Message-Id: <cd048a1378e3f7b055cd467ff3a24ed0cf5e7453.<Message-ID>>
 In-Reply-To: <pull.<Message-ID>>
 References: <pull.<Message-ID>>
-From: GitGitGadget <gitgitgadget@example.com>
+From: "Test Dev via GitGitGadget" <gitgitgadget@example.com>
 Date: Fri, 13 Feb 2009 23:33:30 +0000
 Subject: [PATCH 1/3] A
 Fcc: Sent
@@ -62,6 +62,9 @@ Content-Transfer-Encoding: 8bit
 MIME-Version: 1.0
 To: reviewer@example.com
 Cc: Some Body <somebody@example.com>
+Cc: Test Dev <dev@example.com>
+
+From: Test Dev <dev@example.com>
 
 ---
  A.t | 1 +
@@ -77,10 +80,10 @@ index 0000000..8c7e5a6
 +A
 \\ No newline at end of file
 --${" "}
-2.17.0.windows.1
+gitgitgadget
 
-`, `From 0f7ccd74ef817f36e77c07eb918ebee41f6ab9e7 Mon Sep 17 00:00:00 2001
-Message-Id: <0f7ccd74ef817f36e77c07eb918ebee41f6ab9e7.<Message-ID>>
+`, `From b8acfa2635f9907e472d2b7396b260c6e73b1ed5 Mon Sep 17 00:00:00 2001
+Message-Id: <b8acfa2635f9907e472d2b7396b260c6e73b1ed5.<Message-ID>>
 In-Reply-To: <pull.<Message-ID>>
 References: <pull.<Message-ID>>
 From: "Contributor via GitGitGadget" <gitgitgadget@example.com>
@@ -110,13 +113,13 @@ index 0000000..7371f47
 +B
 \\ No newline at end of file
 --${" "}
-2.17.0.windows.1
+gitgitgadget
 
-`, `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
-Message-Id: <566155e00ab72541ff0ac21eab84d087b0e882a5.<Message-ID>>
+`, `From 07f68c195159518c5777ca4a7c1d07124e7a9956 Mon Sep 17 00:00:00 2001
+Message-Id: <07f68c195159518c5777ca4a7c1d07124e7a9956.<Message-ID>>
 In-Reply-To: <pull.<Message-ID>>
 References: <pull.<Message-ID>>
-From: "Contributor via GitGitGadget" <gitgitgadget@example.com>
+From: "Developer via GitGitGadget" <gitgitgadget@example.com>
 Date: Fri, 13 Feb 2009 23:35:30 +0000
 Subject: [PATCH 3/3] C
 Fcc: Sent
@@ -143,7 +146,7 @@ index 0000000..96d80cd
 +C
 \\ No newline at end of file
 --${" "}
-2.17.0.windows.1
+gitgitgadget
 `,
 ];
 
@@ -165,8 +168,8 @@ test("generate tag/notes from a Pull Request", async () => {
 
     const gitOpts: ITestCommitOptions = { workDir };
 
-    await git(["config", "user.name", "GitGitGadget"], gitOpts);
-    await git(["config", "user.email", "gitgitgadget@example.com"], gitOpts);
+    await git(["config", "user.name", "Test Dev"], gitOpts);
+    await git(["config", "user.email", "dev@example.com"], gitOpts);
 
     expect(await testCommit(gitOpts, "initial")).not.toEqual("");
     expect(await git(["checkout", "-b", "test-run"], { workDir }))
@@ -197,10 +200,13 @@ Cc: Some Body <somebody@example.com>
     const match2 = description.match(/^([^]+)\n\n([^]+)$/);
     expect(match2).toBeTruthy();
 
+    await git(["config", "user.name", "GitGitGadget"], gitOpts);
+    await git(["config", "user.email", "gitgitgadget@example.com"], gitOpts);
+
     const patches = await PatchSeries.getFromNotes(notes, pullRequestURL,
         description,
         "gitgitgadget:next", baseCommit,
-        "somebody:master", headCommit);
+        "somebody:master", headCommit, "GitHub User");
 
     expect(patches.coverLetter).toEqual(`My first Pull Request!
 
@@ -228,12 +234,14 @@ have included in git.git.`);
     const patches2 = await PatchSeries.getFromNotes(notes, pullRequestURL,
         description,
         "gitgitgadget:next", baseCommit,
-        "somebody:master", headCommit2);
+        "somebody:master", headCommit2, "GitHub User");
     mails.splice(0);
     expect(await patches2.generateAndSend(logger, send))
         .toEqual("pull.1.v2.git.gitgitgadget@example.com");
     expect(mails.length).toEqual(5);
-    expect(mails[0]).toMatch(/Range-diff vs v1:\n[^]*\n -: .* 4: /);
+    if (await gitCommandExists("range-diff", workDir)) {
+        expect(mails[0]).toMatch(/Range-diff vs v1:\n[^]*\n -: .* 4: /);
+    }
     expect(await revParse("pr-1/somebody/master-v2", workDir)).toBeDefined();
 
     expect(await notes.get(pullRequestURL)).toEqual({
@@ -263,9 +271,11 @@ Contributor (1):
 Developer (1):
   C
 
-GitGitGadget (2):
-  A
+GitGitGadget (1):
   D
+
+Test Dev (1):
+  A
 
  A.t | 1 +
  B.t | 1 +
@@ -277,7 +287,7 @@ GitGitGadget (2):
  create mode 100644 C.t
  create mode 100644 D.t
 
-base-commit: 0ae4d8d45ce43d7ad56faff2feeacf8ed5293518
+base-commit: c241357a04a6f862ceef20bd148946085f3178b9
 
 Submitted-As: https://dummy.com/?mid=pull.1.v2.git.gitgitgadget@example.com
 In-Reply-To: https://dummy.com/?mid=pull.1.git.gitgitgadget@example.com`);

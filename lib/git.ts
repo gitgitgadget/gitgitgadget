@@ -80,3 +80,9 @@ export async function gitConfigForEach(key: string,
         workDir || ".");
     result.stdout.split(/\r?\n/).map(callbackfn);
 }
+
+export async function gitCommandExists(command: string, workDir?: string):
+    Promise<boolean> {
+    const result = await GitProcess.exec([command, "-h"], workDir);
+    return result.exitCode === 129;
+}
