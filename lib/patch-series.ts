@@ -70,7 +70,7 @@ export class PatchSeries {
                 }
             });
 
-            if (await gitCommandExists("range-diff", workDir)) {
+            if (await gitCommandExists("range-diff", project.workDir)) {
                 rangeDiff = await git(["range-diff", "--no-color", range]);
             }
         }
