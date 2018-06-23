@@ -63,7 +63,7 @@ export async function parseMBox(mbox: string): Promise<IParsedMBox> {
         const key = line.substr(0, colon);
         const value = replaceAll(line.substr(colon + 2), "\n ", " ");
         switch (key.toLowerCase()) {
-            case "cc": cc = value.split(", "); break;
+            case "cc": cc = (cc || []).concat(value.split(", ")); break;
             case "date": date = value; break;
             case "fcc": break;
             case "from": from = value; break;
