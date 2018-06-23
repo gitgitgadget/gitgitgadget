@@ -83,6 +83,6 @@ export async function gitConfigForEach(key: string,
 
 export async function gitCommandExists(command: string, workDir?: string):
     Promise<boolean> {
-    const result = await GitProcess.exec([command, "-h"], workDir);
+    const result = await GitProcess.exec([command, "-h"], workDir || ".");
     return result.exitCode === 129;
 }
