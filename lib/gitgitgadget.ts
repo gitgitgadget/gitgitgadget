@@ -7,6 +7,12 @@ import { ISMTPOptions, parseHeadersAndSendMail } from "./send-mail";
 
 export interface IGitGitGadgetOptions {
     allowedUsers: string[];
+
+    // maps to upstreamBranch (or empty)
+    openPRs?: { [pullRequestURL: string]: string };
+
+    // maps to the original commit
+    activeMessageIDs?: { [messageID: string]: string };
 }
 
 /**
