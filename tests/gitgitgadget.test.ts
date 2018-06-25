@@ -6,7 +6,7 @@ import { PatchSeries } from "../lib/patch-series";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata";
 import { ProjectOptions } from "../lib/project-options";
 import {
-    ITestCommitOptions, testCommit, testCreateRepo,
+    ITestCommitOptions, testCreateRepo, TestRepo,
 } from "./test-lib";
 
 // This test script might take quite a while to run
@@ -162,8 +162,8 @@ test("generate tag/notes from a Pull Request", async () => {
             /* do nothing */
         },
     };
-    const workDir = await testCreateRepo(__filename);
-    const notes = new GitNotes(workDir);
+    const repo = await testCreateRepo(__filename);
+    const notes = new GitNotes(repo.workDir);
 
     const gitGitGadgetOptions: IGitGitGadgetOptions = {
         allowedUsers: ["somebody"],
@@ -171,28 +171,24 @@ test("generate tag/notes from a Pull Request", async () => {
     expect(await notes.set("", gitGitGadgetOptions)).toBeUndefined();
     expect(await notes.get("")).toEqual(gitGitGadgetOptions);
 
-    const gitOpts: ITestCommitOptions = { workDir };
+    await repo.git(["config", "user.name", "Test Dev"]);
+    await repo.git(["config", "user.email", "dev@example.com"]);
 
-    await git(["config", "user.name", "Test Dev"], gitOpts);
-    await git(["config", "user.email", "dev@example.com"], gitOpts);
+    expect(await repo.commit("initial")).not.toEqual("");
+    expect(await repo.newBranch("test-run")).toEqual("");
+    const baseCommit = await repo.revParse("HEAD");
+    expect(await repo.commit("A")).not.toEqual("");
 
-    expect(await testCommit(gitOpts, "initial")).not.toEqual("");
-    expect(await git(["checkout", "-b", "test-run"], { workDir }))
-        .toEqual("");
-    const baseCommit = await revParse("HEAD", workDir);
-    expect(await testCommit(gitOpts, "A")).not.toEqual("");
-    const gitOpts2: ITestCommitOptions = {
-        author: "Contributor <contributor@example.com>",
-        workDir,
-    };
-    expect(await testCommit(gitOpts2, "B")).not.toEqual("");
-    const gitOpts3: ITestCommitOptions = {
-        author: "Developer <developer@example.com>",
-        committer: "Committer <committer@example.com>",
-        workDir,
-    };
-    expect(await testCommit(gitOpts3, "C")).not.toEqual("");
-    const headCommit = await revParse("HEAD", workDir);
+    repo.options.author = "Contributor <contributor@example.com>";
+    expect(await repo.commit("B")).not.toEqual("");
+    delete repo.options.author;
+
+    repo.options.author = "Developer <developer@example.com>";
+    repo.options.committer = "Committer <committer@example.com>";
+    expect(await repo.commit("C")).not.toEqual("");
+    delete repo.options.author;
+    delete repo.options.committer;
+    const headCommit = await repo.revParse("HEAD");
 
     const pullRequestURL = "https://github.com/gitgitgadget/git/pull/1";
     // tslint:disable-next-line:max-line-length
@@ -206,8 +202,9 @@ Cc: Some Body <somebody@example.com>
     const match2 = description.match(/^([^]+)\n\n([^]+)$/);
     expect(match2).toBeTruthy();
 
-    await git(["config", "user.name", "GitGitGadget"], gitOpts);
-    await git(["config", "user.email", "gitgitgadget@example.com"], gitOpts);
+    await git(["config", "user.name", "GitGitGadget"], repo.options);
+    await git(["config", "user.email", "gitgitgadget@example.com"],
+        repo.options);
 
     const patches = await PatchSeries.getFromNotes(notes, pullRequestURL,
         description,
@@ -235,9 +232,9 @@ to have included in git.git [https://github.com/git/git].`);
         .toEqual("pull.1.git.gitgitgadget@example.com");
     expect(mails).toEqual(expectedMails);
 
-    expect(await testCommit(gitOpts, "D")).not.toEqual("");
+    expect(await repo.commit("D")).not.toEqual("");
 
-    const headCommit2 = await revParse("HEAD", workDir);
+    const headCommit2 = await repo.revParse("HEAD");
     const patches2 = await PatchSeries.getFromNotes(notes, pullRequestURL,
         description,
         "gitgitgadget:next", baseCommit,
@@ -247,10 +244,10 @@ to have included in git.git [https://github.com/git/git].`);
         pullRequestURL))
         .toEqual("pull.1.v2.git.gitgitgadget@example.com");
     expect(mails.length).toEqual(5);
-    if (await gitCommandExists("range-diff", workDir)) {
+    if (await gitCommandExists("range-diff", repo.workDir)) {
         expect(mails[0]).toMatch(/Range-diff vs v1:\n[^]*\n -: .* 4: /);
     }
-    expect(await revParse("pr-1/somebody/master-v2", workDir)).toBeDefined();
+    expect(await repo.revParse("pr-1/somebody/master-v2")).toBeDefined();
 
     expect(await notes.get(pullRequestURL)).toEqual({
         baseCommit,
@@ -267,7 +264,8 @@ to have included in git.git [https://github.com/git/git].`);
     } as IPatchSeriesMetadata);
 
     // verify that the tag was generated correctly
-    expect((await git(["cat-file", "tag", "pr-1/somebody/master-v2"], gitOpts))
+    expect((await git(["cat-file", "tag", "pr-1/somebody/master-v2"],
+        repo.options))
         .replace(/^[^]*?\n\n/, "")).toEqual(`My first Pull Request!
 
 This Pull Request contains some really important changes that I would love
@@ -303,19 +301,20 @@ In-Reply-To: https://dummy.com/?mid=pull.1.git.gitgitgadget@example.com`);
 
 test("allow/disallow", async () => {
     const repo = await testCreateRepo(__filename);
+    const workDir = repo.workDir;
     const remote = await testCreateRepo(__filename, "-remote");
 
-    await git(["config", "gitgitgadget.workDir", repo], { workDir: repo });
+    await git(["config", "gitgitgadget.workDir", workDir], { workDir });
     await git(["config",
-        "gitgitgadget.publishRemote", remote], { workDir: repo });
-    await git(["config", "gitgitgadget.smtpUser", "test"], { workDir: repo });
-    await git(["config", "gitgitgadget.smtpHost", "test"], { workDir: repo });
-    await git(["config", "gitgitgadget.smtpPass", "test"], { workDir: repo });
+        "gitgitgadget.publishRemote", remote.workDir], { workDir });
+    await git(["config", "gitgitgadget.smtpUser", "test"], { workDir });
+    await git(["config", "gitgitgadget.smtpHost", "test"], { workDir });
+    await git(["config", "gitgitgadget.smtpPass", "test"], { workDir });
 
-    const notes = new GitNotes(remote);
+    const notes = new GitNotes(remote.workDir);
     await notes.set("", {} as IGitGitGadgetOptions);
 
-    const gitGitGadget = await GitGitGadget.get(repo);
+    const gitGitGadget = await GitGitGadget.get(workDir);
 
     // pretend that the notes ref had been changed in the meantime
     await notes.set("",

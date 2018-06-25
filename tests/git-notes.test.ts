@@ -5,18 +5,21 @@ import { GitNotes } from "../lib/git-notes";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata";
 import { testCreateRepo } from "./test-lib";
 
-test("set/get notes", async () => {
-    const workDir = await testCreateRepo(__filename);
-    expect(await isDirectory(`${workDir}/.git`)).toBeTruthy();
+// This test script might take quite a while to run
+jest.setTimeout(60000);
 
-    const notes = new GitNotes(workDir);
+test("set/get notes", async () => {
+    const repo = await testCreateRepo(__filename);
+    expect(await isDirectory(`${repo.workDir}/.git`)).toBeTruthy();
+
+    const notes = new GitNotes(repo.workDir);
     expect(await notes.getString("hello")).toBeUndefined();
 
     expect(await notes.setString("hello", "world")).toBeUndefined();
     expect(await notes.getString("hello")).toEqual("world");
 
     expect(await git(["log", "-p", "refs/notes/gitgitgadget"], {
-        workDir,
+        workDir: repo.workDir,
     })).toMatch(/\n\+hello$/);
 
     const pullRequestURL = "https://github.com/gitgitgadget/git/pull/1";

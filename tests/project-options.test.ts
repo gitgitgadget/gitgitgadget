@@ -4,33 +4,31 @@ import { git } from "../lib/git";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata";
 import { ProjectOptions } from "../lib/project-options";
 import {
-    ITestCommitOptions, testCommit, testCreateRepo,
+    ITestCommitOptions, testCreateRepo,
 } from "./test-lib";
 
 // This test script might take quite a while to run
 jest.setTimeout(20000);
 
 test("project options", async () => {
-    const workDir = await testCreateRepo(__filename);
-    expect(await isDirectory(`${workDir}/.git`)).toBeTruthy();
+    const repo = await testCreateRepo(__filename);
+    expect(await isDirectory(`${repo.workDir}/.git`)).toBeTruthy();
 
-    const gitOpts: ITestCommitOptions = { workDir };
     const initialCommit = "e073a465d0c7bf27664959bc93a9f018ac6f6f00";
-    expect(await testCommit(gitOpts, "initial")).toEqual(initialCommit);
-    expect(await git(["rev-parse", "--symbolic-full-name", "HEAD"],
-        { workDir })).toEqual("refs/heads/master");
-    expect(await git(["checkout", "-b", "test-project-options"], { workDir }))
-        .toEqual("");
-    expect(await testCommit(gitOpts, "A")).not.toEqual("");
-    expect(await testCommit(gitOpts, "B")).not.toEqual("");
-    expect(await testCommit(gitOpts, "C")).not.toEqual("");
+    expect(await repo.commit("initial")).toEqual(initialCommit);
+    expect(await repo.git(["rev-parse", "--symbolic-full-name", "HEAD"]))
+        .toEqual("refs/heads/master");
+    expect(await repo.newBranch("test-project-options")).toEqual("");
+    expect(await repo.commit("A")).not.toEqual("");
+    expect(await repo.commit("B")).not.toEqual("");
+    expect(await repo.commit("C")).not.toEqual("");
 
-    const options1 = await ProjectOptions.getLocal(workDir);
+    const options1 = await ProjectOptions.getLocal(repo.workDir);
     expect(options1.basedOn).toBeUndefined();
     expect(options1.to).toEqual("--to=reviewer@example.com");
     expect(options1.publishToRemote).toBeUndefined();
-    const options2 = await ProjectOptions.get(workDir, "test-project-options",
-        [], undefined, undefined);
+    const options2 = await ProjectOptions.get(repo.workDir,
+        "test-project-options", [], undefined, undefined);
     expect(options2.workDir).not.toBeUndefined();
     expect(options2.midUrlPrefix).toEqual("https://dummy.com/?mid=");
 });
