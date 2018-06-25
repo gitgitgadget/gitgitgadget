@@ -9,6 +9,7 @@ export interface IParsedMBox {
     messageId?: string;
     subject: string;
     to: string;
+    raw: string;
 }
 
 export interface ISMTPOptions {
@@ -63,7 +64,7 @@ export async function parseMBox(mbox: string): Promise<IParsedMBox> {
         const key = line.substr(0, colon);
         const value = replaceAll(line.substr(colon + 2), "\n ", " ");
         switch (key.toLowerCase()) {
-            case "cc": cc = value.split(", "); break;
+            case "cc": cc = (cc || []).concat(value.split(", ")); break;
             case "date": date = value; break;
             case "fcc": break;
             case "from": from = value; break;
@@ -86,6 +87,7 @@ export async function parseMBox(mbox: string): Promise<IParsedMBox> {
         from,
         headers,
         messageId,
+        raw: mbox,
         subject,
         to,
     };
@@ -106,14 +108,12 @@ export async function sendMail(mail: IParsedMBox,
 
         // setup email data with unicode symbols
         const mailOptions: SendMailOptions = {
-            cc: mail.cc || [],
-            date: mail.date,
-            from: mail.from,
-            headers: mail.headers,
-            messageId: mail.messageId,
-            subject: mail.subject,
-            text: mail.body,
-            to: mail.to,
+            envelope: {
+                cc: mail.cc ? mail.cc.join(", ") : undefined,
+                from: mail.from,
+                to: mail.to,
+            },
+            raw: mail.raw,
         };
 
         transporter.sendMail(mailOptions, (error, info): void => {

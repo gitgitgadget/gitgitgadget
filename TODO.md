@@ -7,7 +7,6 @@ into a few categories (listed by priority, most important tasks first).
 ## These tasks should be the focus immediately after GitGitGadget works
 
 - suppress the `Cc: GitGitGadget` and the first body line `From: GitGitGadget` in the cover letter
-- Junio should be Cc:ed on the entire patch series (but is not)
 - add links to the PR and the branch to-be-merged to the cover letter
 - redo the way links are inserted (the `sed` origins still show)
 - Cc: the GitHub user who issued `/submit` on the cover letter
