@@ -6,6 +6,13 @@ module.exports = (robot) => {
 
   robot.log('Yay, the app was loaded!');
 
+  const instantiate = async () => {
+    if (!gitGitGadget) {
+      console.log('Getting new GitGitGadget instance');
+      gitGitGadget = await GitGitGadget.get();
+    }
+  }
+
   const addComment = async (context, comment) => {
     await context.github.issues.createComment(context.issue({ body: comment }))
   }
@@ -16,10 +23,7 @@ module.exports = (robot) => {
       return;
     }
 
-    if (!gitGitGadget) {
-      console.log('Getting new GitGitGadget instance');
-      gitGitGadget = await GitGitGadget.get();
-    }
+    await instantiate();
 
     const comment = context.payload.comment;
     if (!comment || !comment.user || !comment.user.login) {
