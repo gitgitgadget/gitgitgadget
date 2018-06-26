@@ -77,8 +77,8 @@ Builds](https://docs.microsoft.com/en-us/vsts/build-release/index?view=vsts).
 
 The most convenient way to implement a UI based on GitHub Pull Requests is to
 use the Probot framework. This framework is implemented in Javascript, and to
-allow for type-safe and convenient development, Typescript and Visual Studio
-Code are a natural fit.
+allow for type-safe and convenient development, Typescript and [Visual Studio
+Code](https://code.visualstudio.com/) are a natural fit.
 
 While many developers may not be familiar with Typescript, it is similar enough
 to (and a superset of) Javascript, which is a really well-known language. This
