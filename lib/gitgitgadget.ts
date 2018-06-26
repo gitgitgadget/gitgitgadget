@@ -61,6 +61,17 @@ export class GitGitGadget {
             publishTagsAndNotesToRemote);
     }
 
+    public static parsePullRequestURL(pullRequestURL: string):
+        [string, string, number] {
+        const match = pullRequestURL
+            .match(/^https:\/\/github.com\/(.*)\/(.*)\/pull\/(\d+)$/);
+        if (!match) {
+            throw new Error(`Unrecognized PR URL: "${pullRequestURL}`);
+        }
+        const [, owner, repo, prNo] = match;
+        return [owner, repo, parseInt(prNo, 10)];
+    }
+
     protected static async readOptions(notes: GitNotes):
         Promise<[IGitGitGadgetOptions, Set<string>]> {
         let options = await notes.get<IGitGitGadgetOptions>("");
@@ -153,13 +164,12 @@ export class GitGitGadget {
             throw new Error(`Permission denied for user ${gitHubUser}`);
         }
 
-        const urlPrefix = "https://github.com/gitgitgadget/git/pull/";
-        if (!pullRequestURL.startsWith(urlPrefix)) {
+        const [owner, repo, pullRequestNumber] =
+            GitGitGadget.parsePullRequestURL(pullRequestURL);
+        if (owner !== "gitgitgadget" || repo !== "git") {
             throw new Error(`Unsupported repository: ${pullRequestURL}`);
         }
 
-        const pullRequestNumber =
-            parseInt(pullRequestURL.substr(urlPrefix.length), 10);
         const metadata =
             await this.notes.get<IPatchSeriesMetadata>(pullRequestURL);
         const previousTag = metadata && metadata.latestTag ?
