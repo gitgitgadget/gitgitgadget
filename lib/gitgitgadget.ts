@@ -19,13 +19,19 @@ export interface IGitGitGadgetOptions {
  * The central class of the Probot-based Web App.
  */
 export class GitGitGadget {
+    public static async getWorkDir(gitGitGadgetDir: string): Promise<string> {
+        const workDir =
+            await gitConfig("gitgitgadget.workDir", gitGitGadgetDir);
+        if (!workDir) {
+            throw new Error(`Could not find GitGitGadget's work tree`);
+        }
+        return workDir;
+    }
+
     public static async get(gitGitGadgetDir: string, workDir?: string):
         Promise<GitGitGadget> {
         if (!workDir) {
-            workDir = await gitConfig("gitgitgadget.workDir", gitGitGadgetDir);
-            if (!workDir) {
-                throw new Error(`Could not find GitGitGadget's work tree`);
-            }
+            workDir = await this.getWorkDir(gitGitGadgetDir);
         }
 
         const publishTagsAndNotesToRemote =
