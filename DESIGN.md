@@ -117,8 +117,8 @@ The patches will be submitted in the required form, as mails to the Git mailing
 list. The description of the Pull Request will be used as cover letter, after
 extracting `Cc:` lines from the footer (if any).
 
-The mails will be sent via the dedicated account gitgitgadget@outlook.com, with
-`From: "<author> via GitGitGadget" <gitgitgadget@outlook.com>` headers, and
+The mails will be sent via the dedicated account gitgitgadget@gmail.com, with
+`From: "<author> via GitGitGadget" <gitgitgadget@gmail.com>` headers, and
 linking to the corresponding PR/commits on GitHub.
 
 ### Storage
