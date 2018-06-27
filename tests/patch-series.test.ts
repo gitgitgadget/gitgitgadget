@@ -127,7 +127,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         test("range-diff is inserted correctly", () => {
             expect(coverLetterWithRangeDiff).toMatch(
                 // tslint:disable-next-line:max-line-length
-                /\n-- \n\nHEADER\n This\n is\n a\n fake\n cover letter\n\n2\.17/);
+                /\n\nHEADER\n This\n is\n a\n fake\n cover letter\n-- \n2\.17/);
             expect(mailWithRangeDiff).toMatch(
                 // tslint:disable-next-line:max-line-length
                 /\n---\n\nHEADER\n This\n is\n a\n fake\n cover letter\n\n README/);

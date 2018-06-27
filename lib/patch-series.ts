@@ -353,7 +353,7 @@ export class PatchSeries {
     protected static insertFooters(mail: string, isCoverLetter: boolean,
                                    footers: string[]): string {
         const regex = isCoverLetter ?
-            /^([^]*?\n-- \n)([^]*)$/ :
+            /^([^]*?\n)(-- \n[^]*)$/ :
             /^([^]*?\n---\n(?:\n[A-Za-z:]+ [^]*?\n\n)?)([^]*)$/;
         const match = mail.match(regex);
         if (!match) {
@@ -361,7 +361,8 @@ export class PatchSeries {
                 + "point for\n\n" + mail);
         }
 
-        return `${match[1]}\n${footers.join("\n")}\n\n${match[2]}`;
+        const n = isCoverLetter ? "" : "\n";
+        return `${match[1]}${n}${footers.join("\n")}\n${n}${match[2]}`;
     }
 
     public readonly notes: GitNotes;
