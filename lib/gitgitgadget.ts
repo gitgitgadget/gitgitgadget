@@ -105,24 +105,43 @@ export class GitGitGadget {
         return this.allowedUsers.has(user);
     }
 
-    public async allowUser(user: string): Promise<void> {
-        if (!this.isUserAllowed(user)) {
-            this.allowedUsers.add(user);
-            this.options.allowedUsers.push(user);
-            await this.notes.set("", this.options);
+    public async allowUser(vouchingUser: string, user: string):
+        Promise<boolean> {
+        await this.fetchAndReReadOptions();
+        if (!this.isUserAllowed(vouchingUser)) {
+            throw new Error(`User ${vouchingUser} lacks permission for this.`);
         }
+
+        if (this.isUserAllowed(user)) {
+            return false;
+        }
+        this.allowedUsers.add(user);
+        this.options.allowedUsers.push(user);
+        await this.notes.set("", this.options, true);
+        await this.pushNotesRef();
+        return true;
     }
 
-    public async denyUser(user: string): Promise<void> {
-        if (this.isUserAllowed(user)) {
-            for (let i = 0; i < this.options.allowedUsers.length; i++) {
-                if (this.options.allowedUsers[i] === user) {
-                    this.options.allowedUsers.splice(i, 1);
-                    break;
-                }
-            }
-            this.allowedUsers.delete(user);
+    public async denyUser(vouchingUser: string, user: string):
+        Promise<boolean> {
+        await this.fetchAndReReadOptions();
+        if (!this.isUserAllowed(vouchingUser)) {
+            throw new Error(`User ${vouchingUser} lacks permission for this.`);
         }
+
+        if (!this.isUserAllowed(user)) {
+            return false;
+        }
+        for (let i = 0; i < this.options.allowedUsers.length; i++) {
+            if (this.options.allowedUsers[i] === user) {
+                this.options.allowedUsers.splice(i, 1);
+                break;
+            }
+        }
+        this.allowedUsers.delete(user);
+        await this.notes.set("", this.options, true);
+        await this.pushNotesRef();
+        return true;
     }
 
     public async submit(gitHubUser: string, gitHubUserName: string,
