@@ -114,12 +114,16 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             expect(withLinks).toBe(tagMessage1 + footer);
         });
 
+        const footers = [
+            "HEADER",
+        ].concat([
+            "This", "is", "a", "fake", "cover letter",
+        ].map((element: string): string => ` ${element}`));
+
         const coverLetterWithRangeDiff =
-            PatchSeries.insertRangeDiff(coverLetter, true, "HEADER",
-                "This\nis\na\nfake\ncover letter\n");
+            PatchSeries.insertFooters(coverLetter, true, footers);
         const mailWithRangeDiff =
-            PatchSeries.insertRangeDiff(mails[1], false, "HEADER",
-                "This\nis\na\nfake\ncover letter\n");
+            PatchSeries.insertFooters(mails[1], false, footers);
         test("range-diff is inserted correctly", () => {
             expect(coverLetterWithRangeDiff).toMatch(
                 // tslint:disable-next-line:max-line-length

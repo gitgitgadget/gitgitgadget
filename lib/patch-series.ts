@@ -350,13 +350,8 @@ export class PatchSeries {
         return tagMessage + insert;
     }
 
-    protected static insertRangeDiff(mail: string, isCoverLetter: boolean,
-                                     rangeDiffHeader: string,
-                                     rangeDiff: string): string {
-        if (!rangeDiff) {
-            return mail;
-        }
-
+    protected static insertFooters(mail: string, isCoverLetter: boolean,
+                                   footers: string[]): string {
         const regex = isCoverLetter ?
             /^([^]*?\n-- \n)([^]*)$/ :
             /^([^]*?\n---\n(?:\n[A-Za-z:]+ [^]*?\n\n)?)([^]*)$/;
@@ -366,10 +361,7 @@ export class PatchSeries {
                 + "point for\n\n" + mail);
         }
 
-        // split the range-diff and prefix with a space
-        return match[1] + "\n" + (rangeDiffHeader ?
-            rangeDiffHeader + "\n" : "")
-            + rangeDiff.replace(/(^|\n(?!$))/g, "$1 ") + "\n" + match[2];
+        return `${match[1]}\n${footers.join("\n")}\n\n${match[2]}`;
     }
 
     public readonly notes: GitNotes;
@@ -515,11 +507,17 @@ export class PatchSeries {
             this.metadata.latestTag = tagName;
         }
 
-        logger.log("Inserting range-diff");
+        const footers: string[] = [];
         if (this.rangeDiff) {
-            mails[0] = PatchSeries.insertRangeDiff(mails[0], mails.length > 1,
-                `Range-diff vs v${this.metadata.iteration - 1}:\n`,
-                this.rangeDiff);
+            // split the range-diff and prefix with a space
+            footers.push(`Range-diff vs v${this.metadata.iteration - 1}:`
+                + `\n\n${this.rangeDiff.replace(/(^|\n(?!$))/g, "$1 ")}\n`);
+        }
+
+        logger.log("Inserting footers");
+        if (footers.length > 0) {
+            mails[0] = PatchSeries.insertFooters(mails[0],
+                mails.length > 1, footers);
         }
 
         if (this.options.dryRun) {
