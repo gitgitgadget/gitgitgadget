@@ -88,6 +88,11 @@ module.exports = (robot) => {
   })
 
   commands(robot, 'allow', async (context, command) => {
+    const comment = context.payload.comment;
+    if (!comment || !comment.user || !comment.user.login) {
+      console.log('Cannot determine user who launched this');
+      return;
+    }
     const gitHubUser = comment.user.login;
     await instantiate()
     try {
@@ -101,6 +106,11 @@ module.exports = (robot) => {
   })
 
   commands(robot, 'disallow', async (context, command) => {
+    const comment = context.payload.comment;
+    if (!comment || !comment.user || !comment.user.login) {
+      console.log('Cannot determine user who launched this');
+      return;
+    }
     const gitHubUser = comment.user.login;
     await instantiate()
     try {
