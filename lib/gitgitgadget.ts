@@ -13,16 +13,17 @@ export interface IGitGitGadgetOptions {
  * The central class of the Probot-based Web App.
  */
 export class GitGitGadget {
-    public static async get(workDir?: string): Promise<GitGitGadget> {
+    public static async get(gitGitGadgetDir: string, workDir?: string):
+        Promise<GitGitGadget> {
         if (!workDir) {
-            workDir = await gitConfig("gitgitgadget.workDir");
+            workDir = await gitConfig("gitgitgadget.workDir", gitGitGadgetDir);
             if (!workDir) {
                 throw new Error(`Could not find GitGitGadget's work tree`);
             }
         }
 
         const publishTagsAndNotesToRemote =
-            await gitConfig("gitgitgadget.publishRemote");
+            await gitConfig("gitgitgadget.publishRemote", gitGitGadgetDir);
         if (!publishTagsAndNotesToRemote) {
             throw new Error(`No remote to which to push configured`);
         }
@@ -42,9 +43,12 @@ export class GitGitGadget {
 
         const notes = new GitNotes(workDir);
 
-        const smtpUser = await gitConfig("gitgitgadget.smtpUser");
-        const smtpHost = await gitConfig("gitgitgadget.smtpHost");
-        const smtpPass = await gitConfig("gitgitgadget.smtpPass");
+        const smtpUser = await gitConfig("gitgitgadget.smtpUser",
+            gitGitGadgetDir);
+        const smtpHost = await gitConfig("gitgitgadget.smtpHost",
+            gitGitGadgetDir);
+        const smtpPass = await gitConfig("gitgitgadget.smtpPass",
+            gitGitGadgetDir);
         if (!smtpUser || !smtpHost || !smtpPass) {
             throw new Error(`No SMTP settings configured`);
         }
@@ -101,24 +105,43 @@ export class GitGitGadget {
         return this.allowedUsers.has(user);
     }
 
-    public async allowUser(user: string): Promise<void> {
-        if (!this.isUserAllowed(user)) {
-            this.allowedUsers.add(user);
-            this.options.allowedUsers.push(user);
-            await this.notes.set("", this.options);
+    public async allowUser(vouchingUser: string, user: string):
+        Promise<boolean> {
+        await this.fetchAndReReadOptions();
+        if (!this.isUserAllowed(vouchingUser)) {
+            throw new Error(`User ${vouchingUser} lacks permission for this.`);
         }
+
+        if (this.isUserAllowed(user)) {
+            return false;
+        }
+        this.allowedUsers.add(user);
+        this.options.allowedUsers.push(user);
+        await this.notes.set("", this.options, true);
+        await this.pushNotesRef();
+        return true;
     }
 
-    public async denyUser(user: string): Promise<void> {
-        if (this.isUserAllowed(user)) {
-            for (let i = 0; i < this.options.allowedUsers.length; i++) {
-                if (this.options.allowedUsers[i] === user) {
-                    this.options.allowedUsers.splice(i, 1);
-                    break;
-                }
-            }
-            this.allowedUsers.delete(user);
+    public async denyUser(vouchingUser: string, user: string):
+        Promise<boolean> {
+        await this.fetchAndReReadOptions();
+        if (!this.isUserAllowed(vouchingUser)) {
+            throw new Error(`User ${vouchingUser} lacks permission for this.`);
         }
+
+        if (!this.isUserAllowed(user)) {
+            return false;
+        }
+        for (let i = 0; i < this.options.allowedUsers.length; i++) {
+            if (this.options.allowedUsers[i] === user) {
+                this.options.allowedUsers.splice(i, 1);
+                break;
+            }
+        }
+        this.allowedUsers.delete(user);
+        await this.notes.set("", this.options, true);
+        await this.pushNotesRef();
+        return true;
     }
 
     public async submit(gitHubUser: string, gitHubUserName: string,
@@ -185,5 +208,29 @@ export class GitGitGadget {
             await GitGitGadget.readOptions(this.notes);
 
         return pullRequestRef;
+    }
+
+    protected async fetchAndReReadOptions(): Promise<void> {
+        await git([
+            "fetch",
+            this.publishTagsAndNotesToRemote,
+            "--",
+            `+${GitNotes.defaultNotesRef}:${GitNotes.defaultNotesRef}`,
+        ], { workDir: this.workDir });
+        [this.options, this.allowedUsers] =
+            await GitGitGadget.readOptions(this.notes);
+    }
+
+    protected async pushNotesRef(): Promise<void> {
+        await git([
+            "push",
+            this.publishTagsAndNotesToRemote,
+            "--",
+            `${this.notes.notesRef}`,
+        ], { workDir: this.workDir });
+
+        // re-read options
+        [this.options, this.allowedUsers] =
+            await GitGitGadget.readOptions(this.notes);
     }
 }

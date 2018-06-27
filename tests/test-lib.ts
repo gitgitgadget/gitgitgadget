@@ -24,7 +24,8 @@ export async function removeRecursively(path: string): Promise<void> {
 
 let initializedHome: boolean = false;
 
-export async function testCreateRepo(name: string) {
+export async function testCreateRepo(name: string, suffix?: string):
+    Promise<string> {
     let tmp = `${__dirname}/../.test-dir/`;
     if (!await isDirectory(tmp)) {
         await mkdir(tmp);
@@ -34,6 +35,9 @@ export async function testCreateRepo(name: string) {
     const match = name.match(/^(.*[\\/])?(.*?)(\.test)?\.ts$/);
     if (match) {
         name = `trash directory.${match[2]}`;
+    }
+    if (suffix) {
+        name += suffix;
     }
 
     const dir = `${tmp}/${name}`;
@@ -55,13 +59,14 @@ export async function testCreateRepo(name: string) {
     }
     await git([
         "commit-tree", "-m", "Test commit",
-	"4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+        "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
     ], {
-        workDir: dir,
-        env: {
-            GIT_AUTHOR_DATE: `123457689 +0000`,
-            GIT_COMMITTER_DATE: `123457689 +0000`,
-        }
+            env: {
+                GIT_AUTHOR_DATE: `123457689 +0000`,
+                GIT_COMMITTER_DATE: `123457689 +0000`,
+            },
+            workDir: dir,
+        },
     );
 
     return dir;

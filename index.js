@@ -6,6 +6,13 @@ module.exports = (robot) => {
 
   robot.log('Yay, the app was loaded!');
 
+  const instantiate = async () => {
+    if (!gitGitGadget) {
+      console.log('Getting new GitGitGadget instance');
+      gitGitGadget = await GitGitGadget.get(__dirname);
+    }
+  }
+
   const addComment = async (context, comment) => {
     await context.github.issues.createComment(context.issue({ body: comment }))
   }
@@ -16,10 +23,7 @@ module.exports = (robot) => {
       return;
     }
 
-    if (!gitGitGadget) {
-      console.log('Getting new GitGitGadget instance');
-      gitGitGadget = await GitGitGadget.get();
-    }
+    await instantiate();
 
     const comment = context.payload.comment;
     if (!comment || !comment.user || !comment.user.login) {
@@ -80,6 +84,30 @@ module.exports = (robot) => {
       await addComment(context, `Submitted as [${coverMid}](https://public-inbox.org/git/${coverMid})`);
     } catch (reason) {
       await addComment(context, `An error occurred while submitting:\n\n${reason}`);
+    }
+  })
+
+  commands(robot, 'allow', async (context, command) => {
+    await instantiate()
+    try {
+      if (await gitGitGadget.allowUser(command.arguments))
+        await addComment(context, `User ${command.arguments} is now allowed to use GitGitGadget.`)
+      else
+        await addComment(context, `User ${command.arguments} already allowed to use GitGitGadget.`)
+    } catch (reason) {
+      await addComment(context, `An error occurred while processing:\n\n${reason}`)
+    }
+  })
+
+  commands(robot, 'disallow', async (context, command) => {
+    await instantiate()
+    try {
+      if (await gitGitGadget.disallowUser(command.arguments))
+        await addComment(context, `User ${command.arguments} is no longer allowed to use GitGitGadget.`)
+      else
+        await addComment(context, `User ${command.arguments} already not allowed to use GitGitGadget.`)
+    } catch (reason) {
+      await addComment(context, `An error occurred while processing:\n\n${reason}`)
     }
   })
 }

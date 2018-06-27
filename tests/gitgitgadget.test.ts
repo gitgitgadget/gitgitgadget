@@ -1,7 +1,7 @@
 import "jest";
-import { git, gitCommandExists, revParse } from "../lib/git";
+import { git, gitCommandExists, gitConfig, revParse } from "../lib/git";
 import { GitNotes } from "../lib/git-notes";
-import { IGitGitGadgetOptions } from "../lib/gitgitgadget";
+import { GitGitGadget, IGitGitGadgetOptions } from "../lib/gitgitgadget";
 import { PatchSeries } from "../lib/patch-series";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata";
 import { ProjectOptions } from "../lib/project-options";
@@ -291,4 +291,37 @@ base-commit: c241357a04a6f862ceef20bd148946085f3178b9
 
 Submitted-As: https://dummy.com/?mid=pull.1.v2.git.gitgitgadget@example.com
 In-Reply-To: https://dummy.com/?mid=pull.1.git.gitgitgadget@example.com`);
+});
+
+test("allow/disallow", async () => {
+    const repo = await testCreateRepo(__filename);
+    const remote = await testCreateRepo(__filename, "-remote");
+
+    await git(["config", "gitgitgadget.workDir", repo], { workDir: repo });
+    await git(["config",
+        "gitgitgadget.publishRemote", remote], { workDir: repo });
+    await git(["config", "gitgitgadget.smtpUser", "test"], { workDir: repo });
+    await git(["config", "gitgitgadget.smtpHost", "test"], { workDir: repo });
+    await git(["config", "gitgitgadget.smtpPass", "test"], { workDir: repo });
+
+    const notes = new GitNotes(remote);
+    await notes.set("", {} as IGitGitGadgetOptions);
+
+    const gitGitGadget = await GitGitGadget.get(repo);
+
+    // pretend that the notes ref had been changed in the meantime
+    await notes.set("",
+        { allowedUsers: ["first-one"] } as IGitGitGadgetOptions, true);
+
+    expect(gitGitGadget.isUserAllowed("second-one")).toBeFalsy();
+    expect(await gitGitGadget.allowUser("first-one", "second-one"))
+        .toBeTruthy();
+    expect(await gitGitGadget.allowUser("first-one", "second-one"))
+        .toBeFalsy();
+    expect(gitGitGadget.isUserAllowed("second-one")).toBeTruthy();
+    expect(await gitGitGadget.denyUser("first-one", "second-one"))
+        .toBeTruthy();
+    expect(await gitGitGadget.denyUser("first-one", "second-one"))
+        .toBeFalsy();
+    expect(gitGitGadget.isUserAllowed("second-one")).toBeFalsy();
 });
