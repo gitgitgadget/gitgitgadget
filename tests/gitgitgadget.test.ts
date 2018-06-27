@@ -47,6 +47,11 @@ Test Dev (1):
 
 
 base-commit: c241357a04a6f862ceef20bd148946085f3178b9
+Published-As: https://github.com/gitgitgadget/git/releases/tags/${
+    ""}pr-1/somebody/master-v1
+Fetch-It-Via: git fetch https://github.com/gitgitgadget/git ${
+    ""}pr-1/somebody/master-v1
+Pull-Request: https://github.com/gitgitgadget/git/pull/1
 --${" "}
 gitgitgadget
 `, `From cd048a1378e3f7b055cd467ff3a24ed0cf5e7453 Mon Sep 17 00:00:00 2001
@@ -224,7 +229,8 @@ have included in git.git.`);
 
         return "Message-ID";
     }
-    expect(await patches.generateAndSend(logger, send))
+    expect(await patches.generateAndSend(logger, send, undefined,
+        pullRequestURL))
         .toEqual("pull.1.git.gitgitgadget@example.com");
     expect(mails).toEqual(expectedMails);
 
@@ -236,7 +242,8 @@ have included in git.git.`);
         "gitgitgadget:next", baseCommit,
         "somebody:master", headCommit2, "GitHub User");
     mails.splice(0);
-    expect(await patches2.generateAndSend(logger, send))
+    expect(await patches2.generateAndSend(logger, send, undefined,
+        pullRequestURL))
         .toEqual("pull.1.v2.git.gitgitgadget@example.com");
     expect(mails.length).toEqual(5);
     if (await gitCommandExists("range-diff", workDir)) {

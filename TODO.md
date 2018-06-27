@@ -7,7 +7,6 @@ into a few categories (listed by priority, most important tasks first).
 ## These tasks should be the focus immediately after GitGitGadget works
 
 - suppress the `Cc: GitGitGadget` and the first body line `From: GitGitGadget` in the cover letter
-- add links to the PR and the branch to-be-merged to the cover letter
 - Cc: the GitHub user who issued `/submit` on the cover letter
 - handle the `/allow <user>` and `/disallow <user>` commands
 - upon Probot-type of launch, verify that the base branch is one of "maint", "master", "next" or "pu"

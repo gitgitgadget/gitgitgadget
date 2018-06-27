@@ -184,7 +184,7 @@ export class GitGitGadget {
             async (mail: string): Promise<string> => {
                 return await parseHeadersAndSendMail(mail, this.smtpOptions);
             },
-            this.publishTagsAndNotesToRemote,
+            this.publishTagsAndNotesToRemote, pullRequestURL,
         );
         return coverMid;
     }
