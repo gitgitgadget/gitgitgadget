@@ -13,16 +13,17 @@ export interface IGitGitGadgetOptions {
  * The central class of the Probot-based Web App.
  */
 export class GitGitGadget {
-    public static async get(workDir?: string): Promise<GitGitGadget> {
+    public static async get(gitGitGadgetDir: string, workDir?: string):
+        Promise<GitGitGadget> {
         if (!workDir) {
-            workDir = await gitConfig("gitgitgadget.workDir");
+            workDir = await gitConfig("gitgitgadget.workDir", gitGitGadgetDir);
             if (!workDir) {
                 throw new Error(`Could not find GitGitGadget's work tree`);
             }
         }
 
         const publishTagsAndNotesToRemote =
-            await gitConfig("gitgitgadget.publishRemote");
+            await gitConfig("gitgitgadget.publishRemote", gitGitGadgetDir);
         if (!publishTagsAndNotesToRemote) {
             throw new Error(`No remote to which to push configured`);
         }
@@ -42,9 +43,12 @@ export class GitGitGadget {
 
         const notes = new GitNotes(workDir);
 
-        const smtpUser = await gitConfig("gitgitgadget.smtpUser");
-        const smtpHost = await gitConfig("gitgitgadget.smtpHost");
-        const smtpPass = await gitConfig("gitgitgadget.smtpPass");
+        const smtpUser = await gitConfig("gitgitgadget.smtpUser",
+            gitGitGadgetDir);
+        const smtpHost = await gitConfig("gitgitgadget.smtpHost",
+            gitGitGadgetDir);
+        const smtpPass = await gitConfig("gitgitgadget.smtpPass",
+            gitGitGadgetDir);
         if (!smtpUser || !smtpHost || !smtpPass) {
             throw new Error(`No SMTP settings configured`);
         }

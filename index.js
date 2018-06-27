@@ -9,7 +9,7 @@ module.exports = (robot) => {
   const instantiate = async () => {
     if (!gitGitGadget) {
       console.log('Getting new GitGitGadget instance');
-      gitGitGadget = await GitGitGadget.get();
+      gitGitGadget = await GitGitGadget.get(__dirname);
     }
   }
 
