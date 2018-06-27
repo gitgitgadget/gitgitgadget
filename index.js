@@ -88,9 +88,10 @@ module.exports = (robot) => {
   })
 
   commands(robot, 'allow', async (context, command) => {
+    const gitHubUser = comment.user.login;
     await instantiate()
     try {
-      if (await gitGitGadget.allowUser(command.arguments))
+      if (await gitGitGadget.allowUser(gitHubUser, command.arguments))
         await addComment(context, `User ${command.arguments} is now allowed to use GitGitGadget.`)
       else
         await addComment(context, `User ${command.arguments} already allowed to use GitGitGadget.`)
@@ -100,9 +101,10 @@ module.exports = (robot) => {
   })
 
   commands(robot, 'disallow', async (context, command) => {
+    const gitHubUser = comment.user.login;
     await instantiate()
     try {
-      if (await gitGitGadget.disallowUser(command.arguments))
+      if (await gitGitGadget.disallowUser(gitHubUser, command.arguments))
         await addComment(context, `User ${command.arguments} is no longer allowed to use GitGitGadget.`)
       else
         await addComment(context, `User ${command.arguments} already not allowed to use GitGitGadget.`)
