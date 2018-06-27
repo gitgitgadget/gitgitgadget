@@ -190,4 +190,17 @@ export class GitGitGadget {
 
         return pullRequestRef;
     }
+
+    protected async pushNotesRef(): Promise<void> {
+        await git([
+            "push",
+            this.publishTagsAndNotesToRemote,
+            "--",
+            `${this.notes.notesRef}`,
+        ], { workDir: this.workDir });
+
+        // re-read options
+        [this.options, this.allowedUsers] =
+            await GitGitGadget.readOptions(this.notes);
+    }
 }
