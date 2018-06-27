@@ -24,7 +24,8 @@ export async function removeRecursively(path: string): Promise<void> {
 
 let initializedHome: boolean = false;
 
-export async function testCreateRepo(name: string) {
+export async function testCreateRepo(name: string, suffix?: string):
+    Promise<string> {
     let tmp = `${__dirname}/../.test-dir/`;
     if (!await isDirectory(tmp)) {
         await mkdir(tmp);
@@ -34,6 +35,9 @@ export async function testCreateRepo(name: string) {
     const match = name.match(/^(.*[\\/])?(.*?)(\.test)?\.ts$/);
     if (match) {
         name = `trash directory.${match[2]}`;
+    }
+    if (suffix) {
+        name += suffix;
     }
 
     const dir = `${tmp}/${name}`;
