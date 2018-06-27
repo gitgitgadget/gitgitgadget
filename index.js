@@ -86,4 +86,28 @@ module.exports = (robot) => {
       await addComment(context, `An error occurred while submitting:\n\n${reason}`);
     }
   })
+
+  commands(robot, 'allow', async (context, command) => {
+    await instantiate()
+    try {
+      if (await gitGitGadget.allowUser(command.arguments))
+        await addComment(context, `User ${command.arguments} is now allowed to use GitGitGadget.`)
+      else
+        await addComment(context, `User ${command.arguments} already allowed to use GitGitGadget.`)
+    } catch (reason) {
+      await addComment(context, `An error occurred while processing:\n\n${reason}`)
+    }
+  })
+
+  commands(robot, 'disallow', async (context, command) => {
+    await instantiate()
+    try {
+      if (await gitGitGadget.disallowUser(command.arguments))
+        await addComment(context, `User ${command.arguments} is no longer allowed to use GitGitGadget.`)
+      else
+        await addComment(context, `User ${command.arguments} already not allowed to use GitGitGadget.`)
+    } catch (reason) {
+      await addComment(context, `An error occurred while processing:\n\n${reason}`)
+    }
+  })
 }
