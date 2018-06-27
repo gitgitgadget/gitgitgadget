@@ -19,7 +19,7 @@ export async function git(args: string[],
     Promise<string> {
     const workDir = options && options.workDir || ".";
     if (options && options.trace) {
-        process.stderr.write(`Called 'git ${args.join(" ")}':
+        process.stderr.write(`Called 'git ${args.join(" ")}' in '${workDir}':
 ${new Error().stack}
 `);
     }
@@ -27,6 +27,12 @@ ${new Error().stack}
     if (result.exitCode) {
         throw new Error(`git ${args.join(" ")} failed: ${result.exitCode},
 ${result.stderr}`);
+    }
+    if (options && options.trace) {
+        process.stderr.write(`Output of 'git ${args.join(" ")}':
+stderr: ${result.stderr}
+stdout: ${result.stdout}
+`);
     }
     return !options || options.trimTrailingNewline === false ?
         result.stdout : trimTrailingNewline(result.stdout);
