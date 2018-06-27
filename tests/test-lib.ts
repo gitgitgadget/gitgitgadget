@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as util from "util";
-import { isDirectory } from "../lib/fs-util";
+import { isDirectory, isFile } from "../lib/fs-util";
 import { git, IGitOptions, revParse } from "../lib/git";
 
 const mkdir = util.promisify(fs.mkdir);
@@ -21,8 +21,6 @@ export async function removeRecursively(path: string): Promise<void> {
         await rmdir(path);
     }
 }
-
-let initializedHome: boolean = false;
 
 export async function testCreateRepo(name: string, suffix?: string):
     Promise<string> {
@@ -50,10 +48,8 @@ export async function testCreateRepo(name: string, suffix?: string):
 
     await git(["init", dir]);
 
-    if (!initializedHome) {
-        initializedHome = true;
-
-        process.env.HOME = tmp;
+    process.env.HOME = tmp;
+    if (!await isFile(`${tmp}/.gitconfig`)) {
         await git(["config", "--global", "user.name", "Test User"]);
         await git(["config", "--global", "user.email", "user@example.com"]);
     }
