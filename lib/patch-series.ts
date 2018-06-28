@@ -516,7 +516,8 @@ export class PatchSeries {
             const [owner, repo, prNo] =
                 GitGitGadget.parsePullRequestURL(pullRequestURL);
             const prefix = `https://github.com/${owner}/${repo}`;
-            footers.push(`Published-As: ${prefix}/releases/tags/${tagName}`);
+            const tagName2 = encodeURIComponent(tagName);
+            footers.push(`Published-As: ${prefix}/releases/tags/${tagName2}`);
             footers.push(`Fetch-It-Via: git fetch ${prefix} ${tagName}`);
             footers.push(`Pull-Request: ${prefix}/pull/${prNo}`);
         }
