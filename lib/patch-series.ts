@@ -2,6 +2,7 @@ import {
     commitExists, git, gitCommandExists, gitConfig, revParse,
 } from "./git";
 import { GitNotes } from "./git-notes";
+import { GitGitGadget } from "./gitgitgadget";
 import { IMailMetadata } from "./mail-metadata";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
 import { PatchSeriesOptions } from "./patch-series-options";
@@ -350,15 +351,10 @@ export class PatchSeries {
         return tagMessage + insert;
     }
 
-    protected static insertRangeDiff(mail: string, isCoverLetter: boolean,
-                                     rangeDiffHeader: string,
-                                     rangeDiff: string): string {
-        if (!rangeDiff) {
-            return mail;
-        }
-
+    protected static insertFooters(mail: string, isCoverLetter: boolean,
+                                   footers: string[]): string {
         const regex = isCoverLetter ?
-            /^([^]*?\n-- \n)([^]*)$/ :
+            /^([^]*?\n)(-- \n[^]*)$/ :
             /^([^]*?\n---\n(?:\n[A-Za-z:]+ [^]*?\n\n)?)([^]*)$/;
         const match = mail.match(regex);
         if (!match) {
@@ -366,10 +362,8 @@ export class PatchSeries {
                 + "point for\n\n" + mail);
         }
 
-        // split the range-diff and prefix with a space
-        return match[1] + "\n" + (rangeDiffHeader ?
-            rangeDiffHeader + "\n" : "")
-            + rangeDiff.replace(/(^|\n(?!$))/g, "$1 ") + "\n" + match[2];
+        const n = isCoverLetter ? "" : "\n";
+        return `${match[1]}${n}${footers.join("\n")}\n${n}${match[2]}`;
     }
 
     public readonly notes: GitNotes;
@@ -404,7 +398,8 @@ export class PatchSeries {
 
     public async generateAndSend(logger: ILogger,
                                  send?: SendFunction,
-                                 publishTagsAndNotesToRemote?: string):
+                                 publishTagsAndNotesToRemote?: string,
+                                 pullRequestURL?: string):
         Promise<string | undefined> {
         if (this.options.dryRun) {
             logger.log("Dry-run " + this.project.branchName
@@ -515,11 +510,30 @@ export class PatchSeries {
             this.metadata.latestTag = tagName;
         }
 
-        logger.log("Inserting range-diff");
+        const footers: string[] = [];
+
+        if (pullRequestURL) {
+            const [owner, repo, prNo] =
+                GitGitGadget.parsePullRequestURL(pullRequestURL);
+            const prefix = `https://github.com/${owner}/${repo}`;
+            footers.push(`Published-As: ${prefix}/releases/tags/${tagName}`);
+            footers.push(`Fetch-It-Via: git fetch ${prefix} ${tagName}`);
+            footers.push(`Pull-Request: ${prefix}/pull/${prNo}`);
+        }
+
         if (this.rangeDiff) {
-            mails[0] = PatchSeries.insertRangeDiff(mails[0], mails.length > 1,
-                `Range-diff vs v${this.metadata.iteration - 1}:\n`,
-                this.rangeDiff);
+            if (footers.length > 0) {
+                footers.push(""); // empty line
+            }
+            // split the range-diff and prefix with a space
+            footers.push(`Range-diff vs v${this.metadata.iteration - 1}:`
+                + `\n\n${this.rangeDiff.replace(/(^|\n(?!$))/g, "$1 ")}\n`);
+        }
+
+        logger.log("Inserting footers");
+        if (footers.length > 0) {
+            mails[0] = PatchSeries.insertFooters(mails[0],
+                mails.length > 1, footers);
         }
 
         if (this.options.dryRun) {
