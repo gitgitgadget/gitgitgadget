@@ -77,8 +77,8 @@ Builds](https://docs.microsoft.com/en-us/vsts/build-release/index?view=vsts).
 
 The most convenient way to implement a UI based on GitHub Pull Requests is to
 use the Probot framework. This framework is implemented in Javascript, and to
-allow for type-safe and convenient development, Typescript and Visual Studio
-Code are a natural fit.
+allow for type-safe and convenient development, Typescript and [Visual Studio
+Code](https://code.visualstudio.com/) are a natural fit.
 
 While many developers may not be familiar with Typescript, it is similar enough
 to (and a superset of) Javascript, which is a really well-known language. This
@@ -117,8 +117,8 @@ The patches will be submitted in the required form, as mails to the Git mailing
 list. The description of the Pull Request will be used as cover letter, after
 extracting `Cc:` lines from the footer (if any).
 
-The mails will be sent via the dedicated account gitgitgadget@outlook.com, with
-`From: "<author> via GitGitGadget" <gitgitgadget@outlook.com>` headers, and
+The mails will be sent via the dedicated account gitgitgadget@gmail.com, with
+`From: "<author> via GitGitGadget" <gitgitgadget@gmail.com>` headers, and
 linking to the corresponding PR/commits on GitHub.
 
 ### Storage
