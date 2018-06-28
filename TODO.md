@@ -10,7 +10,6 @@ into a few categories (listed by priority, most important tasks first).
 - Cc: the GitHub user who issued `/submit` on the cover letter
 - handle the `/allow <user>` and `/disallow <user>` commands
 - upon Probot-type of launch, verify that the base branch is one of "maint", "master", "next" or "pu"
-- install a VSTS job to mirror the branches from gitster/git to gitgitgadget/git
 - add a hard-coded test verifying that GitGitGadget is only called from
   gitgitgadget/git
 - write tests that verify that a Probot-type of load is handled correctly
