@@ -97,8 +97,8 @@ export class GitGitGadget {
         return [options, allowedUsers];
     }
 
-    protected readonly workDir: string;
-    protected readonly notes: GitNotes;
+    public readonly workDir: string;
+    public readonly notes: GitNotes;
     protected options: IGitGitGadgetOptions;
     protected allowedUsers: Set<string>;
 

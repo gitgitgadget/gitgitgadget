@@ -332,6 +332,12 @@ export class CIHelper {
         return options;
     }
 
+    public async getPRMetadata(pullRequestURL: string):
+        Promise<IPatchSeriesMetadata | undefined> {
+        await this.maybeUpdateGGGNotes();
+        return this.notes.get<IPatchSeriesMetadata>(pullRequestURL);
+    }
+
     public async getOriginalCommitsForPR(prMeta: IPatchSeriesMetadata):
         Promise<string[]> {
         if (!this.workDir) {
