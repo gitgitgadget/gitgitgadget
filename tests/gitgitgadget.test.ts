@@ -48,7 +48,7 @@ Test Dev (1):
 
 base-commit: c241357a04a6f862ceef20bd148946085f3178b9
 Published-As: https://github.com/gitgitgadget/git/releases/tags/${
-    ""}pr-1%2Fsomebody%2Fmaster-v1
+    "pr-1/somebody/master-v1".replace(/\//g, "%2F")}
 Fetch-It-Via: git fetch https://github.com/gitgitgadget/git ${
     ""}pr-1/somebody/master-v1
 Pull-Request: https://github.com/gitgitgadget/git/pull/1
