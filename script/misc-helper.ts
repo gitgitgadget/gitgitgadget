@@ -6,7 +6,7 @@ import { GitHubGlue } from "../lib/github-glue";
 import { toPrettyJSON } from "../lib/json-util";
 
 commander.version("1.0.0")
-    .usage("[options] ( update-open-prs )")
+    .usage("[options] ( update-open-prs | lookup-upstream-commit )")
     .description("Command-line helper for GitGitGadget")
     .option("-w, --work-dir [directory]",
         "Use a different GitGitGadget working directory than '.'", ".")
@@ -109,6 +109,15 @@ async function getCIHelper(): Promise<CIHelper> {
             console.log(`Changed options:\n${toPrettyJSON(options)}`);
             await ci.notes.set("", options, true);
         }
+    } else if (command === "lookup-upstream-commit") {
+        if (commander.args.length !== 2) {
+            process.stderr.write(`${command}: needs one argument\n`);
+            process.exit(1);
+        }
+        const commit = commander.args[1];
+
+        const upstreamCommit = await ci.identifyUpstreamCommit(commit);
+        console.log(`Upstream commit for ${commit}: ${upstreamCommit}`);
     } else {
         process.stderr.write(`${command}: unhandled sub-command\n`);
         process.exit(1);
