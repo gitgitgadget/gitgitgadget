@@ -1,6 +1,8 @@
 import { git } from "./git";
 import { GitNotes } from "./git-notes";
+import { GitHubGlue } from "./github-glue";
 import { MailCommitMapping } from "./mail-commit-mapping";
+import { IMailMetadata } from "./mail-metadata";
 
 /*
  * This class offers functions to support the operations we want to perform from
@@ -13,6 +15,8 @@ export class CIHelper {
     public readonly workDir?: string;
     public readonly notes: GitNotes;
     protected readonly mail2commit: MailCommitMapping;
+    protected readonly github: GitHubGlue;
+    protected testing: boolean;
     private gggNotesUpdated: boolean;
     private mail2CommitMapUpdated: boolean;
 
@@ -22,6 +26,8 @@ export class CIHelper {
         this.gggNotesUpdated = false;
         this.mail2commit = new MailCommitMapping(this.notes.workDir);
         this.mail2CommitMapUpdated = false;
+        this.github = new GitHubGlue(workDir);
+        this.testing = false;
     }
 
     /*
@@ -40,10 +46,57 @@ export class CIHelper {
         return await this.mail2commit.getGitGitCommitForMessageId(messageId);
     }
 
+    /**
+     * Given a Message-Id, identify the upstream commit (if any), and if there
+     * is one, and if it was not yet recorded in GitGitGadget's metadata, record
+     * it and create a GitHub Commit Status.
+     *
+     * @returns `true` iff the metadata had to be updated
+     */
+    public async updateCommitMapping(messageID: string):
+        Promise<boolean> {
+        await this.maybeUpdateGGGNotes();
+        const mailMeta: IMailMetadata | undefined =
+            await this.notes.get<IMailMetadata>(messageID);
+        if (!mailMeta) {
+            throw new Error(`No metadata found for ${messageID}`);
+        }
+
+        await this.maybeUpdateMail2CommitMap();
+        const upstreamCommit =
+            await this.mail2commit.getGitGitCommitForMessageId(messageID);
+        if (!upstreamCommit || upstreamCommit === mailMeta.commitInGitGit) {
+            return false;
+        }
+        mailMeta.commitInGitGit = upstreamCommit;
+        if (!mailMeta.originalCommit) {
+            mailMeta.originalCommit =
+                await this.getOriginalCommitForMessageId(messageID);
+            if (!mailMeta.originalCommit) {
+                throw new Error(`No original commit found for ${messageID}`);
+            }
+        }
+        await this.notes.set(messageID, mailMeta, true);
+
+        if (!this.testing && mailMeta.pullRequestURL) {
+            await this.github.annotateCommit(mailMeta.originalCommit,
+                                             upstreamCommit);
+        }
+
+        return true;
+    }
+
     public async getMessageIdForOriginalCommit(commit: string):
         Promise<string | undefined> {
         await this.maybeUpdateGGGNotes();
         return await this.notes.getLastCommitNote(commit);
+    }
+
+    public async getOriginalCommitForMessageId(messageID: string):
+        Promise<string | undefined> {
+        await this.maybeUpdateGGGNotes();
+        const note = await this.notes.get<IMailMetadata>(messageID);
+        return note ? note.originalCommit : undefined;
     }
 
     /*
