@@ -1,6 +1,11 @@
 import "jest";
 import { CIHelper } from "../lib/ci-helper";
+import { git } from "../lib/git";
+import { GitNotes } from "../lib/git-notes";
+import { IMailMetadata } from "../lib/mail-metadata";
 import { testCreateRepo } from "./test-lib";
+
+jest.setTimeout(60000);
 
 test("identify merge that integrated some commit", async () => {
     const repo = await testCreateRepo(__filename);
@@ -30,4 +35,53 @@ test("identify merge that integrated some commit", async () => {
     expect(await ci.identifyMergeCommit("pu", g)).toEqual(d);
     expect(await ci.identifyMergeCommit("pu", e)).toEqual(c);
     expect(await ci.identifyMergeCommit("pu", h)).toEqual(d);
+});
+
+test("identify upstream commit", async () => {
+    // initialize test worktree and gitgitgadget remote
+    const worktree = await testCreateRepo(__filename, "-worktree");
+    const gggRemote = await testCreateRepo(__filename, "-gitgitgadget");
+
+    // re-route the URLs
+    await worktree.git(["config", `url.${gggRemote.workDir}.insteadOf`,
+        "https://github.com/gitgitgadget/git"]);
+
+    // Set up fake upstream branches
+    const A = await gggRemote.commit("A");
+    await gggRemote.git(["branch", "maint"]);
+    await gggRemote.git(["branch", "next"]);
+    await gggRemote.git(["branch", "pu"]);
+
+    // Now come up with a local change
+    await worktree.git(["pull", gggRemote.workDir, "master"]);
+    const b = await worktree.commit("b");
+
+    // "Contribute" it via a PullRequest
+    const pullRequestURL = "https://example.com/pull/123";
+    const messageID = "fake-1st-mail@example.com";
+    const notes = new GitNotes(worktree.workDir);
+    await notes.appendCommitNote(b, messageID);
+    const bMeta = {
+        messageID,
+        originalCommit: b,
+        pullRequestURL,
+    } as IMailMetadata;
+    await notes.set(messageID, bMeta);
+
+    // "Apply" the patch, and merge it
+    await gggRemote.newBranch("gg/via-pull-request");
+    const B = await gggRemote.commit("B");
+    await gggRemote.git(["checkout", "pu"]);
+    await gggRemote.git(["merge", "--no-ff", "gg/via-pull-request"]);
+
+    // Update the `mail-to-commit` notes ref, at least the part we care about
+    const mail2CommitNotes = new GitNotes(gggRemote.workDir,
+        "refs/notes/mail-to-commit");
+    await mail2CommitNotes.setString(messageID, B);
+
+    // "publish" the gitgitgadget notes
+    await worktree.git(["push", gggRemote.workDir, notes.notesRef]);
+
+    const ci = new CIHelper(worktree.workDir);
+    expect(await ci.identifyUpstreamCommit(b)).toEqual(B);
 });

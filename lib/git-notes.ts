@@ -75,6 +75,20 @@ export class GitNotes {
         return notes.replace(/^[^]*\n\n/, "");
     }
 
+    public async update(): Promise<void> {
+        if (this.notesRef === "refs/notes/gitgitgadget" ||
+            this.notesRef === "refs/notes/commit-to-mail" ||
+            this.notesRef === "refs/notes/mail-to-commit") {
+            await git([
+                "fetch",
+                "https://github.com/gitgitgadget/git",
+                `+${this.notesRef}:${this.notesRef}`,
+            ], { workDir: this.workDir });
+        } else {
+            throw new Error(`Don't know how to update ${this.notesRef}`);
+        }
+    }
+
     protected async key2obj(key: string): Promise<string> {
         if (!key) {
             return emptyBlobName;
