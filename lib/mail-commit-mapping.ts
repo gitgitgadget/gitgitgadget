@@ -16,17 +16,35 @@ export class MailCommitMapping {
         return await this.mail2CommitNotes.getString(messageID);
     }
 
-    protected async updateMail2CommitRef(): Promise<string> {
-        await git([
-            "fetch",
-            "https://github.com/gitgitgadget/git",
-            "+refs/notes/mail-to-commit:refs/notes/mail-to-commit",
-            "+refs/heads/pu:refs/remotes/upstream/pu",
-        ], { workDir: this.mail2CommitNotes.workDir });
-        return await git([
-            "rev-parse",
-            "--verify",
-            "refs/notes/mail-to-commit",
-        ], { workDir: this.workDir });
+    public async updateMail2CommitAndBranches(): Promise<void> {
+        return await this.update(true, true, true);
+    }
+
+    public async updateMail2CommitRef(): Promise<void> {
+        return await this.update(true);
+    }
+
+    private async update(includeNotesRef?: boolean,
+                         includeUpstreamBranches?: boolean,
+                         includeGitsterBranches?: boolean): Promise<void> {
+        const refs = [];
+        if (includeNotesRef) {
+            refs.push("refs/notes/mail-to-commit:refs/notes/mail-to-commit");
+        }
+        if (includeUpstreamBranches) {
+            for (const ref of ["pu", "next", "master", "maint"]) {
+                refs.push(`+refs/heads/${ref}:refs/remotes/upstream/${ref}`);
+            }
+        }
+        if (includeGitsterBranches) {
+            refs.push("+refs/heads/*:refs/remotes/gitster/*");
+        }
+        if (refs.length) {
+            await git([
+                "fetch",
+                "https://github.com/gitgitgadget/git",
+                ...refs,
+            ], { workDir: this.workDir });
+        }
     }
 }
