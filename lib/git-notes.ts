@@ -77,7 +77,7 @@ export class GitNotes {
     }
 
     protected async notes(...args: string[]): Promise<string> {
-        return await git(["notes", `--ref=${this.notesRef}`].concat(args), {
+        return await git(["notes", `--ref=${this.notesRef}`, ...args], {
             workDir: this.workDir,
         });
     }
