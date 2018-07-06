@@ -66,6 +66,15 @@ export class GitNotes {
         return await this.notes("append", "-m", note, commit);
     }
 
+    public async getCommitNotes(commit: string): Promise<string> {
+        return await this.notes("show", commit);
+    }
+
+    public async getLastCommitNote(commit: string): Promise<string> {
+        const notes = await this.getCommitNotes(commit);
+        return notes.replace(/^[^]*\n\n/, "");
+    }
+
     protected async key2obj(key: string): Promise<string> {
         if (!key) {
             return emptyBlobName;

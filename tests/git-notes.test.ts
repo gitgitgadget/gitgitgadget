@@ -1,6 +1,6 @@
 import "jest";
 import { isDirectory } from "../lib/fs-util";
-import { emptyBlobName, git } from "../lib/git";
+import { git, revParse } from "../lib/git";
 import { GitNotes } from "../lib/git-notes";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata";
 import { testCreateRepo } from "./test-lib";
@@ -35,4 +35,11 @@ test("set/get notes", async () => {
     expect(await notes.set(pullRequestURL, metadata)).toBeUndefined();
     expect(await notes.get<IPatchSeriesMetadata>(pullRequestURL))
         .toEqual(metadata);
+
+    const commit = await revParse(notes.notesRef, notes.workDir);
+    expect(await notes.appendCommitNote(commit, "1")).toEqual("");
+    expect(await notes.getCommitNotes(commit)).toEqual("1");
+    expect(await notes.appendCommitNote(commit, "2")).toEqual("");
+    expect(await notes.getCommitNotes(commit)).toEqual("1\n\n2");
+    expect(await notes.getLastCommitNote(commit)).toEqual("2");
 });
