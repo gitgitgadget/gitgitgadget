@@ -266,7 +266,7 @@ export class PatchSeries {
 
             const ccMatch = header.match(/^([^]*\nCc: .*?)(\n(?![ \t])[^]*)$/);
             if (ccMatch) {
-                header = ccMatch[1] + ", " + authorMatch[2] + ccMatch[2];
+                header = ccMatch[1] + ",\n    " + authorMatch[2] + ccMatch[2];
             } else {
                 header += "\nCc: " + authorMatch[2];
             }
