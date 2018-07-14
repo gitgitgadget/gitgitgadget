@@ -66,8 +66,8 @@ Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 MIME-Version: 1.0
 To: reviewer@example.com
-Cc: Some Body <somebody@example.com>
-Cc: Test Dev <dev@example.com>
+Cc: Some Body <somebody@example.com>,
+    Test Dev <dev@example.com>
 
 From: Test Dev <dev@example.com>
 
@@ -99,8 +99,8 @@ Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 MIME-Version: 1.0
 To: reviewer@example.com
-Cc: Some Body <somebody@example.com>
-Cc: Contributor <contributor@example.com>
+Cc: Some Body <somebody@example.com>,
+    Contributor <contributor@example.com>
 
 From: Contributor <contributor@example.com>
 
@@ -132,8 +132,8 @@ Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 MIME-Version: 1.0
 To: reviewer@example.com
-Cc: Some Body <somebody@example.com>
-Cc: Developer <developer@example.com>
+Cc: Some Body <somebody@example.com>,
+    Developer <developer@example.com>
 
 From: Developer <developer@example.com>
 

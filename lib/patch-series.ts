@@ -264,7 +264,7 @@ export class PatchSeries {
                 return;
             }
 
-            const ccMatch = header.match(/^([^]*\nCc: .*?)(\n(?![ \t])[^]*)$/);
+            const ccMatch = header.match(/^([^]*\nCc: .*?)(|\n(?![ \t])[^]*)$/);
             if (ccMatch) {
                 header = ccMatch[1] + ",\n    " + authorMatch[2] + ccMatch[2];
             } else {
