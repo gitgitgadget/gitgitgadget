@@ -61,6 +61,9 @@ module.exports = (robot) => {
       console.log(`Could not determine PR details:\n${JSON.stringify(pr, null, 4)}`);
       return;
     }
+    if (pr.mergeable !== true) {
+      throw new Error(`Refusing to submit a patch series that does not merge cleanly.`);
+    }
     let gitHubUserName = comment.user.name;
     if (!gitHubUserName) {
       let user = await context.github.users.getById({ id: comment.user.id });
