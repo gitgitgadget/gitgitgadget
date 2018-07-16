@@ -33,7 +33,7 @@ export class ProjectOptions {
 
     public static async get(workDir: string, branchName: string,
                             cc: string[], basedOn?: string,
-                            publishToRemote?: string):
+                            publishToRemote?: string, baseCommit?: string):
         Promise<ProjectOptions> {
         let upstreamBranch: string;
         let to: string;
@@ -78,14 +78,15 @@ export class ProjectOptions {
             upstreamBranch = basedOn;
         }
 
-        if (await git(["rev-list", branchName + ".." + upstreamBranch],
-            { workDir })) {
+        if (!baseCommit &&
+            await git(["rev-list", branchName + ".." + upstreamBranch],
+                { workDir })) {
             throw new Error("Branch " + branchName + " is not rebased to " +
                 upstreamBranch);
         }
 
         return new ProjectOptions(branchName, upstreamBranch, basedOn,
-            publishToRemote, to, cc, midUrlPrefix, workDir);
+            publishToRemote, to, cc, midUrlPrefix, workDir, baseCommit);
     }
 
     protected static async determineBaseBranch(workDir: string,
@@ -132,6 +133,7 @@ export class ProjectOptions {
 
     public readonly branchName: string;
     public readonly upstreamBranch: string;
+    public readonly baseCommit: string;
     public readonly basedOn?: string;
     public readonly publishToRemote?: string;
     public readonly workDir: string;
@@ -144,9 +146,12 @@ export class ProjectOptions {
                           basedOn: string | undefined,
                           publishToRemote: string | undefined,
                           to: string, cc: string[], midUrlPrefix: string,
-                          workDir: string) {
+                          workDir: string, baseCommit?: string) {
         this.branchName = branchName;
         this.upstreamBranch = upstreamBranch;
+
+        this.baseCommit = baseCommit || upstreamBranch;
+
         this.basedOn = basedOn;
         this.publishToRemote = publishToRemote;
         this.workDir = workDir;
