@@ -151,7 +151,7 @@ export class PatchSeries {
         const publishToRemote = undefined;
 
         const project = await ProjectOptions.get(workDir, headCommit, cc || [],
-            basedOn, publishToRemote);
+            basedOn, publishToRemote, baseCommit);
 
         return new PatchSeries(notes, options, project, metadata,
             rangeDiff, coverLetter, senderName);
@@ -264,9 +264,9 @@ export class PatchSeries {
                 return;
             }
 
-            const ccMatch = header.match(/^([^]*\nCc: .*?)(\n(?![ \t])[^]*)$/);
+            const ccMatch = header.match(/^([^]*\nCc: .*?)(|\n(?![ \t])[^]*)$/);
             if (ccMatch) {
-                header = ccMatch[1] + ", " + authorMatch[2] + ccMatch[2];
+                header = ccMatch[1] + ",\n    " + authorMatch[2] + ccMatch[2];
             } else {
                 header += "\nCc: " + authorMatch[2];
             }
@@ -594,8 +594,8 @@ export class PatchSeries {
     }
 
     protected async generateMBox(): Promise<string> {
-        const commitRange = this.project.upstreamBranch + ".."
-            + this.project.branchName;
+        const commitRange =
+            `${this.project.baseCommit}..${this.project.branchName}`;
         if (!this.coverLetter && 1 < parseInt(await git(["rev-list", "--count",
             commitRange], { workDir: this.project.workDir }), 10)) {
             throw new Error("Branch " + this.project.branchName
@@ -608,7 +608,7 @@ export class PatchSeries {
             "--add-header=Content-Type: text/plain; charset=UTF-8",
             "--add-header=Content-Transfer-Encoding: 8bit",
             "--add-header=MIME-Version: 1.0",
-            "--base", this.project.upstreamBranch, this.project.to,
+            "--base", this.project.baseCommit, this.project.to,
         ];
         this.project.cc.map((email) => { args.push("--cc=" + email); });
         if (this.metadata.referencesMessageIds) {
