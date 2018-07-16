@@ -602,13 +602,18 @@ export class PatchSeries {
                 + " needs a description");
         }
 
+        const mergeBase = await git([
+            "merge-base",
+            this.project.baseCommit,
+            this.project.branchName,
+        ], { workDir: this.project.workDir });
         const args = [
             "format-patch", "--thread", "--stdout", "--signature=gitgitgadget",
             "--add-header=Fcc: Sent",
             "--add-header=Content-Type: text/plain; charset=UTF-8",
             "--add-header=Content-Transfer-Encoding: 8bit",
             "--add-header=MIME-Version: 1.0",
-            "--base", this.project.baseCommit, this.project.to,
+            "--base", mergeBase, this.project.to,
         ];
         this.project.cc.map((email) => { args.push("--cc=" + email); });
         if (this.metadata.referencesMessageIds) {
