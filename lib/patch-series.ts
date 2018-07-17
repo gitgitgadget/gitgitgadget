@@ -366,6 +366,40 @@ export class PatchSeries {
         return `${match[1]}${n}${footers.join("\n")}\n${n}${match[2]}`;
     }
 
+    protected static adjustDateHeaders(mails: string[], forceDate: Date):
+        number {
+        let count = 0;
+
+        const time = forceDate.getTime();
+        for (let i = 0, j = mails.length - 1; i < mails.length; i++ , j--) {
+            const mail = mails[i];
+
+            /* Look for the date header */
+            let dateOffset;
+            if (mail.startsWith("Date: ")) {
+                dateOffset = 6;
+            } else {
+                dateOffset = mail.indexOf("\nDate: ");
+                if (dateOffset < 0) {
+                    continue;
+                }
+                const endOfHeader = mail.indexOf("\n\n");
+                if (dateOffset > endOfHeader) {
+                    continue;
+                }
+                dateOffset += 7;
+            }
+
+            const endOfLine = mail.indexOf("\n", dateOffset);
+            mails[i] = mail.substr(0, dateOffset) +
+                new Date(time - j * 1000).toUTCString()
+                + mail.substr(endOfLine);
+            count++;
+        }
+
+        return count;
+    }
+
     public readonly notes: GitNotes;
     public readonly options: PatchSeriesOptions;
     public readonly project: ProjectOptions;
@@ -399,7 +433,8 @@ export class PatchSeries {
     public async generateAndSend(logger: ILogger,
                                  send?: SendFunction,
                                  publishTagsAndNotesToRemote?: string,
-                                 pullRequestURL?: string):
+                                 pullRequestURL?: string,
+                                 forceDate?: Date):
         Promise<string | undefined> {
         if (this.options.dryRun) {
             logger.log("Dry-run " + this.project.branchName
@@ -535,6 +570,11 @@ export class PatchSeries {
         if (footers.length > 0) {
             mails[0] = PatchSeries.insertFooters(mails[0],
                 mails.length > 1, footers);
+        }
+
+        logger.log("Adjusting Date headers");
+        if (forceDate) {
+            PatchSeries.adjustDateHeaders(mails, forceDate);
         }
 
         if (this.options.dryRun) {

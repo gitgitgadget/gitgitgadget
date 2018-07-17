@@ -16,7 +16,6 @@ into a few categories (listed by priority, most important tasks first).
 
 ## Tasks that would be really nice to have, too, time permitting
 
-- Imitate `git send-email` (which apparently overrides the `Date:` header and uses the current time instead)
 - The branches merged into `pu` are also pushed individually to
   https:/github.com/gitster/git. We will want to add a comment to the PR every
   time this branch is pushed, and update the Git note corresponding to the
