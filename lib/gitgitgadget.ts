@@ -185,6 +185,7 @@ export class GitGitGadget {
                 return await parseHeadersAndSendMail(mail, this.smtpOptions);
             },
             this.publishTagsAndNotesToRemote, pullRequestURL,
+            new Date(),
         );
         return coverMid;
     }

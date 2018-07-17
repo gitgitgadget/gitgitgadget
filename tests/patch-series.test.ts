@@ -132,6 +132,21 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
                 // tslint:disable-next-line:max-line-length
                 /\n---\n\nHEADER\n This\n is\n a\n fake\n cover letter\n\n README/);
         });
+
+        test("adjust mbox to forced date", () => {
+            expect(mails.length).toEqual(2);
+            const endDate = new Date(987654321000);
+            expect(PatchSeries.adjustDateHeaders(mails, endDate)).toEqual(2);
+            const dates = mails.map((mail: string): string => {
+                const match = mail.match(/\nDate: (.*)\n/);
+                if (!match) {
+                    throw new Error(`No Date: header in ${mail}`);
+                }
+                return match[1];
+            });
+            expect(new Date(dates[0]).getTime()).toEqual(987654320000);
+            expect(new Date(dates[1]).getTime()).toEqual(987654321000);
+        });
     }
 }
 
