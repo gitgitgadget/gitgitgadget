@@ -19,7 +19,9 @@
     "cSpell.words": [
         "Cygwin",
         "Git's",
+        "Hamano",
         "ISMTP",
+        "Junio",
         "Probot",
         "Schindelin",
         "VSTS",
@@ -32,6 +34,7 @@
         "gitgitgadget",
         "gitster",
         "gmail",
+        "gmane",
         "googlegroups",
         "latesttag",
         "latesttags",
@@ -40,6 +43,7 @@
         "maint",
         "mbox",
         "onelines",
+        "pobox",
         "promisify",
         "publishtoremote",
         "rebased",
@@ -51,6 +55,7 @@
         "superset",
         "taggerdate",
         "tbdiff",
+        "vger",
         "worktree"
     ],
     "cSpell.language": "en-US",
