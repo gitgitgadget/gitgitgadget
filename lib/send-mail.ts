@@ -65,12 +65,15 @@ export async function parseMBox(mbox: string): Promise<IParsedMBox> {
         const value = replaceAll(line.substr(colon + 2), "\n ", " ");
         switch (key.toLowerCase()) {
             case "cc": cc = (cc || []).concat(value.split(", ")); break;
-            case "date": date = value; break;
             case "fcc": break;
             case "from": from = value; break;
             case "message-id": messageId = value; break;
             case "subject": subject = value; break;
             case "to": to = value; break;
+            case "date":
+                /* Ignore value and use 'now' to act like 'git send-mail' */
+                date = new Date().toUTCString();
+                break;
             default:
                 headers.push({ key, value });
         }
