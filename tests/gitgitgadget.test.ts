@@ -25,8 +25,8 @@ MIME-Version: 1.0
 To: reviewer@example.com
 Cc: Some Body <somebody@example.com>
 
-This Pull Request contains some really important changes that I would love to
-have included in git.git.
+This Pull Request contains some really important changes that I would love
+to have included in git.git [https://github.com/git/git].
 
 Contributor (1):
   B
@@ -195,10 +195,11 @@ test("generate tag/notes from a Pull Request", async () => {
     const headCommit = await revParse("HEAD", workDir);
 
     const pullRequestURL = "https://github.com/gitgitgadget/git/pull/1";
+    // tslint:disable-next-line:max-line-length
     const description = `My first Pull Request!
 
-This Pull Request contains some really important changes that I would love to
-have included in git.git.
+This Pull Request contains some really important changes that I would love to${
+        ""} have included in [git.git](https://github.com/git/git).
 
 Cc: Some Body <somebody@example.com>
 `;
@@ -215,8 +216,8 @@ Cc: Some Body <somebody@example.com>
 
     expect(patches.coverLetter).toEqual(`My first Pull Request!
 
-This Pull Request contains some really important changes that I would love to
-have included in git.git.`);
+This Pull Request contains some really important changes that I would love
+to have included in git.git [https://github.com/git/git].`);
 
     const mails = [];
     const midRegex = new RegExp("<(pull|[0-9a-f]{40})"
@@ -269,8 +270,8 @@ have included in git.git.`);
     expect((await git(["cat-file", "tag", "pr-1/somebody/master-v2"], gitOpts))
         .replace(/^[^]*?\n\n/, "")).toEqual(`My first Pull Request!
 
-This Pull Request contains some really important changes that I would love to
-have included in git.git.
+This Pull Request contains some really important changes that I would love
+to have included in git.git [https://github.com/git/git].
 
 Contributor (1):
   B

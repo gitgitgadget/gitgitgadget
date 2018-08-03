@@ -4,6 +4,7 @@ import {
 import { GitNotes } from "./git-notes";
 import { GitGitGadget } from "./gitgitgadget";
 import { IMailMetadata } from "./mail-metadata";
+import { md2text } from "./markdown-renderer";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
 import { PatchSeriesOptions } from "./patch-series-options";
 import { ProjectOptions } from "./project-options";
@@ -153,8 +154,10 @@ export class PatchSeries {
         const project = await ProjectOptions.get(workDir, headCommit, cc || [],
             basedOn, publishToRemote, baseCommit);
 
+        const wrapCoverLetterAtColumn = 76;
         return new PatchSeries(notes, options, project, metadata,
-            rangeDiff, coverLetter, senderName);
+            rangeDiff, md2text(coverLetter, wrapCoverLetterAtColumn),
+            senderName);
     }
 
     protected static parsePullRequestDescription(description: string): {

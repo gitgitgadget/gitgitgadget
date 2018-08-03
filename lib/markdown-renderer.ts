@@ -27,5 +27,5 @@ class MyOptions implements HtmlToTextOptions {
 }
 
 export function md2text(markdown: string, columns?: number): string {
-    return fromString(marked(markdown), new MyOptions(76));
+    return fromString(marked(markdown), new MyOptions(columns));
 }
