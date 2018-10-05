@@ -13,7 +13,7 @@
     "dev": "nodemon --exec \"npm start\"",
     "lint": "tslint -c tslint.json '{lib,script,tests}/**/*.{ts,tsx}'",
     "start": "node server.js",
-    "test": "tslint --project . && jest",
+    "test": "tslint --project . && jest --env=node",
     "test:watch": "jest --watch --notify --notifyMode=change --coverage"
   },
   "bugs": {
