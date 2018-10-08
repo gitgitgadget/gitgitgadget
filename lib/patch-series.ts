@@ -1,3 +1,4 @@
+import { encodeWords } from "nodemailer/lib/mime-funcs";
 import {
     commitExists, git, gitCommandExists, gitConfig, revParse,
 } from "./git";
@@ -248,10 +249,11 @@ export class PatchSeries {
                 throw new Error("No From: line found in header:\n\n" + header);
             }
 
-            let replaceSender = thisAuthor;
+            let replaceSender = encodeWords(thisAuthor);
             if (isGitGitGadget) {
                 const onBehalfOf = i === 0 && senderName ?
-                    senderName : authorMatch[2].replace(/ <.*>$/, "");
+                    encodeWords(senderName) :
+                    authorMatch[2].replace(/ <.*>$/, "");
                 // Special-case GitGitGadget to send from
                 // "<author> via GitGitGadget"
                 replaceSender = "\""
@@ -677,7 +679,9 @@ export class PatchSeries {
             "--add-header=MIME-Version: 1.0",
             "--base", mergeBase, this.project.to,
         ];
-        this.project.cc.map((email) => { args.push("--cc=" + email); });
+        this.project.cc.map((email) => {
+            args.push("--cc=" + encodeWords(email));
+        });
         if (this.metadata.referencesMessageIds) {
             this.metadata.referencesMessageIds.map((email) => {
                 args.push("--in-reply-to=" + email);

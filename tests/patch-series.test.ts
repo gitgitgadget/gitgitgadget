@@ -79,12 +79,20 @@ class PatchSeriesTest extends PatchSeries {
                 /^From [^]*\n---\n2\.17\.0\.windows\.1\n$/);
         });
 
-        PatchSeries.insertCcAndFromLines(mails,
-                                         "A U Thor <author@example.com>");
+        const thisAuthor = "GitGitGadget <gitgitgadget@gmail.com>";
+        const senderName = "Nguyễn Thái Ngọc Duy";
+        PatchSeries.insertCcAndFromLines(mails, thisAuthor, senderName);
+
+        test("non-ASCII characters are encoded correctly", () => {
+            // tslint:disable-next-line:max-line-length
+            const needle = "\"=?UTF-8?Q?Nguy=E1=BB=85n_Th=C3=A1i_Ng=E1=BB=8Dc?= Duy via GitGitGadget\" ";
+            expect(mails[0]).toEqual(expect.stringContaining(needle));
+        });
+
         test("Cc: is inserted correctly", () => {
             expect(mails[1]).toMatch(
                 // tslint:disable-next-line:max-line-length
-                /From: A U Thor[^]*\nCc: Some One Else[^]*\n\nFrom: Some One Else.*\n\n/);
+                /From: "Some One Else via GitGitGadget"[^]*\nCc: Some One Else[^]*\n\nFrom: Some One Else.*\n\n/);
         });
 
         const coverLetter = PatchSeries.adjustCoverLetter(mails[0]);
