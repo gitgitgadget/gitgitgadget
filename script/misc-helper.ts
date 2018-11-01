@@ -111,6 +111,14 @@ async function getCIHelper(): Promise<CIHelper> {
             console.log(`Changed options:\n${toPrettyJSON(options)}`);
             await ci.notes.set("", options, true);
         }
+    } else if (command === "update-commit-mappings") {
+        if (commander.args.length !== 1) {
+            process.stderr.write(`${command}: does not accept arguments\n`);
+            process.exit(1);
+        }
+
+        const result = await ci.updateCommitMappings();
+        console.log(`Updated notes: ${result}`);
     } else if (command === "lookup-upstream-commit") {
         if (commander.args.length !== 2) {
             process.stderr.write(`${command}: needs one argument\n`);
