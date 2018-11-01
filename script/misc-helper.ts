@@ -7,7 +7,8 @@ import { toPrettyJSON } from "../lib/json-util";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata";
 
 commander.version("1.0.0")
-    .usage("[options] ( update-open-prs | lookup-upstream-commit )")
+    .usage("[options] ( update-open-prs | lookup-upstream-commit | "
+        + "annotate-commit <pr-number> <original> <git.git> )")
     .description("Command-line helper for GitGitGadget")
     .option("-w, --work-dir [directory]",
         "Use a different GitGitGadget working directory than '.'", ".")
@@ -153,6 +154,19 @@ async function getCIHelper(): Promise<CIHelper> {
         } as IPatchSeriesMetadata;
         console.log(`data: ${toPrettyJSON(newData)}`);
         await ci.notes.set(pullRequestURL, newData);
+    } else if (command === "annotate-commit") {
+        if (commander.args.length !== 3) {
+            process.stderr.write(`${command}: needs 2 parameters: ${
+                ""}original and git.git commit\n`);
+            process.exit(1);
+        }
+
+        const originalCommit = commander.args[1];
+        const gitGitCommit = commander.args[2];
+
+        const glue = new GitHubGlue(ci.workDir);
+        const id = await glue.annotateCommit(originalCommit, gitGitCommit);
+        console.log(`Created check with id ${id}`);
     } else {
         process.stderr.write(`${command}: unhandled sub-command\n`);
         process.exit(1);
