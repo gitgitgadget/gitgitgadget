@@ -119,6 +119,18 @@ async function getCIHelper(): Promise<CIHelper> {
 
         const result = await ci.updateCommitMappings();
         console.log(`Updated notes: ${result}`);
+    } else if (command === "handle-open-prs") {
+        if (commander.args.length !== 1) {
+            process.stderr.write(`${command}: does not accept arguments\n`);
+            process.exit(1);
+        }
+
+        const options = await ci.getGitGitGadgetOptions();
+        if (!options.openPRs) {
+            throw new Error("No open PRs?");
+        }
+        const result = await ci.handleOpenPRs();
+        console.log(`Updated notes: ${result}`);
     } else if (command === "lookup-upstream-commit") {
         if (commander.args.length !== 2) {
             process.stderr.write(`${command}: needs one argument\n`);
