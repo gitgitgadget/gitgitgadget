@@ -140,6 +140,16 @@ async function getCIHelper(): Promise<CIHelper> {
 
         const upstreamCommit = await ci.identifyUpstreamCommit(commit);
         console.log(`Upstream commit for ${commit}: ${upstreamCommit}`);
+    } else if (command === "set-upstream-commit") {
+        if (commander.args.length !== 3) {
+            process.stderr.write(`${command}: needs 2 parameters:${
+                "\n"}original and upstream commit`);
+            process.exit(1);
+        }
+        const originalCommit = commander.args[1];
+        const gitGitCommit = commander.args[2];
+
+        await ci.setUpstreamCommit(originalCommit, gitGitCommit);
     } else if (command === "set-previous-iteration") {
         if (commander.args.length !== 9) {
             process.stderr.write(`${command}: needs PR URL, iteration, ${

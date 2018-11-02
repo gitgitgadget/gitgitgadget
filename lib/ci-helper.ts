@@ -18,6 +18,7 @@ export class CIHelper {
     public readonly notes: GitNotes;
     protected readonly mail2commit: MailCommitMapping;
     protected readonly github: GitHubGlue;
+    protected commit2mailNotes: GitNotes | undefined;
     protected testing: boolean;
     private gggNotesUpdated: boolean;
     private mail2CommitMapUpdated: boolean;
@@ -46,6 +47,35 @@ export class CIHelper {
             return undefined;
         }
         return await this.mail2commit.getGitGitCommitForMessageId(messageId);
+    }
+
+    /**
+     * Given an original commit that was contributed as a patch via
+     * GitGitGadget (i.e. a commit with a Message-ID recorded in
+     * `refs/notes/gitgitgadget`), and the (known and verified) commit in
+     * `git.git`, update the `refs/notes/mail-to-commit` ref accordingly.
+     * This is sometimes needed when the automated job fails to identify
+     * the correct commit.
+     *
+     * @param originalCommit the original, contributed commit
+     * @param gitGitCommit the corresponding commit in git.git
+     */
+    public async setUpstreamCommit(originalCommit: string,
+                                   gitGitCommit: string): Promise<void> {
+        await this.maybeUpdateMail2CommitMap();
+        if (!this.commit2mailNotes) {
+            this.commit2mailNotes = new GitNotes(this.mail2commit.workDir,
+                "refs/notes/commit-to-mail");
+            await this.commit2mailNotes.update();
+        }
+        const messageId = await
+            this.getMessageIdForOriginalCommit(originalCommit);
+        if (!messageId) {
+            return undefined;
+        }
+        await this.mail2commit.mail2CommitNotes.setString(messageId,
+            gitGitCommit, true);
+        await this.commit2mailNotes.appendCommitNote(gitGitCommit, messageId);
     }
 
     /**
