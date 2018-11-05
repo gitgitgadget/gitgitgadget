@@ -213,6 +213,64 @@ async function getCIHelper(): Promise<CIHelper> {
         const pullRequestURL = prNumber.match(/^http/) ? prNumber :
             `https://github.com/gitgitgadget/git/pull/${prNumber}`;
         console.log(toPrettyJSON(await ci.getPRMetadata(pullRequestURL)));
+    } else if (command === "handle-pr") {
+        if (commander.args.length !== 2) {
+            process.stderr.write(`${command}: need a Pull Request number\n`);
+            process.exit(1);
+        }
+        const prNumber = commander.args[1];
+
+        const pullRequestURL =
+            `https://github.com/gitgitgadget/git/pull/${prNumber}`;
+
+        const meta = await ci.getPRMetadata(pullRequestURL);
+        if (!meta) {
+            throw new Error(`No metadata for ${pullRequestURL}`);
+        }
+
+        const options = await ci.getGitGitGadgetOptions();
+        let optionsUpdated: boolean = false;
+        if (!options.openPRs) {
+            options.openPRs = {};
+            optionsUpdated = true;
+        }
+        if (options.openPRs[pullRequestURL] === undefined) {
+            if (meta.coverLetterMessageId) {
+                options.openPRs[pullRequestURL] = meta.coverLetterMessageId;
+                optionsUpdated = true;
+            }
+        }
+
+        if (!options.activeMessageIDs) {
+            options.activeMessageIDs = {};
+            optionsUpdated = true;
+        }
+
+        let notesUpdated: boolean = false;
+        if (meta.baseCommit && meta.headCommit) {
+            for (const rev of await ci.getOriginalCommitsForPR(meta)) {
+                const messageID = await ci.notes.getLastCommitNote(rev);
+                if (messageID &&
+                    options.activeMessageIDs[messageID] === undefined) {
+                    options.activeMessageIDs[messageID] = rev;
+                    optionsUpdated = true;
+                    if (await ci.updateCommitMapping(messageID)) {
+                        notesUpdated = true;
+                    }
+                }
+            }
+        }
+
+        const [notesUpdated2, optionsUpdated2] =
+            await ci.handlePR(pullRequestURL, options);
+        if (notesUpdated2) {
+            notesUpdated = true;
+        }
+        if (optionsUpdated || optionsUpdated2) {
+            await ci.notes.set("", options, true);
+            notesUpdated = true;
+        }
+        console.log(`Notes were ${notesUpdated ? "" : "not "}updated`);
     } else {
         process.stderr.write(`${command}: unhandled sub-command\n`);
         process.exit(1);

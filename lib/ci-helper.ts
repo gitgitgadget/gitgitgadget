@@ -165,10 +165,21 @@ export class CIHelper {
      * if the `options` were updated.
      */
     public async handlePR(pullRequestURL: string,
-                          options: IGitGitGadgetOptions):
+                          options?: IGitGitGadgetOptions):
         Promise<[boolean, boolean]> {
         await this.maybeUpdateGGGNotes();
         await this.maybeUpdateMail2CommitMap();
+
+        let updateOptionsInRef: boolean;
+        if (options) {
+            updateOptionsInRef = false;
+        } else {
+            options = await this.getGitGitGadgetOptions();
+            if (!options) {
+                throw new Error("GitGitGadgetOptions not set?!?!?");
+            }
+            updateOptionsInRef = true;
+        }
 
         const prMeta =
             await this.notes.get<IPatchSeriesMetadata>(pullRequestURL);
@@ -278,6 +289,10 @@ export class CIHelper {
 
         if (notesUpdated) {
             await this.notes.set(pullRequestURL, prMeta, true);
+        }
+
+        if (optionsUpdated && updateOptionsInRef) {
+            await this.notes.set("", options, true);
         }
 
         return [notesUpdated, optionsUpdated];
