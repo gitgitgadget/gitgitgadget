@@ -213,6 +213,20 @@ async function getCIHelper(): Promise<CIHelper> {
         const pullRequestURL = prNumber.match(/^http/) ? prNumber :
             `https://github.com/gitgitgadget/git/pull/${prNumber}`;
         console.log(toPrettyJSON(await ci.getPRMetadata(pullRequestURL)));
+    } else if (command === "get-pr-commits") {
+        if (commander.args.length !== 2) {
+            process.stderr.write(`${command}: need a Pull Request number\n`);
+            process.exit(1);
+        }
+        const prNumber = commander.args[1];
+
+        const pullRequestURL =
+            `https://github.com/gitgitgadget/git/pull/${prNumber}`;
+        const prMeta = await ci.getPRMetadata(pullRequestURL);
+        if (!prMeta) {
+            throw new Error(`No metadata found for ${pullRequestURL}`);
+        }
+        console.log(toPrettyJSON(await ci.getOriginalCommitsForPR(prMeta)));
     } else if (command === "handle-pr") {
         if (commander.args.length !== 2) {
             process.stderr.write(`${command}: need a Pull Request number\n`);
