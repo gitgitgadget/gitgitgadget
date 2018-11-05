@@ -188,6 +188,13 @@ async function getCIHelper(): Promise<CIHelper> {
 
         const result = await ci.identifyMergeCommit(upstreamBranch, commit);
         console.log(result);
+    } else if (command === "get-gitgitgadget-options") {
+        if (commander.args.length !== 1) {
+            process.stderr.write(`${command}: no argument accepted\n`);
+            process.exit(1);
+        }
+
+        console.log(toPrettyJSON(await ci.getGitGitGadgetOptions()));
     } else {
         process.stderr.write(`${command}: unhandled sub-command\n`);
         process.exit(1);
