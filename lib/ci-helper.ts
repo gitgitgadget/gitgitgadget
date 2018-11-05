@@ -82,7 +82,7 @@ export class CIHelper {
 
         if (!this.testing && mailMeta.pullRequestURL) {
             await this.github.annotateCommit(mailMeta.originalCommit,
-                                             upstreamCommit);
+                upstreamCommit);
         }
 
         return true;
@@ -357,6 +357,12 @@ export class CIHelper {
         Promise<IPatchSeriesMetadata | undefined> {
         await this.maybeUpdateGGGNotes();
         return this.notes.get<IPatchSeriesMetadata>(pullRequestURL);
+    }
+
+    public async getMailMetadata(messageID: string):
+        Promise<IMailMetadata | undefined> {
+        await this.maybeUpdateGGGNotes();
+        return this.notes.get<IMailMetadata>(messageID);
     }
 
     public async getOriginalCommitsForPR(prMeta: IPatchSeriesMetadata):

@@ -195,6 +195,14 @@ async function getCIHelper(): Promise<CIHelper> {
         }
 
         console.log(toPrettyJSON(await ci.getGitGitGadgetOptions()));
+    } else if (command === "get-mail-meta") {
+        if (commander.args.length !== 2) {
+            process.stderr.write(`${command}: need a Message-ID\n`);
+            process.exit(1);
+        }
+        const messageID = commander.args[1];
+
+        console.log(toPrettyJSON(await ci.getMailMetadata(messageID)));
     } else {
         process.stderr.write(`${command}: unhandled sub-command\n`);
         process.exit(1);
