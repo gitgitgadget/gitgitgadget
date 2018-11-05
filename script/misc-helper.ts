@@ -203,6 +203,16 @@ async function getCIHelper(): Promise<CIHelper> {
         const messageID = commander.args[1];
 
         console.log(toPrettyJSON(await ci.getMailMetadata(messageID)));
+    } else if (command === "get-pr-meta") {
+        if (commander.args.length !== 2) {
+            process.stderr.write(`${command}: need a Pull Request number\n`);
+            process.exit(1);
+        }
+        const prNumber = commander.args[1];
+
+        const pullRequestURL = prNumber.match(/^http/) ? prNumber :
+            `https://github.com/gitgitgadget/git/pull/${prNumber}`;
+        console.log(toPrettyJSON(await ci.getPRMetadata(pullRequestURL)));
     } else {
         process.stderr.write(`${command}: unhandled sub-command\n`);
         process.exit(1);
