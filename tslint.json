@@ -8,7 +8,6 @@
         },
         "no-floating-promises": true,
         "no-unused-expression": true,
-        "no-unused-variable": true,
         "no-console": false
     }
 }
