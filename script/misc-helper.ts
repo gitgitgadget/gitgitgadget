@@ -154,6 +154,16 @@ async function getCIHelper(): Promise<CIHelper> {
         } as IPatchSeriesMetadata;
         console.log(`data: ${toPrettyJSON(newData)}`);
         await ci.notes.set(pullRequestURL, newData);
+    } else if (command === "update-commit-mapping") {
+        if (commander.args.length !== 2) {
+            process.stderr.write(`${command}: needs Message-ID\n`);
+            process.exit(1);
+        }
+
+        const messageID = commander.args[1];
+
+        const result = await ci.updateCommitMapping(messageID);
+        console.log(`Result: ${result}`);
     } else if (command === "annotate-commit") {
         if (commander.args.length !== 3) {
             process.stderr.write(`${command}: needs 2 parameters: ${

@@ -88,6 +88,27 @@ export class CIHelper {
         return true;
     }
 
+    public async updateCommitMappings(): Promise<boolean> {
+        const options = await this.getGitGitGadgetOptions();
+        if (!options) {
+            throw new Error(`There were no GitGitGadget options to be found?`);
+        }
+        if (!options.activeMessageIDs) {
+            throw new Error(`No active Message-IDs?`);
+        }
+
+        let result: boolean = false;
+        for (const messageID in options.activeMessageIDs) {
+            if (options.activeMessageIDs.hasOwnProperty(messageID)) {
+                if (await this.updateCommitMapping(messageID)) {
+                    console.log(`Updated mapping for ${messageID}`);
+                    result = true;
+                }
+            }
+        }
+        return result;
+    }
+
     /**
      * Process all open PRs.
      *
