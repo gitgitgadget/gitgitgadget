@@ -1,4 +1,6 @@
+import octokit = require("@octokit/rest");
 import commander = require("commander");
+import jwt = require("jsonwebtoken");
 import { CIHelper } from "../lib/ci-helper";
 import { isDirectory } from "../lib/fs-util";
 import { git, gitConfig } from "../lib/git";
@@ -327,6 +329,32 @@ async function getCIHelper(): Promise<CIHelper> {
 
         const glue = new GitHubGlue();
         await glue.addPRComment(pullRequestURL, comment);
+    } else if (command === "set-app-token") {
+        if (commander.args.length !== 1) {
+            process.stderr.write(`${command}: unexpected argument(s)\n`);
+            process.exit(1);
+        }
+
+        const githubAppID = 12836;
+        const githubAppInstallationID = 195971;
+
+        const client = new octokit();
+        const key = await gitConfig("gitgitgadget.privateKey");
+        if (!key) {
+            throw new Error(`Need the App's private key`);
+        }
+        const now = Math.round(Date.now() / 1000);
+        const payload = { iat: now, exp: now + 60, iss: githubAppID };
+        const signOpts = { algorithm: "RS256" };
+        const app = jwt.sign(payload, key.replace(/\\n/g, `\n`), signOpts);
+        client.authenticate({
+            token: app,
+            type: "app",
+        });
+        const result = await client.apps.createInstallationToken({
+            installation_id: githubAppInstallationID,
+        });
+        await git(["config", "gitgitgadget.githubToken", result.data.token]);
     } else {
         process.stderr.write(`${command}: unhandled sub-command\n`);
         process.exit(1);
