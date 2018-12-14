@@ -315,6 +315,18 @@ async function getCIHelper(): Promise<CIHelper> {
             notesUpdated = true;
         }
         console.log(`Notes were ${notesUpdated ? "" : "not "}updated`);
+    } else if (command === "add-pr-comment") {
+        if (commander.args.length !== 3) {
+            process.stderr.write(`${command}: need a PR URL and a comment\n`);
+            process.exit(1);
+        }
+        const pullRequestURL = commander.args[1].match(/^[0-9]+$/) ?
+            `https://github.com/gitgitgadget/git/pull/${commander.args[1]}` :
+            commander.args[1];
+        const comment = commander.args[2];
+
+        const glue = new GitHubGlue();
+        await glue.addPRComment(pullRequestURL, comment);
     } else {
         process.stderr.write(`${command}: unhandled sub-command\n`);
         process.exit(1);
