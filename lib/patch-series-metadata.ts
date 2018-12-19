@@ -10,6 +10,8 @@ export interface IPatchSeriesMetadata {
     coverLetterMessageId?: string;
     latestTag?: string;
     referencesMessageIds?: string[];
+    tipCommitInGitGit?: string;
     branchNameInGitsterGit?: string;
-    integratedIntoGitGitBranch?: GitGitIntegrationBranch;
+    // maps to merge commit
+    mergedIntoUpstream?: { [branchName: string]: string };
 }

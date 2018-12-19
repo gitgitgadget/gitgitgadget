@@ -7,3 +7,7 @@ export function fromJSON<T>(input: string): T {
 export function toJSON<T>(input: T): string {
     return stringify(input);
 }
+
+export function toPrettyJSON<T>(input: T): string {
+    return stringify(input, { space: 4 });
+}

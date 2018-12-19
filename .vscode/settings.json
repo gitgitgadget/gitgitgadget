@@ -43,6 +43,7 @@
         "mailsplit",
         "maint",
         "mbox",
+        "octokit",
         "onelines",
         "pobox",
         "promisify",

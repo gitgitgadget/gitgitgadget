@@ -2,7 +2,7 @@ import {
     commitExists, git, gitCommandExists, gitConfig, revParse,
 } from "./git";
 import { GitNotes } from "./git-notes";
-import { GitGitGadget } from "./gitgitgadget";
+import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget";
 import { IMailMetadata } from "./mail-metadata";
 import { md2text } from "./markdown-renderer";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
@@ -440,12 +440,14 @@ export class PatchSeries {
                                  pullRequestURL?: string,
                                  forceDate?: Date):
         Promise<string | undefined> {
+        let globalOptions: IGitGitGadgetOptions | undefined;
         if (this.options.dryRun) {
             logger.log("Dry-run " + this.project.branchName
                 + " v" + this.metadata.iteration);
         } else {
             logger.log("Submitting " + this.project.branchName
                 + " v" + this.metadata.iteration);
+            globalOptions = await this.notes.get<IGitGitGadgetOptions>("");
         }
 
         logger.log("Generating mbox");
@@ -607,12 +609,27 @@ export class PatchSeries {
                     originalCommit,
                     pullRequestURL: this.metadata.pullRequestURL,
                 } as IMailMetadata, true);
+                if (globalOptions && originalCommit &&
+                    this.metadata.pullRequestURL) {
+                    if (!globalOptions.activeMessageIDs) {
+                        globalOptions.activeMessageIDs = {};
+                    }
+                    globalOptions.activeMessageIDs[mid] = originalCommit;
+                }
 
                 if (originalCommit &&
                     await commitExists(originalCommit, this.project.workDir)) {
                     await this.notes.appendCommitNote(originalCommit, mid);
                 }
             }
+        }
+
+        if (globalOptions && this.metadata.pullRequestURL) {
+            if (!globalOptions.openPRs) {
+                globalOptions.openPRs = {};
+            }
+            globalOptions.openPRs[this.metadata.pullRequestURL] = "";
+            await this.notes.set("", globalOptions, true);
         }
 
         logger.log("Publishing branch and tag");

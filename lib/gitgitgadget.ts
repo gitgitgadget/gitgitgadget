@@ -7,19 +7,31 @@ import { ISMTPOptions, parseHeadersAndSendMail } from "./send-mail";
 
 export interface IGitGitGadgetOptions {
     allowedUsers: string[];
+
+    // maps to upstreamBranch (or empty)
+    openPRs?: { [pullRequestURL: string]: string };
+
+    // maps to the original commit
+    activeMessageIDs?: { [messageID: string]: string };
 }
 
 /**
  * The central class of the Probot-based Web App.
  */
 export class GitGitGadget {
+    public static async getWorkDir(gitGitGadgetDir: string): Promise<string> {
+        const workDir =
+            await gitConfig("gitgitgadget.workDir", gitGitGadgetDir);
+        if (!workDir) {
+            throw new Error(`Could not find GitGitGadget's work tree`);
+        }
+        return workDir;
+    }
+
     public static async get(gitGitGadgetDir: string, workDir?: string):
         Promise<GitGitGadget> {
         if (!workDir) {
-            workDir = await gitConfig("gitgitgadget.workDir", gitGitGadgetDir);
-            if (!workDir) {
-                throw new Error(`Could not find GitGitGadget's work tree`);
-            }
+            workDir = await this.getWorkDir(gitGitGadgetDir);
         }
 
         const publishTagsAndNotesToRemote =
@@ -85,8 +97,8 @@ export class GitGitGadget {
         return [options, allowedUsers];
     }
 
-    protected readonly workDir: string;
-    protected readonly notes: GitNotes;
+    public readonly workDir: string;
+    public readonly notes: GitNotes;
     protected options: IGitGitGadgetOptions;
     protected allowedUsers: Set<string>;
 
