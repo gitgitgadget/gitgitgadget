@@ -480,6 +480,10 @@ export class CIHelper {
 
                 const pr = await this.github.getPRInfo(comment.prNumber);
 
+                if (pr.author !== comment.author) {
+                    throw new Error("Only the owner of a PR can submit it!");
+                }
+
                 if (!pr || !pr.baseLabel || !pr.baseCommit ||
                     !pr.headLabel || !pr.headCommit) {
                     throw new Error(`Could not determine PR details for ${
