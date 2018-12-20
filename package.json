@@ -45,7 +45,7 @@
   },
   "dependencies": {
     "@types/html-to-text": "^1.4.31",
-    "dugite": "^1.79.0",
+    "dugite": "^1.81.0",
     "html-to-text": "^4.0.0",
     "json-stable-stringify": "^1.0.1",
     "marked": "^0.4.0",
