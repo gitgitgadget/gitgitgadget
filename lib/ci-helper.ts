@@ -528,6 +528,8 @@ export class CIHelper {
                     await addComment(`User ${
                         argument} already not allowed to use GitGitGadget.`);
                 }
+            } else if (command === "/test") {
+                await addComment(`Received test '${argument}'`);
             } else {
                 console.log(`Ignoring unrecognized command ${command} in ${
                     pullRequestURL}#issuecomment-${commentID}`);
