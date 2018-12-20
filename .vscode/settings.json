@@ -58,6 +58,8 @@
         "taggerdate",
         "tbdiff",
         "vger",
+        "webhook",
+        "webhooks",
         "worktree"
     ],
     "cSpell.language": "en-US",

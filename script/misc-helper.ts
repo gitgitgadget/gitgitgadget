@@ -360,6 +360,7 @@ async function getCIHelper(): Promise<CIHelper> {
         process.exit(1);
     }
 })().catch((reason) => {
+    console.log(`Caught error ${reason}:\n${reason.stack}\n`);
     process.stderr.write(`Caught error ${reason}:\n${reason.stack}\n`);
     process.exit(1);
 });
