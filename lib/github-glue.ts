@@ -30,9 +30,9 @@ export class GitHubGlue {
 
     public async annotateCommit(originalCommit: string, gitGitCommit: string):
         Promise<number> {
-        const output = await git([
-            "show", "-s", "--format=%h %cI", gitGitCommit,
-        ], { workDir: this.workDir });
+        const output =
+            await git(["show", "-s", "--format=%h %cI", gitGitCommit],
+                      { workDir: this.workDir });
         const match = output.match(/^(\S+) (\S+)$/);
         if (!match) {
             throw new Error(`Could not find ${gitGitCommit}: '${output}'`);

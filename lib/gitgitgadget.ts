@@ -46,31 +46,27 @@ export class GitGitGadget {
         }
 
         // Always fetch the Git notes first thing
-        await git([
-            "fetch",
-            publishTagsAndNotesToRemote,
-            "--",
-            `+${GitNotes.defaultNotesRef}:${GitNotes.defaultNotesRef}`,
-        ], { workDir });
+        await git(["fetch", publishTagsAndNotesToRemote, "--",
+                   `+${GitNotes.defaultNotesRef}:${GitNotes.defaultNotesRef}`],
+                  { workDir });
 
         const notes = new GitNotes(workDir);
 
         const smtpUser = await gitConfig("gitgitgadget.smtpUser",
-            gitGitGadgetDir);
+                                         gitGitGadgetDir);
         const smtpHost = await gitConfig("gitgitgadget.smtpHost",
-            gitGitGadgetDir);
+                                         gitGitGadgetDir);
         const smtpPass = await gitConfig("gitgitgadget.smtpPass",
-            gitGitGadgetDir);
+                                         gitGitGadgetDir);
         if (!smtpUser || !smtpHost || !smtpPass) {
             throw new Error(`No SMTP settings configured`);
         }
 
         const [options, allowedUsers] = await GitGitGadget.readOptions(notes);
 
-        return new GitGitGadget(notes,
-            options, allowedUsers,
-            smtpUser, smtpHost, smtpPass,
-            publishTagsAndNotesToRemote);
+        return new GitGitGadget(notes, options, allowedUsers,
+                                smtpUser, smtpHost, smtpPass,
+                                publishTagsAndNotesToRemote);
     }
 
     public static parsePullRequestURL(pullRequestURL: string):
@@ -188,17 +184,19 @@ export class GitGitGadget {
             `refs/tags/${metadata.latestTag}` : undefined;
         await this.updateNotesAndPullRef(pullRequestNumber, previousTag);
 
-        const series = await PatchSeries.getFromNotes(this.notes,
-            pullRequestURL, description, baseLabel, baseCommit, headLabel,
-            headCommit, gitHubUserName);
+        const series =
+            await PatchSeries.getFromNotes(this.notes, pullRequestURL,
+                                           description, baseLabel, baseCommit,
+                                           headLabel, headCommit,
+                                           gitHubUserName);
 
-        const coverMid = await series.generateAndSend(console,
-            async (mail: string): Promise<string> => {
-                return await parseHeadersAndSendMail(mail, this.smtpOptions);
-            },
-            this.publishTagsAndNotesToRemote, pullRequestURL,
-            new Date(),
-        );
+        const send = async (mail: string): Promise<string> => {
+            return await parseHeadersAndSendMail(mail, this.smtpOptions);
+        };
+        const coverMid =
+            await series.generateAndSend(console, send,
+                                         this.publishTagsAndNotesToRemote,
+                                         pullRequestURL, new Date());
         return coverMid;
     }
 
@@ -234,23 +232,17 @@ export class GitGitGadget {
     }
 
     protected async fetchAndReReadOptions(): Promise<void> {
-        await git([
-            "fetch",
-            this.publishTagsAndNotesToRemote,
-            "--",
-            `+${GitNotes.defaultNotesRef}:${GitNotes.defaultNotesRef}`,
-        ], { workDir: this.workDir });
+        await git(["fetch", this.publishTagsAndNotesToRemote, "--",
+                   `+${GitNotes.defaultNotesRef}:${GitNotes.defaultNotesRef}`],
+                  { workDir: this.workDir });
         [this.options, this.allowedUsers] =
             await GitGitGadget.readOptions(this.notes);
     }
 
     protected async pushNotesRef(): Promise<void> {
-        await git([
-            "push",
-            this.publishTagsAndNotesToRemote,
-            "--",
-            `${this.notes.notesRef}`,
-        ], { workDir: this.workDir });
+        await git(["push", this.publishTagsAndNotesToRemote, "--",
+                   `${this.notes.notesRef}`],
+                  { workDir: this.workDir });
 
         // re-read options
         [this.options, this.allowedUsers] =

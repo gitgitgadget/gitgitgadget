@@ -109,7 +109,7 @@ async function main(argv: string[]) {
                 await git(["config", "--add", key, arg]);
             } else {
                 const id = await git(["log", "-1", "--format=%an <%ae>",
-                    "--author=" + arg]);
+                                      "--author=" + arg]);
                 if (!id) {
                     throw new Error("Not an email address: " + arg);
                 }

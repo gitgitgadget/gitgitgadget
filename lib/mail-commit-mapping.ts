@@ -8,7 +8,7 @@ export class MailCommitMapping {
     public constructor(workDir?: string) {
         this.workDir = workDir;
         this.mail2CommitNotes = new GitNotes(workDir,
-            "refs/notes/mail-to-commit");
+                                             "refs/notes/mail-to-commit");
     }
 
     public async getGitGitCommitForMessageId(messageID: string):
@@ -40,11 +40,8 @@ export class MailCommitMapping {
             refs.push("+refs/heads/*:refs/remotes/gitster/*");
         }
         if (refs.length) {
-            await git([
-                "fetch",
-                "https://github.com/gitgitgadget/git",
-                ...refs,
-            ], { workDir: this.workDir });
+            await git(["fetch", "https://github.com/gitgitgadget/git", ...refs],
+                      { workDir: this.workDir });
         }
     }
 }

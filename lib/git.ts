@@ -51,9 +51,9 @@ stdout: ${result.stdout}
  * @returns { string | undefined } the full SHA-1, or undefined
  */
 export async function revParse(argument: string, workDir?: string) {
-    const result = await GitProcess.exec([
-        "rev-parse", "--verify", "-q", argument,
-    ], workDir || ".");
+    const result = await GitProcess.exec(["rev-parse", "--verify", "-q",
+                                          argument],
+                                         workDir || ".");
     return result.exitCode ? undefined : trimTrailingNewline(result.stdout);
 }
 
@@ -83,7 +83,7 @@ export async function gitConfigForEach(key: string,
                                        workDir?: string):
     Promise<void> {
     const result = await GitProcess.exec(["config", "--get-all", key],
-        workDir || ".");
+                                         workDir || ".");
     result.stdout.split(/\r?\n/).map(callbackfn);
 }
 

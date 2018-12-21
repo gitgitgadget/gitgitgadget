@@ -79,11 +79,9 @@ export class GitNotes {
         if (this.notesRef === "refs/notes/gitgitgadget" ||
             this.notesRef === "refs/notes/commit-to-mail" ||
             this.notesRef === "refs/notes/mail-to-commit") {
-            await git([
-                "fetch",
-                "https://github.com/gitgitgadget/git",
-                `+${this.notesRef}:${this.notesRef}`,
-            ], { workDir: this.workDir });
+            await git(["fetch", "https://github.com/gitgitgadget/git",
+                       `+${this.notesRef}:${this.notesRef}`],
+                      { workDir: this.workDir });
         } else {
             throw new Error(`Don't know how to update ${this.notesRef}`);
         }

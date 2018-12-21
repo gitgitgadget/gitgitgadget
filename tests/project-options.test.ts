@@ -27,8 +27,9 @@ test("project options", async () => {
     expect(options1.basedOn).toBeUndefined();
     expect(options1.to).toEqual("--to=reviewer@example.com");
     expect(options1.publishToRemote).toBeUndefined();
-    const options2 = await ProjectOptions.get(repo.workDir,
-        "test-project-options", [], undefined, undefined);
+    const options2 =
+        await ProjectOptions.get(repo.workDir, "test-project-options", [],
+                                 undefined, undefined);
     expect(options2.workDir).not.toBeUndefined();
     expect(options2.midUrlPrefix).toEqual("https://dummy.com/?mid=");
 });

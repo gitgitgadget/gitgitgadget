@@ -163,17 +163,16 @@ export async function testCreateRepo(name: string, suffix?: string):
     if (user !== "Test User") {
         throw new Error(`Whoops. '${user}'`);
     }
-    await git([
-        "commit-tree", "-m", "Test commit",
-        "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
-    ], {
-            env: {
-                GIT_AUTHOR_DATE: `123457689 +0000`,
-                GIT_COMMITTER_DATE: `123457689 +0000`,
-            },
-            workDir: dir,
+    const opts = {
+        env: {
+            GIT_AUTHOR_DATE: `123457689 +0000`,
+            GIT_COMMITTER_DATE: `123457689 +0000`,
         },
-    );
+        workDir: dir,
+    };
+    await git(["commit-tree", "-m", "Test commit",
+               "4b825dc642cb6eb9a060e54bf8d69288fbee4904"],
+              opts);
     const gitOpts: ITestCommitOptions = { workDir: dir };
 
     return new TestRepo(gitOpts);

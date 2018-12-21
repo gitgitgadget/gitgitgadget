@@ -54,7 +54,8 @@ Fetch-It-Via: git fetch https://github.com/gitgitgadget/git ${
 Pull-Request: https://github.com/gitgitgadget/git/pull/1
 --${" "}
 gitgitgadget
-`, `From cd048a1378e3f7b055cd467ff3a24ed0cf5e7453 Mon Sep 17 00:00:00 2001
+`,
+    `From cd048a1378e3f7b055cd467ff3a24ed0cf5e7453 Mon Sep 17 00:00:00 2001
 Message-Id: <cd048a1378e3f7b055cd467ff3a24ed0cf5e7453.<Message-ID>>
 In-Reply-To: <pull.<Message-ID>>
 References: <pull.<Message-ID>>
@@ -87,7 +88,8 @@ index 0000000..8c7e5a6
 --${" "}
 gitgitgadget
 
-`, `From b8acfa2635f9907e472d2b7396b260c6e73b1ed5 Mon Sep 17 00:00:00 2001
+`,
+    `From b8acfa2635f9907e472d2b7396b260c6e73b1ed5 Mon Sep 17 00:00:00 2001
 Message-Id: <b8acfa2635f9907e472d2b7396b260c6e73b1ed5.<Message-ID>>
 In-Reply-To: <pull.<Message-ID>>
 References: <pull.<Message-ID>>
@@ -120,7 +122,8 @@ index 0000000..7371f47
 --${" "}
 gitgitgadget
 
-`, `From 07f68c195159518c5777ca4a7c1d07124e7a9956 Mon Sep 17 00:00:00 2001
+`,
+    `From 07f68c195159518c5777ca4a7c1d07124e7a9956 Mon Sep 17 00:00:00 2001
 Message-Id: <07f68c195159518c5777ca4a7c1d07124e7a9956.<Message-ID>>
 In-Reply-To: <pull.<Message-ID>>
 References: <pull.<Message-ID>>
@@ -204,12 +207,13 @@ Cc: Some Body <somebody@example.com>
 
     await git(["config", "user.name", "GitGitGadget"], repo.options);
     await git(["config", "user.email", "gitgitgadget@example.com"],
-        repo.options);
+              repo.options);
 
-    const patches = await PatchSeries.getFromNotes(notes, pullRequestURL,
-        description,
-        "gitgitgadget:next", baseCommit,
-        "somebody:master", headCommit, "GitHub User");
+    const patches =
+        await PatchSeries.getFromNotes(notes, pullRequestURL, description,
+                                       "gitgitgadget:next", baseCommit,
+                                       "somebody:master", headCommit,
+                                       "GitHub User");
 
     expect(patches.coverLetter).toEqual(`My first Pull Request!
 
@@ -217,8 +221,8 @@ This Pull Request contains some really important changes that I would love
 to have included in git.git [https://github.com/git/git].`);
 
     const mails = [];
-    const midRegex = new RegExp("<(pull|[0-9a-f]{40})"
-        + "\\.\\d+(\\.v\\d+)?\\.git\\.gitgitgadget@example\\.com>", "g");
+    const midRegex =
+        /<(pull|[0-9a-f]{40})\.\d+(\.v\d+)?\.git\.gitgitgadget@example\.com>/g;
     async function send(mail: string): Promise<string> {
         if (mails.length === 0) {
             mail = mail.replace(/(\nDate: ).*/, "$1<Cover-Letter-Date>");
@@ -228,20 +232,21 @@ to have included in git.git [https://github.com/git/git].`);
         return "Message-ID";
     }
     expect(await patches.generateAndSend(logger, send, undefined,
-        pullRequestURL))
+                                         pullRequestURL))
         .toEqual("pull.1.git.gitgitgadget@example.com");
     expect(mails).toEqual(expectedMails);
 
     expect(await repo.commit("D")).not.toEqual("");
 
     const headCommit2 = await repo.revParse("HEAD");
-    const patches2 = await PatchSeries.getFromNotes(notes, pullRequestURL,
-        description,
-        "gitgitgadget:next", baseCommit,
-        "somebody:master", headCommit2, "GitHub User");
+    const patches2 =
+        await PatchSeries.getFromNotes(notes, pullRequestURL, description,
+                                       "gitgitgadget:next", baseCommit,
+                                       "somebody:master", headCommit2,
+                                       "GitHub User");
     mails.splice(0);
     expect(await patches2.generateAndSend(logger, send, undefined,
-        pullRequestURL))
+                                          pullRequestURL))
         .toEqual("pull.1.v2.git.gitgitgadget@example.com");
     expect(mails.length).toEqual(5);
     if (await gitCommandExists("range-diff", repo.workDir)) {
@@ -265,7 +270,7 @@ to have included in git.git [https://github.com/git/git].`);
 
     // verify that the tag was generated correctly
     expect((await git(["cat-file", "tag", "pr-1/somebody/master-v2"],
-        repo.options))
+                      repo.options))
         .replace(/^[^]*?\n\n/, "")).toEqual(`My first Pull Request!
 
 This Pull Request contains some really important changes that I would love
@@ -306,7 +311,8 @@ test("allow/disallow", async () => {
 
     await git(["config", "gitgitgadget.workDir", workDir], { workDir });
     await git(["config",
-        "gitgitgadget.publishRemote", remote.workDir], { workDir });
+               "gitgitgadget.publishRemote", remote.workDir],
+              { workDir });
     await git(["config", "gitgitgadget.smtpUser", "test"], { workDir });
     await git(["config", "gitgitgadget.smtpHost", "test"], { workDir });
     await git(["config", "gitgitgadget.smtpPass", "test"], { workDir });
@@ -318,7 +324,8 @@ test("allow/disallow", async () => {
 
     // pretend that the notes ref had been changed in the meantime
     await notes.set("",
-        { allowedUsers: ["first-one"] } as IGitGitGadgetOptions, true);
+                    { allowedUsers: ["first-one"] } as IGitGitGadgetOptions,
+                    true);
 
     expect(gitGitGadget.isUserAllowed("second-one")).toBeFalsy();
     expect(await gitGitGadget.allowUser("first-one", "second-one"))
