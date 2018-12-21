@@ -70,15 +70,21 @@ To remedy this, the shell script was first converted into a node.js script, and
 then into a Typescript project with the intention to turn this into a hybrid web
 application performing its interaction with contributors via GitHub based on the
 [Probot](https://probot.github.io) framework and performing its background
-maintenance tasks in the form of [Visual Studio Team Services
-Builds](https://docs.microsoft.com/en-us/vsts/build-release/index?view=vsts).
+maintenance tasks in the form of [Azure
+Pipelines](https://docs.microsoft.com/en-us/azure/devops/pipelines/index). When
+the web application design became too limiting, it was converted into an [Azure
+Function](https://azure.microsoft.com/en-us/services/functions/) that backs the
+GitHub App and triggers an Azure Pipeline when given specific commands.
 
 ### Typescript
 
-The most convenient way to implement a UI based on GitHub Pull Requests is to
-use the Probot framework. This framework is implemented in Javascript, and to
-allow for type-safe and convenient development, Typescript and [Visual Studio
-Code](https://code.visualstudio.com/) are a natural fit.
+A convenient way to implement a UI based on GitHub Pull Requests is to create
+a GitHub App that triggers an Azure Function that is implemented in Javascript.
+
+The backend is implemented as an Azure Pipeline, using Typescript to allow for
+type-safe and convenient development, and [Visual Studio
+Code](https://code.visualstudio.com/) is a natural fit to develop both the
+Pipeline and the Function.
 
 While many developers may not be familiar with Typescript, it is similar enough
 to (and a superset of) Javascript, which is a really well-known language. This
@@ -106,10 +112,10 @@ automatically.
 
 ### Background tasks
 
-The repositories <https://github.com/gitster/git> (and possibly
-<https://public-inbox.org/git)> will be monitored via automated builds in Visual
-Studio Team Services, backed by Typescript code in
-<https://github.com/gitgitgadget/gitgitgadget.>
+The repositories <https://github.com/gitster/git> (and
+<https://public-inbox.org/git)>) are monitored via dedicated [Azure
+Pipelines](https://dev.azure.com/gitgitgadget/git/_build?definitionId=3),
+backed by Typescript code in <https://github.com/gitgitgadget/gitgitgadget.>
 
 ### Patch submissions
 
@@ -126,40 +132,30 @@ linking to the corresponding PR/commits on GitHub.
 GitGitGadget stores its metadata in the form of Git notes, in
 `refs/notes/gitgitgadget` in <https://github.com/gitgitgadget/git.>
 
-Note: other Probot-based projects choose to (ab-)use dedicated comments to store
-(and possibly hide) their metadata. For GitGitGadget, it was a deliberate
-decision not to do that, but rather to use Git notes, not only to keep a record,
-and to make debugging easier, but also to be able to fix bugs manually when
-necessary.
+Note: GitGitGadgetd uses Git notes, not only to keep a record, and to make
+debugging easier, but also to be able to fix bugs manually when necessary.
 
-We follow the same idea as `refs/notes/amlog` in <https://github.com/git/git>
-(which inspired this design): first, we add notes of the form
-`Message-Id: <message-id>` (but unlike `amlog`, we add it as a note to the tip
-of our notes ref, to avoid clashes with existing notes). This ensures that there
-is a blob with that content. We can add then any metadata corresponding to the
-referenced mail as a note to that blob.
-
-The metadata will be stored in JSON format (sorted by key name).
+We follow the original idea as `refs/notes/amlog` in
+<https://github.com/git/git> (which inspired this design): first, we add the
+Message-Id as a blob, then annotate that with a JSON structure (stable: sorted
+by key name) that contains metadata about that mail.
 
 Metadata includes (but is not limited to): the original commit
-(`Submitted-as:`), the commit in <https://github.com/git/git> (`Integrated-as:`),
-the Pull Request in <https://github.com/gitgitgadget/git> (`Pull-Request:`), the
-latest patch series iteration of which this commit was part (`Iteration:`), etc.
-If the identical commit has been submitted as part of (an) earlier patch series
-iteration(s), the Message-Ids of the corresponding mails should be also made
-available, as `Submitted-as-v<iteration>:`.
+(`Submitted-as:`), the commit in <https://github.com/git/git>
+(`Integrated-as:`), the Pull Request in <https://github.com/gitgitgadget/git>
+(`Pull-Request:`), the latest patch series iteration of which this commit was
+part (`Iteration:`), etc. If the identical commit has been submitted as part of
+(an) earlier patch series iteration(s), the Message-Ids of the corresponding
+mails should be also made available, as `Submitted-as-v<iteration>:`.
 
 Likewise, we will add as notes the URLs of the handled PRs, and in the future
 also the URLs of handled PR comments.
 
-Global metadata will be stored in the Git note for the [empty
+Global metadata is stored in the Git note for the [empty
 blob](https://github.com/git/git/blob/v2.17.0/cache.h#L1026-L1027). This
-includes all metadata not corresponding to a particular PR, such as a whitelist
-of GitHub accounts permitted to use GitGitGadget, the latest commit of
-`refs/notes/amlog` that has been processed so far, or the commit in
-<https://public-inbox/git> up to which GitGitGadget has parsed the Git mailing
-list so far).
+includes all metadata not corresponding to a particular PR, such as the list
+of GitHub accounts permitted to use GitGitGadget.
 
-To implement some sort of "locking" (to prevent inadvertent concurrent actions
-by GitGitGadget), the idea is to update the notes ref first, then push, and
-proceed with the actual actions only after the (non-forced) push succeeds.
+By virtue of running the Azure Pipeline in a dedicated agent pool with a single
+agent, GitGitGadget does not need to worry about concurrency: there is really
+only one job that is run at any given time.

@@ -440,6 +440,105 @@ export class CIHelper {
         return revs.split(/\s+/);
     }
 
+    /**
+     * Retrieves comments on PRs and handles `/submit` and friends.
+     *
+     * @param commentID the ID of the PR comment to handle
+     */
+    public async handleComment(commentID: number): Promise<void> {
+        const comment = await this.github.getPRComment(commentID);
+        const match = comment.body.match(/^(\/[-a-z]+)(\s+(.*))?$/);
+        if (!match) {
+            console.log(`Not a command; doing nothing: '${comment.body}'`);
+            return; /* nothing to do */
+        }
+        const command = match[1];
+        const argument = match[3];
+
+        const pullRequestURL =
+            `https://github.com/gitgitgadget/git/pull/${comment.prNumber}`;
+        console.log(`Handling command ${command} with argument ${argument} at ${
+            pullRequestURL}#issuecomment-${commentID}`);
+
+        const addComment = async (body: string) => {
+            console.log(`Adding comment to ${pullRequestURL}:\n${body}`);
+            await this.github.addPRComment(pullRequestURL, body);
+        };
+
+        try {
+            const gitGitGadget = await GitGitGadget.get(".");
+            if (!gitGitGadget.isUserAllowed(comment.author)) {
+                throw new Error(`User ${
+                    comment.author} is not permitted to use GitGitGadget`);
+            }
+
+            if (command === "/submit") {
+                if (argument && argument !== "") {
+                    throw new Error(`/submit does not accept arguments ('${
+                        argument}')`);
+                }
+
+                const pr = await this.github.getPRInfo(comment.prNumber);
+
+                if (pr.author !== comment.author) {
+                    throw new Error("Only the owner of a PR can submit it!");
+                }
+
+                if (!pr || !pr.baseLabel || !pr.baseCommit ||
+                    !pr.headLabel || !pr.headCommit) {
+                    throw new Error(`Could not determine PR details for ${
+                        pullRequestURL}`);
+                }
+
+                if (!pr.title || !pr.body) {
+                    throw new Error("Ignoring PR with empty title and/or body");
+                }
+                const description = `${pr.title}\n\n${pr.body}`;
+
+                if (!pr.mergeable) {
+                    throw new Error("Refusing to submit a patch series "
+                        + "that does not merge cleanly.");
+                }
+
+                const fullAuthorName =
+                    await this.github.getGitHubUserName(comment.author);
+                if (!fullAuthorName) {
+                    throw new Error(`Could not determine full name of ${
+                        comment.author}`);
+                }
+
+                const coverMid = await gitGitGadget.submit(comment.author,
+                    fullAuthorName, pullRequestURL, description,
+                    pr.baseLabel, pr.baseCommit, pr.headLabel, pr.headCommit);
+                await addComment(`Submitted as [${
+                    coverMid}](https://public-inbox.org/git/${coverMid})`);
+            } else if (command === "/allow") {
+                if (await gitGitGadget.allowUser(comment.author, argument)) {
+                    await addComment(`User ${
+                        argument} is now allowed to use GitGitGadget.`);
+                } else {
+                    await addComment(`User ${
+                        argument} already allowed to use GitGitGadget.`);
+                }
+            } else if (command === "/disallow") {
+                if (await gitGitGadget.denyUser(comment.author, argument)) {
+                    await addComment(`User ${
+                        argument} is no longer allowed to use GitGitGadget.`);
+                } else {
+                    await addComment(`User ${
+                        argument} already not allowed to use GitGitGadget.`);
+                }
+            } else if (command === "/test") {
+                await addComment(`Received test '${argument}'`);
+            } else {
+                console.log(`Ignoring unrecognized command ${command} in ${
+                    pullRequestURL}#issuecomment-${commentID}`);
+            }
+        } catch (e) {
+            await addComment(e.toString());
+        }
+    }
+
     private async maybeUpdateGGGNotes(): Promise<void> {
         if (!this.gggNotesUpdated) {
             await this.notes.update();

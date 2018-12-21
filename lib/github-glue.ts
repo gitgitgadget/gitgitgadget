@@ -4,11 +4,21 @@ import { GitGitGadget } from "./gitgitgadget";
 
 export interface IPullRequestInfo {
     pullRequestURL: string;
+    author: string;
     title: string;
+    body: string;
+    baseLabel: string;
     baseCommit: string;
+    headLabel: string;
     headCommit: string;
+    mergeable: boolean;
 }
 
+export interface IPRComment {
+    author: string;
+    body: string;
+    prNumber: number;
+}
 export class GitHubGlue {
     public workDir?: string;
     protected readonly client = new octokit();
@@ -117,15 +127,79 @@ export class GitHubGlue {
             repo: "git",
             state: "open",
         });
-        response.data.map((pr: any) => {
+        response.data.map((pr: octokit.PullRequestsGetAllResponseItem) => {
             result.push({
+                author: pr.user.login,
                 baseCommit: pr.base.sha,
+                baseLabel: pr.base.label,
+                body: pr.body,
                 headCommit: pr.head.sha,
+                headLabel: pr.head.label,
+                mergeable: true,
                 pullRequestURL: pr.html_url,
                 title: pr.title,
             });
         });
         return result;
+    }
+
+    /**
+     * Retrieve a Pull Request's information relevant to GitGitGadget's
+     * operations.
+     *
+     * @param prNumber the Pull Request's number
+     * @returns information about that Pull Request
+     */
+    public async getPRInfo(prNumber: number): Promise<IPullRequestInfo> {
+        const response = await this.client.pullRequests.get({
+            number: prNumber,
+            owner: "gitgitgadget",
+            repo: "git",
+        });
+        return {
+            author: response.data.user.login,
+            baseCommit: response.data.base.sha,
+            baseLabel: response.data.base.label,
+            body: response.data.body,
+            headCommit: response.data.head.sha,
+            headLabel: response.data.head.label,
+            mergeable: response.data.mergeable,
+            pullRequestURL: response.data.html_url,
+            title: response.data.title,
+        };
+    }
+
+    /**
+     * Retrieves the body of the specified PR/issue comment.
+     *
+     * @param commentID the ID of the PR/issue comment
+     * @returns the text in the comment
+     */
+    public async getPRComment(commentID: number): Promise<IPRComment> {
+        const response = await this.client.issues.getComment({
+            comment_id: commentID,
+            owner: "gitgitgadget",
+            repo: "git",
+        });
+        const match = response.data.html_url.match(/\/pull\/([0-9]+)/);
+        const prNumber = match ? parseInt(match[1], 10) : -1;
+        return {
+            author: response.data.user.login,
+            body: response.data.body,
+            prNumber,
+        };
+    }
+
+    /**
+     * Obtain the full name (if any) for a given GitHub user.
+     *
+     * @param login the GitHub login
+     */
+    public async getGitHubUserName(login: string): Promise<string> {
+        const response = await this.client.users.getForUser({
+            username: login,
+        });
+        return response.data.name;
     }
 
     protected async ensureAuthenticated(): Promise<void> {

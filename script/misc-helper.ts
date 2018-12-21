@@ -355,11 +355,19 @@ async function getCIHelper(): Promise<CIHelper> {
             installation_id: githubAppInstallationID,
         });
         await git(["config", "gitgitgadget.githubToken", result.data.token]);
+    } else if (command === "handle-pr-comment") {
+        if (commander.args.length !== 2) {
+            process.stderr.write(`${command}: Expected one comment ID\n`);
+            process.exit(1);
+        }
+        const commentID = parseInt(commander.args[1], 10);
+        await ci.handleComment(commentID);
     } else {
         process.stderr.write(`${command}: unhandled sub-command\n`);
         process.exit(1);
     }
 })().catch((reason) => {
+    console.log(`Caught error ${reason}:\n${reason.stack}\n`);
     process.stderr.write(`Caught error ${reason}:\n${reason.stack}\n`);
     process.exit(1);
 });
