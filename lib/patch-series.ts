@@ -231,6 +231,31 @@ export class PatchSeries {
         return mbox.split(separatorRegex);
     }
 
+    protected static removeDuplicateMimeVersionHeaders(mails: string[]): void {
+        mails.map((mail: string, i: number) => {
+            const endOfHeader = mail.indexOf("\n\n");
+            if (endOfHeader < 0) {
+                return;
+            }
+            let headers = mail.substr(0, endOfHeader + 1);
+            const needle = "\nMIME-Version: 1.0\n";
+            const offset = headers.indexOf(needle);
+            if (offset < 0) {
+                return;
+            }
+            let offset2 = headers.indexOf(needle, offset + 1);
+            if (offset2 < 0) {
+                return;
+            }
+            do {
+                headers = headers.substr(0, offset2 + 1)
+                    + headers.substr(offset2 + needle.length);
+                offset2 = headers.indexOf(needle, offset + 1);
+            } while (offset2 > 0);
+            mails[i] = headers + mail.substr(endOfHeader + 1);
+        });
+    }
+
     protected static insertCcAndFromLines(mails: string[], thisAuthor: string,
                                           senderName?: string):
         void {
@@ -457,6 +482,7 @@ export class PatchSeries {
         logger.log("Generating mbox");
         const mbox = await this.generateMBox();
         const mails: string[] = PatchSeries.splitMails(mbox);
+        PatchSeries.removeDuplicateMimeVersionHeaders(mails);
 
         const ident = await git(["var", "GIT_AUTHOR_IDENT"], {
             workDir: this.project.workDir,

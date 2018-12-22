@@ -157,6 +157,24 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             expect(new Date(dates[0]).getTime()).toEqual(987654320000);
             expect(new Date(dates[1]).getTime()).toEqual(987654321000);
         });
+
+        const mimeBox1 = [
+            "From xyz",
+            "MIME-Version: 1.0",
+            "From: bogus@example.org",
+            "MIME-Version: 1.0",
+            "Cc: x1@me.org,",
+            " x2@me.org",
+            "MIME-Version: 1.0",
+            "",
+            "Hi!",
+        ].join("\n");
+        test("duplicate MIME-Version headers are eliminated", () => {
+            const mails1 = [mimeBox1];
+            PatchSeries.removeDuplicateMimeVersionHeaders(mails1);
+            expect(mails1[0]).not.toMatch(/MIME-Version[^]*MIME-Version/);
+        });
+
     }
 }
 
