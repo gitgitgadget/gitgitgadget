@@ -44,6 +44,7 @@
     "typescript": "^2.9.2"
   },
   "dependencies": {
+    "@octokit/rest": "^16.3.0",
     "@types/html-to-text": "^1.4.31",
     "dugite": "^1.81.0",
     "html-to-text": "^4.0.0",
