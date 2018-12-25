@@ -2,7 +2,7 @@
 
 [fork]: /fork
 [pr]: /compare
-[style]: https://standardjs.com/
+[style]: https://palantir.github.io/tslint/
 [code-of-conduct]: CODE_OF_CONDUCT.md
 
 Hi there! We're thrilled that you'd like to contribute to this project. Your help is essential for keeping it great.
