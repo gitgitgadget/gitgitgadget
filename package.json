@@ -13,7 +13,8 @@
     "lint": "tslint -c tslint.json '{lib,script,tests}/**/*.{ts,tsx}'",
     "start": "node server.js",
     "test": "tslint --project . && jest --env=node",
-    "test:watch": "jest --watch --notify --notifyMode=change --coverage"
+    "test:watch": "jest --watch --notify --notifyMode=change --coverage",
+    "ci": "tslint --project . && jest --env=node --ci --reporters=default --reporters=jest-junit"
   },
   "bugs": {
     "url": "https://github.com/gitgitgadget/gitgitgadget/issues"
