@@ -16,7 +16,7 @@ export interface IGitGitGadgetOptions {
 }
 
 /**
- * The central class of the Probot-based Web App.
+ * The central class of the GitHub App.
  */
 export class GitGitGadget {
     public static async getWorkDir(gitGitGadgetDir: string): Promise<string> {
