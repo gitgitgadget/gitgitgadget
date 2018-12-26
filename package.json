@@ -13,7 +13,8 @@
     "lint": "tslint -c tslint.json '{lib,script,tests}/**/*.{ts,tsx}'",
     "start": "node server.js",
     "test": "tslint --project . && jest --env=node",
-    "test:watch": "jest --watch --notify --notifyMode=change --coverage"
+    "test:watch": "jest --watch --notify --notifyMode=change --coverage",
+    "ci": "tslint --project . && jest --env=node --ci --reporters=default --reporters=jest-junit"
   },
   "bugs": {
     "url": "https://github.com/gitgitgadget/gitgitgadget/issues"
@@ -37,6 +38,7 @@
     "@types/marked": "^0.3.0",
     "@types/nodemailer": "^4.6.5",
     "jest": "^22.4.4",
+    "jest-junit": "^5.2.0",
     "ts-jest": "^22.4.6",
     "ts-node": "^6.2.0",
     "tslint": "^5.11.0",
