@@ -1,12 +1,19 @@
 {
     "extends": "tslint:recommended",
     "rules": {
+        "align": [
+            true,
+            "parameters",
+            "arguments",
+            "members",
+            "elements",
+            "statements"
+        ],
         "max-line-length": {
             "options": [
                 80
             ]
         },
-        "no-floating-promises": true,
         "no-unused-expression": true,
         "no-console": false
     }

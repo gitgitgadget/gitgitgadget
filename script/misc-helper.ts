@@ -13,7 +13,7 @@ commander.version("1.0.0")
         + "annotate-commit <pr-number> <original> <git.git> )")
     .description("Command-line helper for GitGitGadget")
     .option("-w, --work-dir [directory]",
-        "Use a different GitGitGadget working directory than '.'", ".")
+            "Use a different GitGitGadget working directory than '.'", ".")
     .parse(process.argv);
 
 if (commander.args.length === 0) {

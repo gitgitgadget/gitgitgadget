@@ -65,7 +65,7 @@ export class CIHelper {
         await this.maybeUpdateMail2CommitMap();
         if (!this.commit2mailNotes) {
             this.commit2mailNotes = new GitNotes(this.mail2commit.workDir,
-                "refs/notes/commit-to-mail");
+                                                 "refs/notes/commit-to-mail");
             await this.commit2mailNotes.update();
         }
         const messageId = await
@@ -74,7 +74,7 @@ export class CIHelper {
             return undefined;
         }
         await this.mail2commit.mail2CommitNotes.setString(messageId,
-            gitGitCommit, true);
+                                                          gitGitCommit, true);
         await this.commit2mailNotes.appendCommitNote(gitGitCommit, messageId);
     }
 
@@ -112,7 +112,7 @@ export class CIHelper {
 
         if (!this.testing && mailMeta.pullRequestURL) {
             await this.github.annotateCommit(mailMeta.originalCommit,
-                upstreamCommit);
+                                             upstreamCommit);
         }
 
         return true;
@@ -231,12 +231,9 @@ export class CIHelper {
 
         // Identify branch in gitster/git
         let gitsterBranch: string | undefined =
-            await git([
-                "for-each-ref",
-                `--points-at=${tipCommitInGitGit}`,
-                "--format=%(refname)",
-                "refs/remotes/gitster/",
-            ], { workDir: this.workDir });
+            await git(["for-each-ref", `--points-at=${tipCommitInGitGit}`,
+                       "--format=%(refname)", "refs/remotes/gitster/"],
+                      { workDir: this.workDir });
         if (gitsterBranch) {
             const newline = gitsterBranch.indexOf("\n");
             if (newline > 0) {
@@ -348,12 +345,10 @@ export class CIHelper {
     public async identifyMergeCommit(upstreamBranch: string,
                                      integratedCommit: string):
         Promise<string | undefined> {
-        const revs = await git([
-            "rev-list",
-            "--ancestry-path",
-            "--parents",
-            `${integratedCommit}..upstream/${upstreamBranch}`,
-        ], { workDir: this.workDir });
+        const revs =
+            await git(["rev-list", "--ancestry-path", "--parents",
+                       `${integratedCommit}..upstream/${upstreamBranch}`],
+                      { workDir: this.workDir });
         if (revs === "") {
             return undefined;
         }
@@ -431,12 +426,9 @@ export class CIHelper {
                 workDir: this.workDir,
             });
         }
-        const revs = await git([
-            "rev-list",
-            `${prMeta.baseCommit}..${prMeta.headCommit}`,
-        ], {
-                workDir: this.workDir,
-            });
+        const revs = await git(["rev-list",
+                                `${prMeta.baseCommit}..${prMeta.headCommit}`],
+                               { workDir: this.workDir });
         return revs.split(/\s+/);
     }
 
@@ -507,9 +499,11 @@ export class CIHelper {
                         comment.author}`);
                 }
 
-                const coverMid = await gitGitGadget.submit(comment.author,
-                    fullAuthorName, pullRequestURL, description,
-                    pr.baseLabel, pr.baseCommit, pr.headLabel, pr.headCommit);
+                const coverMid =
+                 await gitGitGadget.submit(comment.author, fullAuthorName,
+                                           pullRequestURL, description,
+                                           pr.baseLabel, pr.baseCommit,
+                                           pr.headLabel, pr.headCommit);
                 await addComment(`Submitted as [${
                     coverMid}](https://public-inbox.org/git/${coverMid})`);
             } else if (command === "/allow") {

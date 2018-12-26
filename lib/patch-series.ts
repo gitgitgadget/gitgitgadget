@@ -20,7 +20,7 @@ export class PatchSeries {
                                    project: ProjectOptions):
         Promise<PatchSeries> {
         const latestTag: string = await this.getLatestTag(project.branchName,
-            options.redo);
+                                                          options.redo);
 
         const baseCommit = await revParse(project.upstreamBranch);
         if (!baseCommit) {
@@ -108,9 +108,9 @@ export class PatchSeries {
                 pullRequestURL,
             };
         } else {
-            if (!await git([
-                "rev-list", `${metadata.headCommit}...${headCommit}`,
-            ], { workDir })) {
+            if (!await git(["rev-list",
+                            `${metadata.headCommit}...${headCommit}`],
+                           { workDir })) {
                 throw new Error(`${headCommit} was already submitted`);
             }
 
@@ -118,9 +118,9 @@ export class PatchSeries {
                 `${metadata.baseCommit}..${metadata.headCommit}`;
             const currentRange = `${baseCommit}..${headCommit}`;
             if (await gitCommandExists("range-diff", workDir)) {
-                rangeDiff = await git([
-                    "range-diff", "--no-color", previousRange, currentRange,
-                ], { workDir });
+                rangeDiff = await git(["range-diff", "--no-color",
+                                       previousRange, currentRange],
+                                      { workDir });
             }
 
             metadata.iteration++;
@@ -152,12 +152,14 @@ export class PatchSeries {
         const publishToRemote = undefined;
 
         const project = await ProjectOptions.get(workDir, headCommit, cc || [],
-            basedOn, publishToRemote, baseCommit);
+                                                 basedOn, publishToRemote,
+                                                 baseCommit);
 
         const wrapCoverLetterAtColumn = 76;
         return new PatchSeries(notes, options, project, metadata,
-            rangeDiff, md2text(coverLetter, wrapCoverLetterAtColumn),
-            senderName);
+                               rangeDiff,
+                               md2text(coverLetter, wrapCoverLetterAtColumn),
+                               senderName);
     }
 
     protected static parsePullRequestDescription(description: string): {
@@ -466,7 +468,7 @@ export class PatchSeries {
         logger.log("Adding Cc: and explicit From: lines for other authors, "
             + "if needed");
         await PatchSeries.insertCcAndFromLines(mails, thisAuthor,
-            this.senderName);
+                                               this.senderName);
         if (mails.length > 1) {
             if (this.coverLetter) {
                 const match2 = mails[0].match(
@@ -514,8 +516,9 @@ export class PatchSeries {
         logger.log("Generating tag message");
         let tagMessage =
             await PatchSeries.generateTagMessage(mails[0], mails.length > 1,
-                this.project.midUrlPrefix,
-                this.metadata.referencesMessageIds);
+                                                 this.project.midUrlPrefix,
+                                                 this.metadata
+                                                 .referencesMessageIds);
         let tagName;
         if (!this.metadata.pullRequestURL) {
             tagName = `${this.project.branchName}-v${this.metadata.iteration}`;
@@ -528,7 +531,7 @@ export class PatchSeries {
         if (this.project.publishToRemote) {
             const url =
                 await gitConfig(`remote.${this.project.publishToRemote}.url`,
-                    this.project.workDir);
+                                this.project.workDir);
             if (!url) {
                 throw new Error(`remote ${this.project.publishToRemote
                     } lacks URL`);
@@ -536,7 +539,7 @@ export class PatchSeries {
 
             logger.log("Inserting links");
             tagMessage = await PatchSeries.insertLinks(tagMessage, url, tagName,
-                this.project.basedOn);
+                                                       this.project.basedOn);
         }
 
         if (this.options.dryRun) {
@@ -575,7 +578,7 @@ export class PatchSeries {
         logger.log("Inserting footers");
         if (footers.length > 0) {
             mails[0] = PatchSeries.insertFooters(mails[0],
-                mails.length > 1, footers);
+                                                 mails.length > 1, footers);
         }
 
         logger.log("Adjusting Date headers");
@@ -604,11 +607,12 @@ export class PatchSeries {
                 const mid = messageID[1];
                 const commitMatch = mail.match(/^From ([0-9a-f]{40}) /);
                 const originalCommit = commitMatch && commitMatch[1];
-                await this.notes.set(mid, {
+                const mailMeta = {
                     messageID: mid,
                     originalCommit,
                     pullRequestURL: this.metadata.pullRequestURL,
-                } as IMailMetadata, true);
+                } as IMailMetadata;
+                await this.notes.set(mid, mailMeta, true);
                 if (globalOptions && originalCommit &&
                     this.metadata.pullRequestURL) {
                     if (!globalOptions.activeMessageIDs) {
@@ -638,17 +642,14 @@ export class PatchSeries {
         }
 
         if (!this.options.dryRun) {
-            await this.notes.set(this.metadata.pullRequestURL ||
-                this.project.branchName, this.metadata, true);
+            const key = this.metadata.pullRequestURL || this.project.branchName;
+            await this.notes.set(key, this.metadata, true);
         }
 
         if (!this.options.dryRun && publishTagsAndNotesToRemote) {
-            await git([
-                "push",
-                publishTagsAndNotesToRemote,
-                this.notes.notesRef,
-                `refs/tags/${tagName}`,
-            ], { workDir: this.notes.workDir });
+            await git(["push", publishTagsAndNotesToRemote, this.notes.notesRef,
+                       `refs/tags/${tagName}`],
+                      { workDir: this.notes.workDir });
         }
 
         return this.metadata.coverLetterMessageId;
@@ -657,17 +658,17 @@ export class PatchSeries {
     protected async generateMBox(): Promise<string> {
         const commitRange =
             `${this.project.baseCommit}..${this.project.branchName}`;
-        if (!this.coverLetter && 1 < parseInt(await git(["rev-list", "--count",
-            commitRange], { workDir: this.project.workDir }), 10)) {
+        if (!this.coverLetter &&
+            1 < parseInt(await git(["rev-list", "--count", commitRange],
+                                   { workDir: this.project.workDir }),
+                         10)) {
             throw new Error("Branch " + this.project.branchName
                 + " needs a description");
         }
 
-        const mergeBase = await git([
-            "merge-base",
-            this.project.baseCommit,
-            this.project.branchName,
-        ], { workDir: this.project.workDir });
+        const mergeBase = await git(["merge-base", this.project.baseCommit,
+                                     this.project.branchName],
+                                    { workDir: this.project.workDir });
         const args = [
             "format-patch", "--thread", "--stdout", "--signature=gitgitgadget",
             "--add-header=Fcc: Sent",
@@ -724,10 +725,9 @@ export class PatchSeries {
         if (this.options.redo) {
             tagName = "+" + tagName;
         }
-        await git(["push", this.project.publishToRemote, "+"
-            + this.project.branchName, tagName], {
-                workDir: this.project.workDir,
-            },
+        await git(["push", this.project.publishToRemote,
+                   `+${this.project.branchName}`, tagName],
+                  { workDir: this.project.workDir },
         );
     }
 }

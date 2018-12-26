@@ -13,7 +13,7 @@ commander.version("1.0.0")
     .usage("[options]")
     .description("GitGitGadget's refs/notes/mail-to-commit monitor")
     .option("-w, --work-dir [directory]",
-        "Use a different working directory than '.'", ".")
+            "Use a different working directory than '.'", ".")
     .parse(process.argv);
 
 if (commander.args.length === 0) {

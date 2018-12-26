@@ -80,7 +80,7 @@ class PatchSeriesTest extends PatchSeries {
         });
 
         PatchSeries.insertCcAndFromLines(mails,
-            "A U Thor <author@example.com>");
+                                         "A U Thor <author@example.com>");
         test("Cc: is inserted correctly", () => {
             expect(mails[1]).toMatch(
                 // tslint:disable-next-line:max-line-length
@@ -92,18 +92,20 @@ class PatchSeriesTest extends PatchSeries {
             expect(coverLetter).toMatch(/\nSubject: .*This is the subject/);
         });
 
-        const tagMessage = PatchSeries.generateTagMessage(coverLetter, true,
-            "https://mid.lookup/", [
-                "cover.2.git.author@example.com",
-                "cover.1.git.author@example.com",
-            ]);
+        const mids = [
+            "cover.2.git.author@example.com",
+            "cover.1.git.author@example.com",
+        ];
+        const tagMessage =
+            PatchSeries.generateTagMessage(coverLetter, true,
+                                           "https://mid.lookup/", mids);
         test("Tag message is generated correctly", () => {
             expect(tagMessage).toBe(tagMessage1);
         });
 
         const repoUrl = "https://github.com/author/git";
         const withLinks = PatchSeries.insertLinks(tagMessage, repoUrl,
-            "my-series-v1", "next");
+                                                  "my-series-v1", "next");
         test("Links are inserted correctly", () => {
             const footer = `
 Based-On: next at ${repoUrl}

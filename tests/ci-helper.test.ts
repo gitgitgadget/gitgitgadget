@@ -44,7 +44,7 @@ test("identify upstream commit", async () => {
 
     // re-route the URLs
     await worktree.git(["config", `url.${gggRemote.workDir}.insteadOf`,
-        "https://github.com/gitgitgadget/git"]);
+                        "https://github.com/gitgitgadget/git"]);
 
     // Set up fake upstream branches
     const A = await gggRemote.commit("A");
@@ -76,7 +76,7 @@ test("identify upstream commit", async () => {
 
     // Update the `mail-to-commit` notes ref, at least the part we care about
     const mail2CommitNotes = new GitNotes(gggRemote.workDir,
-        "refs/notes/mail-to-commit");
+                                          "refs/notes/mail-to-commit");
     await mail2CommitNotes.setString(messageID, B);
 
     // "publish" the gitgitgadget notes

@@ -7,7 +7,7 @@ export class ProjectOptions {
     public static async getBranchName(workDir: string): Promise<string> {
         // Get the current branch name
         const ref = await git(["rev-parse", "--symbolic-full-name", "HEAD"],
-            { workDir });
+                              { workDir });
         const match = ref.match(/^refs\/heads\/(.*)/);
         if (!match) {
             throw new Error("Not on a branch (" + ref + ")?");
@@ -25,10 +25,10 @@ export class ProjectOptions {
             await gitConfig("mail.publishtoremote", workDir);
         const baseBranch =
             await ProjectOptions.determineBaseBranch(workDir, branchName,
-                publishToRemote);
+                                                     publishToRemote);
 
         return await ProjectOptions.get(workDir, branchName, cc, baseBranch,
-            publishToRemote);
+                                        publishToRemote);
     }
 
     public static async get(workDir: string, branchName: string,
@@ -45,11 +45,11 @@ export class ProjectOptions {
             cc.push("Junio C Hamano <gitster@pobox.com>");
             upstreamBranch = "upstream/pu";
             if (await git(["rev-list", branchName + ".." + upstreamBranch],
-                { workDir })) {
+                          { workDir })) {
                 upstreamBranch = "upstream/next";
             }
             if (await git(["rev-list", branchName + ".." + upstreamBranch],
-                { workDir })) {
+                          { workDir })) {
                 upstreamBranch = "upstream/master";
             }
             midUrlPrefix = "https://public-inbox.org/git/";
@@ -80,13 +80,14 @@ export class ProjectOptions {
 
         if (!baseCommit &&
             await git(["rev-list", branchName + ".." + upstreamBranch],
-                { workDir })) {
+                      { workDir })) {
             throw new Error("Branch " + branchName + " is not rebased to " +
                 upstreamBranch);
         }
 
         return new ProjectOptions(branchName, upstreamBranch, basedOn,
-            publishToRemote, to, cc, midUrlPrefix, workDir, baseCommit);
+                                  publishToRemote, to, cc, midUrlPrefix,
+                                  workDir, baseCommit);
     }
 
     protected static async determineBaseBranch(workDir: string,
@@ -109,7 +110,7 @@ export class ProjectOptions {
         }
 
         const commit = await git(["rev-parse", "-q", "--verify", remoteRef],
-            { workDir });
+                                 { workDir });
         if (await git(["rev-parse", basedOn]) !== commit) {
             throw new Error(basedOn + " on " + publishToRemote +
                 " disagrees with local branch");
@@ -122,12 +123,12 @@ export class ProjectOptions {
         Promise<string[]> {
         // Cc: from config
         const cc: string[] = [];
-        await gitConfigForEach(`branch.${branchName}.cc`,
-            (email) => {
-                if (email) {
-                    cc.push(email);
-                }
-            }, workDir);
+        const forEach = (email: string) => {
+            if (email) {
+                cc.push(email);
+            }
+        };
+        await gitConfigForEach(`branch.${branchName}.cc`, forEach, workDir);
         return cc;
     }
 
