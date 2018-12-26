@@ -18,7 +18,7 @@ And if you want to dive into the source code to Get Things Done, here is a littl
 
 The most important part of the source code lives in `lib/`, and is written in Typescript. This is where the core logic lives, from processing the Pull Request metadata (`lib/gitgitgadget.ts`) to calling Git (`lib/git.ts`) to generating the patch series (`lib/patch-series.ts`) to sending the emails (`lib/send-emails.ts`).
 
-One exception is the [Probot](https://probot.github.io/)-related code, which lives in `index.js` (and is used via `server.js` in the web app on Azure).
+The exception to that rule are scripts, such as `ci-helper.ts` which backs the Azure Pipeline that is implicitly triggered via the GitHub App, which live in `scripts/`.
 
 The tests to verify that everything works as expected live in `tests/`, and use the [Jest](https://facebook.github.io/jest/) framework. Please make sure to add tests for whatever functionality you add when developing a new feature, to gain confidence that your feature or bug fix will work also in the future.
 

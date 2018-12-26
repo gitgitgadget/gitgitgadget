@@ -37,21 +37,19 @@
     "@types/marked": "^0.3.0",
     "@types/nodemailer": "^4.6.5",
     "jest": "^22.4.4",
-    "smee-client": "^1.0.2",
     "ts-jest": "^22.4.6",
     "ts-node": "^6.2.0",
     "tslint": "^5.11.0",
     "typescript": "^2.9.2"
   },
   "dependencies": {
+    "@octokit/rest": "^16.3.0",
     "@types/html-to-text": "^1.4.31",
     "dugite": "^1.81.0",
     "html-to-text": "^4.0.0",
     "json-stable-stringify": "^1.0.1",
     "marked": "^0.4.0",
-    "nodemailer": "^4.6.8",
-    "probot": "^6.2.1",
-    "probot-commands": "^1.1.0"
+    "nodemailer": "^4.6.8"
   },
   "engines": {
     "node": ">= 8.3.0"

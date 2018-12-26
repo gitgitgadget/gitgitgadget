@@ -101,7 +101,7 @@ export class GitHubGlue {
             GitGitGadget.parsePullRequestURL(pullRequestURL);
 
         await this.ensureAuthenticated();
-        await this.client.pullRequests.update({
+        await this.client.pulls.update({
             number: prNo,
             owner,
             repo,
@@ -121,13 +121,13 @@ export class GitHubGlue {
 
     public async getOpenPRs(): Promise<IPullRequestInfo[]> {
         const result: IPullRequestInfo[] = [];
-        const response = await this.client.pullRequests.getAll({
+        const response = await this.client.pulls.list({
             owner: "gitgitgadget",
             per_page: 1000,
             repo: "git",
             state: "open",
         });
-        response.data.map((pr: octokit.PullRequestsGetAllResponseItem) => {
+        response.data.map((pr: octokit.PullsListResponseItem) => {
             result.push({
                 author: pr.user.login,
                 baseCommit: pr.base.sha,
@@ -151,7 +151,7 @@ export class GitHubGlue {
      * @returns information about that Pull Request
      */
     public async getPRInfo(prNumber: number): Promise<IPullRequestInfo> {
-        const response = await this.client.pullRequests.get({
+        const response = await this.client.pulls.get({
             number: prNumber,
             owner: "gitgitgadget",
             repo: "git",
@@ -196,7 +196,7 @@ export class GitHubGlue {
      * @param login the GitHub login
      */
     public async getGitHubUserName(login: string): Promise<string> {
-        const response = await this.client.users.getForUser({
+        const response = await this.client.users.getByUsername({
             username: login,
         });
         return response.data.name;
