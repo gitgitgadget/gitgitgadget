@@ -1,3 +1,4 @@
+import { encodeWords } from "nodemailer/lib/mime-funcs";
 import {
     commitExists, git, gitCommandExists, gitConfig, revParse,
 } from "./git";
@@ -230,6 +231,31 @@ export class PatchSeries {
         return mbox.split(separatorRegex);
     }
 
+    protected static removeDuplicateMimeVersionHeaders(mails: string[]): void {
+        mails.map((mail: string, i: number) => {
+            const endOfHeader = mail.indexOf("\n\n");
+            if (endOfHeader < 0) {
+                return;
+            }
+            let headers = mail.substr(0, endOfHeader + 1);
+            const needle = "\nMIME-Version: 1.0\n";
+            const offset = headers.indexOf(needle);
+            if (offset < 0) {
+                return;
+            }
+            let offset2 = headers.indexOf(needle, offset + 1);
+            if (offset2 < 0) {
+                return;
+            }
+            do {
+                headers = headers.substr(0, offset2 + 1)
+                    + headers.substr(offset2 + needle.length);
+                offset2 = headers.indexOf(needle, offset + 1);
+            } while (offset2 > 0);
+            mails[i] = headers + mail.substr(endOfHeader + 1);
+        });
+    }
+
     protected static insertCcAndFromLines(mails: string[], thisAuthor: string,
                                           senderName?: string):
         void {
@@ -248,10 +274,11 @@ export class PatchSeries {
                 throw new Error("No From: line found in header:\n\n" + header);
             }
 
-            let replaceSender = thisAuthor;
+            let replaceSender = encodeWords(thisAuthor);
             if (isGitGitGadget) {
                 const onBehalfOf = i === 0 && senderName ?
-                    senderName : authorMatch[2].replace(/ <.*>$/, "");
+                    encodeWords(senderName) :
+                    authorMatch[2].replace(/ <.*>$/, "");
                 // Special-case GitGitGadget to send from
                 // "<author> via GitGitGadget"
                 replaceSender = "\""
@@ -455,6 +482,7 @@ export class PatchSeries {
         logger.log("Generating mbox");
         const mbox = await this.generateMBox();
         const mails: string[] = PatchSeries.splitMails(mbox);
+        PatchSeries.removeDuplicateMimeVersionHeaders(mails);
 
         const ident = await git(["var", "GIT_AUTHOR_IDENT"], {
             workDir: this.project.workDir,
@@ -677,7 +705,9 @@ export class PatchSeries {
             "--add-header=MIME-Version: 1.0",
             "--base", mergeBase, this.project.to,
         ];
-        this.project.cc.map((email) => { args.push("--cc=" + email); });
+        this.project.cc.map((email) => {
+            args.push("--cc=" + encodeWords(email));
+        });
         if (this.metadata.referencesMessageIds) {
             this.metadata.referencesMessageIds.map((email) => {
                 args.push("--in-reply-to=" + email);

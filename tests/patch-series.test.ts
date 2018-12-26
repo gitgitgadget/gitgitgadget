@@ -79,12 +79,20 @@ class PatchSeriesTest extends PatchSeries {
                 /^From [^]*\n---\n2\.17\.0\.windows\.1\n$/);
         });
 
-        PatchSeries.insertCcAndFromLines(mails,
-                                         "A U Thor <author@example.com>");
+        const thisAuthor = "GitGitGadget <gitgitgadget@gmail.com>";
+        const senderName = "Nguyễn Thái Ngọc Duy";
+        PatchSeries.insertCcAndFromLines(mails, thisAuthor, senderName);
+
+        test("non-ASCII characters are encoded correctly", () => {
+            // tslint:disable-next-line:max-line-length
+            const needle = "\"=?UTF-8?Q?Nguy=E1=BB=85n_Th=C3=A1i_Ng=E1=BB=8Dc?= Duy via GitGitGadget\" ";
+            expect(mails[0]).toEqual(expect.stringContaining(needle));
+        });
+
         test("Cc: is inserted correctly", () => {
             expect(mails[1]).toMatch(
                 // tslint:disable-next-line:max-line-length
-                /From: A U Thor[^]*\nCc: Some One Else[^]*\n\nFrom: Some One Else.*\n\n/);
+                /From: "Some One Else via GitGitGadget"[^]*\nCc: Some One Else[^]*\n\nFrom: Some One Else.*\n\n/);
         });
 
         const coverLetter = PatchSeries.adjustCoverLetter(mails[0]);
@@ -149,6 +157,24 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             expect(new Date(dates[0]).getTime()).toEqual(987654320000);
             expect(new Date(dates[1]).getTime()).toEqual(987654321000);
         });
+
+        const mimeBox1 = [
+            "From xyz",
+            "MIME-Version: 1.0",
+            "From: bogus@example.org",
+            "MIME-Version: 1.0",
+            "Cc: x1@me.org,",
+            " x2@me.org",
+            "MIME-Version: 1.0",
+            "",
+            "Hi!",
+        ].join("\n");
+        test("duplicate MIME-Version headers are eliminated", () => {
+            const mails1 = [mimeBox1];
+            PatchSeries.removeDuplicateMimeVersionHeaders(mails1);
+            expect(mails1[0]).not.toMatch(/MIME-Version[^]*MIME-Version/);
+        });
+
     }
 }
 
