@@ -50,6 +50,7 @@
     "dugite": "^1.81.0",
     "html-to-text": "^4.0.0",
     "json-stable-stringify": "^1.0.1",
+    "jsonwebtoken": "^8.4.0",
     "marked": "^0.4.0",
     "nodemailer": "^4.6.8"
   },
