@@ -1,3 +1,5 @@
+import * as fs from "fs";
+import * as util from "util";
 import { commitExists, git } from "./git";
 import { GitNotes } from "./git-notes";
 import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget";
@@ -5,6 +7,8 @@ import { GitHubGlue } from "./github-glue";
 import { MailCommitMapping } from "./mail-commit-mapping";
 import { IMailMetadata } from "./mail-metadata";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
+
+const readFile = util.promisify(fs.readFile);
 
 /*
  * This class offers functions to support the operations we want to perform from
@@ -530,6 +534,18 @@ export class CIHelper {
             }
         } catch (e) {
             await addComment(e.toString());
+        }
+    }
+
+    public async handlePush(prNumber: number) {
+        const pr = await this.github.getPRInfo(prNumber);
+        const gitGitGadget = await GitGitGadget.get(".");
+        if (!pr.hasComments && !gitGitGadget.isUserAllowed(pr.author)) {
+            const pullRequestURL =
+                `https://github.com/gitgitgadget/git/pull/${prNumber}`;
+            const welcome = (await readFile("res/WELCOME.md")).toString()
+                .replace(/\${username}/g, pr.author);
+            this.github.addPRComment(pullRequestURL, welcome);
         }
     }
 
