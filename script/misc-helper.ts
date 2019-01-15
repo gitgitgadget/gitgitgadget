@@ -362,6 +362,14 @@ async function getCIHelper(): Promise<CIHelper> {
         }
         const commentID = parseInt(commander.args[1], 10);
         await ci.handleComment(commentID);
+    } else if (command === "handle-pr-push") {
+        if (commander.args.length !== 2) {
+            process.stderr.write(`${command
+                }: Expected one Pull Request number\n`);
+            process.exit(1);
+        }
+        const prNumber = parseInt(commander.args[1], 10);
+        await ci.handlePush(prNumber);
     } else {
         process.stderr.write(`${command}: unhandled sub-command\n`);
         process.exit(1);

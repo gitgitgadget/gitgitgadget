@@ -1,13 +1,8 @@
-# A bot to serve as glue between GitHub Pull Requests and the Git mailing list
+# Contributing git.git patches via GitHub PRs
 
-This project intends to help submit patch series to the Git mailing list.
-The process is not quite as painless for the contributor as opening Pull
-Requests, but at least it is much less painful than having to all the steps
-manually.
+This project's goal is to make contributions to the Git project (almost) as easy as opening a GitHub PR. The idea is for users to open a Pull Request at
 
-The idea is for users to open a Pull Request at
-
-	https://github.com/gitgitgadget/git
+    https://github.com/gitgitgadget/git
 
 with a good description of their patch series. Then, the command `/submit`,
 issued via a comment on said PR will tell GitGitGadget to send the patches as
@@ -35,5 +30,5 @@ GitGitGadget will insert a machine-generated representation of what changed,
 and reply to the cover letter of the previous iteration.
 
 For convenience of reviewers, GitGitGadget will generate tags for each
-iteration it sent, and push those to https://github.com/gitgitgadget/git. Links
+iteration it sent, and push those to [https://github.com/gitgitgadget/git](https://github.com/gitgitgadget/git). Links
 to those tags will be included in the cover letter.

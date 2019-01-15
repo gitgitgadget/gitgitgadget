@@ -9,6 +9,7 @@ export interface IPullRequestInfo {
     body: string;
     baseLabel: string;
     baseCommit: string;
+    hasComments: boolean;
     headLabel: string;
     headCommit: string;
     mergeable: boolean;
@@ -133,6 +134,7 @@ export class GitHubGlue {
                 baseCommit: pr.base.sha,
                 baseLabel: pr.base.label,
                 body: pr.body,
+                hasComments: pr.updated_at !== pr.created_at,
                 headCommit: pr.head.sha,
                 headLabel: pr.head.label,
                 mergeable: true,
@@ -161,6 +163,7 @@ export class GitHubGlue {
             baseCommit: response.data.base.sha,
             baseLabel: response.data.base.label,
             body: response.data.body,
+            hasComments: response.data.comments > 0,
             headCommit: response.data.head.sha,
             headLabel: response.data.head.label,
             mergeable: response.data.mergeable,
