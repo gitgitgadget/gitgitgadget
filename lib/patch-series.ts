@@ -660,7 +660,8 @@ export class PatchSeries {
             if (!globalOptions.openPRs) {
                 globalOptions.openPRs = {};
             }
-            globalOptions.openPRs[this.metadata.pullRequestURL] = "";
+            globalOptions.openPRs[this.metadata.pullRequestURL] =
+                coverMid || "";
             await this.notes.set("", globalOptions, true);
         }
 
