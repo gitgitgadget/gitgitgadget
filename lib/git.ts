@@ -17,27 +17,33 @@ function trimTrailingNewline(str: string): string {
     return str.replace(/\r?\n$/, "");
 }
 
-export async function git(args: string[],
-                          options?: IGitOptions | undefined):
+export function git(args: string[], options?: IGitOptions | undefined):
     Promise<string> {
     const workDir = options && options.workDir || ".";
     if (options && options.trace) {
         process.stderr.write(`Called 'git ${args.join(" ")}' in '${workDir
-                             }':\n${new Error().stack}\n`);
+                            }':\n${new Error().stack}\n`);
     }
-    const result = await GitProcess.exec(args, workDir,
-                                         options as IGitExecutionOptions);
-    if (result.exitCode) {
-        throw new Error(`git ${args.join(" ")} failed: ${result.exitCode
-                        },\n${result.stderr}`);
-    }
-    if (options && options.trace) {
-        process.stderr.write(`Output of 'git ${args.join(" ")
-                             }':\nstderr: ${result.stderr
-                             }\nstdout: ${result.stdout}\n`);
-    }
-    return !options || options.trimTrailingNewline === false ?
-        result.stdout : trimTrailingNewline(result.stdout);
+    return new Promise<string>((resolve, reject) => {
+        GitProcess.exec(args, workDir, options as IGitExecutionOptions)
+        .then((result) => {
+            if (result.exitCode) {
+                reject(new Error(`git ${args.join(" ")
+                                } failed: ${result.exitCode
+                                },\n${result.stderr}`));
+                return;
+            }
+            if (options && options.trace) {
+                process.stderr.write(`Output of 'git ${args.join(" ")
+                                    }':\nstderr: ${result.stderr
+                                    }\nstdout: ${result.stdout}\n`);
+            }
+            resolve(!options || options.trimTrailingNewline === false ?
+                    result.stdout : trimTrailingNewline(result.stdout));
+        }).catch((reason) => {
+            reject(reason);
+        });
+    });
 }
 
 /**
