@@ -19,20 +19,18 @@ export async function git(args: string[],
     Promise<string> {
     const workDir = options && options.workDir || ".";
     if (options && options.trace) {
-        process.stderr.write(`Called 'git ${args.join(" ")}' in '${workDir}':
-${new Error().stack}
-`);
+        process.stderr.write(`Called 'git ${args.join(" ")}' in '${workDir
+                             }':\n${new Error().stack}\n`);
     }
     const result = await GitProcess.exec(args, workDir, options);
     if (result.exitCode) {
-        throw new Error(`git ${args.join(" ")} failed: ${result.exitCode},
-${result.stderr}`);
+        throw new Error(`git ${args.join(" ")} failed: ${result.exitCode
+                        },\n${result.stderr}`);
     }
     if (options && options.trace) {
-        process.stderr.write(`Output of 'git ${args.join(" ")}':
-stderr: ${result.stderr}
-stdout: ${result.stdout}
-`);
+        process.stderr.write(`Output of 'git ${args.join(" ")
+                             }':\nstderr: ${result.stderr
+                             }\nstdout: ${result.stdout}\n`);
     }
     return !options || options.trimTrailingNewline === false ?
         result.stdout : trimTrailingNewline(result.stdout);
