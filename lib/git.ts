@@ -1,8 +1,11 @@
+import { ChildProcess } from "child_process";
 import { GitProcess, IGitExecutionOptions } from "dugite";
 
 // For convenience, let's add helpers to call Git:
 
-export interface IGitOptions extends IGitExecutionOptions {
+export interface IGitOptions {
+    processCallback?: (process: ChildProcess) => void;
+    stdin?: string | Buffer;
     workDir?: string;
     trimTrailingNewline?: boolean; // defaults to true
     trace?: boolean;
@@ -22,7 +25,8 @@ export async function git(args: string[],
         process.stderr.write(`Called 'git ${args.join(" ")}' in '${workDir
                              }':\n${new Error().stack}\n`);
     }
-    const result = await GitProcess.exec(args, workDir, options);
+    const result = await GitProcess.exec(args, workDir,
+                                         options as IGitExecutionOptions);
     if (result.exitCode) {
         throw new Error(`git ${args.join(" ")} failed: ${result.exitCode
                         },\n${result.stderr}`);
