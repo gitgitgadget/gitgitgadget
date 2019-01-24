@@ -84,6 +84,43 @@ export class GitHubGlue {
         };
     }
 
+    /**
+     * Add a Pull Request comment on a specific commit
+     *
+     * @param {string} pullRequestURL the Pull Request to comment on
+     * @param {string} commit the hash of the commit to comment on
+     * @param {string} comment the comment
+     * @returns the comment ID and the URL to the comment
+     */
+    public async addPRCommitComment(pullRequestURL: string,
+                                    commit: string,
+                                    gitWorkDir: string | undefined,
+                                    comment: string):
+        Promise<{id: number, url: string}> {
+        await this.ensureAuthenticated();
+        const [owner, repo, nr] =
+            GitGitGadget.parsePullRequestURL(pullRequestURL);
+
+        const files = await git(["diff", "--name-only",
+                                 `${commit}^..${commit}`, "--"],
+                                {workDir: gitWorkDir});
+        const path = files.replace(/\n[^]*/, "");
+
+        const status = await this.client.pulls.createComment({
+            body: comment,
+            commit_id: commit,
+            number: nr,
+            owner,
+            path,
+            position: 1,
+            repo,
+        });
+        return {
+            id: status.data.id,
+            url: status.data.html_url,
+        };
+    }
+
     public async setPRLabels(pullRequestURL: string, labels: string[]):
         Promise<string[]> {
         const [owner, repo, prNo] =
