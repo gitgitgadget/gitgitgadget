@@ -121,6 +121,34 @@ export class GitHubGlue {
         };
     }
 
+    /**
+     * Add a Pull Request comment as reply to a specific comment
+     *
+     * @param {string} pullRequestURL the Pull Request to comment on
+     * @param {number} id the ID of the comment to which to reply
+     * @param {string} comment the comment to add
+     * @returns the comment ID and the URL to the added comment
+     */
+    public async addPRCommentReply(pullRequestURL: string, id: number,
+                                   comment: string):
+        Promise<{id: number, url: string}> {
+        await this.ensureAuthenticated();
+        const [owner, repo, nr] =
+            GitGitGadget.parsePullRequestURL(pullRequestURL);
+
+        const status = await this.client.pulls.createCommentReply({
+            body: comment,
+            in_reply_to: id,
+            number: nr,
+            owner,
+            repo,
+        });
+        return {
+            id: status.data.id,
+            url: status.data.html_url,
+        };
+    }
+
     public async setPRLabels(pullRequestURL: string, labels: string[]):
         Promise<string[]> {
         const [owner, repo, prNo] =
