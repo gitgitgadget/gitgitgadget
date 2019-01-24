@@ -629,12 +629,21 @@ export class PatchSeries {
         }
 
         logger.log("Updating the mail metadata");
+        let isCoverLetter: boolean = true;
         for (const mail of mails) {
             const messageID = mail.match(/\nMessage-ID: <(.*?)>\n/i);
             if (messageID) {
+                let originalCommit: string | undefined;
+                if (isCoverLetter) {
+                    isCoverLetter = false;
+                } else {
+                    const commitMatch = mail.match(/^From ([0-9a-f]{40}) /);
+                    if (commitMatch) {
+                        originalCommit = commitMatch[1];
+                    }
+                }
+
                 const mid = messageID[1];
-                const commitMatch = mail.match(/^From ([0-9a-f]{40}) /);
-                const originalCommit = commitMatch && commitMatch[1];
                 const mailMeta = {
                     messageID: mid,
                     originalCommit,
