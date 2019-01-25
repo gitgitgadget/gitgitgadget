@@ -65,10 +65,10 @@ export class GitHubGlue {
      *
      * @param {string} pullRequestURL the Pull Request to comment on
      * @param {string} comment the comment
-     * @returns the URL to the comment
+     * @returns the comment ID and the URL to the comment
      */
     public async addPRComment(pullRequestURL: string, comment: string):
-        Promise<string> {
+        Promise<{id: number, url: string}> {
         await this.ensureAuthenticated();
         const [owner, repo, nr] =
             GitGitGadget.parsePullRequestURL(pullRequestURL);
@@ -78,7 +78,10 @@ export class GitHubGlue {
             owner,
             repo,
         });
-        return status.data.html_url;
+        return {
+            id: status.data.id,
+            url: status.data.html_url,
+        };
     }
 
     public async setPRLabels(pullRequestURL: string, labels: string[]):
