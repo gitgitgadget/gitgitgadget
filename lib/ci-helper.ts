@@ -89,7 +89,8 @@ export class CIHelper {
      *
      * @returns `true` iff the metadata had to be updated
      */
-    public async updateCommitMapping(messageID: string):
+    public async updateCommitMapping(messageID: string,
+                                     upstreamCommit?: string):
         Promise<boolean> {
         await this.maybeUpdateGGGNotes();
         const mailMeta: IMailMetadata | undefined =
@@ -97,12 +98,13 @@ export class CIHelper {
         if (!mailMeta) {
             throw new Error(`No metadata found for ${messageID}`);
         }
-
-        await this.maybeUpdateMail2CommitMap();
-        const upstreamCommit =
-            await this.mail2commit.getGitGitCommitForMessageId(messageID);
+        if (upstreamCommit === undefined) {
+            await this.maybeUpdateMail2CommitMap();
+            upstreamCommit =
+                await this.mail2commit.getGitGitCommitForMessageId(messageID);
+        }
         if (!upstreamCommit || upstreamCommit === mailMeta.commitInGitGit) {
-            return false;
+                return false;
         }
         mailMeta.commitInGitGit = upstreamCommit;
         if (!mailMeta.originalCommit) {
