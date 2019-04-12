@@ -4,7 +4,7 @@ import { parseMBox } from "../lib/send-mail";
 const mbox =
     `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
 Message-Id: <pull.12345.v17.git.gitgitgadget@example.com>
-From: GitGitGadget <gitgitgadget@example.com>
+From:   =?utf-8?B?w4Z2YXIgQXJuZmrDtnLDsA==?= Bjarmason <avarab@gmail.com>
 Date: Fri Sep 21 12:34:56 2001
 Subject: [PATCH 0/3] My first Pull Request!
 Fcc: Sent
@@ -43,7 +43,7 @@ base-commit: 0ae4d8d45ce43d7ad56faff2feeacf8ed5293518
 
 test("parse mbox", async () => {
     const parsed = await parseMBox(mbox);
-    expect(parsed.from).toEqual("GitGitGadget <gitgitgadget@example.com>");
+    expect(parsed.from).toEqual("Ævar Arnfjörð Bjarmason <avarab@gmail.com>");
     expect(parsed.cc).toEqual([
         "Some Body <somebody@example.com>",
         "And Somebody Else <somebody@else.org>",

@@ -1,4 +1,5 @@
 import { createTransport, SendMailOptions } from "nodemailer";
+import { decode } from "rfc2047";
 
 export interface IParsedMBox {
     body: string;
@@ -68,7 +69,7 @@ export async function parseMBox(mbox: string, gentle?: boolean):
             case "cc": cc = (cc || []).concat(value.split(", ")); break;
             case "date": date = value; break;
             case "fcc": break;
-            case "from": from = value; break;
+            case "from": from = decode(value.trim()); break;
             case "message-id": messageId = value; break;
             case "subject": subject = value; break;
             case "to": to = value; break;
