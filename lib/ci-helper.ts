@@ -27,12 +27,12 @@ export class CIHelper {
     private gggNotesUpdated: boolean;
     private mail2CommitMapUpdated: boolean;
 
-    public constructor(workDir?: string) {
+    public constructor(workDir?: string, skipUpdate?: boolean) {
         this.workDir = workDir;
         this.notes = new GitNotes(workDir);
-        this.gggNotesUpdated = false;
+        this.gggNotesUpdated = !!skipUpdate;
         this.mail2commit = new MailCommitMapping(this.notes.workDir);
-        this.mail2CommitMapUpdated = false;
+        this.mail2CommitMapUpdated = !!skipUpdate;
         this.github = new GitHubGlue(workDir);
         this.testing = false;
     }
