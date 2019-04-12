@@ -1,5 +1,4 @@
 import * as fs from "fs";
-import { isSourceFile } from "typescript";
 import * as util from "util";
 import { isDirectory, isFile } from "../lib/fs-util";
 import { git, IGitOptions, revParse } from "../lib/git";

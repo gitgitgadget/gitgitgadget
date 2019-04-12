@@ -1,6 +1,5 @@
 import "jest";
 import { CIHelper } from "../lib/ci-helper";
-import { git } from "../lib/git";
 import { GitNotes } from "../lib/git-notes";
 import { IMailMetadata } from "../lib/mail-metadata";
 import { testCreateRepo } from "./test-lib";

@@ -1,13 +1,10 @@
 import "jest";
-import { git, gitCommandExists, gitConfig, revParse } from "../lib/git";
+import { git, gitCommandExists } from "../lib/git";
 import { GitNotes } from "../lib/git-notes";
 import { GitGitGadget, IGitGitGadgetOptions } from "../lib/gitgitgadget";
 import { PatchSeries } from "../lib/patch-series";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata";
-import { ProjectOptions } from "../lib/project-options";
-import {
-    ITestCommitOptions, testCreateRepo, TestRepo,
-} from "./test-lib";
+import { testCreateRepo } from "./test-lib";
 
 // This test script might take quite a while to run
 jest.setTimeout(60000);
