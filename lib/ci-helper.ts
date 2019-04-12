@@ -125,19 +125,56 @@ export class CIHelper {
     }
 
     public async updateCommitMappings(): Promise<boolean> {
+        if (!this.gggNotesUpdated) {
+            await git(["fetch", "https://github.com/gitgitgadget/git",
+                       `+refs/notes/gitgitgadget:refs/notes/gitgitgadget`,
+                       `+refs/heads/pu:refs/remotes/upstream/pu`],
+                      { workDir: this.workDir });
+            this.gggNotesUpdated = true;
+        }
+
         const options = await this.getGitGitGadgetOptions();
         if (!options) {
             throw new Error(`There were no GitGitGadget options to be found?`);
         }
-        if (!options.activeMessageIDs) {
-            throw new Error(`No active Message-IDs?`);
+        if (!options.openPRs) {
+            return false;
         }
 
         let result: boolean = false;
-        for (const messageID in options.activeMessageIDs) {
-            if (options.activeMessageIDs.hasOwnProperty(messageID)) {
-                if (await this.updateCommitMapping(messageID)) {
-                    console.log(`Updated mapping for ${messageID}`);
+        for (const pullRequestURL of Object.keys(options.openPRs)) {
+            const info = await this.getPRMetadata(pullRequestURL);
+            if (info === undefined || info.latestTag === undefined ||
+                info.baseCommit === undefined ||
+                info.headCommit === undefined) {
+                continue;
+            }
+            const messageID =
+                await this.getMessageIdForOriginalCommit(info.headCommit);
+            if (!messageID) {
+                continue;
+            }
+            const meta = await this.getMailMetadata(messageID);
+            if (!meta || meta.commitInGitGit !== undefined) {
+                continue;
+            }
+
+            const out = await git(["-c", "core.abbrev=40", "range-diff", "-s",
+                                   info.baseCommit, info.headCommit,
+                                   "refs/remotes/upstream/pu"],
+                                  { workDir: this.workDir });
+            for (const line of out.split("\n")) {
+                const match =
+                    line.match(/^[^:]*: *([^ ]*) [!=][^:]*: *([^ ]*)/);
+                if (!match) {
+                    continue;
+                }
+                const messageID2 = match[1] === info.headCommit ? messageID :
+                    await this.getMessageIdForOriginalCommit(match[1]);
+                if (messageID2 === undefined) {
+                    continue;
+                }
+                if (await this.updateCommitMapping(messageID2, match[2])) {
                     result = true;
                 }
             }
