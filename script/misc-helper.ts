@@ -14,6 +14,8 @@ commander.version("1.0.0")
     .description("Command-line helper for GitGitGadget")
     .option("-w, --work-dir [directory]",
             "Use a different GitGitGadget working directory than '.'", ".")
+    .option("-s, --skip-update",
+            "Do not update the local refs (useful for debugging)")
     .parse(process.argv);
 
 if (commander.args.length === 0) {
@@ -39,7 +41,7 @@ async function getGitGitWorkDir(): Promise<string> {
 }
 
 async function getCIHelper(): Promise<CIHelper> {
-    return new CIHelper(await getGitGitWorkDir());
+    return new CIHelper(await getGitGitWorkDir(), commander.skipUpdate);
 }
 
 (async () => {

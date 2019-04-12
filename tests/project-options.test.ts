@@ -1,13 +1,9 @@
 import "jest";
 import { isDirectory } from "../lib/fs-util";
-import { git } from "../lib/git";
 import { GitNotes } from "../lib/git-notes";
 import { PatchSeries } from "../lib/patch-series";
-import { IPatchSeriesMetadata } from "../lib/patch-series-metadata";
 import { ProjectOptions } from "../lib/project-options";
-import {
-    ITestCommitOptions, testCreateRepo,
-} from "./test-lib";
+import { testCreateRepo, } from "./test-lib";
 
 // This test script might take quite a while to run
 jest.setTimeout(20000);

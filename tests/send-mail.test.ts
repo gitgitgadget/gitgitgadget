@@ -1,4 +1,5 @@
-import { IParsedMBox, parseMBox } from "../lib/send-mail";
+import "jest";
+import { parseMBox } from "../lib/send-mail";
 
 const mbox =
     `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
