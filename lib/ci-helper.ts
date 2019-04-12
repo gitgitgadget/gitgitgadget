@@ -38,7 +38,7 @@ export class CIHelper {
     }
 
     /*
-     * Given an commit that was contributed as a patch via GitGitGadget (i.e.
+     * Given a commit that was contributed as a patch via GitGitGadget (i.e.
      * a commit with a Message-ID recorded in `refs/notes/gitgitgadget`),
      * identify the commit (if any) in `git.git`.
      */
