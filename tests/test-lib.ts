@@ -96,7 +96,7 @@ export class TestRepo {
                 GIT_COMMITTER_DATE: `${tick} +0000`,
             },
             workDir: options.workDir,
-        } as IGitOptions;
+        };
 
         if (options.committer) {
             const match = options.committer.match(/^(.*)<(.*)>$/);
