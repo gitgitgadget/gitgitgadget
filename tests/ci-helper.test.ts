@@ -31,6 +31,7 @@ test("identify merge that integrated some commit", async () => {
     await repo.git(["update-ref", "refs/remotes/upstream/pu", d]);
 
     const ci = new CIHelper(repo.workDir);
+    expect(b).not.toBeUndefined();
     expect(await ci.identifyMergeCommit("pu", g)).toEqual(d);
     expect(await ci.identifyMergeCommit("pu", e)).toEqual(c);
     expect(await ci.identifyMergeCommit("pu", h)).toEqual(d);
@@ -47,6 +48,7 @@ test("identify upstream commit", async () => {
 
     // Set up fake upstream branches
     const A = await gggRemote.commit("A");
+    expect(A).not.toBeUndefined();
     await gggRemote.git(["branch", "maint"]);
     await gggRemote.git(["branch", "next"]);
     await gggRemote.git(["branch", "pu"]);
@@ -92,6 +94,7 @@ test("identify upstream commit", async () => {
 
     expect(await ci.updateCommitMapping(messageID)).toBeTruthy();
     const bMetaNew = await notes.get<IMailMetadata>(messageID);
-    expect(bMetaNew.originalCommit).toEqual(b);
-    expect(bMetaNew.commitInGitGit).toEqual(B);
+    expect(bMetaNew).not.toBeUndefined();
+    expect(bMetaNew!.originalCommit).toEqual(b);
+    expect(bMetaNew!.commitInGitGit).toEqual(B);
 });

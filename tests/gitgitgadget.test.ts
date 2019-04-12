@@ -156,10 +156,12 @@ gitgitgadget
 ];
 
 test("generate tag/notes from a Pull Request", async () => {
-    const debug = true;
-    const logger = !debug ? console : {
+    const debug = !true;
+    const logger = {
         log: (message: string): void => {
-            /* do nothing */
+            if (debug) {
+                console.log(message);
+            }
         },
     };
     const repo = await testCreateRepo(__filename);
@@ -217,7 +219,7 @@ Cc: Some Body <somebody@example.com>
 This Pull Request contains some really important changes that I would love
 to have included in git.git [https://github.com/git/git].`);
 
-    const mails = [];
+    const mails: string[] = [];
     const midRegex =
         /<(pull|[0-9a-f]{40})\.\d+(\.v\d+)?\.git\.gitgitgadget@example\.com>/g;
     async function send(mail: string): Promise<string> {
