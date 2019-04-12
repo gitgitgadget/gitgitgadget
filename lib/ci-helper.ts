@@ -260,8 +260,11 @@ export class CIHelper {
             return [false, false];
         }
 
-        const tipCommitInGitGit =
-            await this.identifyUpstreamCommit(prMeta.headCommit);
+        const headMessageID =
+            await this.getMessageIdForOriginalCommit(prMeta.headCommit);
+        const headMeta = headMessageID &&
+            await this.getMailMetadata(headMessageID);
+        const tipCommitInGitGit = headMeta && headMeta.commitInGitGit;
         if (!tipCommitInGitGit) {
             return [false, false];
         }
