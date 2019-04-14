@@ -27,18 +27,18 @@ export class CIHelper {
     private gggNotesUpdated: boolean;
     private mail2CommitMapUpdated: boolean;
 
-    public constructor(workDir?: string) {
+    public constructor(workDir?: string, skipUpdate?: boolean) {
         this.workDir = workDir;
         this.notes = new GitNotes(workDir);
-        this.gggNotesUpdated = false;
+        this.gggNotesUpdated = !!skipUpdate;
         this.mail2commit = new MailCommitMapping(this.notes.workDir);
-        this.mail2CommitMapUpdated = false;
+        this.mail2CommitMapUpdated = !!skipUpdate;
         this.github = new GitHubGlue(workDir);
         this.testing = false;
     }
 
     /*
-     * Given an commit that was contributed as a patch via GitGitGadget (i.e.
+     * Given a commit that was contributed as a patch via GitGitGadget (i.e.
      * a commit with a Message-ID recorded in `refs/notes/gitgitgadget`),
      * identify the commit (if any) in `git.git`.
      */
@@ -89,7 +89,8 @@ export class CIHelper {
      *
      * @returns `true` iff the metadata had to be updated
      */
-    public async updateCommitMapping(messageID: string):
+    public async updateCommitMapping(messageID: string,
+                                     upstreamCommit?: string):
         Promise<boolean> {
         await this.maybeUpdateGGGNotes();
         const mailMeta: IMailMetadata | undefined =
@@ -97,12 +98,13 @@ export class CIHelper {
         if (!mailMeta) {
             throw new Error(`No metadata found for ${messageID}`);
         }
-
-        await this.maybeUpdateMail2CommitMap();
-        const upstreamCommit =
-            await this.mail2commit.getGitGitCommitForMessageId(messageID);
+        if (upstreamCommit === undefined) {
+            await this.maybeUpdateMail2CommitMap();
+            upstreamCommit =
+                await this.mail2commit.getGitGitCommitForMessageId(messageID);
+        }
         if (!upstreamCommit || upstreamCommit === mailMeta.commitInGitGit) {
-            return false;
+                return false;
         }
         mailMeta.commitInGitGit = upstreamCommit;
         if (!mailMeta.originalCommit) {
@@ -123,19 +125,56 @@ export class CIHelper {
     }
 
     public async updateCommitMappings(): Promise<boolean> {
+        if (!this.gggNotesUpdated) {
+            await git(["fetch", "https://github.com/gitgitgadget/git",
+                       `+refs/notes/gitgitgadget:refs/notes/gitgitgadget`,
+                       `+refs/heads/pu:refs/remotes/upstream/pu`],
+                      { workDir: this.workDir });
+            this.gggNotesUpdated = true;
+        }
+
         const options = await this.getGitGitGadgetOptions();
         if (!options) {
             throw new Error(`There were no GitGitGadget options to be found?`);
         }
-        if (!options.activeMessageIDs) {
-            throw new Error(`No active Message-IDs?`);
+        if (!options.openPRs) {
+            return false;
         }
 
         let result: boolean = false;
-        for (const messageID in options.activeMessageIDs) {
-            if (options.activeMessageIDs.hasOwnProperty(messageID)) {
-                if (await this.updateCommitMapping(messageID)) {
-                    console.log(`Updated mapping for ${messageID}`);
+        for (const pullRequestURL of Object.keys(options.openPRs)) {
+            const info = await this.getPRMetadata(pullRequestURL);
+            if (info === undefined || info.latestTag === undefined ||
+                info.baseCommit === undefined ||
+                info.headCommit === undefined) {
+                continue;
+            }
+            const messageID =
+                await this.getMessageIdForOriginalCommit(info.headCommit);
+            if (!messageID) {
+                continue;
+            }
+            const meta = await this.getMailMetadata(messageID);
+            if (!meta || meta.commitInGitGit !== undefined) {
+                continue;
+            }
+
+            const out = await git(["-c", "core.abbrev=40", "range-diff", "-s",
+                                   info.baseCommit, info.headCommit,
+                                   "refs/remotes/upstream/pu"],
+                                  { workDir: this.workDir });
+            for (const line of out.split("\n")) {
+                const match =
+                    line.match(/^[^:]*: *([^ ]*) [!=][^:]*: *([^ ]*)/);
+                if (!match) {
+                    continue;
+                }
+                const messageID2 = match[1] === info.headCommit ? messageID :
+                    await this.getMessageIdForOriginalCommit(match[1]);
+                if (messageID2 === undefined) {
+                    continue;
+                }
+                if (await this.updateCommitMapping(messageID2, match[2])) {
                     result = true;
                 }
             }
@@ -221,8 +260,11 @@ export class CIHelper {
             return [false, false];
         }
 
-        const tipCommitInGitGit =
-            await this.identifyUpstreamCommit(prMeta.headCommit);
+        const headMessageID =
+            await this.getMessageIdForOriginalCommit(prMeta.headCommit);
+        const headMeta = headMessageID &&
+            await this.getMailMetadata(headMessageID);
+        const tipCommitInGitGit = headMeta && headMeta.commitInGitGit;
         if (!tipCommitInGitGit) {
             return [false, false];
         }

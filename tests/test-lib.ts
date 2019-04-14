@@ -1,5 +1,4 @@
 import * as fs from "fs";
-import { isSourceFile } from "typescript";
 import * as util from "util";
 import { isDirectory, isFile } from "../lib/fs-util";
 import { git, IGitOptions, revParse } from "../lib/git";
@@ -42,7 +41,7 @@ export class TestRepo {
     public async commit(message: string,
                         fileName?: string, contents?: string):
         Promise<string> {
-        const [tick, gitOpts] = this.parseOptionsForCommit(this.options);
+        const [, gitOpts] = this.parseOptionsForCommit(this.options);
 
         if (!fileName) {
             fileName = `${message}.t`;
@@ -59,7 +58,7 @@ export class TestRepo {
     }
 
     public async merge(message: string, mergeHead: string): Promise<string> {
-        const [tick, gitOpts] = this.parseOptionsForCommit(this.options);
+        const [, gitOpts] = this.parseOptionsForCommit(this.options);
         await git(["merge", "-m", message, "--", mergeHead], gitOpts);
         const result = await revParse("HEAD", this.workDir);
         if (!result) {
@@ -77,7 +76,11 @@ export class TestRepo {
     }
 
     public async revParse(rev: string): Promise<string> {
-        return await revParse(rev, this.workDir);
+        const result = await revParse(rev, this.workDir);
+        if (!result) {
+            throw new Error(`Could not parse '${rev}'`);
+        }
+        return result;
     }
 
     protected testTick(): number {
