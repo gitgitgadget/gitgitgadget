@@ -1,8 +1,12 @@
+import { ChildProcess } from "child_process";
 import { GitProcess, IGitExecutionOptions } from "dugite";
 
 // For convenience, let's add helpers to call Git:
 
-export interface IGitOptions extends IGitExecutionOptions {
+export interface IGitOptions {
+    lineHandler?: (line: string) => Promise<void>;
+    processCallback?: (process: ChildProcess) => void;
+    stdin?: string | Buffer;
     workDir?: string;
     trimTrailingNewline?: boolean; // defaults to true
     trace?: boolean;
@@ -14,28 +18,95 @@ function trimTrailingNewline(str: string): string {
     return str.replace(/\r?\n$/, "");
 }
 
-export async function git(args: string[],
-                          options?: IGitOptions | undefined):
+export function git(args: string[], options?: IGitOptions | undefined):
     Promise<string> {
     const workDir = options && options.workDir || ".";
     if (options && options.trace) {
-        process.stderr.write(`Called 'git ${args.join(" ")}' in '${workDir}':
-${new Error().stack}
-`);
+        process.stderr.write(`Called 'git ${args.join(" ")}' in '${workDir
+                            }':\n${new Error().stack}\n`);
     }
-    const result = await GitProcess.exec(args, workDir, options);
-    if (result.exitCode) {
-        throw new Error(`git ${args.join(" ")} failed: ${result.exitCode},
-${result.stderr}`);
-    }
-    if (options && options.trace) {
-        process.stderr.write(`Output of 'git ${args.join(" ")}':
-stderr: ${result.stderr}
-stdout: ${result.stdout}
-`);
-    }
-    return !options || options.trimTrailingNewline === false ?
-        result.stdout : trimTrailingNewline(result.stdout);
+
+    return new Promise<string>((resolve, reject) => {
+        if (options && options.lineHandler) {
+            if (options.processCallback) {
+                reject(new Error("line handler *and* process callback set"));
+                return;
+            }
+            options.processCallback = (process: ChildProcess): void => {
+                process.on("exit", (code: number, signal: string) => {
+                    if (signal) {
+                        reject(new Error(`Received signal ${signal}`));
+                    } else if (code) {
+                        reject(new Error(`Received code ${code}`));
+                    }
+                });
+                let linePromise: Promise<void> | undefined;
+                const handleLine = (line: string): boolean => {
+                    try {
+                        if (!linePromise) {
+                            linePromise = options.lineHandler!(line);
+                        } else {
+                            linePromise = linePromise.then(() => {
+                                return options.lineHandler!(line);
+                            });
+                        }
+                        linePromise.catch((reason) => {
+                            reject(reason);
+                            process.kill();
+                        });
+                    } catch (reason) {
+                        reject(reason);
+                        process.kill();
+                        return false;
+                    }
+                    return true;
+                };
+                let buffer = "";
+                process.stdout.on("data", (chunk: any) => {
+                    buffer += chunk;
+                    for (;;) {
+                        const eol = buffer.indexOf("\n");
+                        if (eol < 0) {
+                            break;
+                        }
+                        if (!handleLine(buffer.substr(0, eol))) {
+                            return;
+                        }
+                        buffer = buffer.substr(eol + 1);
+                    }
+                });
+                process.stdout.on("end", () => {
+                    if (buffer.length > 0) {
+                        handleLine(buffer);
+                    }
+                    if (linePromise) {
+                        linePromise.then(() => { resolve(""); });
+                    } else {
+                        resolve("");
+                    }
+                });
+            };
+        }
+
+        GitProcess.exec(args, workDir, options as IGitExecutionOptions)
+        .then((result) => {
+            if (result.exitCode) {
+                reject(new Error(`git ${args.join(" ")
+                                } failed: ${result.exitCode
+                                },\n${result.stderr}`));
+                return;
+            }
+            if (options && options.trace) {
+                process.stderr.write(`Output of 'git ${args.join(" ")
+                                    }':\nstderr: ${result.stderr
+                                    }\nstdout: ${result.stdout}\n`);
+            }
+            resolve(!options || options.trimTrailingNewline === false ?
+                    result.stdout : trimTrailingNewline(result.stdout));
+        }).catch((reason) => {
+            reject(reason);
+        });
+    });
 }
 
 /**

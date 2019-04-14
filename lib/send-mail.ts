@@ -1,14 +1,15 @@
 import { createTransport, SendMailOptions } from "nodemailer";
+import { decode } from "rfc2047";
 
 export interface IParsedMBox {
     body: string;
     cc?: string[];
     date?: string;
-    from: string;
+    from?: string;
     headers?: Array<{ key: string; value: string; }>;
     messageId?: string;
-    subject: string;
-    to: string;
+    subject?: string;
+    to?: string;
     raw: string;
 }
 
@@ -38,7 +39,8 @@ function replaceAll(input: string, pattern: string, replacement: string):
  * @param {string} mbox The mail, in mbox format
  * @returns {IParsedMBox} the parsed headers/body
  */
-export async function parseMBox(mbox: string): Promise<IParsedMBox> {
+export async function parseMBox(mbox: string, gentle?: boolean):
+    Promise<IParsedMBox> {
     const headerEnd = mbox.indexOf("\n\n");
     if (headerEnd < 0) {
         throw new Error(`Could not parse mail`);
@@ -67,7 +69,7 @@ export async function parseMBox(mbox: string): Promise<IParsedMBox> {
             case "cc": cc = (cc || []).concat(value.split(", ")); break;
             case "date": date = value; break;
             case "fcc": break;
-            case "from": from = value; break;
+            case "from": from = decode(value.trim()); break;
             case "message-id": messageId = value; break;
             case "subject": subject = value; break;
             case "to": to = value; break;
@@ -76,7 +78,7 @@ export async function parseMBox(mbox: string): Promise<IParsedMBox> {
         }
     }
 
-    if (!to || !subject || !from) {
+    if (!gentle && (!to || !subject || !from)) {
         throw new Error(`Missing To, Subject and/or From header:\n${header}`);
     }
 
@@ -91,6 +93,55 @@ export async function parseMBox(mbox: string): Promise<IParsedMBox> {
         subject,
         to,
     };
+}
+
+export async function parseMBoxMessageIDAndReferences(mbox: string):
+        Promise<{messageID: string, references: string[]}> {
+    const parsed = await parseMBox(mbox, true);
+    if (!parsed.headers) {
+        throw new Error(`Could not parse ${mbox}`);
+    }
+    const references: string[] = [];
+    const seen: Set<string> = new Set<string>();
+    /*
+     * This regular expression parses whitespace-separated lists of the form
+     * <MESSAGE-ID> [(COMMENT ["QUOTED"])], i.e. lists of message IDs that are
+     * enclosed in pointy brackets, possibly followed by a comment that is
+     * enclosed in parentheses which possibly contains one quoted string.
+     *
+     * This is in no way a complete parser for RFC2822 (which is not possible
+     * using regular expressions due to its recursive nature) but seems to be
+     * good enough for the Git mailing list.
+     */
+    const msgIdRegex =
+        /^\s*<([^>]+)>(\s*|,)(\([^")]*("[^"]*")?\)\s*|\([^)]*\)$)?(<.*)?$/;
+    for (const header of parsed.headers) {
+        if (header.key === "In-Reply-To" || header.key === "References") {
+            let value: string = header.value;
+            while (value) {
+                const match = value.match(msgIdRegex);
+                if (!match) {
+                    if (value !== undefined && !value.match(/^\s*$/)) {
+                        throw new Error(`Error parsing Message-ID '${value}'`);
+                    }
+                    break;
+                }
+                if (!seen.has(match[1])) {
+                    references.push(match[1]);
+                    seen.add(match[1]);
+                }
+                value = match[5];
+            }
+        }
+    }
+    if (!parsed.messageId) {
+        throw new Error(`No Message-ID found in ${mbox}`);
+    }
+    const messageID = parsed.messageId.match(/^<(.*)>$/);
+    if (!messageID) {
+        throw new Error(`Unexpected Message-ID format: ${parsed.messageId}`);
+    }
+    return { messageID: messageID[1], references };
 }
 
 export async function sendMail(mail: IParsedMBox,

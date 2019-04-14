@@ -372,6 +372,19 @@ async function getCIHelper(): Promise<CIHelper> {
         }
         const prNumber = parseInt(commander.args[1], 10);
         await ci.handlePush(prNumber);
+    } else if (command === "handle-new-mails") {
+        const publicInboxGitDir =
+            await gitConfig("gitgitgadget.publicInboxGitDir");
+        if (!publicInboxGitDir) {
+            process.stderr.write("Need a public-inbox/git worktree");
+            process.exit(1);
+        }
+        const onlyPRs = new Set<number>();
+        for (const arg of commander.args.slice(1)) {
+            onlyPRs.add(parseInt(arg, 10));
+        }
+        await ci.handleNewMails(publicInboxGitDir!,
+                                onlyPRs.size ? onlyPRs : undefined);
     } else {
         process.stderr.write(`${command}: unhandled sub-command\n`);
         process.exit(1);

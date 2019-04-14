@@ -7,6 +7,7 @@ import { GitHubGlue } from "./github-glue";
 import { MailCommitMapping } from "./mail-commit-mapping";
 import { IMailMetadata } from "./mail-metadata";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
+import { PublicInboxGitHelper } from "./public-inbox-helper";
 
 const readFile = util.promisify(fs.readFile);
 
@@ -589,6 +590,21 @@ export class CIHelper {
                 .replace(/\${username}/g, pr.author);
             this.github.addPRComment(pullRequestURL, welcome);
         }
+    }
+
+    public async handleNewMails(publicInboxGitDir: string,
+                                onlyPRs?: Set<number>): Promise<boolean> {
+        await git(["fetch"], { workDir: publicInboxGitDir });
+        const prFilter = !onlyPRs ? undefined :
+            (pullRequestURL: string): boolean => {
+                const match = pullRequestURL.match(/.*\/(\d+)$/);
+                return !match ? false : onlyPRs.has(parseInt(match[1], 10));
+            };
+        await this.maybeUpdateGGGNotes();
+        const publicInboxGit =
+            await PublicInboxGitHelper.get(this.notes, publicInboxGitDir,
+                                           this.github);
+        return await publicInboxGit.processMails(prFilter);
     }
 
     private async maybeUpdateGGGNotes(): Promise<void> {

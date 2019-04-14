@@ -47,12 +47,14 @@
   "dependencies": {
     "@octokit/rest": "^16.3.0",
     "@types/html-to-text": "^1.4.31",
+    "@types/rfc2047": "^2.0.1",
     "dugite": "^1.81.0",
     "html-to-text": "^4.0.0",
     "json-stable-stringify": "^1.0.1",
     "jsonwebtoken": "^8.4.0",
     "marked": "^0.6.2",
-    "nodemailer": "^4.6.8"
+    "nodemailer": "^4.6.8",
+    "rfc2047": "^2.0.1"
   },
   "engines": {
     "node": ">= 8.3.0"
