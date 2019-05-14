@@ -98,7 +98,7 @@ to use at one's fingertips.
 ### Main UI
 
 The principal way to interact with GitGitGadget is by opening a Pull Request at
-<https://github.com/gitgitgadget/git.> The patch submission is then triggered by
+<https://github.com/gitgitgadget/git>. The patch submission is then triggered by
 a command given in a single comment to that PR. GitGitGadget will follow up with
 a comment describing details of the patch submission, such as the link to the
 cover letter in [Git's mailing list archive](https://public-inbox.org/git).
@@ -115,7 +115,7 @@ automatically.
 The repositories <https://github.com/gitster/git> (and
 <https://public-inbox.org/git)>) are monitored via dedicated [Azure
 Pipelines](https://dev.azure.com/gitgitgadget/git/_build?definitionId=3),
-backed by Typescript code in <https://github.com/gitgitgadget/gitgitgadget.>
+backed by Typescript code in <https://github.com/gitgitgadget/gitgitgadget>.
 
 ### Patch submissions
 
@@ -130,7 +130,7 @@ linking to the corresponding PR/commits on GitHub.
 ### Storage
 
 GitGitGadget stores its metadata in the form of Git notes, in
-`refs/notes/gitgitgadget` in <https://github.com/gitgitgadget/git.>
+`refs/notes/gitgitgadget` in <https://github.com/gitgitgadget/git>.
 
 Note: GitGitGadgetd uses Git notes, not only to keep a record, and to make
 debugging easier, but also to be able to fix bugs manually when necessary.
