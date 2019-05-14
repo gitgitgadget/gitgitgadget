@@ -162,17 +162,222 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             "From xyz",
             "MIME-Version: 1.0",
             "From: bogus@example.org",
-            "MIME-Version: 1.0",
+            "MIME-Version:  1.0",
             "Cc: x1@me.org,",
             " x2@me.org",
-            "MIME-Version: 1.0",
+            "MIME-Version: 1.0 ",
             "",
             "Hi!",
         ].join("\n");
         test("duplicate MIME-Version headers are eliminated", () => {
             const mails1 = [mimeBox1];
-            PatchSeries.removeDuplicateMimeVersionHeaders(mails1);
+            PatchSeries.removeDuplicateHeaders(mails1);
             expect(mails1[0]).not.toMatch(/MIME-Version[^]*MIME-Version/);
+        });
+
+        const mimeBox2 = [
+            "From xyz",
+            "MIME-Version: 1.0",
+            "From: bogus@example.org",
+            "MIME-Version: 2.0",
+            "Cc: x1@me.org,",
+            " x2@me.org",
+            "",
+            "Hi!",
+        ].join("\n");
+        test("different MIME-Version headers write to log", () => {
+            const mails1 = [mimeBox2];
+            let realLog = global.console.log; // capture calls to log
+            const log = jest.fn();
+            global.console.log = log;
+
+            PatchSeries.removeDuplicateHeaders(mails1);
+
+            global.console.log = realLog;
+            expect(log.mock.calls[0][0]).toMatch(/Found multiple headers/);
+            expect(log).toHaveBeenCalledTimes(1); // verify no more errors
+        });
+
+        const ContentTypeBox1 = [
+            "From xyz",
+            "Content-Type: text/plain; charset=UTF-8",
+            "From: bogus@example.org",
+            "Content-Type: text/plain; charset=UTF-8",
+            "Content-Type: text/plain; charset=UTF-8", // ensure positioning ok
+            "Content-Type: text/plain; charset=UTF-8",
+            "Cc: x1@me.org,",
+            " x2@me.org",
+            "Content-Type: text/plain; charset=UTF-8",
+            "",
+            "Hi!",
+        ].join("\n");
+        test("duplicate Content-Type headers are eliminated", () => {
+            const mails1 = [ContentTypeBox1];
+            PatchSeries.removeDuplicateHeaders(mails1);
+            expect(mails1[0]).not.toMatch(/Content-Type[^]*Content-Type/);
+        });
+
+        const ContentTypeBox2 = [
+            "From xyz",
+            "Content-Type: text/plain; charset=UTF-8",
+            "From: bogus@example.org",
+            "Content-Type: text/plain; charset=UTF-16",
+            "Cc: x1@me.org,",
+            " x2@me.org",
+            "",
+            "Hi!",
+        ].join("\n");
+        test("different Content-Type headers write to log", () => {
+            const mails1 = [ContentTypeBox2];
+            let realLog = global.console.log; // capture calls to log
+            const log = jest.fn();
+            global.console.log = log;
+
+            PatchSeries.removeDuplicateHeaders(mails1);
+
+            global.console.log = realLog;
+            expect(log.mock.calls[0][0]).toMatch(/Found multiple headers/);
+            expect(log).toHaveBeenCalledTimes(1); // verify no more errors
+        });
+
+        const ContentTypeBox3 = [
+            "From xyz",
+            "Content-Type: text/plain; charset=UTF-8",
+            "From: bogus@example.org",
+            "Content-Type: text/plain", // different but variant ignored
+            "Cc: x1@me.org,",
+            " x2@me.org",
+            "Content-Type: text/plain; charset=UTF-8",
+            "",
+            "Hi!",
+        ].join("\n");
+        test("duplicate Content-Type headers are eliminated", () => {
+            const mails1 = [ContentTypeBox3];
+            PatchSeries.removeDuplicateHeaders(mails1);
+            expect(mails1[0]).not.toMatch(/Content-Type[^]*Content-Type/);
+        });
+
+        const ContentTransferEncodingBox1 = [
+            "From xyz",
+            "Content-Transfer-Encoding: 8bit",
+            "From: bogus@example.org",
+            "Content-Transfer-Encoding: 8bit",
+            "Cc: x1@me.org,",
+            " x2@me.org",
+            "Content-Transfer-Encoding: 8bit",
+            "",
+            "Hi!",
+        ].join("\n");
+        test("duplicate Content-Transfer-Encoding headers are eliminated",
+            () => {
+            const mails1 = [ContentTransferEncodingBox1];
+            PatchSeries.removeDuplicateHeaders(mails1);
+            expect(mails1[0]).not.toMatch(/Content-Transfer-Encoding[^]*Content-Transfer-Encoding/);
+        });
+
+        const ContentTransferEncodingBox2 = [
+            "From xyz",
+            "Content-Transfer-Encoding: 8bit",
+            "From: bogus@example.org",
+            "Content-Transfer-Encoding: 16bit",
+            "Cc: x1@me.org,",
+            " x2@me.org",
+            "",
+            "Hi!",
+        ].join("\n");
+        test("different Content-Transfer-Encoding headers write to log", () => {
+            const mails1 = [ContentTransferEncodingBox2];
+            let realLog = global.console.log; // capture calls to log
+            const log = jest.fn();
+            global.console.log = log;
+
+            PatchSeries.removeDuplicateHeaders(mails1);
+
+            global.console.log = realLog;
+            expect(log.mock.calls[0][0]).toMatch(/Found multiple headers/);
+            expect(log).toHaveBeenCalledTimes(1); // verify no more errors
+        });
+
+        const ContentDescriptionBox1 = [
+            "From xyz",
+            "Content-Description: fooba",
+            "From: bogus@example.org",
+            "Content-Description: fooba",
+            "Cc: x1@me.org,",
+            " x2@me.org",
+            "Content-Description: fooba",
+            "",
+            "Hi!",
+        ].join("\n");
+        test("duplicate Content-Description headers throw error", () => {
+            const mails1 = [ContentDescriptionBox1];
+            PatchSeries.removeDuplicateHeaders(mails1);
+            expect(mails1[0]).not.toMatch(/Content-Description[^]*Content-Description/);
+        });
+
+        const ContentDescriptionBox2 = [
+            "From xyz",
+            "Content-Description: fooba",
+            "From: bogus@example.org",
+            "Content-Description: foobar",
+            "Cc: x1@me.org,",
+            " x2@me.org",
+            "Content-Description: fooba",
+            "",
+            "Hi!",
+        ].join("\n");
+        test("different Content-Description headers write to log", () => {
+            const mails1 = [ContentDescriptionBox2];
+            let realLog = global.console.log; // capture calls to log
+            const log = jest.fn();
+            global.console.log = log;
+
+            PatchSeries.removeDuplicateHeaders(mails1);
+
+            global.console.log = realLog;
+            expect(log.mock.calls[0][0]).toMatch(/Found multiple headers/);
+            expect(log).toHaveBeenCalledTimes(1); // verify no more errors
+        });
+
+        const ContentIDBox1 = [
+            "From xyz",
+            "Content-ID: 1.0",
+            "From: bogus@example.org",
+            "Content-ID: 1.0",
+            "Cc: x1@me.org,",
+            " x2@me.org",
+            "Content-ID: 1.0",
+            "",
+            "Hi!",
+        ].join("\n");
+        test("duplicate Content-ID headers throw error", () => {
+            const mails1 = [ContentIDBox1];
+            PatchSeries.removeDuplicateHeaders(mails1);
+            expect(mails1[0]).not.toMatch(/Content-ID[^]*Content-ID/);
+        });
+
+        const ContentIDBox2 = [
+            "From xyz",
+            "Content-ID: 1.0",
+            "From: bogus@example.org",
+            "Content-ID: 2.0",
+            "Cc: x1@me.org,",
+            " x2@me.org",
+            "Content-ID: 1.0",
+            "",
+            "Hi!",
+        ].join("\n");
+        test("different Content-ID headers write to log", () => {
+            const mails1 = [ContentIDBox2];
+            let realLog = global.console.log; // capture calls to log
+            const log = jest.fn();
+            global.console.log = log;
+
+            PatchSeries.removeDuplicateHeaders(mails1);
+
+            global.console.log = realLog;
+            expect(log.mock.calls[0][0]).toMatch(/Found multiple headers/);
+            expect(log).toHaveBeenCalledTimes(1); // verify no more errors
         });
 
     }
