@@ -16,6 +16,37 @@ export interface ILogger {
 
 export type SendFunction = (mail: string) => Promise<string>;
 
+interface ISingletonHeader {
+    key: string;
+    values: string[];
+}
+
+// NOTE: first values is used when emitting headers in addSingletonHeaders
+// unless it is an empty string
+const singletonHeaders: ISingletonHeader[] = [
+    {
+        key: "Content-Description",
+        values: [],
+    },
+    {
+        key: "Content-ID",
+        values: [],
+    },
+    {
+        key: "Content-Type",
+        values: ["text/plain; charset=UTF-8", "text/plain; charset=\"UTF-8\"",
+                 "text/plain; charset=utf-8", "text/plain"],
+    },
+    {
+        key: "Content-Transfer-Encoding",
+        values: ["8bit", "7bit"],
+    },
+    {
+        key: "MIME-Version",
+        values: ["1.0"],
+    },
+];
+
 export class PatchSeries {
     public static async getFromTag(options: PatchSeriesOptions,
                                    project: ProjectOptions):
@@ -231,29 +262,68 @@ export class PatchSeries {
         return mbox.split(separatorRegex);
     }
 
-    protected static removeDuplicateMimeVersionHeaders(mails: string[]): void {
+    protected static removeDuplicateHeaders(mails: string[]): void {
         mails.map((mail: string, i: number) => {
             const endOfHeader = mail.indexOf("\n\n");
             if (endOfHeader < 0) {
                 return;
             }
+
             let headers = mail.substr(0, endOfHeader + 1);
-            const needle = "\nMIME-Version: 1.0\n";
-            const offset = headers.indexOf(needle);
-            if (offset < 0) {
-                return;
-            }
-            let offset2 = headers.indexOf(needle, offset + 1);
-            if (offset2 < 0) {
-                return;
-            }
-            do {
-                headers = headers.substr(0, offset2 + 1)
-                    + headers.substr(offset2 + needle.length);
-                offset2 = headers.indexOf(needle, offset + 1);
-            } while (offset2 > 0);
+            singletonHeaders.forEach((header: ISingletonHeader) => {
+                headers = PatchSeries.stripDuplicateHeaders(headers, header);
+            });
+
             mails[i] = headers + mail.substr(endOfHeader + 1);
         });
+    }
+
+    protected static stripDuplicateHeaders(headers: string,
+                                           header: ISingletonHeader): string {
+        const needle = "\n" + header.key + ":";
+        let offset;
+
+        if (headers.startsWith(`${header.key}:`)) {
+            offset = 0;
+        } else {
+            offset = headers.indexOf(needle) + 1;
+            if (!offset) {
+                return headers;
+            }
+        }
+
+        let endOfKey = offset + needle.length - 1;
+        offset = headers.indexOf(needle, endOfKey);
+
+        if (offset < 0) {
+            return headers;
+        }
+
+        // extract values to determine if they match.
+        let endOfHdr = headers.indexOf("\n", endOfKey);
+        const value1 = headers.substr(endOfKey, endOfHdr - endOfKey).trim();
+
+        do {
+            endOfKey = offset + needle.length;
+            endOfHdr = headers.indexOf("\n", endOfKey);
+            const value2 = headers.substr(endOfKey,
+                                          endOfHdr - endOfKey).trim();
+
+            if (value1 !== value2) {
+                if (0 >= header.values.indexOf(value2)) {
+                    console.log("Found multiple headers where only one allowed"
+                        + `\n    ${header.key}: ${value1}\n    `
+                        + `${header.key}: ${value2}\nProcessing headers:\n`
+                        + headers);
+                }
+            }
+
+            // substr up to \n and concat from next \n
+            headers = headers.substr(0, offset) + headers.substr(endOfHdr);
+            offset = headers.indexOf(needle, offset);
+        } while (offset >= 0);
+
+        return headers;
     }
 
     protected static insertCcAndFromLines(mails: string[], thisAuthor: string,
@@ -433,6 +503,18 @@ export class PatchSeries {
         return count;
     }
 
+    protected static generateSingletonHeaders(): string[] {
+        const results: string[] = [];
+
+        for (const key of singletonHeaders) {
+            if (key.values.length) {
+                results.push(`--add-header=${key.key}: ${key.values[0]}`);
+            }
+        }
+
+        return results;
+    }
+
     public readonly notes: GitNotes;
     public readonly options: PatchSeriesOptions;
     public readonly project: ProjectOptions;
@@ -482,7 +564,7 @@ export class PatchSeries {
         logger.log("Generating mbox");
         const mbox = await this.generateMBox();
         const mails: string[] = PatchSeries.splitMails(mbox);
-        PatchSeries.removeDuplicateMimeVersionHeaders(mails);
+        PatchSeries.removeDuplicateHeaders(mails);
 
         const ident = await git(["var", "GIT_AUTHOR_IDENT"], {
             workDir: this.project.workDir,
@@ -710,11 +792,8 @@ export class PatchSeries {
         const args = [
             "format-patch", "--thread", "--stdout", "--signature=gitgitgadget",
             "--add-header=Fcc: Sent",
-            "--add-header=Content-Type: text/plain; charset=UTF-8",
-            "--add-header=Content-Transfer-Encoding: 8bit",
-            "--add-header=MIME-Version: 1.0",
             "--base", mergeBase, this.project.to,
-        ];
+        ].concat(PatchSeries.generateSingletonHeaders());
         this.project.cc.map((email) => {
             args.push("--cc=" + encodeWords(email));
         });
