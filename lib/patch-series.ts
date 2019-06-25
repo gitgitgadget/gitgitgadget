@@ -326,6 +326,27 @@ export class PatchSeries {
         return headers;
     }
 
+    protected static encodeSender(sender: string): string {
+        const encoded = encodeWords(sender);
+        const dot = encoded.indexOf(".");
+        if (dot < 0) {
+            return encoded;
+        }
+
+        let endOfName = encoded.indexOf("<");
+        if (endOfName < 0) {
+            endOfName = encoded.length;
+        } else {
+            while (endOfName > 0 && encoded[endOfName - 1] === " ") {
+                endOfName--;
+            }
+        }
+        if (dot >= endOfName) {
+            return encoded;
+        }
+        return `"${encoded.substr(0, endOfName)}"${encoded.substr(endOfName)}`;
+    }
+
     protected static insertCcAndFromLines(mails: string[], thisAuthor: string,
                                           senderName?: string):
         void {
@@ -344,10 +365,10 @@ export class PatchSeries {
                 throw new Error("No From: line found in header:\n\n" + header);
             }
 
-            let replaceSender = encodeWords(thisAuthor);
+            let replaceSender = PatchSeries.encodeSender(thisAuthor);
             if (isGitGitGadget) {
                 const onBehalfOf = i === 0 && senderName ?
-                    encodeWords(senderName) :
+                    PatchSeries.encodeSender(senderName) :
                     authorMatch[2].replace(/ <.*>$/, "");
                 // Special-case GitGitGadget to send from
                 // "<author> via GitGitGadget"
@@ -795,7 +816,7 @@ export class PatchSeries {
             "--base", mergeBase, this.project.to,
         ].concat(PatchSeries.generateSingletonHeaders());
         this.project.cc.map((email) => {
-            args.push("--cc=" + encodeWords(email));
+            args.push("--cc=" + PatchSeries.encodeSender(email));
         });
         if (this.metadata.referencesMessageIds) {
             this.metadata.referencesMessageIds.map((email) => {

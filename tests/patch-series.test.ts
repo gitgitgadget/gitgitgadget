@@ -89,6 +89,13 @@ class PatchSeriesTest extends PatchSeries {
             expect(mails[0]).toEqual(expect.stringContaining(needle));
         });
 
+        test("sender name with a dot in it is enclosed in double quotes", () => {
+            const withDots = "wile e. coyote <coyote@desert.net>";
+            const expected = "\"wile e. coyote\" <coyote@desert.net>";
+            const quoted = PatchSeries.encodeSender(withDots);
+            expect(quoted).toEqual(expected);
+        });
+
         test("Cc: is inserted correctly", () => {
             expect(mails[1]).toMatch(
                 // tslint:disable-next-line:max-line-length
