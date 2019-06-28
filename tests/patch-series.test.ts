@@ -89,11 +89,27 @@ class PatchSeriesTest extends PatchSeries {
             expect(mails[0]).toEqual(expect.stringContaining(needle));
         });
 
-        test("sender name with a dot in it is enclosed in double quotes", () => {
-            const withDots = "wile e. coyote <coyote@desert.net>";
-            const expected = "\"wile e. coyote\" <coyote@desert.net>";
-            const quoted = PatchSeries.encodeSender(withDots);
-            expect(quoted).toEqual(expected);
+        test("sender names are quoted properly", () => {
+            const pairs: { [sender: string]: string | boolean } = {
+                "bee <nobody <email.org>": "\"bee <nobody\" <email.org>",
+                "bob@obo <email.org>": "\"bob@obo\" <email.org>",
+                "excited! <email.org>": false,
+                "foo [bar] name <email.org>": "\"foo [bar] name\" <email.org>",
+                "harry \"s\" truman <usa.gov>":
+                    "\"harry \\\"s\\\" truman\" <usa.gov>",
+                "mr. name <email.org>": "\"mr. name\" <email.org>",
+                "ms. \\backslash <email.org>":
+                    "\"ms. \\\\backslash\" <email.org>",
+                "my name <email.org>": false,
+                "name <email.org>": false,
+                "wile e. coyote <coyote@desert.net>":
+                    "\"wile e. coyote\" <coyote@desert.net>",
+            };
+            for (const sender of Object.keys(pairs)) {
+                const expected = pairs[sender] || sender;
+                const quoted = PatchSeries.encodeSender(sender);
+                expect(quoted).toEqual(expected);
+            }
         });
 
         test("Cc: is inserted correctly", () => {
