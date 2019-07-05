@@ -222,8 +222,8 @@ export class GitHubGlue {
      */
     public async getPRInfo(prNumber: number): Promise<IPullRequestInfo> {
         const response = await this.client.pulls.get({
-            number: prNumber,
             owner: "gitgitgadget",
+            pull_number: prNumber,
             repo: "git",
         });
         return {
