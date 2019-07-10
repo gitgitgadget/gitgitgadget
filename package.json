@@ -6,7 +6,8 @@
   "license": "ISC",
   "repository": "https://github.com/gitgitgadget/gitgitgadget.git",
   "directories": {
-    "lib": "lib"
+    "lib": "lib",
+    "test": "tests"
   },
   "scripts": {
     "build": "tsc",
@@ -45,7 +46,7 @@
     "typescript": "^2.9.2"
   },
   "dependencies": {
-    "@octokit/rest": "^16.3.0",
+    "@octokit/rest": "^16.25.0",
     "@types/html-to-text": "^1.4.31",
     "@types/rfc2047": "^2.0.1",
     "dugite": "^1.81.0",
