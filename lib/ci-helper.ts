@@ -486,7 +486,7 @@ export class CIHelper {
      */
     public async handleComment(commentID: number): Promise<void> {
         const comment = await this.github.getPRComment(commentID);
-        const match = comment.body.match(/^(\/[-a-z]+)(\s+(.*))?$/);
+        const match = comment.body.match(/^\s*(\/[-a-z]+)(\s+(.*?))?\s*$/);
         if (!match) {
             console.log(`Not a command; doing nothing: '${comment.body}'`);
             return; /* nothing to do */
@@ -511,6 +511,11 @@ export class CIHelper {
                     comment.author} is not permitted to use GitGitGadget`);
             }
 
+            const getPRAuthor = async (): Promise<string> => {
+                const pr = await this.github.getPRInfo(comment.prNumber);
+                return pr.author;
+            };
+
             if (command === "/submit") {
                 if (argument && argument !== "") {
                     throw new Error(`/submit does not accept arguments ('${
@@ -523,7 +528,7 @@ export class CIHelper {
                     throw new Error("Only the owner of a PR can submit it!");
                 }
 
-                if (!pr || !pr.baseLabel || !pr.baseCommit ||
+                if (!pr.baseLabel || !pr.baseCommit ||
                     !pr.headLabel || !pr.headCommit) {
                     throw new Error(`Could not determine PR details for ${
                         pullRequestURL}`);
@@ -554,20 +559,30 @@ export class CIHelper {
                 await addComment(`Submitted as [${
                     coverMid}](https://public-inbox.org/git/${coverMid})`);
             } else if (command === "/allow") {
-                if (await gitGitGadget.allowUser(comment.author, argument)) {
+                const accountName = argument || await getPRAuthor();
+                try {
+                    await this.github.getGitHubUserName(accountName);
+                } catch (reason) {
+                    throw new Error(`User ${
+                        accountName} is not a valid GitHub username.`);
+                }
+
+                if (await gitGitGadget.allowUser(comment.author, accountName)) {
                     await addComment(`User ${
-                        argument} is now allowed to use GitGitGadget.`);
+                        accountName} is now allowed to use GitGitGadget.`);
                 } else {
                     await addComment(`User ${
-                        argument} already allowed to use GitGitGadget.`);
+                        accountName} already allowed to use GitGitGadget.`);
                 }
             } else if (command === "/disallow") {
-                if (await gitGitGadget.denyUser(comment.author, argument)) {
-                    await addComment(`User ${
-                        argument} is no longer allowed to use GitGitGadget.`);
+                const accountName = argument || await getPRAuthor();
+
+                if (await gitGitGadget.denyUser(comment.author, accountName)) {
+                    await addComment(`User ${accountName
+                        } is no longer allowed to use GitGitGadget.`);
                 } else {
                     await addComment(`User ${
-                        argument} already not allowed to use GitGitGadget.`);
+                        accountName} already not allowed to use GitGitGadget.`);
                 }
             } else if (command === "/test") {
                 await addComment(`Received test '${argument}'`);
