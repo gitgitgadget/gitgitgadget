@@ -43,7 +43,7 @@
     "ts-jest": "^24.0.2",
     "ts-node": "^6.2.0",
     "tslint": "^5.11.0",
-    "typescript": "^2.9.2"
+    "typescript": "^3.5.3"
   },
   "dependencies": {
     "@octokit/rest": "^16.25.0",
