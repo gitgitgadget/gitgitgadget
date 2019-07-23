@@ -20,6 +20,14 @@ export interface IPRComment {
     body: string;
     prNumber: number;
 }
+
+export interface IGitHubUser {
+    email: string;                  // null if no public email
+    login: string;
+    name: string;
+    type: string;
+}
+
 export class GitHubGlue {
     public workDir?: string;
     protected readonly client = new octokit();
@@ -258,6 +266,25 @@ export class GitHubGlue {
             author: response.data.user.login,
             body: response.data.body,
             prNumber,
+        };
+    }
+
+    /**
+     * Obtain basic information for a given GitHub user.
+     *
+     * @param login the GitHub login
+     */
+    public async getGitHubUserInfo(login: string): Promise<IGitHubUser> {
+        await this.ensureAuthenticated(); // required to get email
+
+        const response = await this.client.users.getByUsername({
+            username: login,
+        });
+        return {
+            email: response.data.email,
+            login: response.data.login,
+            name: response.data.name,
+            type: response.data.type,
         };
     }
 

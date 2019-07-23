@@ -560,8 +560,15 @@ export class CIHelper {
                     coverMid}](https://public-inbox.org/git/${coverMid})`);
             } else if (command === "/allow") {
                 const accountName = argument || await getPRAuthor();
+                let extraComment = "";
                 try {
-                    await this.github.getGitHubUserName(accountName);
+                    const userInfo = await this.github.getGitHubUserInfo(
+                        accountName);
+                    if (userInfo.email === null) {
+                        extraComment = `\n\nWARNING: ${
+                            accountName} has no public email address` +
+                            " set on GitHub";
+                    }
                 } catch (reason) {
                     throw new Error(`User ${
                         accountName} is not a valid GitHub username.`);
@@ -569,7 +576,8 @@ export class CIHelper {
 
                 if (await gitGitGadget.allowUser(comment.author, accountName)) {
                     await addComment(`User ${
-                        accountName} is now allowed to use GitGitGadget.`);
+                        accountName} is now allowed to use GitGitGadget.${
+                        extraComment}`);
                 } else {
                     await addComment(`User ${
                         accountName} already allowed to use GitGitGadget.`);
