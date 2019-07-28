@@ -537,27 +537,27 @@ export class CIHelper {
                 if (!pr.title || !pr.body) {
                     throw new Error("Ignoring PR with empty title and/or body");
                 }
-                const description = `${pr.title}\n\n${pr.body}`;
 
                 if (!pr.mergeable) {
                     throw new Error("Refusing to submit a patch series "
                         + "that does not merge cleanly.");
                 }
 
-                const fullAuthorName =
-                    await this.github.getGitHubUserName(comment.author);
-                if (!fullAuthorName) {
+                const userInfo =
+                    await this.github.getGitHubUserInfo(comment.author);
+                if (!userInfo.name) {
                     throw new Error(`Could not determine full name of ${
                         comment.author}`);
                 }
+                const extraComment = userInfo.email === null ?
+                    ( `\n\nWARNING: ${comment.author} has no public email` +
+                    " address set on GitHub" ) : "";
 
                 const coverMid =
-                 await gitGitGadget.submit(comment.author, fullAuthorName,
-                                           pullRequestURL, description,
-                                           pr.baseLabel, pr.baseCommit,
-                                           pr.headLabel, pr.headCommit);
+                    await gitGitGadget.submit(pr, userInfo);
                 await addComment(`Submitted as [${
-                    coverMid}](https://public-inbox.org/git/${coverMid})`);
+                    coverMid}](https://public-inbox.org/git/${coverMid})${
+                        extraComment}`);
             } else if (command === "/allow") {
                 const accountName = argument || await getPRAuthor();
                 let extraComment = "";

@@ -9,10 +9,13 @@ export interface IPullRequestInfo {
     body: string;
     baseLabel: string;
     baseCommit: string;
+    baseOwner: string;
+    baseRepo: string;
     hasComments: boolean;
     headLabel: string;
     headCommit: string;
     mergeable: boolean;
+    number: number;
 }
 
 export interface IPRComment {
@@ -209,11 +212,14 @@ export class GitHubGlue {
                 author: pr.user.login,
                 baseCommit: pr.base.sha,
                 baseLabel: pr.base.label,
+                baseOwner: pr.base.repo.owner.login,
+                baseRepo: pr.base.repo.name,
                 body: pr.body,
                 hasComments: pr.updated_at !== pr.created_at,
                 headCommit: pr.head.sha,
                 headLabel: pr.head.label,
                 mergeable: true,
+                number: pr.number,
                 pullRequestURL: pr.html_url,
                 title: pr.title,
             });
@@ -238,11 +244,14 @@ export class GitHubGlue {
             author: response.data.user.login,
             baseCommit: response.data.base.sha,
             baseLabel: response.data.base.label,
+            baseOwner: response.data.base.repo.owner.login,
+            baseRepo: response.data.base.repo.name,
             body: response.data.body,
             hasComments: response.data.comments > 0,
             headCommit: response.data.head.sha,
             headLabel: response.data.head.label,
             mergeable: response.data.mergeable,
+            number: response.data.number,
             pullRequestURL: response.data.html_url,
             title: response.data.title,
         };

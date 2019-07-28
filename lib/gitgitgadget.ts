@@ -1,6 +1,7 @@
 import { isDirectory } from "./fs-util";
 import { git, gitConfig } from "./git";
 import { GitNotes } from "./git-notes";
+import { IGitHubUser, IPullRequestInfo } from "./github-glue";
 import { PatchSeries } from "./patch-series";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
 import { ISMTPOptions, parseHeadersAndSendMail } from "./send-mail";
@@ -163,32 +164,29 @@ export class GitGitGadget {
         return true;
     }
 
-    public async submit(gitHubUser: string, gitHubUserName: string,
-                        pullRequestURL: string, description: string,
-                        baseLabel: string, baseCommit: string,
-                        headLabel: string, headCommit: string):
+    // better parms would be to pass prinfo object
+    public async submit(pr: IPullRequestInfo, userInfo: IGitHubUser):
         Promise<string | undefined> {
-        if (!this.isUserAllowed(gitHubUser)) {
-            throw new Error(`Permission denied for user ${gitHubUser}`);
+
+        const description = `${pr.title}\n\n${pr.body}`;
+
+        if (pr.baseOwner !== "gitgitgadget" || pr.baseRepo !== "git") {
+            throw new Error(`Unsupported repository: ${pr.pullRequestURL}`);
         }
 
-        const [owner, repo, pullRequestNumber] =
-            GitGitGadget.parsePullRequestURL(pullRequestURL);
-        if (owner !== "gitgitgadget" || repo !== "git") {
-            throw new Error(`Unsupported repository: ${pullRequestURL}`);
-        }
-
+        // get metadata in work repo
         const metadata =
-            await this.notes.get<IPatchSeriesMetadata>(pullRequestURL);
+            await this.notes.get<IPatchSeriesMetadata>(pr.pullRequestURL);
         const previousTag = metadata && metadata.latestTag ?
             `refs/tags/${metadata.latestTag}` : undefined;
-        await this.updateNotesAndPullRef(pullRequestNumber, previousTag);
+        // update work repo from base
+        await this.updateNotesAndPullRef(pr.number, previousTag);
 
         const series =
-            await PatchSeries.getFromNotes(this.notes, pullRequestURL,
-                                           description, baseLabel, baseCommit,
-                                           headLabel, headCommit,
-                                           gitHubUserName);
+            await PatchSeries.getFromNotes(this.notes, pr.pullRequestURL,
+                                           description, pr.baseLabel,
+                                           pr.baseCommit, pr.headLabel,
+                                           pr.headCommit, userInfo.name);
 
         const send = async (mail: string): Promise<string> => {
             return await parseHeadersAndSendMail(mail, this.smtpOptions);
@@ -196,17 +194,13 @@ export class GitGitGadget {
         const coverMid =
             await series.generateAndSend(console, send,
                                          this.publishTagsAndNotesToRemote,
-                                         pullRequestURL, new Date());
+                                         pr.pullRequestURL, new Date());
         return coverMid;
     }
 
     protected async updateNotesAndPullRef(pullRequestNumber: number,
                                           additionalRef?: string):
         Promise<string> {
-        if (!await isDirectory(this.workDir)) {
-            await git(["init", "--bare", this.workDir]);
-        }
-
         const pullRequestRef = `refs/pull/${pullRequestNumber}/head`;
         const args = [
             "fetch",
