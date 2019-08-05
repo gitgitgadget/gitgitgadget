@@ -168,7 +168,10 @@ export class GitGitGadget {
     public async submit(pr: IPullRequestInfo, userInfo: IGitHubUser):
         Promise<string | undefined> {
 
-        const description = `${pr.title}\n\n${pr.body}`;
+        // if known, add submitter to email chain
+        const ccSubmitter = userInfo.email ? `\nCc: ${
+            userInfo.name} <${userInfo.email}>` : "";
+        const description = `${pr.title}\n\n${pr.body}${ccSubmitter}`;
 
         if (pr.baseOwner !== "gitgitgadget" || pr.baseRepo !== "git") {
             throw new Error(`Unsupported repository: ${pr.pullRequestURL}`);
