@@ -4,10 +4,6 @@ GitGitGadget is a live Open Source project. As such, it will probably never be
 finished. Here are a few features that may materialize at some stage, organized
 into a few categories (listed by priority, most important tasks first).
 
-## These tasks should be the focus immediately after GitGitGadget works
-
-- Cc: the GitHub user who issued `/submit` on the cover letter
-
 ## Tasks that would be really nice to have, too, time permitting
 
 - The "What's cooking" mails talk about the branches, stating e.g. when a
