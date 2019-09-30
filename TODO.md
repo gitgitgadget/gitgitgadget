@@ -22,9 +22,6 @@ into a few categories (listed by priority, most important tasks first).
   is really helpful to know about that, therefore GitGitGadget should use
   the `range-diff` command to inform the contributor about this, so that
   subsequent iterations of the patch submission do not revert those amendments.
-- Answers to the mails should ideally be attached as answers to the PR.
-- Answers that comment on the quoted diff should ideally be attached to the diff
-  of the PR at the corresponding line.
 - Comments on the PR should be sent as mails responding to the best-matching
   mail.
 - Simple issues, such as overly-long lines, or short commit messages, or missing
