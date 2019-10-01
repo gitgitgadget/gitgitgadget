@@ -147,7 +147,8 @@ export class CIHelper {
             const info = await this.getPRMetadata(pullRequestURL);
             if (info === undefined || info.latestTag === undefined ||
                 info.baseCommit === undefined ||
-                info.headCommit === undefined) {
+                info.headCommit === undefined || info.baseLabel === undefined ||
+                info.baseLabel.match(/^gitgitgadget:git-gui\//)) {
                 continue;
             }
             const messageID =
