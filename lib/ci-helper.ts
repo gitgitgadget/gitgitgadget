@@ -3,7 +3,7 @@ import * as util from "util";
 import { commitExists, git } from "./git";
 import { GitNotes } from "./git-notes";
 import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget";
-import { GitHubGlue } from "./github-glue";
+import { GitHubGlue, IGitHubUser, IPullRequestInfo } from "./github-glue";
 import { MailCommitMapping } from "./mail-commit-mapping";
 import { IMailMetadata } from "./mail-metadata";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
@@ -523,33 +523,14 @@ export class CIHelper {
                         argument}')`);
                 }
 
-                const pr = await this.github.getPRInfo(comment.prNumber);
-
+                const pr = await this.getPRInfo(comment.prNumber,
+                                                pullRequestURL);
                 if (pr.author !== comment.author) {
                     throw new Error("Only the owner of a PR can submit it!");
                 }
 
-                if (!pr.baseLabel || !pr.baseCommit ||
-                    !pr.headLabel || !pr.headCommit) {
-                    throw new Error(`Could not determine PR details for ${
-                        pullRequestURL}`);
-                }
+                const userInfo = await this.getUserInfo(comment.author);
 
-                if (!pr.title || !pr.body) {
-                    throw new Error("Ignoring PR with empty title and/or body");
-                }
-
-                if (!pr.mergeable) {
-                    throw new Error("Refusing to submit a patch series "
-                        + "that does not merge cleanly.");
-                }
-
-                const userInfo =
-                    await this.github.getGitHubUserInfo(comment.author);
-                if (!userInfo.name) {
-                    throw new Error(`Could not determine full name of ${
-                        comment.author}`);
-                }
                 const extraComment = userInfo.email === null ?
                     ( `\n\nWARNING: ${comment.author} has no public email` +
                     " address set on GitHub" ) : "";
@@ -629,6 +610,37 @@ export class CIHelper {
             await PublicInboxGitHelper.get(this.notes, publicInboxGitDir,
                                            this.github);
         return await publicInboxGit.processMails(prFilter);
+    }
+
+    private async getPRInfo(prNumber: number, pullRequestURL: string):
+        Promise<IPullRequestInfo> {
+        const pr = await this.github.getPRInfo(prNumber);
+
+        if (!pr.baseLabel || !pr.baseCommit ||
+            !pr.headLabel || !pr.headCommit) {
+            throw new Error(`Could not determine PR details for ${
+                pullRequestURL}`);
+        }
+
+        if (!pr.title || !pr.body) {
+            throw new Error("Ignoring PR with empty title and/or body");
+        }
+
+        if (!pr.mergeable) {
+            throw new Error("Refusing to submit a patch series "
+                + "that does not merge cleanly.");
+        }
+
+        return pr;
+    }
+
+    private async getUserInfo(author: string): Promise<IGitHubUser> {
+        const userInfo = await this.github.getGitHubUserInfo(author);
+        if (!userInfo.name) {
+            throw new Error(`Could not determine full name of ${author}`);
+        }
+
+        return userInfo;
     }
 
     private async maybeUpdateGGGNotes(): Promise<void> {
