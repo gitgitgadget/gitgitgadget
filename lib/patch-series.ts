@@ -105,7 +105,8 @@ export class PatchSeries {
             });
 
             if (await gitCommandExists("range-diff", project.workDir)) {
-                rangeDiff = await git(["range-diff", "--no-color", range]);
+                rangeDiff = await git(["range-diff", "--creation-factor=95",
+                                       "--no-color", range]);
             }
         }
 
@@ -151,6 +152,7 @@ export class PatchSeries {
             const currentRange = `${baseCommit}..${headCommit}`;
             if (await gitCommandExists("range-diff", workDir)) {
                 rangeDiff = await git(["range-diff", "--no-color",
+                                       "--creation-factor=95",
                                        previousRange, currentRange],
                                       { workDir });
             }
