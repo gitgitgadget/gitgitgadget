@@ -675,7 +675,7 @@ export class PatchSeries {
                                                        this.project.basedOn);
         }
 
-        if (this.options.dryRun) {
+        if (this.options.noUpdate) {
             logger.log("Would generate tag " + tagName
                 + " with message:\n\n"
                 + tagMessage.split("\n").map((line: string) => {
@@ -780,16 +780,14 @@ export class PatchSeries {
         }
 
         logger.log("Publishing branch and tag");
-        if (this.project.publishToRemote && !this.options.dryRun) {
-            await this.publishBranch(tagName);
-        }
+        await this.publishBranch(tagName);
 
         if (!this.options.dryRun) {
             const key = this.metadata.pullRequestURL || this.project.branchName;
             await this.notes.set(key, this.metadata, true);
         }
 
-        if (!this.options.dryRun && publishTagsAndNotesToRemote) {
+        if (!this.options.noUpdate && publishTagsAndNotesToRemote) {
             await git(["push", publishTagsAndNotesToRemote, this.notes.notesRef,
                        `refs/tags/${tagName}`],
                       { workDir: this.notes.workDir });
@@ -860,7 +858,7 @@ export class PatchSeries {
     }
 
     protected async publishBranch(tagName: string): Promise<void> {
-        if (!this.project.publishToRemote || this.options.dryRun) {
+        if (!this.project.publishToRemote || this.options.noUpdate) {
             return;
         }
 
