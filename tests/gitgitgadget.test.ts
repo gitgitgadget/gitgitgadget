@@ -212,7 +212,7 @@ Cc: Some Body <somebody@example.com>
         await PatchSeries.getFromNotes(notes, pullRequestURL, description,
                                        "gitgitgadget:next", baseCommit,
                                        "somebody:master", headCommit,
-                                       "GitHub User");
+                                       {}, "GitHub User");
 
     expect(patches.coverLetter).toEqual(`My first Pull Request!
 
@@ -242,7 +242,7 @@ to have included in git.git [https://github.com/git/git].`);
         await PatchSeries.getFromNotes(notes, pullRequestURL, description,
                                        "gitgitgadget:next", baseCommit,
                                        "somebody:master", headCommit2,
-                                       "GitHub User");
+                                       {}, "GitHub User");
     mails.splice(0);
     expect(await patches2.generateAndSend(logger, send, undefined,
                                           pullRequestURL))

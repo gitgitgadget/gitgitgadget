@@ -120,6 +120,7 @@ export class PatchSeries {
                                      pullRequestDescription: string,
                                      baseLabel: string, baseCommit: string,
                                      headLabel: string, headCommit: string,
+                                     options: PatchSeriesOptions,
                                      senderName?: string):
         Promise<PatchSeries> {
         const workDir = notes.workDir;
@@ -182,7 +183,6 @@ export class PatchSeries {
             throw new Error(`Cannot find base branch ${basedOn}`);
         }
 
-        const options = new PatchSeriesOptions();
         const publishToRemote = undefined;
 
         const project = await ProjectOptions.get(workDir, headCommit, cc || [],
