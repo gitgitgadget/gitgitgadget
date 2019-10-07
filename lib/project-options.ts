@@ -1,5 +1,5 @@
 import {
-    commitExists, git, gitConfig, gitConfigForEach,
+    commitExists, git, gitConfig, gitConfigForEach, revParse,
 } from "./git";
 
 // For now, only the Git, Cygwin and BusyBox projects are supported
@@ -39,7 +39,13 @@ export class ProjectOptions {
         let to: string;
         let midUrlPrefix: string = " Message-ID: ";
 
-        if (await commitExists("e83c5163316f89bfbde", workDir)) {
+        if (await commitExists("cb07fc2a29c86d1bc11", workDir) &&
+            await revParse(`${baseCommit}:git-gui.sh`, workDir) !== undefined) {
+            // Git GUI
+            to = "--to=git@vger.kernel.org";
+            cc.push("Pratyush Yadav <me@yadavpratyush.com>");
+            upstreamBranch = "git-gui/master";
+        } else if (await commitExists("e83c5163316f89bfbde", workDir)) {
             // Git
             to = "--to=git@vger.kernel.org";
             cc.push("Junio C Hamano <gitster@pobox.com>");

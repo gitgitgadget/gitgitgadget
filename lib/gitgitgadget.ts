@@ -205,12 +205,14 @@ export class GitGitGadget {
                                           additionalRef?: string):
         Promise<string> {
         const pullRequestRef = `refs/pull/${pullRequestNumber}/head`;
+        const pullRequestMerge = `refs/pull/${pullRequestNumber}/merge`;
         const args = [
             "fetch",
             this.publishTagsAndNotesToRemote,
             "--",
             `+${this.notes.notesRef}:${this.notes.notesRef}`,
             `+${pullRequestRef}:${pullRequestRef}`,
+            `+${pullRequestMerge}:${pullRequestMerge}`,
             `+refs/heads/maint:refs/remotes/upstream/maint`,
             `+refs/heads/master:refs/remotes/upstream/master`,
             `+refs/heads/next:refs/remotes/upstream/next`,
