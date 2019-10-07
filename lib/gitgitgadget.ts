@@ -5,7 +5,9 @@ import { IGitHubUser, IPullRequestInfo } from "./github-glue";
 import { PatchSeries, SendFunction } from "./patch-series";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
 import { PatchSeriesOptions } from "./patch-series-options";
-import { ISMTPOptions, parseHeadersAndSendMail } from "./send-mail";
+import {
+    ISMTPOptions, parseHeadersAndSendMail, parseMBox,
+    sendMail } from "./send-mail";
 
 export interface IGitGitGadgetOptions {
     allowedUsers: string[];
@@ -165,6 +167,21 @@ export class GitGitGadget {
         return true;
     }
 
+    // Send emails only to the user
+    public async preview(pr: IPullRequestInfo, userInfo: IGitHubUser):
+        Promise<string | undefined> {
+
+        const send = async (mail: string): Promise<string> => {
+            const mbox = await parseMBox(mail);
+            mbox.cc = [];
+            mbox.to = userInfo.email;
+            console.log(mbox);
+            return await sendMail(mbox, this.smtpOptions);
+        };
+
+        return await this.genAndSend( pr, userInfo, {noUpdate: true}, send);
+    }
+
     // Send emails out for review
     public async submit(pr: IPullRequestInfo, userInfo: IGitHubUser):
         Promise<string | undefined> {
@@ -221,7 +238,7 @@ export class GitGitGadget {
             await GitGitGadget.readOptions(this.notes);
     }
 
-    // Finish the job for submit
+    // Finish the job for preview and submit
     protected async genAndSend(pr: IPullRequestInfo, userInfo: IGitHubUser,
                                options: PatchSeriesOptions,
                                send: SendFunction):

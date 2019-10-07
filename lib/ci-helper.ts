@@ -540,6 +540,24 @@ export class CIHelper {
                 await addComment(`Submitted as [${
                     coverMid}](https://public-inbox.org/git/${coverMid})${
                         extraComment}`);
+            } else if (command === "/preview") {
+                if (argument && argument !== "") {
+                    throw new Error(`/preview does not accept arguments ('${
+                        argument}')`);
+                }
+
+                const pr = await this.getPRInfo(comment.prNumber,
+                                                pullRequestURL);
+                const userInfo = await this.getUserInfo(comment.author);
+
+                if (!userInfo.email) {
+                    throw new Error(`Could not determine public email of ${
+                        comment.author}`);
+                }
+
+                const coverMid =
+                    await gitGitGadget.preview(pr, userInfo);
+                await addComment(`Preview email sent as ${coverMid}`);
             } else if (command === "/allow") {
                 const accountName = argument || await getPRAuthor();
                 let extraComment = "";

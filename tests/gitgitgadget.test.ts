@@ -221,7 +221,7 @@ to have included in git.git [https://github.com/git/git].`);
 
     const mails: string[] = [];
     const midRegex =
-        /<(pull|[0-9a-f]{40})\.\d+(\.v\d+)?\.git\.gitgitgadget@example\.com>/g;
+        /<(pull|[0-9a-f]{40})\.\d+(\.v\d+)?\.git(\.*\d*)\.gitgitgadget@example\.com>/g;
     async function send(mail: string): Promise<string> {
         if (mails.length === 0) {
             mail = mail.replace(/(\nDate: ).*/, "$1<Cover-Letter-Date>");
@@ -232,7 +232,7 @@ to have included in git.git [https://github.com/git/git].`);
     }
     expect(await patches.generateAndSend(logger, send, undefined,
                                          pullRequestURL))
-        .toEqual("pull.1.git.gitgitgadget@example.com");
+        .toMatch(/pull\.1\.git\.\d+\.gitgitgadget@example\.com/);
     expect(mails).toEqual(expectedMails);
 
     expect(await repo.commit("D")).not.toEqual("");
@@ -246,24 +246,34 @@ to have included in git.git [https://github.com/git/git].`);
     mails.splice(0);
     expect(await patches2.generateAndSend(logger, send, undefined,
                                           pullRequestURL))
-        .toEqual("pull.1.v2.git.gitgitgadget@example.com");
+        .toMatch(/pull\.1\.v2\.git\.\d+\.gitgitgadget@example\.com/);
     expect(mails.length).toEqual(5);
     if (await gitCommandExists("range-diff", repo.workDir)) {
         expect(mails[0]).toMatch(/Range-diff vs v1:\n[^]*\n -: .* 4: /);
     }
     expect(await repo.revParse("pr-1/somebody/master-v2")).toBeDefined();
 
-    expect(await notes.get(pullRequestURL)).toEqual({
+    const seriesMeta = await notes.get<IPatchSeriesMetadata>(pullRequestURL);
+    expect(seriesMeta).not.toBeNull();
+    expect(seriesMeta!.coverLetterMessageId).not.toBeUndefined();
+    const coverMid: string = seriesMeta!.coverLetterMessageId!;
+    expect(coverMid)
+        .toMatch(/pull\.1\.v2\.git\.\d+\.gitgitgadget@example\.com/);
+    expect(seriesMeta!.referencesMessageIds).not.toBeUndefined();
+    const refMid: string = seriesMeta!.referencesMessageIds![0];
+    expect(refMid)
+        .toMatch(/pull\.1\.git\.\d+\.gitgitgadget@example\.com/);
+    expect(seriesMeta).toEqual({
         baseCommit,
         baseLabel: "gitgitgadget:next",
-        coverLetterMessageId: "pull.1.v2.git.gitgitgadget@example.com",
+        coverLetterMessageId: coverMid,
         headCommit: headCommit2,
         headLabel: "somebody:master",
         iteration: 2,
         latestTag: "pr-1/somebody/master-v2",
         pullRequestURL,
         referencesMessageIds: [
-            "pull.1.git.gitgitgadget@example.com",
+            refMid,
         ],
     } as IPatchSeriesMetadata);
 
@@ -299,8 +309,8 @@ Test Dev (1):
 
 base-commit: c241357a04a6f862ceef20bd148946085f3178b9
 
-Submitted-As: https://dummy.com/?mid=pull.1.v2.git.gitgitgadget@example.com
-In-Reply-To: https://dummy.com/?mid=pull.1.git.gitgitgadget@example.com`);
+Submitted-As: https://dummy.com/?mid=${coverMid}
+In-Reply-To: https://dummy.com/?mid=${refMid}`);
 });
 
 test("allow/disallow", async () => {
