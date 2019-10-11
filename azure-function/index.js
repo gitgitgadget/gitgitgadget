@@ -3,7 +3,7 @@
  *
  * As Azure Functions do not support Typescript natively yet, we implement it in
  * pure Javascript and keep it as simple as possible.
- * 
+ *
  * Note: while the Azure Function Runtime v1 supported GitHub webhooks natively,
  * via the "webHookType", we want to use v2, so we have to do the payload
  * validation "by hand".
@@ -116,7 +116,7 @@ module.exports = async (context, req) => {
             }
 
             /* Only trigger the Pipeline for valid commands */
-            if (!comment.body || !comment.body.match(/^\/(submit|allow|disallow|test)\b/)) {
+            if (!comment.body || !comment.body.match(/^\/(submit|preview|allow|disallow|test)\b/)) {
                 context.res = {
                     body: `Not a command: '${comment.body}'`,
                 };

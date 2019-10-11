@@ -81,6 +81,7 @@ async function main(argv: string[]) {
             options.redo = true;
         } else if (arg === "--dry-run" || arg === "-n") {
             options.dryRun = true;
+            options.noUpdate = true;
         } else if (arg === "--rfc") {
             options.rfc = true;
             // tslint:disable-next-line:no-conditional-assignment

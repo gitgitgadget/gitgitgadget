@@ -120,6 +120,7 @@ export class PatchSeries {
                                      pullRequestDescription: string,
                                      baseLabel: string, baseCommit: string,
                                      headLabel: string, headCommit: string,
+                                     options: PatchSeriesOptions,
                                      senderName?: string):
         Promise<PatchSeries> {
         const workDir = notes.workDir;
@@ -141,7 +142,8 @@ export class PatchSeries {
                 pullRequestURL,
             };
         } else {
-            if (!await git(["rev-list",
+            if (!options.noUpdate &&   // allow reprint of submitted PRs
+                !await git(["rev-list",
                             `${metadata.headCommit}...${headCommit}`],
                            { workDir })) {
                 throw new Error(`${headCommit} was already submitted`);
@@ -182,7 +184,6 @@ export class PatchSeries {
             throw new Error(`Cannot find base branch ${basedOn}`);
         }
 
-        const options = new PatchSeriesOptions();
         const publishToRemote = undefined;
 
         const project = await ProjectOptions.get(workDir, headCommit, cc || [],
@@ -518,7 +519,7 @@ export class PatchSeries {
 
             const endOfLine = mail.indexOf("\n", dateOffset);
             mails[i] = mail.substr(0, dateOffset) +
-                new Date(time - j * 1000).toUTCString()
+                new Date(time - j * 1000).toUTCString().replace(/GMT$/, "+0000")
                 + mail.substr(endOfLine);
             count++;
         }
@@ -560,12 +561,10 @@ export class PatchSeries {
     }
 
     public subjectPrefix(): string {
-        if (this.metadata.iteration === 1) {
-            return this.options.rfc ? "PATCH/RFC" : "";
-        } else {
-            return `PATCH${this.options.rfc ?
-                "/RFC" : ""} v${this.metadata.iteration}`;
-        }
+        return `${this.options.noUpdate ? "PREVIEW" : "PATCH"
+            }${this.options.rfc ?
+            "/RFC" : ""}${this.metadata.iteration > 1 ?
+            ` v${this.metadata.iteration}` : ""}`;
     }
 
     public async generateAndSend(logger: ILogger,
@@ -624,6 +623,8 @@ export class PatchSeries {
                 throw new Error(`Could not extract cover letter Message-ID`);
             }
 
+            const tsMatch = coverMid.match(/cover\.([0-9]+)\./);
+            const timeStamp = tsMatch ? tsMatch[1] : `${Date.now()}`;
             const emailMatch = thisAuthor.match(/<(.*)>/);
             if (!emailMatch) {
                 throw new Error(`Could not parse email of '${thisAuthor}`);
@@ -636,7 +637,8 @@ export class PatchSeries {
                 const infix = this.metadata.iteration > 1 ?
                     `.v${this.metadata.iteration}` : "";
                 const newCoverMid =
-                    `pull.${prMatch[2]}${infix}.${prMatch[1]}.${email}`;
+                    `pull.${prMatch[2]}${infix}.${prMatch[1]}.${
+                    timeStamp}.${email}`;
                 mails.map((value: string, index: number): void => {
                     // cheap replace-all
                     mails[index] = value.split(coverMid!).join(newCoverMid);
@@ -675,7 +677,7 @@ export class PatchSeries {
                                                        this.project.basedOn);
         }
 
-        if (this.options.dryRun) {
+        if (this.options.noUpdate) {
             logger.log("Would generate tag " + tagName
                 + " with message:\n\n"
                 + tagMessage.split("\n").map((line: string) => {
@@ -780,16 +782,14 @@ export class PatchSeries {
         }
 
         logger.log("Publishing branch and tag");
-        if (this.project.publishToRemote && !this.options.dryRun) {
-            await this.publishBranch(tagName);
-        }
+        await this.publishBranch(tagName);
 
         if (!this.options.dryRun) {
             const key = this.metadata.pullRequestURL || this.project.branchName;
             await this.notes.set(key, this.metadata, true);
         }
 
-        if (!this.options.dryRun && publishTagsAndNotesToRemote) {
+        if (!this.options.noUpdate && publishTagsAndNotesToRemote) {
             await git(["push", publishTagsAndNotesToRemote, this.notes.notesRef,
                        `refs/tags/${tagName}`],
                       { workDir: this.notes.workDir });
@@ -860,7 +860,7 @@ export class PatchSeries {
     }
 
     protected async publishBranch(tagName: string): Promise<void> {
-        if (!this.project.publishToRemote || this.options.dryRun) {
+        if (!this.project.publishToRemote || this.options.noUpdate) {
             return;
         }
 

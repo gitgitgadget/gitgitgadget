@@ -2,9 +2,12 @@ import { isDirectory } from "./fs-util";
 import { git, gitConfig } from "./git";
 import { GitNotes } from "./git-notes";
 import { IGitHubUser, IPullRequestInfo } from "./github-glue";
-import { PatchSeries } from "./patch-series";
+import { PatchSeries, SendFunction } from "./patch-series";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
-import { ISMTPOptions, parseHeadersAndSendMail } from "./send-mail";
+import { PatchSeriesOptions } from "./patch-series-options";
+import {
+    ISMTPOptions, parseHeadersAndSendMail, parseMBox,
+    sendMail } from "./send-mail";
 
 export interface IGitGitGadgetOptions {
     allowedUsers: string[];
@@ -164,41 +167,30 @@ export class GitGitGadget {
         return true;
     }
 
-    // better parms would be to pass prinfo object
-    public async submit(pr: IPullRequestInfo, userInfo: IGitHubUser):
+    // Send emails only to the user
+    public async preview(pr: IPullRequestInfo, userInfo: IGitHubUser):
         Promise<string | undefined> {
 
-        // if known, add submitter to email chain
-        const ccSubmitter = userInfo.email ? `\nCc: ${
-            userInfo.name} <${userInfo.email}>` : "";
-        const description = `${pr.title}\n\n${pr.body}${ccSubmitter}`;
+        const send = async (mail: string): Promise<string> => {
+            const mbox = await parseMBox(mail);
+            mbox.cc = [];
+            mbox.to = userInfo.email;
+            console.log(mbox);
+            return await sendMail(mbox, this.smtpOptions);
+        };
 
-        if (pr.baseOwner !== "gitgitgadget" || pr.baseRepo !== "git") {
-            throw new Error(`Unsupported repository: ${pr.pullRequestURL}`);
-        }
+        return await this.genAndSend( pr, userInfo, {noUpdate: true}, send);
+    }
 
-        // get metadata in work repo
-        const metadata =
-            await this.notes.get<IPatchSeriesMetadata>(pr.pullRequestURL);
-        const previousTag = metadata && metadata.latestTag ?
-            `refs/tags/${metadata.latestTag}` : undefined;
-        // update work repo from base
-        await this.updateNotesAndPullRef(pr.number, previousTag);
-
-        const series =
-            await PatchSeries.getFromNotes(this.notes, pr.pullRequestURL,
-                                           description, pr.baseLabel,
-                                           pr.baseCommit, pr.headLabel,
-                                           pr.headCommit, userInfo.name);
+    // Send emails out for review
+    public async submit(pr: IPullRequestInfo, userInfo: IGitHubUser):
+        Promise<string | undefined> {
 
         const send = async (mail: string): Promise<string> => {
             return await parseHeadersAndSendMail(mail, this.smtpOptions);
         };
-        const coverMid =
-            await series.generateAndSend(console, send,
-                                         this.publishTagsAndNotesToRemote,
-                                         pr.pullRequestURL, new Date());
-        return coverMid;
+
+        return await this.genAndSend(pr, userInfo, {}, send);
     }
 
     protected async updateNotesAndPullRef(pullRequestNumber: number,
@@ -246,5 +238,42 @@ export class GitGitGadget {
         // re-read options
         [this.options, this.allowedUsers] =
             await GitGitGadget.readOptions(this.notes);
+    }
+
+    // Finish the job for preview and submit
+    protected async genAndSend(pr: IPullRequestInfo, userInfo: IGitHubUser,
+                               options: PatchSeriesOptions,
+                               send: SendFunction):
+        Promise<string | undefined> {
+
+        if (pr.baseOwner !== "gitgitgadget" || pr.baseRepo !== "git") {
+            throw new Error(`Unsupported repository: ${pr.pullRequestURL}`);
+        }
+
+        // if known, add submitter to email chain
+        const ccSubmitter = userInfo.email ? `\nCc: ${
+            userInfo.name} <${userInfo.email}>` : "";
+        const description = `${pr.title}\n\n${pr.body}${ccSubmitter}`;
+
+        // get metadata in work repo
+        const metadata =
+            await this.notes.get<IPatchSeriesMetadata>(pr.pullRequestURL);
+        const previousTag = metadata && metadata.latestTag ?
+            `refs/tags/${metadata.latestTag}` : undefined;
+        // update work repo from base
+        await this.updateNotesAndPullRef(pr.number, previousTag);
+
+        const series =
+            await PatchSeries.getFromNotes(this.notes, pr.pullRequestURL,
+                                           description, pr.baseLabel,
+                                           pr.baseCommit, pr.headLabel,
+                                           pr.headCommit, options,
+                                           userInfo.name);
+
+        const coverMid =
+            await series.generateAndSend(console, send,
+                                         this.publishTagsAndNotesToRemote,
+                                         pr.pullRequestURL, new Date());
+        return coverMid;
     }
 }
