@@ -519,7 +519,7 @@ export class PatchSeries {
 
             const endOfLine = mail.indexOf("\n", dateOffset);
             mails[i] = mail.substr(0, dateOffset) +
-                new Date(time - j * 1000).toUTCString()
+                new Date(time - j * 1000).toUTCString().replace(/GMT$/, "+0000")
                 + mail.substr(endOfLine);
             count++;
         }
