@@ -62,7 +62,7 @@ export function git(args: string[], options?: IGitOptions | undefined):
                     return true;
                 };
                 let buffer = "";
-                process.stdout.on("data", (chunk: any) => {
+                process.stdout!.on("data", (chunk: any) => {
                     buffer += chunk;
                     for (;;) {
                         const eol = buffer.indexOf("\n");
@@ -75,7 +75,7 @@ export function git(args: string[], options?: IGitOptions | undefined):
                         buffer = buffer.substr(eol + 1);
                     }
                 });
-                process.stdout.on("end", () => {
+                process.stdout!.on("end", () => {
                     if (buffer.length > 0) {
                         handleLine(buffer);
                     }
