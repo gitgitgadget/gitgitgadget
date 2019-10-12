@@ -1,4 +1,5 @@
 import { createTransport, SendMailOptions } from "nodemailer";
+import SMTPTransport = require("nodemailer/lib/smtp-transport");
 import { decode } from "rfc2047";
 
 export interface IParsedMBox {
@@ -16,6 +17,7 @@ export interface IParsedMBox {
 export interface ISMTPOptions {
     smtpUser: string;
     smtpHost: string;
+    smtpOpts?: string;
     smtpPass: string;
 }
 
@@ -147,15 +149,22 @@ export async function parseMBoxMessageIDAndReferences(mbox: string):
 export async function sendMail(mail: IParsedMBox,
                                smtpOptions: ISMTPOptions):
     Promise<string> {
+    const transportOpts: SMTPTransport.Options | any = {
+        auth: {
+            pass: smtpOptions.smtpPass,
+            user: smtpOptions.smtpUser,
+        },
+        host: smtpOptions.smtpHost,
+        secure: true,
+    };
+
+    if (smtpOptions.smtpOpts) {
+        Object.entries(JSON.parse(smtpOptions.smtpOpts))
+            .forEach(([key, value]) => transportOpts[key] = value);
+    }
+
     return new Promise<string>((resolve, reject) => {
-        const transporter = createTransport({
-            auth: {
-                pass: smtpOptions.smtpPass,
-                user: smtpOptions.smtpUser,
-            },
-            host: smtpOptions.smtpHost,
-            secure: true,
-        });
+        const transporter = createTransport( transportOpts );
 
         // setup email data with unicode symbols
         const mailOptions: SendMailOptions = {

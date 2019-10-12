@@ -62,6 +62,8 @@ export class GitGitGadget {
                                          gitGitGadgetDir);
         const smtpPass = await gitConfig("gitgitgadget.smtpPass",
                                          gitGitGadgetDir);
+        const smtpOpts = await gitConfig("gitgitgadget.smtpOpts",
+                                         gitGitGadgetDir);
         if (!smtpUser || !smtpHost || !smtpPass) {
             throw new Error(`No SMTP settings configured`);
         }
@@ -69,7 +71,7 @@ export class GitGitGadget {
         const [options, allowedUsers] = await GitGitGadget.readOptions(notes);
 
         return new GitGitGadget(notes, options, allowedUsers,
-                                smtpUser, smtpHost, smtpPass,
+                                { smtpHost, smtpOpts, smtpPass, smtpUser },
                                 publishTagsAndNotesToRemote);
     }
 
@@ -109,7 +111,7 @@ export class GitGitGadget {
     protected constructor(notes: GitNotes,
                           options: IGitGitGadgetOptions,
                           allowedUsers: Set<string>,
-                          smtpUser: string, smtpHost: string, smtpPass: string,
+                          smtpOptions: ISMTPOptions,
                           publishTagsAndNotesToRemote: string) {
         if (!notes.workDir) {
             throw new Error(`Could not determine Git worktree`);
@@ -119,7 +121,7 @@ export class GitGitGadget {
         this.options = options;
         this.allowedUsers = allowedUsers;
 
-        this.smtpOptions = { smtpHost, smtpPass, smtpUser };
+        this.smtpOptions = smtpOptions;
 
         this.publishTagsAndNotesToRemote = publishTagsAndNotesToRemote;
     }
