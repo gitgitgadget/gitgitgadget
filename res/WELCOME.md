@@ -15,7 +15,17 @@ It is in general a good idea to await the automated test ("Checks") in this Pull
 
 ## Contributing the patches
 
-Before you can contribute the patches, your GitHub username needs to be added to the list of permitted users. Any already-permitted user can do that, by adding a PR comment of the form `/allow <username>`.
+Before you can contribute the patches, your GitHub username needs to be added to the list of permitted users. Any already-permitted user can do that, by adding a comment to your PR of the form `/allow`. A good way to find other contributors is to locate recent pull requests where someone has been `/allow`ed:
+
+* [Search: is:pr is:open "/allow"](https://github.com/gitgitgadget/git/pulls?utf8=%E2%9C%93&q=is%3Apr+is%3Aopen+%22%2Fallow%22)
+
+Both the person who commented `/allow` and the PR author are able to `/allow` you.
+
+An alternative is the channel [`#git-devel`](https://webchat.freenode.net/#git-devel) on the FreeNode IRC network:
+
+    <newcontributor> I've just created my first PR, could someone please /allow me? https://github.com/gitgitgadget/git/pull/12345
+    <veteran> newcontributor: it is done
+    <newcontributor> thanks!
 
 Once on the list of permitted usernames, you can contribute the patches to the Git mailing list by adding a PR comment `/submit`.
 
