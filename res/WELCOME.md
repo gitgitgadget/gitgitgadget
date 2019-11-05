@@ -2,7 +2,7 @@
 
 Hi @${username}, and welcome to GitGitGadget, the GitHub App to send patch series to the Git mailing list from GitHub Pull Requests.
 
-Please make sure that this Pull Request has a good description, as it will be used as cover letter.
+Please make sure that your Pull Request has a good description, as it will be used as cover letter.
 
 Also, it is a good idea to review the commit messages one last time, as the Git project expects them in a quite specific form:
 
@@ -31,7 +31,7 @@ Once on the list of permitted usernames, you can contribute the patches to the G
 
 If you want to see what email(s) would be sent for a `/submit` request, add a PR comment `/preview` to have the email(s) sent to you.  You must have a public GitHub email address for this.
 
-After you submit, GitGitGadget will respond with another comment that contains the link to the cover letter mail in the Git mailing list archive. Please make sure to monitor the discussion in that thread and to address comments and suggestions.
+After you submit, GitGitGadget will respond with another comment that contains the link to the cover letter mail in the Git mailing list archive. Please make sure to monitor the discussion in that thread and to address comments and suggestions (while the comments and suggestions will be mirrored into the PR by GitGitGadget, you will still want to [reply via mail](https://github.com/gitgitgadget/gitgitgadget/wiki/ReplyToThis)).
 
 If you do not want to subscribe to the Git mailing list just to be able to respond to a mail, you can download the mbox from the [Git mailing list archive](https://lore.kernel.org/git) (click the `(raw)` link), then import it into your mail program. If you use GMail, you can do this via:
 
@@ -39,6 +39,17 @@ If you do not want to subscribe to the Git mailing list just to be able to respo
 curl -g --user "<EMailAddress>:<Password>" \
     --url "imaps://imap.gmail.com/INBOX" -T /path/to/raw.txt
 ```
+
+To iterate on your change, i.e. send a revised patch or patch series, you will first want to (force-)push to the same branch. You probably also want to modify your Pull Request description (or title). It is a good idea to summarize the revision by adding something like this to the cover letter (read: by editing the first comment on the PR, i.e. the PR description):
+
+```
+Changes since v1:
+- Fixed a typo in the commit message (found by ...)
+- Added a code comment to ... as suggested by ...
+...
+```
+
+To send a new iteration, just add another PR comment with the contents: `/submit`.
 
 ## Need help?
 
