@@ -10,7 +10,7 @@ import { testCreateRepo } from "./test-lib";
 jest.setTimeout(60000);
 
 const expectedMails = [
-    `From 07f68c195159518c5777ca4a7c1d07124e7a9956 Mon Sep 17 00:00:00 2001
+    `From 91fba7811291c1064b2603765a2297c34fc843c0 Mon Sep 17 00:00:00 2001
 Message-Id: <pull.<Message-ID>>
 From: "GitHub User via GitGitGadget" <gitgitgadget@example.com>
 Date: <Cover-Letter-Date>
@@ -31,7 +31,7 @@ Contributor (1):
 Developer (1):
   C
 
-Test Dev (1):
+Test H. Dev (1):
   A
 
  A.t | 1 +
@@ -43,7 +43,7 @@ Test Dev (1):
  create mode 100644 C.t
 
 
-base-commit: c241357a04a6f862ceef20bd148946085f3178b9
+base-commit: b4bc10cab67df9962ae52c82af9e1a43fd83d806
 Published-As: https://github.com/gitgitgadget/git/releases/tag/${
     "pr-1/somebody/master-v1".replace(/\//g, "%2F")}
 Fetch-It-Via: git fetch https://github.com/gitgitgadget/git ${
@@ -52,11 +52,11 @@ Pull-Request: https://github.com/gitgitgadget/git/pull/1
 --${" "}
 gitgitgadget
 `,
-    `From cd048a1378e3f7b055cd467ff3a24ed0cf5e7453 Mon Sep 17 00:00:00 2001
-Message-Id: <cd048a1378e3f7b055cd467ff3a24ed0cf5e7453.<Message-ID>>
+    `From 3a632624f5927565b178664f9a12b9802d2714b1 Mon Sep 17 00:00:00 2001
+Message-Id: <3a632624f5927565b178664f9a12b9802d2714b1.<Message-ID>>
 In-Reply-To: <pull.<Message-ID>>
 References: <pull.<Message-ID>>
-From: "Test Dev via GitGitGadget" <gitgitgadget@example.com>
+From: "Test H. Dev via GitGitGadget" <gitgitgadget@example.com>
 Date: Fri, 13 Feb 2009 23:33:30 +0000
 Subject: [PATCH 1/3] A
 Fcc: Sent
@@ -65,9 +65,9 @@ Content-Transfer-Encoding: 8bit
 MIME-Version: 1.0
 To: reviewer@example.com
 Cc: Some Body <somebody@example.com>,
-    Test Dev <dev@example.com>
+    "Test H. Dev" <dev@example.com>
 
-From: Test Dev <dev@example.com>
+From: "Test H. Dev" <dev@example.com>
 
 ---
  A.t | 1 +
@@ -86,8 +86,8 @@ index 0000000..8c7e5a6
 gitgitgadget
 
 `,
-    `From b8acfa2635f9907e472d2b7396b260c6e73b1ed5 Mon Sep 17 00:00:00 2001
-Message-Id: <b8acfa2635f9907e472d2b7396b260c6e73b1ed5.<Message-ID>>
+    `From 0076a21b90c6e1f4f380deb464fe7145d4a7a56d Mon Sep 17 00:00:00 2001
+Message-Id: <0076a21b90c6e1f4f380deb464fe7145d4a7a56d.<Message-ID>>
 In-Reply-To: <pull.<Message-ID>>
 References: <pull.<Message-ID>>
 From: "Contributor via GitGitGadget" <gitgitgadget@example.com>
@@ -120,8 +120,8 @@ index 0000000..7371f47
 gitgitgadget
 
 `,
-    `From 07f68c195159518c5777ca4a7c1d07124e7a9956 Mon Sep 17 00:00:00 2001
-Message-Id: <07f68c195159518c5777ca4a7c1d07124e7a9956.<Message-ID>>
+    `From 91fba7811291c1064b2603765a2297c34fc843c0 Mon Sep 17 00:00:00 2001
+Message-Id: <91fba7811291c1064b2603765a2297c34fc843c0.<Message-ID>>
 In-Reply-To: <pull.<Message-ID>>
 References: <pull.<Message-ID>>
 From: "Developer via GitGitGadget" <gitgitgadget@example.com>
@@ -173,7 +173,7 @@ test("generate tag/notes from a Pull Request", async () => {
     expect(await notes.set("", gitGitGadgetOptions)).toBeUndefined();
     expect(await notes.get("")).toEqual(gitGitGadgetOptions);
 
-    await repo.git(["config", "user.name", "Test Dev"]);
+    await repo.git(["config", "user.name", "Test H. Dev"]);
     await repo.git(["config", "user.email", "dev@example.com"]);
 
     expect(await repo.commit("initial")).not.toEqual("");
@@ -294,7 +294,7 @@ Developer (1):
 GitGitGadget (1):
   D
 
-Test Dev (1):
+Test H. Dev (1):
   A
 
  A.t | 1 +
@@ -307,7 +307,7 @@ Test Dev (1):
  create mode 100644 C.t
  create mode 100644 D.t
 
-base-commit: c241357a04a6f862ceef20bd148946085f3178b9
+base-commit: b4bc10cab67df9962ae52c82af9e1a43fd83d806
 
 Submitted-As: https://dummy.com/?mid=${coverMid}
 In-Reply-To: https://dummy.com/?mid=${refMid}`);
