@@ -210,7 +210,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("different MIME-Version headers write to log", () => {
             const mails1 = [mimeBox2];
-            let realLog = global.console.log; // capture calls to log
+            const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;
 
@@ -252,7 +252,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("different Content-Type headers write to log", () => {
             const mails1 = [ContentTypeBox2];
-            let realLog = global.console.log; // capture calls to log
+            const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;
 
@@ -311,7 +311,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("different Content-Transfer-Encoding headers write to log", () => {
             const mails1 = [ContentTransferEncodingBox2];
-            let realLog = global.console.log; // capture calls to log
+            const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;
 
@@ -353,7 +353,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("different Content-Description headers write to log", () => {
             const mails1 = [ContentDescriptionBox2];
-            let realLog = global.console.log; // capture calls to log
+            const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;
 
@@ -394,7 +394,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("different Content-ID headers write to log", () => {
             const mails1 = [ContentIDBox2];
-            let realLog = global.console.log; // capture calls to log
+            const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;
 
