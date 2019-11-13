@@ -292,7 +292,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             "Hi!",
         ].join("\n");
         test("duplicate Content-Transfer-Encoding headers are eliminated",
-            () => {
+             () => {
             const mails1 = [ContentTransferEncodingBox1];
             PatchSeries.removeDuplicateHeaders(mails1);
             // tslint:disable-next-line:max-line-length
