@@ -376,7 +376,8 @@ export class PatchSeries {
                 // Special-case GitGitGadget to send from
                 // "<author> via GitGitGadget"
                 replaceSender = "\""
-                    + onBehalfOf
+                    + onBehalfOf.replace(/^"(.*)"$/, "$1")
+                                .replace(/"/g, "\\\"")
                     + " via GitGitGadget\" "
                     + thisAuthor.replace(/^GitGitGadget /, "");
             } else if (authorMatch[2] === thisAuthor) {
