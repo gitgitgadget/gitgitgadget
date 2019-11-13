@@ -331,23 +331,20 @@ export class PatchSeries {
 
     protected static encodeSender(sender: string): string {
         const encoded = encodeWords(sender);
-        const dot = encoded.indexOf(".");
-        if (dot < 0) {
+
+        /* Don't quote if already quoted */
+        if (encoded.startsWith("\"") && encoded.match(/"\s*</)) {
             return encoded;
         }
 
-        let endOfName = encoded.indexOf("<");
-        if (endOfName < 0) {
-            endOfName = encoded.length;
-        } else {
-            while (endOfName > 0 && encoded[endOfName - 1] === " ") {
-                endOfName--;
-            }
-        }
-        if (dot >= endOfName) {
+        const match =
+            encoded.match(/^([^<]*[()<>[\]:;@\\,."][^<]*?)(\s*)(<.*)/);
+        if (!match) {
             return encoded;
         }
-        return `"${encoded.substr(0, endOfName)}"${encoded.substr(endOfName)}`;
+
+        // tslint:disable-next-line:max-line-length
+        return `"${match[1].replace(/["\\\\]/g, "\\$&")}"${match[2]}${match[3]}`;
     }
 
     protected static insertCcAndFromLines(mails: string[], thisAuthor: string,
