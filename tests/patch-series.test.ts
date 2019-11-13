@@ -295,6 +295,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             () => {
             const mails1 = [ContentTransferEncodingBox1];
             PatchSeries.removeDuplicateHeaders(mails1);
+            // tslint:disable-next-line:max-line-length
             expect(mails1[0]).not.toMatch(/Content-Transfer-Encoding[^]*Content-Transfer-Encoding/);
         });
 
@@ -335,6 +336,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         test("duplicate Content-Description headers throw error", () => {
             const mails1 = [ContentDescriptionBox1];
             PatchSeries.removeDuplicateHeaders(mails1);
+            // tslint:disable-next-line:max-line-length
             expect(mails1[0]).not.toMatch(/Content-Description[^]*Content-Description/);
         });
 
