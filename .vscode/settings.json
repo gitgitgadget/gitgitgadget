@@ -17,6 +17,8 @@
         }
     },
     "cSpell.words": [
+        "Arnfjörð",
+        "Bjarmason",
         "Cygwin",
         "Git's",
         "Hamano",
@@ -25,17 +27,21 @@
         "Nguy",
         "Nguyễn",
         "Ngọc",
+        "Pratyush",
         "Probot",
         "Schindelin",
         "Thái",
         "Truthy",
         "VSTS",
+        "Yadav",
         "amlog",
+        "avarab",
         "basedon",
         "busybox",
         "coverageprocessor",
         "dstolee",
         "dugite",
+        "fooba",
         "gitgitgadget",
         "gitster",
         "gmail",
@@ -69,7 +75,9 @@
         "vger",
         "webhook",
         "webhooks",
-        "worktree"
+        "worktree",
+        "yadavpratyush",
+        "Ævar"
     ],
     "cSpell.language": "en-US",
     "cSpell.enabledLanguageIds": [
