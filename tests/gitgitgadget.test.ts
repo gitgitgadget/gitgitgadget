@@ -221,6 +221,7 @@ to have included in git.git [https://github.com/git/git].`);
 
     const mails: string[] = [];
     const midRegex =
+        // tslint:disable-next-line:max-line-length
         /<(pull|[0-9a-f]{40})\.\d+(\.v\d+)?\.git(\.*\d*)\.gitgitgadget@example\.com>/g;
     async function send(mail: string): Promise<string> {
         if (mails.length === 0) {

@@ -210,7 +210,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("different MIME-Version headers write to log", () => {
             const mails1 = [mimeBox2];
-            let realLog = global.console.log; // capture calls to log
+            const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;
 
@@ -252,7 +252,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("different Content-Type headers write to log", () => {
             const mails1 = [ContentTypeBox2];
-            let realLog = global.console.log; // capture calls to log
+            const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;
 
@@ -292,9 +292,10 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             "Hi!",
         ].join("\n");
         test("duplicate Content-Transfer-Encoding headers are eliminated",
-            () => {
+             () => {
             const mails1 = [ContentTransferEncodingBox1];
             PatchSeries.removeDuplicateHeaders(mails1);
+            // tslint:disable-next-line:max-line-length
             expect(mails1[0]).not.toMatch(/Content-Transfer-Encoding[^]*Content-Transfer-Encoding/);
         });
 
@@ -310,7 +311,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("different Content-Transfer-Encoding headers write to log", () => {
             const mails1 = [ContentTransferEncodingBox2];
-            let realLog = global.console.log; // capture calls to log
+            const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;
 
@@ -335,6 +336,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         test("duplicate Content-Description headers throw error", () => {
             const mails1 = [ContentDescriptionBox1];
             PatchSeries.removeDuplicateHeaders(mails1);
+            // tslint:disable-next-line:max-line-length
             expect(mails1[0]).not.toMatch(/Content-Description[^]*Content-Description/);
         });
 
@@ -351,7 +353,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("different Content-Description headers write to log", () => {
             const mails1 = [ContentDescriptionBox2];
-            let realLog = global.console.log; // capture calls to log
+            const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;
 
@@ -392,7 +394,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("different Content-ID headers write to log", () => {
             const mails1 = [ContentIDBox2];
-            let realLog = global.console.log; // capture calls to log
+            const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;
 
