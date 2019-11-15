@@ -91,12 +91,29 @@ module.exports = async (context, req) => {
     }
 
     try {
+        /*
+         * The Azure Pipeline needs to be installed as a PR build on _the very
+         * same_ repository that triggers this function. That is, when the
+         * Azure Function triggers GitGitGadget for gitgitgadget/git, it needs
+         * to know that pipelineId 3 is installed on gitgitgadget/git, and
+         * trigger that very pipeline.
+         *
+         * So whenever we extend GitGitGadget to handle another repository, we
+         * will have to add an Azure Pipeline, install it on that repository as
+         * a PR build, and add the information here.
+         */
+        const pipelines = {
+            'git': 13,
+            'gitgitgadget': 3,
+        };
+
         const eventType = context.req.headers['x-github-event'];
         context.log(`Got eventType: ${eventType}`);
-        if (req.body.repository.owner.login !== 'gitgitgadget') {
+        const repositoryOwner = req.body.repository.owner.login;
+        if (pipelines[repositoryOwner] === undefined) {
             context.res = {
                 status: 403,
-                body: 'Refusing to work on a repository other than gitgitgadget/git'
+                body: 'Refusing to work on a repository other than gitgitgadget/git or git/git'
             };
         } else if ((new Set(['check_run', 'status']).has(eventType))) {
             context.res = {
@@ -128,8 +145,11 @@ module.exports = async (context, req) => {
             const parameters = {
                 'pr.comment.id': comment.id,
             };
+            const pipelineId = pipelines[repositoryOwner];
+            if (!pipelineId || pipelineId < 1)
+                throw new Error(`No pipeline set up for org ${repositoryOwner}`);
             context.log(`Queuing with branch ${sourceBranch} and parameters ${JSON.stringify(parameters)}`);
-            await triggerAzurePipeline(triggerToken, 'gitgitgadget', 'git', 3, sourceBranch, parameters);
+            await triggerAzurePipeline(triggerToken, 'gitgitgadget', 'git', pipelineId, sourceBranch, parameters);
 
             context.res = {
                 // status: 200, /* Defaults to 200 */
