@@ -121,7 +121,7 @@ export class CIHelper {
             mailMeta.pullRequestURL
             .startsWith("https://github.com/gitgitgadget/") ) {
             await this.github.annotateCommit(mailMeta.originalCommit,
-                                             upstreamCommit);
+                                             upstreamCommit, "gitgitgadget");
         }
 
         return true;

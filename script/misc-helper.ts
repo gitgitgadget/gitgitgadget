@@ -209,7 +209,8 @@ async function getCIHelper(): Promise<CIHelper> {
         const gitGitCommit = commander.args[2];
 
         const glue = new GitHubGlue(ci.workDir);
-        const id = await glue.annotateCommit(originalCommit, gitGitCommit);
+        const id = await glue.annotateCommit(originalCommit, gitGitCommit,
+                                             "gitgitgadget");
         console.log(`Created check with id ${id}`);
     } else if (command === "identify-merge-commit") {
         if (commander.args.length !== 3) {

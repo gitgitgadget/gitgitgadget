@@ -40,8 +40,8 @@ export class GitHubGlue {
         this.workDir = workDir;
     }
 
-    public async annotateCommit(originalCommit: string, gitGitCommit: string):
-        Promise<number> {
+    public async annotateCommit(originalCommit: string, gitGitCommit: string,
+                                repositoryOwner: string): Promise<number> {
         const output =
             await git(["show", "-s", "--format=%h %cI", gitGitCommit],
                       { workDir: this.workDir });
@@ -52,7 +52,7 @@ export class GitHubGlue {
         const [, short, completedAt] = match;
         const url = `https://github.com/git/git/commit/${gitGitCommit}`;
 
-        await this.ensureAuthenticated("gitgitgadget");
+        await this.ensureAuthenticated(repositoryOwner);
         const checks = await this.client.checks.create({
             completed_at: completedAt,
             conclusion: "success",
@@ -64,7 +64,7 @@ export class GitHubGlue {
                 summary: `Integrated into git.git as [${short}](${url}).`,
                 title: `In git.git: ${short}`,
             },
-            owner: "gitgitgadget",
+            owner: repositoryOwner,
             repo: "git",
             status: "completed",
         });
