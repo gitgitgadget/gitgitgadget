@@ -252,11 +252,6 @@ export class GitGitGadget {
             throw new Error(`Unsupported repository: ${pr.pullRequestURL}`);
         }
 
-        // if known, add submitter to email chain
-        const ccSubmitter = userInfo.email ? `\nCc: ${
-            userInfo.name} <${userInfo.email}>` : "";
-        const description = `${pr.title}\n\n${pr.body}${ccSubmitter}`;
-
         // get metadata in work repo
         const metadata =
             await this.notes.get<IPatchSeriesMetadata>(pr.pullRequestURL);
@@ -264,6 +259,24 @@ export class GitGitGadget {
             `refs/tags/${metadata.latestTag}` : undefined;
         // update work repo from base
         await this.updateNotesAndPullRef(pr.number, previousTag);
+
+        // Remove template from description
+        let prTemplate =
+            await git(["show",
+                       "upstream/master:.github/PULL_REQUEST_TEMPLATE.md"],
+                      { workDir: this.workDir });
+        // github uses \r\n so make sure it is set
+        prTemplate = prTemplate.replace(/([^\r])\n/, "$1\r\n");
+        const prBody = pr.body.replace(prTemplate, "");
+
+        if (!prBody.length) {       // reject empty description
+            throw new Error("A pull request description must be provided");
+        }
+
+        // if known, add submitter to email chain
+        const ccSubmitter = userInfo.email ? `\nCc: ${
+            userInfo.name} <${userInfo.email}>` : "";
+        const description = `${pr.title}\n\n${prBody}${ccSubmitter}`;
 
         const series =
             await PatchSeries.getFromNotes(this.notes, pr.pullRequestURL,
