@@ -258,7 +258,8 @@ export class GitGitGadget {
                                send: SendFunction):
         Promise<string | undefined> {
 
-        if (pr.baseOwner !== "gitgitgadget" || pr.baseRepo !== "git") {
+        if (!new Set(["gitgitgadget", "git"]).has(pr.baseOwner) ||
+            pr.baseRepo !== "git") {
             throw new Error(`Unsupported repository: ${pr.pullRequestURL}`);
         }
 
