@@ -332,31 +332,47 @@ async function getCIHelper(): Promise<CIHelper> {
         const glue = new GitHubGlue();
         await glue.addPRComment(pullRequestURL, comment);
     } else if (command === "set-app-token") {
-        if (commander.args.length !== 1) {
-            process.stderr.write(`${command}: unexpected argument(s)\n`);
-            process.exit(1);
-        }
+        const set = async (options: {
+             appID: number,
+             installationID?: number,
+             name: string,
+        }): Promise<void> => {
+            const client = new octokit();
+            const appName = options.name === "gitgitgadget" ?
+                "gitgitgadget" : "gitgitgadget-git";
+            const key = await gitConfig(`${appName}.privateKey`);
+            if (!key) {
+                throw new Error(`Need the ${appName} App's private key`);
+            }
+            const now = Math.round(Date.now() / 1000);
+            const payload = { iat: now, exp: now + 60, iss: options.appID };
+            const signOpts = { algorithm: "RS256" };
+            const app = jwt.sign(payload, key.replace(/\\n/g, `\n`), signOpts);
+            client.authenticate({
+                token: app,
+                type: "app",
+            });
 
-        const githubAppID = 12836;
-        const githubAppInstallationID = 195971;
+            if (options.installationID === undefined) {
+                options.installationID =
+                    (await client.apps.getRepoInstallation({
+                        owner: options.name,
+                        repo: "git",
+                })).data.id;
+            }
+            const result = await client.apps.createInstallationToken({
+                installation_id: options.installationID!,
+            });
+            const configKey = options.name === "gitgitgadget" ?
+                "gitgitgadget.githubToken" :
+                `gitgitgadget.${options.name}.githubToken`;
+            await git(["config", configKey, result.data.token]);
+        };
 
-        const client = new octokit();
-        const key = await gitConfig("gitgitgadget.privateKey");
-        if (!key) {
-            throw new Error(`Need the App's private key`);
+        await set({appID: 12836, installationID: 195971, name: "gitgitgadget"});
+        for (const org of commander.args.slice(1)) {
+            await set({ appID: 46807, name: org});
         }
-        const now = Math.round(Date.now() / 1000);
-        const payload = { iat: now, exp: now + 60, iss: githubAppID };
-        const signOpts = { algorithm: "RS256" };
-        const app = jwt.sign(payload, key.replace(/\\n/g, `\n`), signOpts);
-        client.authenticate({
-            token: app,
-            type: "app",
-        });
-        const result = await client.apps.createInstallationToken({
-            installation_id: githubAppInstallationID,
-        });
-        await git(["config", "gitgitgadget.githubToken", result.data.token]);
     } else if (command === "handle-pr-comment") {
         if (commander.args.length !== 2) {
             process.stderr.write(`${command}: Expected one comment ID\n`);
