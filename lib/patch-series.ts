@@ -696,7 +696,7 @@ export class PatchSeries {
             const tagName2 = encodeURIComponent(tagName);
             footers.push(`Published-As: ${prefix}/releases/tag/${tagName2}`);
             footers.push(`Fetch-It-Via: git fetch ${prefix} ${tagName}`);
-            footers.push(`Pull-Request: ${prefix}/pull/${prNo}`);
+            footers.push(`Pull-Request: ${pullRequestURL}`);
         }
 
         if (this.rangeDiff) {
