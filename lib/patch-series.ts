@@ -656,10 +656,12 @@ export class PatchSeries {
         if (!this.metadata.pullRequestURL) {
             tagName = `${this.project.branchName}-v${this.metadata.iteration}`;
         } else {
-            const prNumber = this.metadata.pullRequestURL
-                .replace(/.*\/pull\/(\d+).*/, "$1");
+            const [owner, , prNumber] =
+                GitGitGadget.parsePullRequestURL(this.metadata.pullRequestURL);
             const branch = this.metadata.headLabel.replace(/:/g, "/");
-            tagName = `pr-${prNumber}/${branch}-v${this.metadata.iteration}`;
+            const tagPrefix = owner === "gitgitgadget" ? "pr-" : `pr-${owner}-`;
+            tagName = `${tagPrefix}${prNumber}/${branch}-v${
+                this.metadata.iteration}`;
         }
         if (this.project.publishToRemote) {
             const url =
@@ -690,9 +692,7 @@ export class PatchSeries {
         const footers: string[] = [];
 
         if (pullRequestURL) {
-            const [owner, repo, prNo] =
-                GitGitGadget.parsePullRequestURL(pullRequestURL);
-            const prefix = `https://github.com/${owner}/${repo}`;
+            const prefix = `https://github.com/gitgitgadget/git`;
             const tagName2 = encodeURIComponent(tagName);
             footers.push(`Published-As: ${prefix}/releases/tag/${tagName2}`);
             footers.push(`Fetch-It-Via: git fetch ${prefix} ${tagName}`);
