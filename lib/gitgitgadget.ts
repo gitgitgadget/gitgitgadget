@@ -195,7 +195,8 @@ export class GitGitGadget {
         return await this.genAndSend(pr, userInfo, {}, send);
     }
 
-    protected async updateNotesAndPullRef(pullRequestNumber: number,
+    protected async updateNotesAndPullRef(repositoryOwner: string,
+                                          pullRequestNumber: number,
                                           additionalRef?: string):
         Promise<string> {
         const pullRequestRef = `refs/pull/${pullRequestNumber}/head`;
@@ -205,15 +206,24 @@ export class GitGitGadget {
             this.publishTagsAndNotesToRemote,
             "--",
             `+${this.notes.notesRef}:${this.notes.notesRef}`,
-            `+${pullRequestRef}:${pullRequestRef}`,
-            `+${pullRequestMerge}:${pullRequestMerge}`,
             `+refs/heads/maint:refs/remotes/upstream/maint`,
             `+refs/heads/master:refs/remotes/upstream/master`,
             `+refs/heads/next:refs/remotes/upstream/next`,
             `+refs/heads/pu:refs/remotes/upstream/pu`,
         ];
+        const prArgs = [
+            `+${pullRequestRef}:${pullRequestRef}`,
+            `+${pullRequestMerge}:${pullRequestMerge}`,
+        ];
         if (additionalRef) {
             args.push(`+${additionalRef}:${additionalRef}`);
+        }
+        if (repositoryOwner === "gitgitgadget") {
+            args.push(...prArgs);
+        } else {
+            prArgs.unshift("fetch", `https://github.com/${repositoryOwner}/git`,
+                           "--");
+            await git(prArgs, { workDir: this.workDir });
         }
         await git(args, { workDir: this.workDir });
 
@@ -263,7 +273,7 @@ export class GitGitGadget {
         const previousTag = metadata && metadata.latestTag ?
             `refs/tags/${metadata.latestTag}` : undefined;
         // update work repo from base
-        await this.updateNotesAndPullRef(pr.number, previousTag);
+        await this.updateNotesAndPullRef(pr.baseOwner, pr.number, previousTag);
 
         const series =
             await PatchSeries.getFromNotes(this.notes, pr.pullRequestURL,
