@@ -630,12 +630,14 @@ export class PatchSeries {
             const email = emailMatch[1];
 
             const prMatch = this.metadata.pullRequestURL
-                .match(/\/([^\/]+)\/pull\/(\d+)$/);
+                .match(/\/([^\/]+)\/([^\/]+)\/pull\/(\d+)$/);
             if (prMatch) {
                 const infix = this.metadata.iteration > 1 ?
                     `.v${this.metadata.iteration}` : "";
+                const repoInfix = prMatch[1] === "gitgitgadget" ?
+                    prMatch[2] : `${prMatch[1]}.${prMatch[2]}`;
                 const newCoverMid =
-                    `pull.${prMatch[2]}${infix}.${prMatch[1]}.${
+                    `pull.${prMatch[3]}${infix}.${repoInfix}.${
                     timeStamp}.${email}`;
                 mails.map((value: string, index: number): void => {
                     // cheap replace-all
