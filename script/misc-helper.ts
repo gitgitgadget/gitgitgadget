@@ -241,38 +241,47 @@ async function getCIHelper(): Promise<CIHelper> {
 
         console.log(toPrettyJSON(await ci.getMailMetadata(messageID)));
     } else if (command === "get-pr-meta") {
-        if (commander.args.length !== 2) {
-            process.stderr.write(`${command}: need a Pull Request number\n`);
+        if (commander.args.length !== 2 && commander.args.length !== 3) {
+            process.stderr.write(`${command}: need a repository owner and ${
+                                 ""}a Pull Request number\n`);
             process.exit(1);
         }
-        const prNumber = commander.args[1];
+        const repositoryOwner = commander.args.length === 3 ?
+            commander.args[1] : "gitgitgadget";
+        const prNumber = commander.args[commander.args.length === 3 ? 2 : 1];
 
         const pullRequestURL = prNumber.match(/^http/) ? prNumber :
-            `https://github.com/gitgitgadget/git/pull/${prNumber}`;
+            `https://github.com/${repositoryOwner}/git/pull/${prNumber}`;
         console.log(toPrettyJSON(await ci.getPRMetadata(pullRequestURL)));
     } else if (command === "get-pr-commits") {
-        if (commander.args.length !== 2) {
-            process.stderr.write(`${command}: need a Pull Request number\n`);
+        if (commander.args.length !== 2 && commander.args.length !== 3) {
+            process.stderr.write(`${command}: need a repository owner and ${
+                                 ""}a Pull Request number\n`);
             process.exit(1);
         }
-        const prNumber = commander.args[1];
+        const repositoryOwner = commander.args.length === 3 ?
+            commander.args[1] : "gitgitgadget";
+        const prNumber = commander.args[commander.args.length === 3 ? 2 : 1];
 
         const pullRequestURL =
-            `https://github.com/gitgitgadget/git/pull/${prNumber}`;
+            `https://github.com/${repositoryOwner}/git/pull/${prNumber}`;
         const prMeta = await ci.getPRMetadata(pullRequestURL);
         if (!prMeta) {
             throw new Error(`No metadata found for ${pullRequestURL}`);
         }
         console.log(toPrettyJSON(await ci.getOriginalCommitsForPR(prMeta)));
     } else if (command === "handle-pr") {
-        if (commander.args.length !== 2) {
-            process.stderr.write(`${command}: need a Pull Request number\n`);
+        if (commander.args.length !== 2 && commander.args.length !== 3) {
+            process.stderr.write(`${command}: need a repository owner and ${
+                                 ""}a Pull Request number\n`);
             process.exit(1);
         }
-        const prNumber = commander.args[1];
+        const repositoryOwner = commander.args.length === 3 ?
+            commander.args[1] : "gitgitgadget";
+        const prNumber = commander.args[commander.args.length === 3 ? 2 : 1];
 
         const pullRequestURL =
-            `https://github.com/gitgitgadget/git/pull/${prNumber}`;
+            `https://github.com/${repositoryOwner}/git/pull/${prNumber}`;
 
         const meta = await ci.getPRMetadata(pullRequestURL);
         if (!meta) {
