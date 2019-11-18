@@ -199,10 +199,11 @@ export class GitHubGlue {
 
     // The following public methods do not require authentication
 
-    public async getOpenPRs(): Promise<IPullRequestInfo[]> {
+    public async getOpenPRs(repositoryOwner: string):
+        Promise<IPullRequestInfo[]> {
         const result: IPullRequestInfo[] = [];
         const response = await this.client.pulls.list({
-            owner: "gitgitgadget",
+            owner: repositoryOwner,
             per_page: 1000,
             repo: "git",
             state: "open",

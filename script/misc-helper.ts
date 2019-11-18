@@ -66,32 +66,34 @@ async function getCIHelper(): Promise<CIHelper> {
             optionsChanged = true;
         }
 
-        const pullRequests = await gitHub.getOpenPRs();
         const handledPRs = new Set<string>();
         const handledMessageIDs = new Set<string>();
-        for (const pr of pullRequests) {
-            const meta = await ci.getPRMetadata(pr.pullRequestURL);
-            if (!meta) {
-                console.log(`No meta found for ${pr.pullRequestURL}`);
-                continue;
-            }
+        for (const repositoryOwner of ["gitgitgadget", "git", "dscho"]) {
+            const pullRequests = await gitHub.getOpenPRs(repositoryOwner);
+            for (const pr of pullRequests) {
+                const meta = await ci.getPRMetadata(pr.pullRequestURL);
+                if (!meta) {
+                    console.log(`No meta found for ${pr.pullRequestURL}`);
+                    continue;
+                }
 
-            const url: string = pr.pullRequestURL;
-            handledPRs.add(url);
-            if (meta.coverLetterMessageId &&
-                options.openPRs[url] === undefined) {
-                options.openPRs[url] = meta.coverLetterMessageId;
-                optionsChanged = true;
-            }
+                const url: string = pr.pullRequestURL;
+                handledPRs.add(url);
+                if (meta.coverLetterMessageId &&
+                    options.openPRs[url] === undefined) {
+                    options.openPRs[url] = meta.coverLetterMessageId;
+                    optionsChanged = true;
+                }
 
-            if (meta.baseCommit && meta.headCommit) {
-                for (const rev of await ci.getOriginalCommitsForPR(meta)) {
-                    const messageID = await ci.notes.getLastCommitNote(rev);
-                    handledMessageIDs.add(messageID);
-                    if (messageID &&
-                        options.activeMessageIDs[messageID] === undefined) {
-                        options.activeMessageIDs[messageID] = rev;
-                        optionsChanged = true;
+                if (meta.baseCommit && meta.headCommit) {
+                    for (const rev of await ci.getOriginalCommitsForPR(meta)) {
+                        const messageID = await ci.notes.getLastCommitNote(rev);
+                        handledMessageIDs.add(messageID);
+                        if (messageID &&
+                            options.activeMessageIDs[messageID] === undefined) {
+                            options.activeMessageIDs[messageID] = rev;
+                            optionsChanged = true;
+                        }
                     }
                 }
             }
