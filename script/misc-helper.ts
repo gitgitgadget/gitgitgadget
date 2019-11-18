@@ -375,20 +375,29 @@ async function getCIHelper(): Promise<CIHelper> {
             await set({ appID: 46807, name: org});
         }
     } else if (command === "handle-pr-comment") {
-        if (commander.args.length !== 2) {
-            process.stderr.write(`${command}: Expected one comment ID\n`);
+        if (commander.args.length !== 2 && commander.args.length !== 3) {
+            process.stderr.write(`${command}: optionally takes  a ${
+                                 ""}repository owner and one comment ID\n`);
             process.exit(1);
         }
-        const commentID = parseInt(commander.args[1], 10);
-        await ci.handleComment(commentID);
+        const repositoryOwner = commander.args.length === 3 ?
+            commander.args[1] : "gitgitgadget";
+        const commentID =
+            parseInt(commander.args[commander.args.length === 3 ? 2 : 1], 10);
+
+        await ci.handleComment(repositoryOwner, commentID);
     } else if (command === "handle-pr-push") {
-        if (commander.args.length !== 2) {
-            process.stderr.write(`${command
-                }: Expected one Pull Request number\n`);
+        if (commander.args.length !== 2 && commander.args.length !== 3) {
+            process.stderr.write(`${command}: optionally takes a repository ${
+                                 ""}owner and a Pull Request number\n`);
             process.exit(1);
         }
-        const prNumber = parseInt(commander.args[1], 10);
-        await ci.handlePush(prNumber);
+        const repositoryOwner = commander.args.length === 3 ?
+            commander.args[1] : "gitgitgadget";
+        const prNumber =
+            parseInt(commander.args[commander.args.length === 3 ? 2 : 1], 10);
+
+        await ci.handlePush(repositoryOwner, prNumber);
     } else if (command === "handle-new-mails") {
         const publicInboxGitDir =
             await gitConfig("gitgitgadget.publicInboxGitDir");

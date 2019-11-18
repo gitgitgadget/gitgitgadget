@@ -234,9 +234,10 @@ export class GitHubGlue {
      * @param prNumber the Pull Request's number
      * @returns information about that Pull Request
      */
-    public async getPRInfo(prNumber: number): Promise<IPullRequestInfo> {
+    public async getPRInfo(repositoryOwner: string, prNumber: number):
+        Promise<IPullRequestInfo> {
         const response = await this.client.pulls.get({
-            owner: "gitgitgadget",
+            owner: repositoryOwner,
             pull_number: prNumber,
             repo: "git",
         });
@@ -263,10 +264,11 @@ export class GitHubGlue {
      * @param commentID the ID of the PR/issue comment
      * @returns the text in the comment
      */
-    public async getPRComment(commentID: number): Promise<IPRComment> {
+    public async getPRComment(repositoryOwner: string, commentID: number):
+        Promise<IPRComment> {
         const response = await this.client.issues.getComment({
             comment_id: commentID,
-            owner: "gitgitgadget",
+            owner: repositoryOwner,
             repo: "git",
         });
         const match = response.data.html_url.match(/\/pull\/([0-9]+)/);
