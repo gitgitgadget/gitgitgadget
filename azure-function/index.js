@@ -103,6 +103,7 @@ module.exports = async (context, req) => {
          * a PR build, and add the information here.
          */
         const pipelines = {
+            'dscho': 12,
             'git': 13,
             'gitgitgadget': 3,
         };
@@ -130,6 +131,11 @@ module.exports = async (context, req) => {
             if (!comment || !comment.id || !prNumber) {
                 context.log(`Invalid payload:\n${JSON.stringify(req.body, null, 4)}`);
                 throw new Error('Invalid payload');
+            }
+
+            /* GitGitGadget works on dscho/git only for testing */
+            if (repositoryOwner === 'dscho' && comment.user.login !== 'dscho') {
+                throw new Error(`Ignoring comment from ${comment.user.login}`);
             }
 
             /* Only trigger the Pipeline for valid commands */
