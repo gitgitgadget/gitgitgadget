@@ -109,8 +109,7 @@ module.exports = async (context, req) => {
             }
 
             const comment = req.body.comment;
-            const pullRequestURL = req.body.issue.pull_request.html_url;
-            const prNumber = pullRequestURL.match(/https:\/\/github\.com\/gitgitgadget\/git\/pull\/([0-9]*)$/)
+            const prNumber = req.body.issue.number;
             if (!comment || !comment.id || !prNumber) {
                 context.log(`Invalid payload:\n${JSON.stringify(req.body, null, 4)}`);
                 throw new Error('Invalid payload');
@@ -125,7 +124,7 @@ module.exports = async (context, req) => {
                 return;
             }
 
-            const sourceBranch = `refs/pull/${prNumber[1]}/head`;
+            const sourceBranch = `refs/pull/${prNumber}/head`;
             const parameters = {
                 'pr.comment.id': comment.id,
             };
