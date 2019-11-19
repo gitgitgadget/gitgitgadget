@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import * as path from "path";
 import * as util from "util";
 import { isDirectory, isFile } from "../lib/fs-util";
 import { git, IGitOptions, revParse } from "../lib/git";
@@ -45,6 +46,11 @@ export class TestRepo {
 
         if (!fileName) {
             fileName = `${message}.t`;
+        }
+
+        const fPath = path.dirname(`${this.workDir}/${fileName}`);
+        if (fPath !== this.workDir) {
+            await mkdir(fPath, { recursive: true });
         }
 
         await writeFile(`${this.workDir}/${fileName}`, contents || message);
