@@ -1,3 +1,4 @@
+// @ts-check
 /*
  * This is the Azure Function backing the GitGitGadget GitHub App.
  *
