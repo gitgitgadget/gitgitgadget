@@ -117,9 +117,11 @@ export class CIHelper {
         }
         await this.notes.set(messageID, mailMeta, true);
 
-        if (!this.testing && mailMeta.pullRequestURL) {
+        if (!this.testing && mailMeta.pullRequestURL &&
+            mailMeta.pullRequestURL
+            .startsWith("https://github.com/gitgitgadget/") ) {
             await this.github.annotateCommit(mailMeta.originalCommit,
-                                             upstreamCommit);
+                                             upstreamCommit, "gitgitgadget");
         }
 
         return true;
@@ -485,8 +487,10 @@ export class CIHelper {
      *
      * @param commentID the ID of the PR comment to handle
      */
-    public async handleComment(commentID: number): Promise<void> {
-        const comment = await this.github.getPRComment(commentID);
+    public async handleComment(repositoryOwner: string, commentID: number):
+        Promise<void> {
+        const comment =
+            await this.github.getPRComment(repositoryOwner, commentID);
         const match = comment.body.match(/^\s*(\/[-a-z]+)(\s+(.*?))?\s*$/);
         if (!match) {
             console.log(`Not a command; doing nothing: '${comment.body}'`);
@@ -495,8 +499,8 @@ export class CIHelper {
         const command = match[1];
         const argument = match[3];
 
-        const pullRequestURL =
-            `https://github.com/gitgitgadget/git/pull/${comment.prNumber}`;
+        const pullRequestURL = `https://github.com/${
+            repositoryOwner}/git/pull/${comment.prNumber}`;
         console.log(`Handling command ${command} with argument ${argument} at ${
             pullRequestURL}#issuecomment-${commentID}`);
 
@@ -513,7 +517,8 @@ export class CIHelper {
             }
 
             const getPRAuthor = async (): Promise<string> => {
-                const pr = await this.github.getPRInfo(comment.prNumber);
+                const pr = await this.github.getPRInfo(repositoryOwner,
+                                                       comment.prNumber);
                 return pr.author;
             };
 
@@ -603,12 +608,12 @@ export class CIHelper {
         }
     }
 
-    public async handlePush(prNumber: number) {
-        const pr = await this.github.getPRInfo(prNumber);
+    public async handlePush(repositoryOwner: string, prNumber: number) {
+        const pr = await this.github.getPRInfo(repositoryOwner, prNumber);
         const gitGitGadget = await GitGitGadget.get(".");
         if (!pr.hasComments && !gitGitGadget.isUserAllowed(pr.author)) {
             const pullRequestURL =
-                `https://github.com/gitgitgadget/git/pull/${prNumber}`;
+                `https://github.com/${repositoryOwner}/git/pull/${prNumber}`;
             const welcome = (await readFile("res/WELCOME.md")).toString()
                 .replace(/\${username}/g, pr.author);
             this.github.addPRComment(pullRequestURL, welcome);
@@ -632,7 +637,9 @@ export class CIHelper {
 
     private async getPRInfo(prNumber: number, pullRequestURL: string):
         Promise<IPullRequestInfo> {
-        const pr = await this.github.getPRInfo(prNumber);
+        const [owner] =
+                GitGitGadget.parsePullRequestURL(pullRequestURL);
+        const pr = await this.github.getPRInfo(owner, prNumber);
 
         if (!pr.baseLabel || !pr.baseCommit ||
             !pr.headLabel || !pr.headCommit) {

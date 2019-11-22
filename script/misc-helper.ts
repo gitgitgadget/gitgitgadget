@@ -66,32 +66,34 @@ async function getCIHelper(): Promise<CIHelper> {
             optionsChanged = true;
         }
 
-        const pullRequests = await gitHub.getOpenPRs();
         const handledPRs = new Set<string>();
         const handledMessageIDs = new Set<string>();
-        for (const pr of pullRequests) {
-            const meta = await ci.getPRMetadata(pr.pullRequestURL);
-            if (!meta) {
-                console.log(`No meta found for ${pr.pullRequestURL}`);
-                continue;
-            }
+        for (const repositoryOwner of ["gitgitgadget", "git", "dscho"]) {
+            const pullRequests = await gitHub.getOpenPRs(repositoryOwner);
+            for (const pr of pullRequests) {
+                const meta = await ci.getPRMetadata(pr.pullRequestURL);
+                if (!meta) {
+                    console.log(`No meta found for ${pr.pullRequestURL}`);
+                    continue;
+                }
 
-            const url: string = pr.pullRequestURL;
-            handledPRs.add(url);
-            if (meta.coverLetterMessageId &&
-                options.openPRs[url] === undefined) {
-                options.openPRs[url] = meta.coverLetterMessageId;
-                optionsChanged = true;
-            }
+                const url: string = pr.pullRequestURL;
+                handledPRs.add(url);
+                if (meta.coverLetterMessageId &&
+                    options.openPRs[url] === undefined) {
+                    options.openPRs[url] = meta.coverLetterMessageId;
+                    optionsChanged = true;
+                }
 
-            if (meta.baseCommit && meta.headCommit) {
-                for (const rev of await ci.getOriginalCommitsForPR(meta)) {
-                    const messageID = await ci.notes.getLastCommitNote(rev);
-                    handledMessageIDs.add(messageID);
-                    if (messageID &&
-                        options.activeMessageIDs[messageID] === undefined) {
-                        options.activeMessageIDs[messageID] = rev;
-                        optionsChanged = true;
+                if (meta.baseCommit && meta.headCommit) {
+                    for (const rev of await ci.getOriginalCommitsForPR(meta)) {
+                        const messageID = await ci.notes.getLastCommitNote(rev);
+                        handledMessageIDs.add(messageID);
+                        if (messageID &&
+                            options.activeMessageIDs[messageID] === undefined) {
+                            options.activeMessageIDs[messageID] = rev;
+                            optionsChanged = true;
+                        }
                     }
                 }
             }
@@ -209,7 +211,8 @@ async function getCIHelper(): Promise<CIHelper> {
         const gitGitCommit = commander.args[2];
 
         const glue = new GitHubGlue(ci.workDir);
-        const id = await glue.annotateCommit(originalCommit, gitGitCommit);
+        const id = await glue.annotateCommit(originalCommit, gitGitCommit,
+                                             "gitgitgadget");
         console.log(`Created check with id ${id}`);
     } else if (command === "identify-merge-commit") {
         if (commander.args.length !== 3) {
@@ -238,38 +241,47 @@ async function getCIHelper(): Promise<CIHelper> {
 
         console.log(toPrettyJSON(await ci.getMailMetadata(messageID)));
     } else if (command === "get-pr-meta") {
-        if (commander.args.length !== 2) {
-            process.stderr.write(`${command}: need a Pull Request number\n`);
+        if (commander.args.length !== 2 && commander.args.length !== 3) {
+            process.stderr.write(`${command}: need a repository owner and ${
+                                 ""}a Pull Request number\n`);
             process.exit(1);
         }
-        const prNumber = commander.args[1];
+        const repositoryOwner = commander.args.length === 3 ?
+            commander.args[1] : "gitgitgadget";
+        const prNumber = commander.args[commander.args.length === 3 ? 2 : 1];
 
         const pullRequestURL = prNumber.match(/^http/) ? prNumber :
-            `https://github.com/gitgitgadget/git/pull/${prNumber}`;
+            `https://github.com/${repositoryOwner}/git/pull/${prNumber}`;
         console.log(toPrettyJSON(await ci.getPRMetadata(pullRequestURL)));
     } else if (command === "get-pr-commits") {
-        if (commander.args.length !== 2) {
-            process.stderr.write(`${command}: need a Pull Request number\n`);
+        if (commander.args.length !== 2 && commander.args.length !== 3) {
+            process.stderr.write(`${command}: need a repository owner and ${
+                                 ""}a Pull Request number\n`);
             process.exit(1);
         }
-        const prNumber = commander.args[1];
+        const repositoryOwner = commander.args.length === 3 ?
+            commander.args[1] : "gitgitgadget";
+        const prNumber = commander.args[commander.args.length === 3 ? 2 : 1];
 
         const pullRequestURL =
-            `https://github.com/gitgitgadget/git/pull/${prNumber}`;
+            `https://github.com/${repositoryOwner}/git/pull/${prNumber}`;
         const prMeta = await ci.getPRMetadata(pullRequestURL);
         if (!prMeta) {
             throw new Error(`No metadata found for ${pullRequestURL}`);
         }
         console.log(toPrettyJSON(await ci.getOriginalCommitsForPR(prMeta)));
     } else if (command === "handle-pr") {
-        if (commander.args.length !== 2) {
-            process.stderr.write(`${command}: need a Pull Request number\n`);
+        if (commander.args.length !== 2 && commander.args.length !== 3) {
+            process.stderr.write(`${command}: need a repository owner and ${
+                                 ""}a Pull Request number\n`);
             process.exit(1);
         }
-        const prNumber = commander.args[1];
+        const repositoryOwner = commander.args.length === 3 ?
+            commander.args[1] : "gitgitgadget";
+        const prNumber = commander.args[commander.args.length === 3 ? 2 : 1];
 
         const pullRequestURL =
-            `https://github.com/gitgitgadget/git/pull/${prNumber}`;
+            `https://github.com/${repositoryOwner}/git/pull/${prNumber}`;
 
         const meta = await ci.getPRMetadata(pullRequestURL);
         if (!meta) {
@@ -332,46 +344,71 @@ async function getCIHelper(): Promise<CIHelper> {
         const glue = new GitHubGlue();
         await glue.addPRComment(pullRequestURL, comment);
     } else if (command === "set-app-token") {
-        if (commander.args.length !== 1) {
-            process.stderr.write(`${command}: unexpected argument(s)\n`);
-            process.exit(1);
-        }
+        const set = async (options: {
+             appID: number,
+             installationID?: number,
+             name: string,
+        }): Promise<void> => {
+            const client = new octokit();
+            const appName = options.name === "gitgitgadget" ?
+                "gitgitgadget" : "gitgitgadget-git";
+            const key = await gitConfig(`${appName}.privateKey`);
+            if (!key) {
+                throw new Error(`Need the ${appName} App's private key`);
+            }
+            const now = Math.round(Date.now() / 1000);
+            const payload = { iat: now, exp: now + 60, iss: options.appID };
+            const signOpts = { algorithm: "RS256" };
+            const app = jwt.sign(payload, key.replace(/\\n/g, `\n`), signOpts);
+            client.authenticate({
+                token: app,
+                type: "app",
+            });
 
-        const githubAppID = 12836;
-        const githubAppInstallationID = 195971;
+            if (options.installationID === undefined) {
+                options.installationID =
+                    (await client.apps.getRepoInstallation({
+                        owner: options.name,
+                        repo: "git",
+                })).data.id;
+            }
+            const result = await client.apps.createInstallationToken({
+                installation_id: options.installationID!,
+            });
+            const configKey = options.name === "gitgitgadget" ?
+                "gitgitgadget.githubToken" :
+                `gitgitgadget.${options.name}.githubToken`;
+            await git(["config", configKey, result.data.token]);
+        };
 
-        const client = new octokit();
-        const key = await gitConfig("gitgitgadget.privateKey");
-        if (!key) {
-            throw new Error(`Need the App's private key`);
+        await set({appID: 12836, installationID: 195971, name: "gitgitgadget"});
+        for (const org of commander.args.slice(1)) {
+            await set({ appID: 46807, name: org});
         }
-        const now = Math.round(Date.now() / 1000);
-        const payload = { iat: now, exp: now + 60, iss: githubAppID };
-        const signOpts = { algorithm: "RS256" };
-        const app = jwt.sign(payload, key.replace(/\\n/g, `\n`), signOpts);
-        client.authenticate({
-            token: app,
-            type: "app",
-        });
-        const result = await client.apps.createInstallationToken({
-            installation_id: githubAppInstallationID,
-        });
-        await git(["config", "gitgitgadget.githubToken", result.data.token]);
     } else if (command === "handle-pr-comment") {
-        if (commander.args.length !== 2) {
-            process.stderr.write(`${command}: Expected one comment ID\n`);
+        if (commander.args.length !== 2 && commander.args.length !== 3) {
+            process.stderr.write(`${command}: optionally takes  a ${
+                                 ""}repository owner and one comment ID\n`);
             process.exit(1);
         }
-        const commentID = parseInt(commander.args[1], 10);
-        await ci.handleComment(commentID);
+        const repositoryOwner = commander.args.length === 3 ?
+            commander.args[1] : "gitgitgadget";
+        const commentID =
+            parseInt(commander.args[commander.args.length === 3 ? 2 : 1], 10);
+
+        await ci.handleComment(repositoryOwner, commentID);
     } else if (command === "handle-pr-push") {
-        if (commander.args.length !== 2) {
-            process.stderr.write(`${command
-                }: Expected one Pull Request number\n`);
+        if (commander.args.length !== 2 && commander.args.length !== 3) {
+            process.stderr.write(`${command}: optionally takes a repository ${
+                                 ""}owner and a Pull Request number\n`);
             process.exit(1);
         }
-        const prNumber = parseInt(commander.args[1], 10);
-        await ci.handlePush(prNumber);
+        const repositoryOwner = commander.args.length === 3 ?
+            commander.args[1] : "gitgitgadget";
+        const prNumber =
+            parseInt(commander.args[commander.args.length === 3 ? 2 : 1], 10);
+
+        await ci.handlePush(repositoryOwner, prNumber);
     } else if (command === "handle-new-mails") {
         const publicInboxGitDir =
             await gitConfig("gitgitgadget.publicInboxGitDir");

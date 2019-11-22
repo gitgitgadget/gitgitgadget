@@ -33,15 +33,15 @@ export interface IGitHubUser {
 
 export class GitHubGlue {
     public workDir?: string;
-    protected readonly client = new octokit();
-    protected authenticated = false;
+    protected client = new octokit();
+    protected authenticated?: string;
 
     public constructor(workDir?: string) {
         this.workDir = workDir;
     }
 
-    public async annotateCommit(originalCommit: string, gitGitCommit: string):
-        Promise<number> {
+    public async annotateCommit(originalCommit: string, gitGitCommit: string,
+                                repositoryOwner: string): Promise<number> {
         const output =
             await git(["show", "-s", "--format=%h %cI", gitGitCommit],
                       { workDir: this.workDir });
@@ -52,7 +52,7 @@ export class GitHubGlue {
         const [, short, completedAt] = match;
         const url = `https://github.com/git/git/commit/${gitGitCommit}`;
 
-        await this.ensureAuthenticated();
+        await this.ensureAuthenticated(repositoryOwner);
         const checks = await this.client.checks.create({
             completed_at: completedAt,
             conclusion: "success",
@@ -64,7 +64,7 @@ export class GitHubGlue {
                 summary: `Integrated into git.git as [${short}](${url}).`,
                 title: `In git.git: ${short}`,
             },
-            owner: "gitgitgadget",
+            owner: repositoryOwner,
             repo: "git",
             status: "completed",
         });
@@ -80,9 +80,9 @@ export class GitHubGlue {
      */
     public async addPRComment(pullRequestURL: string, comment: string):
         Promise<{id: number, url: string}> {
-        await this.ensureAuthenticated();
         const [owner, repo, nr] =
             GitGitGadget.parsePullRequestURL(pullRequestURL);
+        await this.ensureAuthenticated(owner);
         const status = await this.client.issues.createComment({
             body: comment,
             number: nr,
@@ -108,9 +108,9 @@ export class GitHubGlue {
                                     gitWorkDir: string | undefined,
                                     comment: string):
         Promise<{id: number, url: string}> {
-        await this.ensureAuthenticated();
         const [owner, repo, nr] =
             GitGitGadget.parsePullRequestURL(pullRequestURL);
+        await this.ensureAuthenticated(owner);
 
         const files = await git(["diff", "--name-only",
                                  `${commit}^..${commit}`, "--"],
@@ -143,9 +143,9 @@ export class GitHubGlue {
     public async addPRCommentReply(pullRequestURL: string, id: number,
                                    comment: string):
         Promise<{id: number, url: string}> {
-        await this.ensureAuthenticated();
         const [owner, repo, nr] =
             GitGitGadget.parsePullRequestURL(pullRequestURL);
+        await this.ensureAuthenticated(owner);
 
         const status = await this.client.pulls.createCommentReply({
             body: comment,
@@ -165,7 +165,7 @@ export class GitHubGlue {
         const [owner, repo, prNo] =
             GitGitGadget.parsePullRequestURL(pullRequestURL);
 
-        await this.ensureAuthenticated();
+        await this.ensureAuthenticated(owner);
         const result = await this.client.issues.addLabels({
             labels,
             number: prNo,
@@ -180,7 +180,7 @@ export class GitHubGlue {
         const [owner, repo, prNo] =
             GitGitGadget.parsePullRequestURL(pullRequestURL);
 
-        await this.ensureAuthenticated();
+        await this.ensureAuthenticated(owner);
         await this.client.pulls.update({
             number: prNo,
             owner,
@@ -199,10 +199,11 @@ export class GitHubGlue {
 
     // The following public methods do not require authentication
 
-    public async getOpenPRs(): Promise<IPullRequestInfo[]> {
+    public async getOpenPRs(repositoryOwner: string):
+        Promise<IPullRequestInfo[]> {
         const result: IPullRequestInfo[] = [];
         const response = await this.client.pulls.list({
-            owner: "gitgitgadget",
+            owner: repositoryOwner,
             per_page: 1000,
             repo: "git",
             state: "open",
@@ -234,9 +235,10 @@ export class GitHubGlue {
      * @param prNumber the Pull Request's number
      * @returns information about that Pull Request
      */
-    public async getPRInfo(prNumber: number): Promise<IPullRequestInfo> {
+    public async getPRInfo(repositoryOwner: string, prNumber: number):
+        Promise<IPullRequestInfo> {
         const response = await this.client.pulls.get({
-            owner: "gitgitgadget",
+            owner: repositoryOwner,
             pull_number: prNumber,
             repo: "git",
         });
@@ -263,10 +265,11 @@ export class GitHubGlue {
      * @param commentID the ID of the PR/issue comment
      * @returns the text in the comment
      */
-    public async getPRComment(commentID: number): Promise<IPRComment> {
+    public async getPRComment(repositoryOwner: string, commentID: number):
+        Promise<IPRComment> {
         const response = await this.client.issues.getComment({
             comment_id: commentID,
-            owner: "gitgitgadget",
+            owner: repositoryOwner,
             repo: "git",
         });
         const match = response.data.html_url.match(/\/pull\/([0-9]+)/);
@@ -284,7 +287,8 @@ export class GitHubGlue {
      * @param login the GitHub login
      */
     public async getGitHubUserInfo(login: string): Promise<IGitHubUser> {
-        await this.ensureAuthenticated(); // required to get email
+        // required to get email
+        await this.ensureAuthenticated(this.authenticated || "gitgitgadget");
 
         const response = await this.client.users.getByUsername({
             username: login,
@@ -309,17 +313,23 @@ export class GitHubGlue {
         return response.data.name;
     }
 
-    protected async ensureAuthenticated(): Promise<void> {
-        if (!this.authenticated) {
-            const token = await gitConfig("gitgitgadget.githubToken");
+    protected async ensureAuthenticated(repositoryOwner: string):
+        Promise<void> {
+        if (repositoryOwner !== this.authenticated) {
+            if (this.authenticated) {
+                this.client = new octokit();
+            }
+            const infix = repositoryOwner === "gitgitgadget" ?
+                "" : `.${repositoryOwner}`;
+            const token = await gitConfig(`gitgitgadget${infix}.githubToken`);
             if (!token) {
-                throw new Error(`Need a GitHub token`);
+                throw new Error(`Need a GitHub token for ${repositoryOwner}`);
             }
             this.client.authenticate({
                 token,
                 type: "token",
             });
-            this.authenticated = true;
+            this.authenticated = repositoryOwner;
         }
     }
 }

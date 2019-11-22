@@ -630,12 +630,14 @@ export class PatchSeries {
             const email = emailMatch[1];
 
             const prMatch = this.metadata.pullRequestURL
-                .match(/\/([^\/]+)\/pull\/(\d+)$/);
+                .match(/\/([^\/]+)\/([^\/]+)\/pull\/(\d+)$/);
             if (prMatch) {
                 const infix = this.metadata.iteration > 1 ?
                     `.v${this.metadata.iteration}` : "";
+                const repoInfix = prMatch[1] === "gitgitgadget" ?
+                    prMatch[2] : `${prMatch[1]}.${prMatch[2]}`;
                 const newCoverMid =
-                    `pull.${prMatch[2]}${infix}.${prMatch[1]}.${
+                    `pull.${prMatch[3]}${infix}.${repoInfix}.${
                     timeStamp}.${email}`;
                 mails.map((value: string, index: number): void => {
                     // cheap replace-all
@@ -656,10 +658,12 @@ export class PatchSeries {
         if (!this.metadata.pullRequestURL) {
             tagName = `${this.project.branchName}-v${this.metadata.iteration}`;
         } else {
-            const prNumber = this.metadata.pullRequestURL
-                .replace(/.*\/pull\/(\d+).*/, "$1");
+            const [owner, , prNumber] =
+                GitGitGadget.parsePullRequestURL(this.metadata.pullRequestURL);
             const branch = this.metadata.headLabel.replace(/:/g, "/");
-            tagName = `pr-${prNumber}/${branch}-v${this.metadata.iteration}`;
+            const tagPrefix = owner === "gitgitgadget" ? "pr-" : `pr-${owner}-`;
+            tagName = `${tagPrefix}${prNumber}/${branch}-v${
+                this.metadata.iteration}`;
         }
         if (this.project.publishToRemote) {
             const url =
@@ -690,13 +694,11 @@ export class PatchSeries {
         const footers: string[] = [];
 
         if (pullRequestURL) {
-            const [owner, repo, prNo] =
-                GitGitGadget.parsePullRequestURL(pullRequestURL);
-            const prefix = `https://github.com/${owner}/${repo}`;
+            const prefix = `https://github.com/gitgitgadget/git`;
             const tagName2 = encodeURIComponent(tagName);
             footers.push(`Published-As: ${prefix}/releases/tag/${tagName2}`);
             footers.push(`Fetch-It-Via: git fetch ${prefix} ${tagName}`);
-            footers.push(`Pull-Request: ${prefix}/pull/${prNo}`);
+            footers.push(`Pull-Request: ${pullRequestURL}`);
         }
 
         if (this.rangeDiff) {
