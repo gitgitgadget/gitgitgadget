@@ -131,6 +131,7 @@ export class CIHelper {
         if (!this.gggNotesUpdated) {
             await git(["fetch", "https://github.com/gitgitgadget/git",
                        `+refs/notes/gitgitgadget:refs/notes/gitgitgadget`,
+                       `+refs/heads/maint:refs/remotes/upstream/maint`,
                        `+refs/heads/pu:refs/remotes/upstream/pu`],
                       { workDir: this.workDir });
             this.gggNotesUpdated = true;
@@ -144,6 +145,12 @@ export class CIHelper {
             return false;
         }
 
+        const commitsInPu: Set<string> = new Set<string>(
+            (await git(["rev-list", "--no-merges",
+                        "^refs/remotes/upstream/maint~100",
+                        "refs/remotes/upstream/pu"],
+                       { workDir: this.workDir })).split("\n"),
+        );
         let result: boolean = false;
         for (const pullRequestURL of Object.keys(options.openPRs)) {
             const info = await this.getPRMetadata(pullRequestURL);
@@ -160,7 +167,14 @@ export class CIHelper {
             }
             const meta = await this.getMailMetadata(messageID);
             if (!meta || meta.commitInGitGit !== undefined) {
-                continue;
+                if (!meta || commitsInPu.has(meta.commitInGitGit!)) {
+                    continue;
+                }
+                console.log(`Upstream commit ${meta.commitInGitGit} for ${
+                    info.headCommit} of ${
+                    info.pullRequestURL} no longer found in pu`);
+                meta.commitInGitGit = undefined;
+                result = true;
             }
 
             const out = await git(["-c", "core.abbrev=40", "range-diff", "-s",
