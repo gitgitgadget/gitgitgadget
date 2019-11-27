@@ -4,10 +4,10 @@ import { commitExists, git } from "./git";
 import { GitNotes } from "./git-notes";
 import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget";
 import { GitHubGlue, IGitHubUser, IPullRequestInfo } from "./github-glue";
+import { MailArchiveGitHelper } from "./mail-archive-helper";
 import { MailCommitMapping } from "./mail-commit-mapping";
 import { IMailMetadata } from "./mail-metadata";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
-import { PublicInboxGitHelper } from "./public-inbox-helper";
 
 const readFile = util.promisify(fs.readFile);
 
@@ -557,7 +557,7 @@ export class CIHelper {
                 const coverMid =
                     await gitGitGadget.submit(pr, userInfo);
                 await addComment(`Submitted as [${
-                    coverMid}](https://public-inbox.org/git/${coverMid})${
+                    coverMid}](https://lore.kernel.org/git/${coverMid})${
                         extraComment}`);
             } else if (command === "/preview") {
                 if (argument && argument !== "") {
@@ -634,19 +634,19 @@ export class CIHelper {
         }
     }
 
-    public async handleNewMails(publicInboxGitDir: string,
+    public async handleNewMails(mailArchiveGitDir: string,
                                 onlyPRs?: Set<number>): Promise<boolean> {
-        await git(["fetch"], { workDir: publicInboxGitDir });
+        await git(["fetch"], { workDir: mailArchiveGitDir });
         const prFilter = !onlyPRs ? undefined :
             (pullRequestURL: string): boolean => {
                 const match = pullRequestURL.match(/.*\/(\d+)$/);
                 return !match ? false : onlyPRs.has(parseInt(match[1], 10));
             };
         await this.maybeUpdateGGGNotes();
-        const publicInboxGit =
-            await PublicInboxGitHelper.get(this.notes, publicInboxGitDir,
+        const mailArchiveGit =
+            await MailArchiveGitHelper.get(this.notes, mailArchiveGitDir,
                                            this.github);
-        return await publicInboxGit.processMails(prFilter);
+        return await mailArchiveGit.processMails(prFilter);
     }
 
     private async getPRInfo(prNumber: number, pullRequestURL: string):

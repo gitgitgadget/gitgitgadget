@@ -101,7 +101,7 @@ The principal way to interact with GitGitGadget is by opening a Pull Request at
 <https://github.com/gitgitgadget/git>. The patch submission is then triggered by
 a command given in a single comment to that PR. GitGitGadget will follow up with
 a comment describing details of the patch submission, such as the link to the
-cover letter in [Git's mailing list archive](https://public-inbox.org/git).
+cover letter in [Git's mailing list archive](https://lore.kernel.org/git).
 
 Any other interesting information that can be inferred automatically will be
 added in the form of further comments to the same Pull Request.
@@ -113,7 +113,7 @@ automatically.
 ### Background tasks
 
 The repositories <https://github.com/gitster/git> (and
-<https://public-inbox.org/git)>) are monitored via dedicated [Azure
+<https://lore.kernel.org/git)>) are monitored via dedicated [Azure
 Pipelines](https://dev.azure.com/gitgitgadget/git/_build?definitionId=3),
 backed by Typescript code in <https://github.com/gitgitgadget/gitgitgadget>.
 

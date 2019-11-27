@@ -14,13 +14,13 @@ export interface IGitMailingListMirrorState {
     latestRevision?: string;
 }
 
-export class PublicInboxGitHelper {
-    public static async get(gggNotes: GitNotes, publicInboxGitDir: string,
+export class MailArchiveGitHelper {
+    public static async get(gggNotes: GitNotes, mailArchiveGitDir: string,
                             githubGlue: GitHubGlue):
-        Promise<PublicInboxGitHelper> {
+        Promise<MailArchiveGitHelper> {
         const state: IGitMailingListMirrorState =
             await gggNotes.get<IGitMailingListMirrorState>(stateKey) || {};
-        return new PublicInboxGitHelper(gggNotes, publicInboxGitDir, githubGlue,
+        return new MailArchiveGitHelper(gggNotes, mailArchiveGitDir, githubGlue,
                                         state);
     }
 
@@ -69,14 +69,14 @@ export class PublicInboxGitHelper {
 
     protected readonly state: IGitMailingListMirrorState;
     protected readonly gggNotes: GitNotes;
-    protected readonly publicInboxGitDir: string;
+    protected readonly mailArchiveGitDir: string;
     protected readonly githubGlue: GitHubGlue;
 
-    protected constructor(gggNotes: GitNotes, publicInboxGitDir: string,
+    protected constructor(gggNotes: GitNotes, mailArchiveGitDir: string,
                           githubGlue: GitHubGlue,
                           state: IGitMailingListMirrorState) {
         this.gggNotes = gggNotes;
-        this.publicInboxGitDir = publicInboxGitDir;
+        this.mailArchiveGitDir = mailArchiveGitDir;
         this.githubGlue = githubGlue;
         this.state = state;
     }
@@ -90,7 +90,7 @@ export class PublicInboxGitHelper {
                     keys.add(line.substr(53).replace(/\//g, ""));
                 });
         const seen = (messageID: string) => {
-            return keys.has(PublicInboxGitHelper.hashKey(messageID));
+            return keys.has(MailArchiveGitHelper.hashKey(messageID));
         };
 
         const mboxHandler = async (messageID: string, references: string[],
@@ -129,13 +129,13 @@ export class PublicInboxGitHelper {
                             }, comment ID: ${issueCommentId}`);
 
                 const parsed = await parseMBox(mbox);
-                const pigURL = `https://public-inbox.org/git/${messageID}`;
-                const header = `[On the Git mailing list](${pigURL}), ` +
+                const archiveURL = `https://lore.kernel.org/git/${messageID}`;
+                const header = `[On the Git mailing list](${archiveURL}), ` +
                     (parsed.from ?
                      parsed.from.replace(/ *<.*>/, "") : "Somebody") +
                      ` wrote ([reply to this](${replyToThisURL})):\n\n`;
                 const comment = header +
-                    PublicInboxGitHelper.mbox2markdown(parsed);
+                    MailArchiveGitHelper.mbox2markdown(parsed);
 
                 if (issueCommentId) {
                     const result =  await this.githubGlue
@@ -164,7 +164,7 @@ export class PublicInboxGitHelper {
                 } as IMailMetadata);
 
                 /* It is now known */
-                keys.add(PublicInboxGitHelper.hashKey(messageID));
+                keys.add(MailArchiveGitHelper.hashKey(messageID));
             };
 
         let buffer = "";
@@ -194,20 +194,20 @@ export class PublicInboxGitHelper {
 
         if (!this.state.latestRevision) {
             /*
-             * This is the commit in public-inbox/git that is *just* before the
+             * This is the commit in lore.kernel/git that is *just* before the
              * first ever GitGitGadget mail sent to the Git mailing list.
              */
             this.state.latestRevision =
-                "cf3590b3a1ce08a52b01142307b8fcc089acb6a6";
+                "3b38d8d206c64bf3dc873ba8ae9dbd48ed43f612";
         }
-        const head = await revParse("master", this.publicInboxGitDir);
+        const head = await revParse("master", this.mailArchiveGitDir);
         if (this.state.latestRevision === head) {
             return false;
         }
 
         const range = `${this.state.latestRevision}..${head}`;
         await git(["log", "-p", "--reverse", range],
-                  { lineHandler, workDir: this.publicInboxGitDir });
+                  { lineHandler, workDir: this.mailArchiveGitDir });
 
         this.state.latestRevision = head;
         await this.gggNotes.set(stateKey, this.state, true);

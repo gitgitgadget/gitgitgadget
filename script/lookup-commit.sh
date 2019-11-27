@@ -20,45 +20,45 @@ esac; do shift; done
 test $# = 1 ||
 die "Usage: $0 ( ( [--open] | [--reply] ) <commit> | --notes <range> )"
 
-test -n "$PUBLIC_INBOX_DIR" ||
-PUBLIC_INBOX_DIR="$(dirname "$0")/../.git/public-inbox-git"
+test -n "$LORE_GIT_DIR" ||
+LORE_GIT_DIR="$(dirname "$0")/../.git/lore.kernel-git"
 test -n "$GITGIT_DIR" ||
 GITGIT_DIR="$(dirname "$0")/../.git/git-worktree"
 
-update_public_inbox_dir () {
-	test -d "$PUBLIC_INBOX_DIR" ||
-	git clone --bare https://git-for-windows.visualstudio.com/git.public-inbox/_git/git.public-inbox "$PUBLIC_INBOX_DIR" ||
-	die "Could not clone public-inbox/git to $PUBLIC_INBOX_DIR"
+update_mail_archive_dir () {
+	test -d "$LORE_GIT_DIR" ||
+	git clone --bare https://dev.azure.com/gitgitgadget/git/_git/lore-git "$LORE_GIT_DIR" ||
+	die "Could not clone lore.kernel/git to $LORE_GIT_DIR"
 
-	git -C "$PUBLIC_INBOX_DIR" fetch https://public-inbox.org/git master:master ||
-	die "Could not update $PUBLIC_INBOX_DIR to remote's master"
+	git -C "$LORE_GIT_DIR" fetch https://lore.kernel.org/git/0 master:master ||
+	die "Could not update $LORE_GIT_DIR to remote's master"
 
-	head="$(git -C "$PUBLIC_INBOX_DIR" rev-parse --verify master)" ||
+	head="$(git -C "$LORE_GIT_DIR" rev-parse --verify master)" ||
 	die "Could not determine tip of master"
 
 	prevhead=
-	test ! -f "$PUBLIC_INBOX_DIR/"tae-list.latest-rev ||
-	prevhead="$(cat "$PUBLIC_INBOX_DIR/"tae-list.latest-rev)"
+	test ! -f "$LORE_GIT_DIR/"tae-list.latest-rev ||
+	prevhead="$(cat "$LORE_GIT_DIR/"tae-list.latest-rev)"
 
 	if test $head != "$prevhead"
 	then
 		range=${prevhead:+$prevhead..}$head
 		echo "Inserting records for $range" >&2
-		git -C "$PUBLIC_INBOX_DIR" log --format="%at %H %an <%ae>" $range >"$PUBLIC_INBOX_DIR/"tae-list.txt.add ||
+		git -C "$LORE_GIT_DIR" log --format="%at %H %an <%ae>" $range >"$LORE_GIT_DIR/"tae-list.txt.add ||
 		die "Could not enumerate $range"
 
-		cat "$PUBLIC_INBOX_DIR/"tae-list.txt "$PUBLIC_INBOX_DIR/"tae-list.txt.add 2>/dev/null | sort -n | uniq >"$PUBLIC_INBOX_DIR/"tae-list.txt.new &&
-		mv -f "$PUBLIC_INBOX_DIR/"tae-list.txt.new "$PUBLIC_INBOX_DIR/"tae-list.txt ||
+		cat "$LORE_GIT_DIR/"tae-list.txt "$LORE_GIT_DIR/"tae-list.txt.add 2>/dev/null | sort -n | uniq >"$LORE_GIT_DIR/"tae-list.txt.new &&
+		mv -f "$LORE_GIT_DIR/"tae-list.txt.new "$LORE_GIT_DIR/"tae-list.txt ||
 		die "Could not insert new records"
 
-		echo $head >"$PUBLIC_INBOX_DIR/"tae-list.latest-rev
+		echo $head >"$LORE_GIT_DIR/"tae-list.latest-rev
 	fi
 }
 
 update_gitgit_dir () {
 	test -d "$GITGIT_DIR" ||
 	git clone https://github.com/gitgitgadget/git "$GITGIT_DIR" ||
-	die "Could not clone public-inbox/git to $GITGIT_DIR"
+	die "Could not clone gitgitgadget/git to $GITGIT_DIR"
 
 	git -C "$GITGIT_DIR" fetch https://github.com/gitgitgadget/git refs/notes/commit-to-mail:refs/notes/commit-to-mail ||
 	die "Could not update refs/notes/commit-to-mail"
@@ -88,41 +88,41 @@ lookup_tae () {
 	# mail's body
 	timestamp=${1%% *}
 
-	lines="$(grep "^$timestamp " <"$PUBLIC_INBOX_DIR/"tae-list.txt)"
+	lines="$(grep "^$timestamp " <"$LORE_GIT_DIR/"tae-list.txt)"
 	if test 1 != $(echo "$lines" | wc -l)
 	then
 		if test -n "$2"
 		then
 			oneline="$(git -C "$GITGIT_DIR" show -s --format=%s "$2" | sed 's/^\[.*\] //')"
-			git -C "$GITGIT_DIR" diff "$2"^! | sed -e '/^index /d' -e 's/^@@ .*/@@/' >"$PUBLIC_INBOX_DIR"/.tmp."$2".commit
-			linecount=$(wc -l <"$PUBLIC_INBOX_DIR"/.tmp."$2".commit)
+			git -C "$GITGIT_DIR" diff "$2"^! | sed -e '/^index /d' -e 's/^@@ .*/@@/' >"$LORE_GIT_DIR"/.tmp."$2".commit
+			linecount=$(wc -l <"$LORE_GIT_DIR"/.tmp."$2".commit)
 			for h in $(echo "$lines" | cut -d ' ' -f 2)
 			do
-				filename="$(git -C "$PUBLIC_INBOX_DIR" diff --name-only $h^!)"
+				filename="$(git -C "$LORE_GIT_DIR" diff --name-only $h^!)"
 
 				# If the oneline matches, we have a match
-				if test "a$oneline" = "a$(git -C "$PUBLIC_INBOX_DIR" show $h:$filename | sed -n 's/^Subject: \(\[.*\] \)\(.*\)/\2/p' | head -n 1)"
+				if test "a$oneline" = "a$(git -C "$LORE_GIT_DIR" show $h:$filename | sed -n 's/^Subject: \(\[.*\] \)\(.*\)/\2/p' | head -n 1)"
 				then
-					rm "$PUBLIC_INBOX_DIR"/.tmp."$2".commit
-					git -C "$PUBLIC_INBOX_DIR" show $h | sed -n 's/^+Message-Id: <\(.*\)>/\1/ip' | head -n 1
+					rm "$LORE_GIT_DIR"/.tmp."$2".commit
+					git -C "$LORE_GIT_DIR" show $h | sed -n 's/^+Message-Id: <\(.*\)>/\1/ip' | head -n 1
 					return 0
 				fi
 
 				# If the diff is reasonably close enough, we have a match
-				git -C "$PUBLIC_INBOX_DIR" show $h:$filename | git mailinfo "$PUBLIC_INBOX_DIR"/.tmp."$2".msg "$PUBLIC_INBOX_DIR"/.tmp."$2".mail >/dev/null
-				sed -n '/^diff --git/,${/^index /d;s/^@@ .*/@@/;p}' <"$PUBLIC_INBOX_DIR"/.tmp."$2".mail >"$PUBLIC_INBOX_DIR"/.tmp."$2".mailpatch
-				rm "$PUBLIC_INBOX_DIR"/.tmp."$2".msg
-				rm "$PUBLIC_INBOX_DIR"/.tmp."$2".mail
-				diffsize=$(git diff --no-index -U0 "$PUBLIC_INBOX_DIR"/.tmp."$2".commit "$PUBLIC_INBOX_DIR"/.tmp."$2".mailpatch | wc -l)
-				rm "$PUBLIC_INBOX_DIR"/.tmp."$2".mailpatch
+				git -C "$LORE_GIT_DIR" show $h:$filename | git mailinfo "$LORE_GIT_DIR"/.tmp."$2".msg "$LORE_GIT_DIR"/.tmp."$2".mail >/dev/null
+				sed -n '/^diff --git/,${/^index /d;s/^@@ .*/@@/;p}' <"$LORE_GIT_DIR"/.tmp."$2".mail >"$LORE_GIT_DIR"/.tmp."$2".mailpatch
+				rm "$LORE_GIT_DIR"/.tmp."$2".msg
+				rm "$LORE_GIT_DIR"/.tmp."$2".mail
+				diffsize=$(git diff --no-index -U0 "$LORE_GIT_DIR"/.tmp."$2".commit "$LORE_GIT_DIR"/.tmp."$2".mailpatch | wc -l)
+				rm "$LORE_GIT_DIR"/.tmp."$2".mailpatch
 				if test $diffsize -lt 30 && test $(($diffsize * 100 / $linecount)) -lt 40
 				then
-					rm "$PUBLIC_INBOX_DIR"/.tmp."$2".commit
-					git -C "$PUBLIC_INBOX_DIR" show $h | sed -n 's/^+Message-Id: <\(.*\)>/\1/ip' | head -n 1
+					rm "$LORE_GIT_DIR"/.tmp."$2".commit
+					git -C "$LORE_GIT_DIR" show $h | sed -n 's/^+Message-Id: <\(.*\)>/\1/ip' | head -n 1
 					return 0
 				fi
 			done
-			rm "$PUBLIC_INBOX_DIR"/.tmp."$2".commit
+			rm "$LORE_GIT_DIR"/.tmp."$2".commit
 		fi
 
 		# Hard-code a couple of manually identified pairings
@@ -139,8 +139,8 @@ lookup_tae () {
 
 			for h in $(echo "$lines" | cut -d ' ' -f 2)
 			do
-				git -C "$PUBLIC_INBOX_DIR" show -s --format="%nOn %ad, %an <%ae> sent" $h
-				git -C "$PUBLIC_INBOX_DIR" show $h |
+				git -C "$LORE_GIT_DIR" show -s --format="%nOn %ad, %an <%ae> sent" $h
+				git -C "$LORE_GIT_DIR" show $h |
 				sed -n -e 's/^+Message-Id: <\(.*\)>/\1/ip' \
 					-e 's/^+Subject: //ip'
 			done
@@ -159,7 +159,7 @@ lookup_tae () {
 	# We found exactly one record: print the message ID
 	h=${lines#$timestamp }
 	h=${h%% *}
-	messageid="$(git -C "$PUBLIC_INBOX_DIR" show $h | sed -n 's/^+Message-Id: <\(.*\)>/\1/ip' | head -n 1)" &&
+	messageid="$(git -C "$LORE_GIT_DIR" show $h | sed -n 's/^+Message-Id: <\(.*\)>/\1/ip' | head -n 1)" &&
 	test -n "$messageid" &&
 	echo "$messageid" || {
 		echo "Could not determine Message-Id from $h"
@@ -198,8 +198,8 @@ test notes != "$mode" || {
 	test "no match" != "$*" ||
 	set -- --no-walk $(echo "$matched" | sed -n 's/ no match$//p')
 
-	update_public_inbox_dir ||
-	die "Could not update $PUBLIX_INBOX_DIR"
+	update_mail_archive_dir ||
+	die "Could not update $LORE_GIT_DIR"
 
 	(cat <<-EOH
 		commit refs/notes/commit-to-mail
@@ -408,8 +408,8 @@ test reply != $mode ||
 test -d "$HOME/Mail" ||
 die "Need $HOME/Mail to reply"
 
-update_public_inbox_dir ||
-die "Could not update $PUBLIX_INBOX_DIR"
+update_mail_archive_dir ||
+die "Could not update $LORE_GIT_DIR"
 
 messageid="$(lookup_tae "$tae" "$1")" ||
 die "Failed to identify Message-Id for $1: $messageid"
@@ -417,7 +417,7 @@ die "Failed to identify Message-Id for $1: $messageid"
 case $mode in
 print) echo $messageid;;
 open)
-	url=https://public-inbox.org/git/$messageid
+	url=https://lore.kernel.org/git/$messageid
 	case "$(uname -s)" in
 	Linux) xdg-open "$url";;
 	MINGW*|MSYS*) start "$url";;
@@ -425,14 +425,14 @@ open)
 	esac
 	;;
 reply)
-	mkdir -p "$HOME/Mail/from-public-inbox/new" &&
-	mkdir -p "$HOME/Mail/from-public-inbox/cur" &&
-	mkdir -p "$HOME/Mail/from-public-inbox/tmp" ||
-	die "Could not set up mail folder 'from-public-inbox'"
+	mkdir -p "$HOME/Mail/from-lore.kernel/new" &&
+	mkdir -p "$HOME/Mail/from-lore.kernel/cur" &&
+	mkdir -p "$HOME/Mail/from-lore.kernel/tmp" ||
+	die "Could not set up mail folder 'from-lore.kernel'"
 
 	path=$(git -C "$GITGIT_DIR" diff --name-only $h^!) &&
 	mail="$(printf "%s_%09d.%s:2," $(date +%s.%N) $$ $(hostname -f))" &&
-	git -C "$GITGIT_DIR" show $h:$path >"$HOME/Mail/from-public-inbox/new/$mail" ||
+	git -C "$GITGIT_DIR" show $h:$path >"$HOME/Mail/from-lore.kernel/new/$mail" ||
 	die "Could not write mail"
 	;;
 *)

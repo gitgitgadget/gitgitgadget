@@ -20,7 +20,7 @@ GITGIT_DIR="$(dirname "$0")/../.git/git-worktree"
 update_gitgit_dir () {
 	test -d "$GITGIT_DIR" ||
 	git clone https://github.com/gitgitgadget/git "$GITGIT_DIR" ||
-	die "Could not clone public-inbox/git to $GITGIT_DIR"
+	die "Could not clone gitgitgadget/git to $GITGIT_DIR"
 
 	git -C "$GITGIT_DIR" fetch https://github.com/gitgitgadget/git \
 		refs/notes/mail-to-commit:refs/notes/mail-to-commit ||

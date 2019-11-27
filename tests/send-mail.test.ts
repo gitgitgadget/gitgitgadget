@@ -1,5 +1,5 @@
 import "jest";
-import { PublicInboxGitHelper } from "../lib/public-inbox-helper";
+import { MailArchiveGitHelper } from "../lib/mail-archive-helper";
 import { parseMBox } from "../lib/send-mail";
 
 const mbox0 =
@@ -80,7 +80,7 @@ have included in git.git.
 `;
 
     const parsed = await parseMBox(mbox);
-    const body = PublicInboxGitHelper.mbox2markdown(parsed);
+    const body = MailArchiveGitHelper.mbox2markdown(parsed);
     expect(body).toMatch(/1234/);
 });
 
@@ -103,7 +103,7 @@ Cc: Some Body <somebody@example.com>,
 ${Buffer.from(mailBody).toString("base64")}`;
 
     const parsed = await parseMBox(mbox);
-    const body = PublicInboxGitHelper.mbox2markdown(parsed);
+    const body = MailArchiveGitHelper.mbox2markdown(parsed);
     expect(body).toMatch(mailBody);
 });
 
