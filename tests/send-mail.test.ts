@@ -1,4 +1,5 @@
 import "jest";
+import { PublicInboxGitHelper } from "../lib/public-inbox-helper";
 import { parseMBox } from "../lib/send-mail";
 
 const mbox =
@@ -55,4 +56,75 @@ test("parse mbox", async () => {
         { key: "MIME-Version", value: "1.0" },
     ]);
     expect(parsed.to).toEqual("reviewer@example.com");
+});
+
+test("test quoted printable", async () => {
+const mbox =
+    `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
+Message-Id: <pull.12345.v17.git.gitgitgadget@example.com>
+From:   =?utf-8?B?w4Z2YXIgQXJuZmrDtnLDsA==?= Bjarmason <avarab@gmail.com>
+Date: Fri Sep 21 12:34:56 2001
+Subject: [PATCH 0/3] My first Pull Request!
+Fcc: Sent
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+To: reviewer@example.com
+Cc: Some Body <somebody@example.com>,
+ And Somebody Else <somebody@else.org>
+
+This Pull Request contains some really important changes that I would love to
+have included in git.git.
+=31=32=33=34
+2.17.0.windows.1
+`;
+
+    const parsed = await parseMBox(mbox);
+    const body = PublicInboxGitHelper.mbox2markdown(parsed);
+    expect(body).toMatch(/1234/);
+});
+
+test("test base64", async () => {
+const mailBody = "Base 64 Data";
+const mbox =
+    `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
+Message-Id: <pull.12345.v17.git.gitgitgadget@example.com>
+From:   =?utf-8?B?w4Z2YXIgQXJuZmrDtnLDsA==?= Bjarmason <avarab@gmail.com>
+Date: Fri Sep 21 12:34:56 2001
+Subject: [PATCH 0/3] My first Pull Request!
+Fcc: Sent
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: BaSe64
+MIME-Version: 1.0
+To: reviewer@example.com
+Cc: Some Body <somebody@example.com>,
+ And Somebody Else <somebody@else.org>
+
+${Buffer.from(mailBody).toString("base64")}`;
+
+    const parsed = await parseMBox(mbox);
+    const body = PublicInboxGitHelper.mbox2markdown(parsed);
+    expect(body).toMatch(mailBody);
+});
+
+test("test empty body", async () => {
+const mbox =
+    `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
+Message-Id: <pull.12345.v17.git.gitgitgadget@example.com>
+From:   =?utf-8?B?w4Z2YXIgQXJuZmrDtnLDsA==?= Bjarmason <avarab@gmail.com>
+Date: Fri Sep 21 12:34:56 2001
+Subject: [PATCH 0/3] My first Pull Request!
+Fcc: Sent
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: BaSe64
+MIME-Version: 1.0
+To: reviewer@example.com
+Cc: Some Body <somebody@example.com>,
+ And Somebody Else <somebody@else.org>
+
+`;
+
+    const parsed = await parseMBox(mbox);
+    const body = PublicInboxGitHelper.mbox2markdown(parsed);
+    expect(body).toMatch(/^$/);
 });

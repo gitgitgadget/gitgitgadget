@@ -3,7 +3,8 @@ import { git, revParse } from "./git";
 import { GitNotes } from "./git-notes";
 import { GitHubGlue } from "./github-glue";
 import { IMailMetadata } from "./mail-metadata";
-import { parseMBox, parseMBoxMessageIDAndReferences } from "./send-mail";
+import { IParsedMBox, parseMBox,
+    parseMBoxMessageIDAndReferences } from "./send-mail";
 
 const stateKey = "git@vger.kernel.org <-> GitGitGadget";
 const replyToThisURL =
@@ -37,14 +38,32 @@ export class PublicInboxGitHelper {
         return hash.digest("hex");
     }
 
-    public static mbox2markdown(mbox: string): string {
-        const eoh = mbox.indexOf("\n\n");
-        if (eoh < 0) {
+    public static mbox2markdown(mbox: IParsedMBox): string {
+        let body = mbox.body;
+
+        for (const header of mbox.headers!) {
+            if (header.key === "Content-Transfer-Encoding") {
+                const value = header.value.toLowerCase();
+                if (value === "base64") {
+                    body = Buffer.from(body, "base64").toString();
+                } else if (value === "quoted-printable") {
+                    const stringFromCharCode = String.fromCharCode;
+                    body = body.replace(/[\t\x20]$/gm, "")
+                        .replace(/=(?:\r\n?|\n|$)/g, "")
+                        .replace(/=([a-fA-F0-9]{2})/g, (_$0, $1) => {
+                            const codePoint = parseInt($1, 16);
+                            return stringFromCharCode(codePoint);
+                    });
+                }
+            }
+        }
+
+        if (!body.length) {
             return "";
         }
 
         return "``````````\n" +
-            mbox.substr(eoh + 2) + (mbox.endsWith("\n") ? "" : "\n") +
+            body + (body.endsWith("\n") ? "" : "\n") +
             "``````````\n";
     }
 
@@ -116,7 +135,7 @@ export class PublicInboxGitHelper {
                      parsed.from.replace(/ *<.*>/, "") : "Somebody") +
                      ` wrote ([reply to this](${replyToThisURL})):\n\n`;
                 const comment = header +
-                    PublicInboxGitHelper.mbox2markdown(mbox);
+                    PublicInboxGitHelper.mbox2markdown(parsed);
 
                 if (issueCommentId) {
                     const result =  await this.githubGlue
