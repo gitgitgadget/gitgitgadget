@@ -199,7 +199,43 @@ export class MailArchiveGitHelper {
              */
             this.state.latestRevision =
                 "3b38d8d206c64bf3dc873ba8ae9dbd48ed43f612";
+        } else if (await revParse(this.state.latestRevision,
+                                  this.mailArchiveGitDir) === undefined) {
+            const publicInboxGitDir = process.env.PUBLIC_INBOX_DIR;
+            if (publicInboxGitDir === undefined) {
+                throw new Error(`Commit ${this.state.latestRevision
+                                } not found; need PUBLIC_INBOX_DIR`);
+            }
+            let commitDiff =
+                await git(["show", this.state.latestRevision, "--"],
+                          { workDir: publicInboxGitDir });
+            if (!commitDiff) {
+                throw new Error(`Could not find ${this.state.latestRevision
+                                } in ${publicInboxGitDir}`);
+            }
+            const match = commitDiff.match(/\n\+(Message-ID: [^\n]*)/);
+            if (!match) {
+                throw new Error(`Could not find Message-ID in ${commitDiff}`);
+            }
+            let commit = "HEAD";
+            for (;;) {
+                commit = await git(["log", "-1", "--format=%H", `-S${match[1]}`,
+                                    commit, "--"],
+                                   { workDir: this.mailArchiveGitDir});
+                if (!commit) {
+                    throw new Error(`Could not find ${this.state.latestRevision
+                                }'s equivalent in ${this.mailArchiveGitDir}`);
+                }
+                commitDiff = await git(["show", commit, "--"],
+                                       {workDir: this.mailArchiveGitDir});
+                if (commitDiff.indexOf(`\n+${match[1]}\n`) >= 0) {
+                    break;
+                }
+                commit += "^"; /* continue search with the parent commit */
+            }
+            this.state.latestRevision = commit;
         }
+
         const head = await revParse("master", this.mailArchiveGitDir);
         if (this.state.latestRevision === head) {
             return false;
