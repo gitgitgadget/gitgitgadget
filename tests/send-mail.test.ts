@@ -2,7 +2,7 @@ import "jest";
 import { PublicInboxGitHelper } from "../lib/public-inbox-helper";
 import { parseMBox } from "../lib/send-mail";
 
-const mbox =
+const mbox0 =
     `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
 Message-Id: <pull.12345.v17.git.gitgitgadget@example.com>
 From:   =?utf-8?B?w4Z2YXIgQXJuZmrDtnLDsA==?= Bjarmason <avarab@gmail.com>
@@ -43,7 +43,7 @@ base-commit: 0ae4d8d45ce43d7ad56faff2feeacf8ed5293518
 `;
 
 test("parse mbox", async () => {
-    const parsed = await parseMBox(mbox);
+    const parsed = await parseMBox(mbox0);
     expect(parsed.from).toEqual("Ævar Arnfjörð Bjarmason <avarab@gmail.com>");
     expect(parsed.cc).toEqual([
         "Some Body <somebody@example.com>",
@@ -59,7 +59,7 @@ test("parse mbox", async () => {
 });
 
 test("test quoted printable", async () => {
-const mbox =
+    const mbox =
     `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
 Message-Id: <pull.12345.v17.git.gitgitgadget@example.com>
 From:   =?utf-8?B?w4Z2YXIgQXJuZmrDtnLDsA==?= Bjarmason <avarab@gmail.com>
@@ -85,8 +85,8 @@ have included in git.git.
 });
 
 test("test base64", async () => {
-const mailBody = "Base 64 Data";
-const mbox =
+    const mailBody = "Base 64 Data";
+    const mbox =
     `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
 Message-Id: <pull.12345.v17.git.gitgitgadget@example.com>
 From:   =?utf-8?B?w4Z2YXIgQXJuZmrDtnLDsA==?= Bjarmason <avarab@gmail.com>
@@ -108,7 +108,7 @@ ${Buffer.from(mailBody).toString("base64")}`;
 });
 
 test("test empty body", async () => {
-const mbox =
+    const mbox =
     `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
 Message-Id: <pull.12345.v17.git.gitgitgadget@example.com>
 From:   =?utf-8?B?w4Z2YXIgQXJuZmrDtnLDsA==?= Bjarmason <avarab@gmail.com>
@@ -125,6 +125,6 @@ Cc: Some Body <somebody@example.com>,
 `;
 
     const parsed = await parseMBox(mbox);
-    const body = PublicInboxGitHelper.mbox2markdown(parsed);
+    const body = MailArchiveGitHelper.mbox2markdown(parsed);
     expect(body).toMatch(/^$/);
 });
