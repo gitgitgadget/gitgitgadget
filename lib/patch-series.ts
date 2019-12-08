@@ -84,7 +84,12 @@ export class PatchSeries {
             const tagMessage = await git(["cat-file", "tag", latestTag]);
             match = tagMessage.match(/^[\s\S]*?\n\n([\s\S]*)/);
             (match ? match[1] : tagMessage).split("\n").map((line) => {
-                match = line.match(/https:\/\/public-inbox\.org\/.*\/([^\/]+)/);
+                // tslint:disable-next-line:max-line-length
+                match = line.match(/https:\/\/lore\.kernel\.org\/.*\/([^\/]+)/);
+                if (!match) {
+                    // tslint:disable-next-line:max-line-length
+                    match = line.match(/https:\/\/public-inbox\.org\/.*\/([^\/]+)/);
+                }
                 if (!match) {
                     // tslint:disable-next-line:max-line-length
                     match = line.match(/https:\/\/www\.mail-archive\.com\/.*\/([^\/]+)/);

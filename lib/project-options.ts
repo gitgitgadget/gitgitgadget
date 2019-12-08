@@ -58,7 +58,7 @@ export class ProjectOptions {
                           { workDir })) {
                 upstreamBranch = "upstream/master";
             }
-            midUrlPrefix = "https://public-inbox.org/git/";
+            midUrlPrefix = "https://lore.kernel.org/git/";
         } else if (await commitExists("a3acbf46947e52ff596", workDir)) {
             // Cygwin
             to = "--to=cygwin-patches@cygwin.com";

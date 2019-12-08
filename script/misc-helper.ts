@@ -410,17 +410,17 @@ async function getCIHelper(): Promise<CIHelper> {
 
         await ci.handlePush(repositoryOwner, prNumber);
     } else if (command === "handle-new-mails") {
-        const publicInboxGitDir =
-            await gitConfig("gitgitgadget.publicInboxGitDir");
-        if (!publicInboxGitDir) {
-            process.stderr.write("Need a public-inbox/git worktree");
+        const mailArchiveGitDir =
+            await gitConfig("gitgitgadget.loreGitDir");
+        if (!mailArchiveGitDir) {
+            process.stderr.write("Need a lore.kernel/git worktree");
             process.exit(1);
         }
         const onlyPRs = new Set<number>();
         for (const arg of commander.args.slice(1)) {
             onlyPRs.add(parseInt(arg, 10));
         }
-        await ci.handleNewMails(publicInboxGitDir!,
+        await ci.handleNewMails(mailArchiveGitDir!,
                                 onlyPRs.size ? onlyPRs : undefined);
     } else {
         process.stderr.write(`${command}: unhandled sub-command\n`);
