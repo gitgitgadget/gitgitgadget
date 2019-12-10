@@ -186,7 +186,7 @@ export class PatchSeries {
 
         const publishToRemote = undefined;
 
-        const project = await ProjectOptions.get(workDir, headCommit, cc || [],
+        const project = await ProjectOptions.get(workDir, headCommit, cc,
                                                  basedOn, publishToRemote,
                                                  baseCommit);
 
@@ -200,17 +200,16 @@ export class PatchSeries {
     protected static parsePullRequestDescription(description: string): {
         coverLetter: string,
         basedOn?: string,
-        cc?: string[],
+        cc: string[],
     } {
         let basedOn;
-        let cc: string[] | undefined;
+        const cc: string[] = [];
         let coverLetter = description.trim();
 
         // parse the footers of the pullRequestDescription
         const match = description.match(/^([^]+)\n\n([^]+)$/);
         if (match) {
             coverLetter = match[1];
-            cc = [];
             const footer: string[] = [];
             for (const line of match[2].trimRight().split("\n")) {
                 const match2 = line.match(/^([-A-Za-z]+:) (.*)\n?$/);
