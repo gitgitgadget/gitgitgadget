@@ -235,13 +235,13 @@ export class PatchSeries {
             throw new Error("A pull request description must be provided");
         }
 
-        const description = `${prTitle}\n\n${prBody}`;
-
         const {
             basedOn,
             cc,
-            coverLetter,
-        } = PatchSeries.parsePullRequestDescription(description);
+            coverLetterBody,
+        } = PatchSeries.parsePullRequestBody(prBody);
+
+        const coverLetter = `${prTitle}\n\n${coverLetterBody}`;
 
         const wrapCoverLetterAtColumn = 76;
         const wrappedLetter = md2text(coverLetter, wrapCoverLetterAtColumn);
@@ -253,19 +253,19 @@ export class PatchSeries {
         };
     }
 
-    protected static parsePullRequestDescription(description: string): {
-        coverLetter: string,
+    protected static parsePullRequestBody(prBody: string): {
+        coverLetterBody: string,
         basedOn?: string,
         cc: string[],
     } {
         let basedOn;
         const cc: string[] = [];
-        let coverLetter = description.trim();
+        let coverLetterBody = prBody.trim();
 
         // parse the footers of the pullRequestDescription
-        const match = description.match(/^([^]+)\n\n([^]+)$/);
+        const match = prBody.match(/^([^]+)\n\n([^]+)$/);
         if (match) {
-            coverLetter = match[1];
+            coverLetterBody = match[1];
             const footer: string[] = [];
             for (const line of match[2].trimRight().split("\n")) {
                 const match2 = line.match(/^([-A-Za-z]+:) (.*)$/);
@@ -290,13 +290,13 @@ export class PatchSeries {
             }
 
             if (footer.length > 0) {
-                coverLetter += `\n\n${footer.join("\n")}`;
+                coverLetterBody += `\n\n${footer.join("\n")}`;
             }
         }
         return {
             basedOn,
             cc,
-            coverLetter,
+            coverLetterBody,
         };
     }
 
