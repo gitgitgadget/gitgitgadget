@@ -213,14 +213,19 @@ export class PatchSeries {
         basedOn?: string,
         cc: string[],
     }> {
+        // Replace \r\n with \n to simplify remaining parsing.
+        // Note that md2text() in the end will do the replacement anyway.
+        prBody = prBody.replace(/\r\n/g, "\n");
+
         // Remove template from description (if template exists)
         try {
             let prTemplate =
                 await git(["show",
                            "upstream/master:.github/PULL_REQUEST_TEMPLATE.md"],
                           { workDir });
-            // github uses \r\n so make sure it is set
-            prTemplate = prTemplate.replace(/\r?\n/g, "\r\n");
+            // Depending on the core.autocrlf setting, the template may contain
+            // \r\n line endings.
+            prTemplate = prTemplate.replace(/\r\n/g, "\n");
             prBody = prBody.replace(prTemplate, "");
         } catch {
             // Just ignore it
@@ -263,7 +268,7 @@ export class PatchSeries {
             coverLetter = match[1];
             const footer: string[] = [];
             for (const line of match[2].trimRight().split("\n")) {
-                const match2 = line.match(/^([-A-Za-z]+:) (.*)\n?$/);
+                const match2 = line.match(/^([-A-Za-z]+:) (.*)$/);
                 if (!match2) {
                     footer.push(line);
                 } else {
