@@ -1,5 +1,7 @@
 import "jest";
 import { PatchSeries } from "../lib/patch-series";
+import { testCreateRepo } from "./test-lib";
+import { git } from "../lib/git";
 
 const mbox1 =
     `From 38d1082511bb02a709f203481c2787adc6e67c02 Mon Sep 17 00:00:00 2001
@@ -405,6 +407,44 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             expect(log).toHaveBeenCalledTimes(1); // verify no more errors
         });
 
+        test("test parsePullRequest()", async () => {
+            const repo = await testCreateRepo(__filename);
+            await git(["config", "gitgitgadget.workDir", repo.workDir], {
+                workDir: repo.workDir,
+            });
+            await repo.newBranch("upstream/master");
+            await repo.commit("template", ".github/PULL_REQUEST_TEMPLATE.md", [
+                "This is PR template",
+                "Please read our guide to continue",
+            ].join("\n"))
+
+            const prTitle = "My test PR!";
+            const prBody = [
+                "some description goes here",
+                "",
+                "Cc: Some Contributor <contributor@example.com>",
+                "Cc: Git Maintainer <maintainer@gmail.com>",
+                "This is PR template",
+                "Please read our guide to continue",
+            ].join("\r\n");
+
+            const parsed = await PatchSeries.parsePullRequest(repo.workDir,
+                                                              prTitle,
+                                                              prBody);
+
+            expect(parsed.cc).toEqual([
+                "Some Contributor <contributor@example.com>",
+                "Git Maintainer <maintainer@gmail.com>",
+            ]);
+
+            const expectedCover = [
+                "My test PR!",
+                "",
+                "some description goes here",
+            ].join("\n");
+
+            expect(parsed.coverLetter).toEqual(expectedCover);
+        });
     }
 }
 
