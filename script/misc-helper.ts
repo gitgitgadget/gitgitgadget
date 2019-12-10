@@ -12,8 +12,15 @@ commander.version("1.0.0")
     .usage("[options] ( update-open-prs | lookup-upstream-commit | "
         + "annotate-commit <pr-number> <original> <git.git> )")
     .description("Command-line helper for GitGitGadget")
-    .option("-w, --work-dir [directory]",
-            "Use a different GitGitGadget working directory than '.'", ".")
+    .option("-g, --git-work-dir [directory]",
+            "Use a different git.git working directory than specified via "
+            + "`gitgitgadget.workDir`",
+            undefined)
+    .option("-G, --gitgitgadget-work-dir [directory]",
+            "Use a different gitgitgitgadget working directory than the "
+            + "current working directory to access the Git config e.g. for "
+            + "`gitgitgadget.workDir`",
+            ".")
     .option("-s, --skip-update",
             "Do not update the local refs (useful for debugging)")
     .parse(process.argv);
@@ -23,25 +30,27 @@ if (commander.args.length === 0) {
 }
 
 async function getGitGitWorkDir(): Promise<string> {
-    if (!commander.gitGitWorkDir) {
-        commander.gitGitWorkDir = await gitConfig("gitgitgadget.workDir");
-        if (!commander.gitGitWorkDir) {
+    if (!commander.gitWorkDir) {
+        commander.gitWorkDir = await gitConfig("gitgitgadget.workDir",
+                                               commander.gitgitgadgetWorkDir);
+        if (!commander.gitWorkDir) {
             throw new Error(`Could not determine gitgitgadget.workDir`);
         }
     }
-    if (!await isDirectory(commander.gitGitWorkDir)) {
-        console.log(`Cloning git into ${commander.gitGitWorkDir}`);
+    if (!await isDirectory(commander.gitWorkDir)) {
+        console.log(`Cloning git into ${commander.gitWorkDir}`);
         await git([
             "clone",
             "https://github.com/gitgitgadget/git",
-            commander.gitGitWorkDir,
+            commander.gitWorkDir,
         ]);
     }
-    return commander.gitGitWorkDir;
+    return commander.gitWorkDir;
 }
 
 async function getCIHelper(): Promise<CIHelper> {
-    return new CIHelper(await getGitGitWorkDir(), commander.skipUpdate);
+    return new CIHelper(await getGitGitWorkDir(), commander.skipUpdate,
+                        commander.gitgitgadgetWorkDir);
 }
 
 (async () => {

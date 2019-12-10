@@ -23,15 +23,15 @@ export class CIHelper {
     public readonly notes: GitNotes;
     protected readonly mail2commit: MailCommitMapping;
     protected readonly github: GitHubGlue;
-    protected readonly gggConfig: string;
+    protected readonly gggConfigDir: string;
     protected commit2mailNotes: GitNotes | undefined;
     protected testing: boolean;
     private gggNotesUpdated: boolean;
     private mail2CommitMapUpdated: boolean;
 
     public constructor(workDir?: string, skipUpdate?: boolean,
-                       gggConfig = ".") {
-        this.gggConfig = gggConfig;
+                       gggConfigDir = ".") {
+        this.gggConfigDir = gggConfigDir;
         this.workDir = workDir;
         this.notes = new GitNotes(workDir);
         this.gggNotesUpdated = !!skipUpdate;
@@ -527,7 +527,7 @@ export class CIHelper {
         };
 
         try {
-            const gitGitGadget = await GitGitGadget.get(this.gggConfig,
+            const gitGitGadget = await GitGitGadget.get(this.gggConfigDir,
                                                         this.workDir);
             if (!gitGitGadget.isUserAllowed(comment.author)) {
                 throw new Error(`User ${
