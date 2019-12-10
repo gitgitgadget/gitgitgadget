@@ -179,7 +179,7 @@ export class PatchSeries {
             basedOn,
             cc,
             coverLetter,
-        } = PatchSeries.parsePullRequestDescription(pullRequestDescription);
+        } = PatchSeries.parsePullRequest(pullRequestDescription);
 
         // if known, add submitter to email chain
         if (senderEmail) {
@@ -196,11 +196,31 @@ export class PatchSeries {
                                                  basedOn, publishToRemote,
                                                  baseCommit);
 
-        const wrapCoverLetterAtColumn = 76;
         return new PatchSeries(notes, options, project, metadata,
                                rangeDiff,
-                               md2text(coverLetter, wrapCoverLetterAtColumn),
+                               coverLetter,
                                senderName);
+    }
+
+    protected static parsePullRequest(description: string): {
+        coverLetter: string,
+        basedOn?: string,
+        cc: string[],
+    } {
+        const {
+            basedOn,
+            cc,
+            coverLetter,
+        } = PatchSeries.parsePullRequestDescription(description);
+
+        const wrapCoverLetterAtColumn = 76;
+        const wrappedLetter = md2text(coverLetter, wrapCoverLetterAtColumn);
+
+        return {
+            basedOn,
+            cc,
+            coverLetter: wrappedLetter,
+        };
     }
 
     protected static parsePullRequestDescription(description: string): {
