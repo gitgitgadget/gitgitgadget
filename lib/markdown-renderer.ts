@@ -17,6 +17,16 @@ class MyOptions implements HtmlToTextOptions {
                 .replace(/./g, "=");
             return `${heading}\n${underline}\n\n`;
         },
+        blockquote(elem: any, fn: any, options: any): string {
+            const indentOptions = Object.assign({}, options);
+            // decrease word wrap, but only to a minimum of 20 columns/line
+            indentOptions.wordwrap = Math.max(20, options.wordwrap - 2);
+
+            const block: string = fn(elem.children, indentOptions);
+            return block.replace(/^>/mg, ">>") // add to quote
+                .replace(/^(?!>|$)/mg, "> ")   // new quote
+                .replace(/(^|\n)(\n)(?!$)/g, "$1>$2"); // quote empty lines
+        },
     };
 
     public constructor(columns?: number) {
