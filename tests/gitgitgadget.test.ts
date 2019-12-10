@@ -193,23 +193,21 @@ test("generate tag/notes from a Pull Request", async () => {
     const headCommit = await repo.revParse("HEAD");
 
     const pullRequestURL = "https://github.com/gitgitgadget/git/pull/1";
+    const pullRequestTitle = "My first Pull Request!";
     // tslint:disable-next-line:max-line-length
-    const description = `My first Pull Request!
-
-This Pull Request contains some really important changes that I would love to${
+    const pullRequestBody = `This Pull Request contains some really important changes that I would love to${
         ""} have included in [git.git](https://github.com/git/git).
 
 Cc: Some Body <somebody@example.com>
 `;
-    const match2 = description.match(/^([^]+)\n\n([^]+)$/);
-    expect(match2).toBeTruthy();
 
     await git(["config", "user.name", "GitGitGadget"], repo.options);
     await git(["config", "user.email", "gitgitgadget@example.com"],
               repo.options);
 
     const patches =
-        await PatchSeries.getFromNotes(notes, pullRequestURL, description,
+        await PatchSeries.getFromNotes(notes, pullRequestURL, pullRequestTitle,
+                                       pullRequestBody,
                                        "gitgitgadget:next", baseCommit,
                                        "somebody:master", headCommit,
                                        {}, "GitHub User", undefined);
@@ -240,7 +238,8 @@ to have included in git.git [https://github.com/git/git].`);
 
     const headCommit2 = await repo.revParse("HEAD");
     const patches2 =
-        await PatchSeries.getFromNotes(notes, pullRequestURL, description,
+        await PatchSeries.getFromNotes(notes, pullRequestURL, pullRequestTitle,
+                                       pullRequestBody,
                                        "gitgitgadget:next", baseCommit,
                                        "somebody:master", headCommit2,
                                        {}, "GitHub User", undefined);

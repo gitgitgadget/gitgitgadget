@@ -271,29 +271,9 @@ export class GitGitGadget {
         // update work repo from base
         await this.updateNotesAndPullRef(pr.baseOwner, pr.number, previousTag);
 
-        // Remove template from description (if template exists)
-        let prBody: string;
-        try {
-            let prTemplate =
-                await git(["show",
-                           "upstream/master:.github/PULL_REQUEST_TEMPLATE.md"],
-                          { workDir: this.workDir });
-            // github uses \r\n so make sure it is set
-            prTemplate = prTemplate.replace(/\r?\n/g, "\r\n");
-            prBody = pr.body.replace(prTemplate, "");
-        } catch {
-            prBody = pr.body;
-        }
-
-        if (!prBody.length) {       // reject empty description
-            throw new Error("A pull request description must be provided");
-        }
-
-        const description = `${pr.title}\n\n${prBody}`;
-
         const series =
             await PatchSeries.getFromNotes(this.notes, pr.pullRequestURL,
-                                           description, pr.baseLabel,
+                                           pr.title, pr.body, pr.baseLabel,
                                            pr.baseCommit, pr.headLabel,
                                            pr.headCommit, options,
                                            userInfo.name, userInfo.email);

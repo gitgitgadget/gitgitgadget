@@ -117,7 +117,8 @@ export class PatchSeries {
 
     public static async getFromNotes(notes: GitNotes,
                                      pullRequestURL: string,
-                                     pullRequestDescription: string,
+                                     pullRequestTitle: string,
+                                     pullRequestBody: string,
                                      baseLabel: string, baseCommit: string,
                                      headLabel: string, headCommit: string,
                                      options: PatchSeriesOptions,
@@ -179,7 +180,9 @@ export class PatchSeries {
             basedOn,
             cc,
             coverLetter,
-        } = PatchSeries.parsePullRequest(pullRequestDescription);
+        } = await PatchSeries.parsePullRequest(workDir,
+                                               pullRequestTitle,
+                                               pullRequestBody);
 
         // if known, add submitter to email chain
         if (senderEmail) {
@@ -202,11 +205,33 @@ export class PatchSeries {
                                senderName);
     }
 
-    protected static parsePullRequest(description: string): {
+    protected static async parsePullRequest(workDir: string,
+                                            prTitle: string,
+                                            prBody: string):
+    Promise <{
         coverLetter: string,
         basedOn?: string,
         cc: string[],
-    } {
+    }> {
+        // Remove template from description (if template exists)
+        try {
+            let prTemplate =
+                await git(["show",
+                           "upstream/master:.github/PULL_REQUEST_TEMPLATE.md"],
+                          { workDir });
+            // github uses \r\n so make sure it is set
+            prTemplate = prTemplate.replace(/\r?\n/g, "\r\n");
+            prBody = prBody.replace(prTemplate, "");
+        } catch {
+            // Just ignore it
+        }
+
+        if (!prBody.length) {       // reject empty description
+            throw new Error("A pull request description must be provided");
+        }
+
+        const description = `${prTitle}\n\n${prBody}`;
+
         const {
             basedOn,
             cc,
