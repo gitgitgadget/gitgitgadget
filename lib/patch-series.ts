@@ -121,7 +121,8 @@ export class PatchSeries {
                                      baseLabel: string, baseCommit: string,
                                      headLabel: string, headCommit: string,
                                      options: PatchSeriesOptions,
-                                     senderName?: string):
+                                     senderName?: string,
+                                     senderEmail?: string):
         Promise<PatchSeries> {
         const workDir = notes.workDir;
         if (!workDir) {
@@ -179,6 +180,11 @@ export class PatchSeries {
             cc,
             coverLetter,
         } = PatchSeries.parsePullRequestDescription(pullRequestDescription);
+
+        // if known, add submitter to email chain
+        if (senderEmail) {
+            cc.push(`${senderName} <${senderEmail}>`);
+        }
 
         if (basedOn && !revParse(basedOn, workDir)) {
             throw new Error(`Cannot find base branch ${basedOn}`);

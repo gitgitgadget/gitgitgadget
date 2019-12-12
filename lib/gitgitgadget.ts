@@ -289,17 +289,14 @@ export class GitGitGadget {
             throw new Error("A pull request description must be provided");
         }
 
-        // if known, add submitter to email chain
-        const ccSubmitter = userInfo.email ? `\nCc: ${
-            userInfo.name} <${userInfo.email}>` : "";
-        const description = `${pr.title}\n\n${prBody}${ccSubmitter}`;
+        const description = `${pr.title}\n\n${prBody}`;
 
         const series =
             await PatchSeries.getFromNotes(this.notes, pr.pullRequestURL,
                                            description, pr.baseLabel,
                                            pr.baseCommit, pr.headLabel,
                                            pr.headCommit, options,
-                                           userInfo.name);
+                                           userInfo.name, userInfo.email);
 
         const coverMid =
             await series.generateAndSend(console, send,
