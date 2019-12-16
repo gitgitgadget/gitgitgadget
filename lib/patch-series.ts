@@ -122,11 +122,13 @@ export class PatchSeries {
 
     public static async getFromNotes(notes: GitNotes,
                                      pullRequestURL: string,
-                                     pullRequestDescription: string,
+                                     pullRequestTitle: string,
+                                     pullRequestBody: string,
                                      baseLabel: string, baseCommit: string,
                                      headLabel: string, headCommit: string,
                                      options: PatchSeriesOptions,
-                                     senderName?: string):
+                                     senderName?: string,
+                                     senderEmail?: string):
         Promise<PatchSeries> {
         const workDir = notes.workDir;
         if (!workDir) {
@@ -183,7 +185,14 @@ export class PatchSeries {
             basedOn,
             cc,
             coverLetter,
-        } = PatchSeries.parsePullRequestDescription(pullRequestDescription);
+        } = await PatchSeries.parsePullRequest(workDir,
+                                               pullRequestTitle,
+                                               pullRequestBody);
+
+        // if known, add submitter to email chain
+        if (senderEmail) {
+            cc.push(`${senderName} <${senderEmail}>`);
+        }
 
         if (basedOn && !revParse(basedOn, workDir)) {
             throw new Error(`Cannot find base branch ${basedOn}`);
@@ -191,46 +200,92 @@ export class PatchSeries {
 
         const publishToRemote = undefined;
 
-        const project = await ProjectOptions.get(workDir, headCommit, cc || [],
+        const project = await ProjectOptions.get(workDir, headCommit, cc,
                                                  basedOn, publishToRemote,
                                                  baseCommit);
 
-        const wrapCoverLetterAtColumn = 76;
         return new PatchSeries(notes, options, project, metadata,
                                rangeDiff,
-                               md2text(coverLetter, wrapCoverLetterAtColumn),
+                               coverLetter,
                                senderName);
     }
 
-    protected static parsePullRequestDescription(description: string): {
+    protected static async parsePullRequest(workDir: string,
+                                            prTitle: string,
+                                            prBody: string):
+    Promise <{
         coverLetter: string,
         basedOn?: string,
-        cc?: string[],
+        cc: string[],
+    }> {
+        // Replace \r\n with \n to simplify remaining parsing.
+        // Note that md2text() in the end will do the replacement anyway.
+        prBody = prBody.replace(/\r\n/g, "\n");
+
+        // Remove template from description (if template exists)
+        try {
+            let prTemplate =
+                await git(["show",
+                           "upstream/master:.github/PULL_REQUEST_TEMPLATE.md"],
+                          { workDir });
+            // Depending on the core.autocrlf setting, the template may contain
+            // \r\n line endings.
+            prTemplate = prTemplate.replace(/\r\n/g, "\n");
+            prBody = prBody.replace(prTemplate, "");
+        } catch {
+            // Just ignore it
+        }
+
+        if (!prBody.length) {       // reject empty description
+            throw new Error("A pull request description must be provided");
+        }
+
+        const {
+            basedOn,
+            cc,
+            coverLetterBody,
+        } = PatchSeries.parsePullRequestBody(prBody);
+
+        const coverLetter = `${prTitle}\n\n${coverLetterBody}`;
+
+        const wrapCoverLetterAtColumn = 76;
+        const wrappedLetter = md2text(coverLetter, wrapCoverLetterAtColumn);
+
+        return {
+            basedOn,
+            cc,
+            coverLetter: wrappedLetter,
+        };
+    }
+
+    protected static parsePullRequestBody(prBody: string): {
+        coverLetterBody: string,
+        basedOn?: string,
+        cc: string[],
     } {
         let basedOn;
-        let cc: string[] | undefined;
-        let coverLetter = description.trim();
+        const cc: string[] = [];
+        let coverLetterBody = prBody.trim();
 
         // parse the footers of the pullRequestDescription
-        const match = description.match(/^([^]+)\n\n([^]+)$/);
+        const match = prBody.match(/^([^]+)\n\n([^]+)$/);
         if (match) {
-            coverLetter = match[1];
-            cc = [];
+            coverLetterBody = match[1];
             const footer: string[] = [];
             for (const line of match[2].trimRight().split("\n")) {
-                const match2 = line.match(/^([-A-Za-z]+:) (.*)\n?$/);
+                const match2 = line.match(/^([-A-Za-z]+:) (.*)$/);
                 if (!match2) {
                     footer.push(line);
                 } else {
-                    switch (match2[1]) {
-                        case "Based-On":
+                    switch (match2[1].toLowerCase()) {
+                        case "based-on":
                             if (basedOn) {
                                 throw new Error(`Duplicate Based-On footer: ${
                                     basedOn} vs ${match2[2]}`);
                             }
                             basedOn = match2[2];
                             break;
-                        case "Cc:":
+                        case "cc:":
                             cc.push(match2[2]);
                             break;
                         default:
@@ -240,13 +295,13 @@ export class PatchSeries {
             }
 
             if (footer.length > 0) {
-                coverLetter += `\n\n${footer.join("\n")}`;
+                coverLetterBody += `\n\n${footer.join("\n")}`;
             }
         }
         return {
             basedOn,
             cc,
-            coverLetter,
+            coverLetterBody,
         };
     }
 
