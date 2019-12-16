@@ -272,15 +272,15 @@ export class PatchSeries {
                 if (!match2) {
                     footer.push(line);
                 } else {
-                    switch (match2[1]) {
-                        case "Based-On":
+                    switch (match2[1].toLowerCase()) {
+                        case "based-on":
                             if (basedOn) {
                                 throw new Error(`Duplicate Based-On footer: ${
                                     basedOn} vs ${match2[2]}`);
                             }
                             basedOn = match2[2];
                             break;
-                        case "Cc:":
+                        case "cc:":
                             cc.push(match2[2]);
                             break;
                         default:
