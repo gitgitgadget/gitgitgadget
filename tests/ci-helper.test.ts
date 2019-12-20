@@ -654,3 +654,97 @@ test("handle comment preview email success", async () => {
         await ci.handleComment("gitgitgadget", 433865360); // should still be v2
     }
 });
+
+test("handle push/comment too many commits fails", async () => {
+    let { worktree,
+          gggLocal,
+          gggRemote,
+    } = await setupRepos("pu1");
+
+    const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
+    const prNumber = 59;
+
+    const A = await gggRemote.revParse("HEAD");
+    expect(A).not.toBeUndefined();
+
+    // Now come up with a local change
+    // this should be in a separate repo from the worktree
+    await worktree.git(["pull", gggRemote.workDir, "master"]);
+    const B = await worktree.commit("b");
+
+    // get the pr refs in place
+    const pullRequestRef = `refs/pull/${prNumber}`;
+    await gggRemote.git(["fetch", worktree.workDir,
+        `refs/heads/master:${pullRequestRef}/head`,
+        `refs/heads/master:${pullRequestRef}/merge`]); // fake merge
+
+    const commits = 40;
+
+    // GitHubGlue Responses
+    let comment = {
+        author: "ggg",
+        body: "/submit   ",
+        prNumber: prNumber,
+    };
+    const user = {
+        email: "preview@example.com",
+        login: "ggg",
+        name: "e. e. cummings",
+        type: "basic",
+    };
+    const prinfo = {
+        author: "ggg",
+        baseCommit: A,
+        baseLabel: "gitgitgadget:next",
+        baseOwner: "gitgitgadget",
+        baseRepo: "git",
+        body: "Never seen - too many commits.",
+        commits: commits,
+        hasComments: false,
+        headCommit: B,
+        headLabel: "somebody:master",
+        mergeable: true,
+        number: prNumber,
+        pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
+        title: "Preview a fun fix",
+    };
+
+    ci.setGHgetPRInfo(prinfo);
+    ci.setGHgetPRComment(comment);
+    ci.setGHgetGitHubUserInfo(user);
+
+    const failMsg = `The pull request has ${commits} commits.`;
+    // fail for too many commits on push
+    await expect(ci.handlePush("gitgitgadget", 433865360)).
+        rejects.toThrow(/Failing check due/);
+
+    expect(ci.addPRComment.mock.calls[0][1]).toMatch(failMsg);
+    ci.addPRComment.mock.calls.length = 0;
+
+    // fail for too many commits on submit
+    await ci.handleComment("gitgitgadget", 433865360);
+    expect(ci.addPRComment.mock.calls[0][1]).toMatch(failMsg);
+    ci.addPRComment.mock.calls.length = 0;
+
+    // fail for too many commits on preview
+    comment.body = " /preview";
+    ci.setGHgetPRComment(comment);
+
+    await ci.handleComment("gitgitgadget", 433865360);
+    expect(ci.addPRComment.mock.calls[0][1]).toMatch(failMsg);
+    ci.addPRComment.mock.calls.length = 0;
+
+    // fail for too many commits push new user
+    prinfo.author = "starfish";
+    comment.author = "starfish";
+    user.login = "starfish";
+    ci.setGHgetPRInfo(prinfo);
+    ci.setGHgetPRComment(comment);
+    ci.setGHgetGitHubUserInfo(user);
+
+    await expect(ci.handlePush("gitgitgadget", 433865360)).
+        rejects.toThrow(/Failing check due/);
+
+    expect(ci.addPRComment.mock.calls[0][1]).toMatch(/Welcome/);
+    expect(ci.addPRComment.mock.calls[1][1]).toMatch(failMsg);
+});
