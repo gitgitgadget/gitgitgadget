@@ -423,7 +423,9 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
                 "some description goes here",
                 "",
                 "Cc: Some Contributor <contributor@example.com>",
-                "CC: Capital Letters <shout@out.loud>",
+                "CC: Capital Letters <shout@out.loud>, Hello <hello@wor.ld>"
+                + ", without@any.explicit.name"
+                + "; Semi Cologne <semi@col.on>",
                 "Cc: Git Maintainer <maintainer@gmail.com>",
                 "This is PR template",
                 "Please read our guide to continue",
@@ -436,6 +438,9 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             expect(parsed.cc).toEqual([
                 "Some Contributor <contributor@example.com>",
                 "Capital Letters <shout@out.loud>",
+                "Hello <hello@wor.ld>",
+                "without@any.explicit.name",
+                "Semi Cologne <semi@col.on>",
                 "Git Maintainer <maintainer@gmail.com>",
             ]);
 

@@ -1,3 +1,4 @@
+import addressparser = require("nodemailer/lib/addressparser");
 import { encodeWords } from "nodemailer/lib/mime-funcs";
 import {
     commitExists, git, gitCommandExists, gitConfig, revParse,
@@ -286,7 +287,13 @@ export class PatchSeries {
                             basedOn = match2[2];
                             break;
                         case "cc:":
-                            cc.push(match2[2]);
+                            addressparser(match2[2]).forEach((e) => {
+                                if (e.name) {
+                                    cc.push(`${e.name} <${e.address}>`);
+                                } else {
+                                    cc.push(e.address);
+                                }
+                            });
                             break;
                         default:
                             footer.push(line);
