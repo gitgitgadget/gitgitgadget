@@ -176,7 +176,7 @@ export class GitGitGadget {
         const send = async (mail: string): Promise<string> => {
             const mbox = await parseMBox(mail);
             mbox.cc = [];
-            mbox.to = userInfo.email;
+            mbox.to = userInfo.email!;
             console.log(mbox);
             return await sendMail(mbox, this.smtpOptions);
         };
