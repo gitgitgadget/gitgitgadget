@@ -25,7 +25,7 @@ export interface IPRComment {
 }
 
 export interface IGitHubUser {
-    email: string;                  // null if no public email
+    email: string | null;           // null if no public email
     login: string;
     name: string;
     type: string;

@@ -129,7 +129,7 @@ export class PatchSeries {
                                      headLabel: string, headCommit: string,
                                      options: PatchSeriesOptions,
                                      senderName?: string,
-                                     senderEmail?: string):
+                                     senderEmail?: string | null):
         Promise<PatchSeries> {
         const workDir = notes.workDir;
         if (!workDir) {
