@@ -16,6 +16,14 @@ steps:
   displayName: 'Install Node.js'
 
 - script: |
+    git config gitgitgadget.CIsmtpUser '$(gitgitgadget.CIsmtpUser)'
+    git config gitgitgadget.CIsmtpHost '$(gitgitgadget.CIsmtpHost)'
+    git config gitgitgadget.CIsmtpPass '$(gitgitgadget.CIsmtpPass)'
+    git config gitgitgadget.CIsmtpOpts '$(gitgitgadget.CIsmtpOpts)'
+  displayName: 'Configure ethereal SMTP'
+  condition: ne(variables['gitgitgadget.CIsmtpPass'], '')
+
+- script: |
     npm install
     npm run build
     npm run ci
