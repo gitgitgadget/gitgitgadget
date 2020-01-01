@@ -7,7 +7,7 @@ import { GitHubGlue, IGitHubUser, IPullRequestInfo,
 import { IMailMetadata } from "../lib/mail-metadata";
 import { testCreateRepo, TestRepo } from "./test-lib";
 
-jest.setTimeout(60000);
+jest.setTimeout(180000);
 
 // smtp testing support.  NodeMailer suggests using ethereal.email.
 // The config must be set for the submit/preview tests to work.  They
