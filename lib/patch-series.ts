@@ -1,7 +1,7 @@
 import addressparser = require("nodemailer/lib/addressparser");
 import { encodeWords } from "nodemailer/lib/mime-funcs";
 import {
-    commitExists, git, gitCommandExists, gitConfig, revParse,
+    commitExists, git, gitCommandExists, gitConfig, revListCount, revParse,
 } from "./git";
 import { GitNotes } from "./git-notes";
 import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget";
@@ -869,9 +869,7 @@ export class PatchSeries {
         const commitRange =
             `${this.project.baseCommit}..${this.project.branchName}`;
         if (!this.coverLetter &&
-            1 < parseInt(await git(["rev-list", "--count", commitRange],
-                                   { workDir: this.project.workDir }),
-                         10)) {
+            1 < await revListCount(commitRange, this.project.workDir)) {
             throw new Error("Branch " + this.project.branchName
                 + " needs a description");
         }

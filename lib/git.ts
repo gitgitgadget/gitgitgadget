@@ -129,6 +129,31 @@ export async function revParse(argument: string, workDir?: string) {
 }
 
 /**
+ * Call `git rev-list --count` to count objects in a commit range.
+ *
+ * @param { string[] } rangeArgs the arguments to pass to `git rev-list`
+ * @param { string | undefined } workDir
+ *    the working directory in which to run `git rev-parse`
+ * @returns number the number of commits in the commit range
+ */
+export async function revListCount(rangeArgs: string | string[],
+                                   workDir: string = "."):
+    Promise<number> {
+    const gitArgs: string[] = ["rev-list", "--count"];
+    if (typeof(rangeArgs) === "string") {
+        gitArgs.push(rangeArgs);
+    } else {
+        gitArgs.push(...rangeArgs);
+    }
+    const result = await GitProcess.exec(gitArgs, workDir);
+    if (result.exitCode) {
+        throw new Error(`Could not determine count for ${
+            rangeArgs}: ${result.stderr}`);
+    }
+    return parseInt(result.stdout, 10);
+}
+
+/**
  * Determine whether a certain commit exists
  *
  * @param {string} commit the name of the commit
