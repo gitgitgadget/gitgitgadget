@@ -191,8 +191,8 @@ export class PatchSeries {
             metadata.coverLetterMessageId = "not yet sent";
         }
 
-        const indentCoverLetter = "";
-        const wrapCoverLetterAt = 76;
+        const indentCoverLetter = patchCount > 1 ? "" : "    ";
+        const wrapCoverLetterAt = 76 - indentCoverLetter.length;
 
         const {
             basedOn,
@@ -803,6 +803,27 @@ export class PatchSeries {
                                                  mails.length > 1, footers);
         }
 
+        /*
+         * Finally, *after* inserting the range-diff and the footers (if any),
+         * insert the cover letter into single-patch submissions.
+         */
+        if (mails.length === 1 && this.coverLetter) {
+            if (this.patchCount !== 1) {
+                throw new Error(`Patch count mismatch: ${mails.length} vs ${
+                    this.patchCount}`);
+            }
+            // Need to insert it into the first mail
+            const splitAtTripleDash = mails[0].match(/([^]*?\n---\n)([^]*)$/);
+            if (!splitAtTripleDash) {
+                throw new Error(`No \`---\` found in\n${mails[0]}`);
+            }
+            console.log(`Insert cover letter into\n${mails[0]}\nwith match:`);
+            console.log(splitAtTripleDash);
+            mails[0] = splitAtTripleDash[1] +
+                this.coverLetter + "\n" + splitAtTripleDash[2];
+            console.log(mails[0]);
+        }
+
         logger.log("Adjusting Date headers");
         if (forceDate) {
             PatchSeries.adjustDateHeaders(mails, forceDate);
@@ -823,7 +844,7 @@ export class PatchSeries {
         }
 
         logger.log("Updating the mail metadata");
-        let isCoverLetter: boolean = true;
+        let isCoverLetter: boolean = mails.length > 1;
         for (const mail of mails) {
             const messageID = mail.match(/\nMessage-ID: <(.*?)>\n/i);
             if (messageID) {
@@ -913,7 +934,7 @@ export class PatchSeries {
         if (subjectPrefix) {
             args.push("--subject-prefix=" + subjectPrefix);
         }
-        if (this.coverLetter) {
+        if (this.coverLetter && this.patchCount > 1) {
             args.push("--cover-letter");
         }
         if (this.options.patience) {
