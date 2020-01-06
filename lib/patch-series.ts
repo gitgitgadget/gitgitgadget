@@ -116,9 +116,13 @@ export class PatchSeries {
             }
         }
 
+        const patchCount = await revListCount(`${baseCommit}..${headCommit}`,
+                                              project.workDir);
+
         const notes =
             new GitNotes(project.workDir, "refs/notes/mail-patch-series");
-        return new PatchSeries(notes, options, project, metadata, rangeDiff);
+        return new PatchSeries(notes, options, project, metadata, rangeDiff,
+                               patchCount);
     }
 
     public static async getFromNotes(notes: GitNotes,
@@ -137,6 +141,12 @@ export class PatchSeries {
         }
         let metadata: IPatchSeriesMetadata | undefined =
             await notes.get<IPatchSeriesMetadata>(pullRequestURL);
+
+        const currentRange = `${baseCommit}..${headCommit}`;
+        const patchCount = await revListCount(currentRange, workDir);
+        if (!patchCount) {
+            throw new Error(`Invalid commit range: ${currentRange}`);
+        }
 
         let rangeDiff: string = "";
         if (metadata === undefined) {
@@ -159,7 +169,6 @@ export class PatchSeries {
 
             const previousRange =
                 `${metadata.baseCommit}..${metadata.headCommit}`;
-            const currentRange = `${baseCommit}..${headCommit}`;
             if (await gitCommandExists("range-diff", workDir)) {
                 rangeDiff = await git(["range-diff", "--no-color",
                                        "--creation-factor=95",
@@ -211,7 +220,7 @@ export class PatchSeries {
                                                  baseCommit);
 
         return new PatchSeries(notes, options, project, metadata,
-                               rangeDiff,
+                               rangeDiff, patchCount,
                                coverLetter,
                                senderName);
     }
@@ -619,10 +628,12 @@ export class PatchSeries {
     public readonly rangeDiff: string;
     public readonly coverLetter?: string;
     public readonly senderName?: string;
+    public readonly patchCount: number;
 
     protected constructor(notes: GitNotes, options: PatchSeriesOptions,
                           project: ProjectOptions,
                           metadata: IPatchSeriesMetadata, rangeDiff: string,
+                          patchCount: number,
                           coverLetter?: string, senderName?: string) {
         this.notes = notes;
         this.options = options;
@@ -631,6 +642,7 @@ export class PatchSeries {
         this.rangeDiff = rangeDiff;
         this.coverLetter = coverLetter;
         this.senderName = senderName;
+        this.patchCount = patchCount;
     }
 
     public subjectPrefix(): string {
@@ -876,8 +888,7 @@ export class PatchSeries {
     protected async generateMBox(): Promise<string> {
         const commitRange =
             `${this.project.baseCommit}..${this.project.branchName}`;
-        if (!this.coverLetter &&
-            1 < await revListCount(commitRange, this.project.workDir)) {
+        if (!this.coverLetter && 1 < this.patchCount) {
             throw new Error("Branch " + this.project.branchName
                 + " needs a description");
         }
