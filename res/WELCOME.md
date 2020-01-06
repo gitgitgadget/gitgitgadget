@@ -33,10 +33,11 @@ If you want to see what email(s) would be sent for a `/submit` request, add a PR
 
 After you submit, GitGitGadget will respond with another comment that contains the link to the cover letter mail in the Git mailing list archive. Please make sure to monitor the discussion in that thread and to address comments and suggestions.
 
-If you do not want to subscribe to the Git mailing list just to be able to respond to a mail, you can download the mbox ("raw") file corresponding to the mail you want to reply to from the Git mailing list. If you use GMail, you can upload that raw mbox file via:
+If you do not want to subscribe to the Git mailing list just to be able to respond to a mail, you can download the mbox from the [Git mailing list archive](https://lore.kernel.org/git) (click the `(raw)` link), then import it into your mail program. If you use GMail, you can do this via:
 
 ```sh
-curl -g --user "<EMailAddress>:<Password>" --url "imaps://imap.gmail.com/INBOX" -T /path/to/raw.txt
+curl -g --user "<EMailAddress>:<Password>" \
+    --url "imaps://imap.gmail.com/INBOX" -T /path/to/raw.txt
 ```
 
 ## Need help?
