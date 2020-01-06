@@ -29,9 +29,9 @@ An alternative is the channel [`#git-devel`](https://webchat.freenode.net/#git-d
 
 Once on the list of permitted usernames, you can contribute the patches to the Git mailing list by adding a PR comment `/submit`.
 
-After you submit, GitGitGadget will respond with another comment that contains the link to the cover letter mail in the Git mailing list archive. Please make sure to monitor the discussion in that thread and to address comments and suggestions.
-
 If you want to see what email(s) would be sent for a submit request, add a PR comment `/preview` to have the email(s) sent to you.  You must have a public GitHub email address for this.
+
+After you submit, GitGitGadget will respond with another comment that contains the link to the cover letter mail in the Git mailing list archive. Please make sure to monitor the discussion in that thread and to address comments and suggestions.
 
 If you do not want to subscribe to the Git mailing list just to be able to respond to a mail, you can download the mbox ("raw") file corresponding to the mail you want to reply to from the Git mailing list. If you use GMail, you can upload that raw mbox file via:
 
