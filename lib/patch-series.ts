@@ -182,13 +182,18 @@ export class PatchSeries {
             metadata.coverLetterMessageId = "not yet sent";
         }
 
+        const indentCoverLetter = "";
+        const wrapCoverLetterAt = 76;
+
         const {
             basedOn,
             cc,
             coverLetter,
         } = await PatchSeries.parsePullRequest(workDir,
                                                pullRequestTitle,
-                                               pullRequestBody);
+                                               pullRequestBody,
+                                               wrapCoverLetterAt,
+                                               indentCoverLetter);
 
         // if known, add submitter to email chain
         if (senderEmail) {
@@ -213,7 +218,9 @@ export class PatchSeries {
 
     protected static async parsePullRequest(workDir: string,
                                             prTitle: string,
-                                            prBody: string):
+                                            prBody: string,
+                                            wrapCoverLetterAtColumn: number,
+                                            indentCoverLetter: string):
     Promise <{
         coverLetter: string,
         basedOn?: string,
@@ -248,9 +255,10 @@ export class PatchSeries {
         } = PatchSeries.parsePullRequestBody(prBody);
 
         const coverLetter = `${prTitle}\n\n${coverLetterBody}`;
-
-        const wrapCoverLetterAtColumn = 76;
-        const wrappedLetter = md2text(coverLetter, wrapCoverLetterAtColumn);
+        let wrappedLetter = md2text(coverLetter, wrapCoverLetterAtColumn);
+        if (indentCoverLetter) {
+            wrappedLetter = wrappedLetter.replace(/^/mg, indentCoverLetter);
+        }
 
         return {
             basedOn,
