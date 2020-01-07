@@ -327,7 +327,8 @@ test("handle comment allow already allowed", async () => {
     expect(ci.addPRComment.mock.calls[0][1]).toMatch(/already allowed to use GitGitGadget/);
 });
 
-test("handle comment allow no name specified (with trailing white space)", async () => {
+test("handle comment allow no name specified (with trailing white space)",
+     async () => {
     const { worktree, gggLocal } = await setupRepos("a5");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
@@ -546,7 +547,8 @@ test("handle comment submit email success", async () => {
         baseLabel: "gitgitgadget:next",
         baseOwner: "gitgitgadget",
         baseRepo: "git",
-        body: `Super body\r\n${template}\r\nCc: Copy One <copy@cat.com>\r\nCc: Copy Two <copycat@cat.com>`,
+        body: `Super body\r\n${template}\r\nCc: Copy One <copy@cat.com>\r\n`
+            + `Cc: Copy Two <copycat@cat.com>`,
         hasComments: true,
         headCommit: B,
         headLabel: "somebody:master",
