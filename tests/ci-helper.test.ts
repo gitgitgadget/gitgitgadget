@@ -2,8 +2,9 @@ import "jest";
 import { CIHelper } from "../lib/ci-helper";
 import { gitConfig } from "../lib/git";
 import { GitNotes } from "../lib/git-notes";
-import { GitHubGlue, IGitHubUser, IPullRequestInfo,
-    IPRComment } from "../lib/github-glue";
+import {
+     GitHubGlue, IGitHubUser, IPRComment, IPullRequestInfo,
+} from "../lib/github-glue";
 import { IMailMetadata } from "../lib/mail-metadata";
 import { testCreateRepo, TestRepo } from "./test-lib";
 

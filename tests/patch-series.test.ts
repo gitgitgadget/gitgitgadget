@@ -1,7 +1,7 @@
 import "jest";
+import { git } from "../lib/git";
 import { PatchSeries } from "../lib/patch-series";
 import { testCreateRepo } from "./test-lib";
-import { git } from "../lib/git";
 
 const mbox1 =
     `From 38d1082511bb02a709f203481c2787adc6e67c02 Mon Sep 17 00:00:00 2001
