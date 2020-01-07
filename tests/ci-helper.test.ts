@@ -91,27 +91,36 @@ async function setupRepos(instance: string):
                         "https://github.com/gitgitgadget/git"]);
 
     // set needed config
-    await worktree.git(["config",
-        '--add', "gitgitgadget.workDir", gggLocal.workDir]);
-    await worktree.git(["config",
-        '--add', "gitgitgadget.publishRemote",
-        "https://github.com/gitgitgadget/git"]);
+    await worktree.git([
+        "config", "--add", "gitgitgadget.workDir", gggLocal.workDir,
+    ]);
+    await worktree.git([
+        "config", "--add", "gitgitgadget.publishRemote",
+        "https://github.com/gitgitgadget/git",
+    ]);
 
     const { smtpUser, smtpHost, smtpPass, smtpOpts } =
         await getSMTPInfo();
 
-    await worktree.git(["config",
-        '--add', "gitgitgadget.smtpUser", smtpUser ? smtpUser : "test"]);
+    await worktree.git([
+        "config", "--add", "gitgitgadget.smtpUser",
+        smtpUser ? smtpUser : "test",
+    ]);
 
-    await worktree.git(["config",
-        '--add', "gitgitgadget.smtpHost", smtpHost ? smtpHost : "test"]);
+    await worktree.git([
+        "config", "--add", "gitgitgadget.smtpHost",
+        smtpHost ? smtpHost : "test",
+    ]);
 
-    await worktree.git(["config",
-        '--add', "gitgitgadget.smtpPass", smtpPass ? smtpPass : "test"]);
+    await worktree.git([
+        "config", "--add", "gitgitgadget.smtpPass",
+        smtpPass ? smtpPass : "test",
+    ]);
 
     if (smtpOpts) {
-        await worktree.git(["config",
-            '--add', "gitgitgadget.smtpOpts", smtpOpts]);
+        await worktree.git([
+            "config", "--add", "gitgitgadget.smtpOpts", smtpOpts,
+        ]);
     }
 
     const notes = new GitNotes(gggRemote.workDir);
