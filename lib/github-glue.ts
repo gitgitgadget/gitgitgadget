@@ -11,6 +11,7 @@ export interface IPullRequestInfo {
     baseCommit: string;
     baseOwner: string;
     baseRepo: string;
+    commits?: number;
     hasComments: boolean;
     headLabel: string;
     headCommit: string;
@@ -249,6 +250,7 @@ export class GitHubGlue {
             baseOwner: response.data.base.repo.owner.login,
             baseRepo: response.data.base.repo.name,
             body: response.data.body,
+            commits: response.data.commits,
             hasComments: response.data.comments > 0,
             headCommit: response.data.head.sha,
             headLabel: response.data.head.label,

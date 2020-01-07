@@ -10,6 +10,7 @@ import { IMailMetadata } from "./mail-metadata";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
 
 const readFile = util.promisify(fs.readFile);
+type CommentFunction = (comment: string) => Promise<void>;
 
 /*
  * This class offers functions to support the operations we want to perform from
@@ -554,15 +555,19 @@ export class CIHelper {
 
                 const userInfo = await this.getUserInfo(comment.author);
 
-                const extraComment = userInfo.email === null ?
-                    ( `\n\nWARNING: ${comment.author} has no public email` +
-                    " address set on GitHub" ) : "";
+                const commitOkay = await this.checkCommits(pr, addComment);
 
-                const coverMid =
-                    await gitGitGadget.submit(pr, userInfo);
-                await addComment(`Submitted as [${
-                    coverMid}](https://lore.kernel.org/git/${coverMid})${
-                        extraComment}`);
+                if (commitOkay) {
+                    const extraComment = userInfo.email === null ?
+                        ( `\n\nWARNING: ${comment.author} has no public email` +
+                        " address set on GitHub" ) : "";
+
+                    const coverMid = await gitGitGadget.submit(pr, userInfo);
+                    await addComment(`Submitted as [${
+                        coverMid}](https://lore.kernel.org/git/${coverMid})${
+                            extraComment}`);
+                }
+
             } else if (command === "/preview") {
                 if (argument && argument !== "") {
                     throw new Error(`/preview does not accept arguments ('${
@@ -578,9 +583,13 @@ export class CIHelper {
                         comment.author}`);
                 }
 
-                const coverMid =
-                    await gitGitGadget.preview(pr, userInfo);
-                await addComment(`Preview email sent as ${coverMid}`);
+                const commitOkay = await this.checkCommits(pr, addComment);
+
+                if (commitOkay) {
+                    const coverMid = await gitGitGadget.preview(pr, userInfo);
+                    await addComment(`Preview email sent as ${coverMid}`);
+                }
+
             } else if (command === "/allow") {
                 const accountName = argument || await getPRAuthor();
                 let extraComment = "";
@@ -626,15 +635,43 @@ export class CIHelper {
         }
     }
 
+    public async checkCommits(pr: IPullRequestInfo,
+                              addComment: CommentFunction):
+        Promise<boolean> {
+        const maxCommits = 30;
+        if (pr.commits && pr.commits > maxCommits) {
+            addComment(`The pull request has ${pr.commits
+                       } commits.  The max allowed is ${maxCommits
+                       }.  Please split the patch series into multiple pull ${
+                       ""}requests. Also consider squashing related commits.`);
+            return false;
+        }
+
+        return true;
+    }
+
     public async handlePush(repositoryOwner: string, prNumber: number) {
         const pr = await this.github.getPRInfo(repositoryOwner, prNumber);
-        const gitGitGadget = await GitGitGadget.get(".");
+        const pullRequestURL = `https://github.com/${repositoryOwner
+                                }/git/pull/${prNumber}`;
+
+        const addComment = async (body: string) => {
+            console.log(`Adding comment to ${pullRequestURL}:\n${body}`);
+            await this.github.addPRComment(pullRequestURL, body);
+        };
+
+        const gitGitGadget = await GitGitGadget.get(this.gggConfigDir,
+                                                    this.workDir);
         if (!pr.hasComments && !gitGitGadget.isUserAllowed(pr.author)) {
-            const pullRequestURL =
-                `https://github.com/${repositoryOwner}/git/pull/${prNumber}`;
             const welcome = (await readFile("res/WELCOME.md")).toString()
-                .replace(/\${username}/g, pr.author);
+                    .replace(/\${username}/g, pr.author);
             this.github.addPRComment(pullRequestURL, welcome);
+        }
+
+        const commitOkay = await this.checkCommits(pr, addComment);
+
+        if (!commitOkay) {          // make check fail to get user attention
+            throw new Error("Failing check due to commit linting errors.");
         }
     }
 
