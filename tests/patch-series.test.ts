@@ -416,7 +416,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             await repo.commit("template", ".github/PULL_REQUEST_TEMPLATE.md", [
                 "This is PR template",
                 "Please read our guide to continue",
-            ].join("\n"))
+            ].join("\n"));
 
             const prTitle = "My test PR!";
             const prBody = [
