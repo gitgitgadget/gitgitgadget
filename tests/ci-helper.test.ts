@@ -226,9 +226,7 @@ test("identify upstream commit", async () => {
 });
 
 test("handle comment allow basic test", async () => {
-    let { worktree,
-          gggLocal,
-    } = await setupRepos("a1");
+    const { worktree, gggLocal } = await setupRepos("a1");
 
     // Ready to start testing
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
@@ -256,9 +254,7 @@ test("handle comment allow basic test", async () => {
 });
 
 test("handle comment allow fail invalid user", async () => {
-    let { worktree,
-          gggLocal,
-    } = await setupRepos("a2");
+    const { worktree, gggLocal } = await setupRepos("a2");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
@@ -277,9 +273,7 @@ test("handle comment allow fail invalid user", async () => {
 });
 
 test("handle comment allow no public email", async () => {
-    let { worktree,
-          gggLocal,
-    } = await setupRepos("a3");
+    const { worktree, gggLocal } = await setupRepos("a3");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
@@ -307,9 +301,7 @@ test("handle comment allow no public email", async () => {
 });
 
 test("handle comment allow already allowed", async () => {
-    let { worktree,
-          gggLocal,
-    } = await setupRepos("a4");
+    const { worktree, gggLocal } = await setupRepos("a4");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
@@ -336,9 +328,7 @@ test("handle comment allow already allowed", async () => {
 });
 
 test("handle comment allow no name specified (with trailing white space)", async () => {
-    let { worktree,
-          gggLocal,
-    } = await setupRepos("a5");
+    const { worktree, gggLocal } = await setupRepos("a5");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
@@ -381,9 +371,7 @@ test("handle comment allow no name specified (with trailing white space)", async
 });
 
 test("handle comment disallow basic test", async () => {
-    let { worktree,
-          gggLocal,
-    } = await setupRepos("d1");
+    const { worktree, gggLocal } = await setupRepos("d1");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
@@ -410,9 +398,7 @@ test("handle comment disallow basic test", async () => {
 });
 
 test("handle comment disallow was not allowed", async () => {
-    let { worktree,
-          gggLocal,
-    } = await setupRepos("d2");
+    const { worktree, gggLocal } = await setupRepos("d2");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
@@ -432,9 +418,7 @@ test("handle comment disallow was not allowed", async () => {
 });
 
 test("handle comment submit not author", async () => {
-    let { worktree,
-          gggLocal,
-    } = await setupRepos("s1");
+    const { worktree, gggLocal } = await setupRepos("s1");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
@@ -477,9 +461,7 @@ test("handle comment submit not author", async () => {
 });
 
 test("handle comment submit not mergable", async () => {
-    let { worktree,
-          gggLocal,
-    } = await setupRepos("s2");
+    const { worktree, gggLocal } = await setupRepos("s2");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
@@ -522,10 +504,7 @@ test("handle comment submit not mergable", async () => {
 });
 
 test("handle comment submit email success", async () => {
-    let { worktree,
-          gggLocal,
-          gggRemote,
-    } = await setupRepos("s3");
+    const { worktree, gggLocal, gggRemote } = await setupRepos("s3");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
@@ -590,10 +569,7 @@ test("handle comment submit email success", async () => {
 });
 
 test("handle comment preview email success", async () => {
-    let { worktree,
-          gggLocal,
-          gggRemote,
-    } = await setupRepos("p1");
+    const { worktree, gggLocal, gggRemote } = await setupRepos("p1");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
@@ -617,7 +593,7 @@ test("handle comment preview email success", async () => {
     ]); // fake merge
 
     // GitHubGlue Responses
-    let comment = {
+    const comment = {
         author: "ggg",
         body: "/submit   ",
         prNumber: prNumber,
@@ -665,10 +641,7 @@ test("handle comment preview email success", async () => {
 });
 
 test("handle push/comment too many commits fails", async () => {
-    let { worktree,
-          gggLocal,
-          gggRemote,
-    } = await setupRepos("pu1");
+    const { worktree, gggLocal, gggRemote } = await setupRepos("pu1");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
@@ -692,7 +665,7 @@ test("handle push/comment too many commits fails", async () => {
     const commits = 40;
 
     // GitHubGlue Responses
-    let comment = {
+    const comment = {
         author: "ggg",
         body: "/submit   ",
         prNumber: prNumber,
