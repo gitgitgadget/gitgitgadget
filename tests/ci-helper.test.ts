@@ -215,13 +215,7 @@ test("identify upstream commit", async () => {
     // "publish" the gitgitgadget notes
     await worktree.git(["push", gggRemote.workDir, notes.notesRef]);
 
-    class TestCIHelper extends CIHelper {
-        public constructor() {
-            super(worktree.workDir);
-            this.testing = true;
-        }
-    }
-    const ci = new TestCIHelper();
+    const ci = new TestCIHelper(worktree.workDir);
     expect(await ci.identifyUpstreamCommit(b)).toEqual(B);
 
     expect(await ci.updateCommitMapping(messageID)).toBeTruthy();
