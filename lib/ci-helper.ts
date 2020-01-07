@@ -660,6 +660,13 @@ export class CIHelper {
                 merges.push(cm.commit);
             }
 
+            if (cm.author.email.endsWith("@users.noreply.github.com")) {
+                addComment(`Invalid author email in ${cm.commit}: "${
+                    cm.author.email}"`);
+                result = false;
+                return;
+            }
+
             // Update email from git info if not already set
             if (userInfo && !userInfo.email) {
                 if (userInfo.login === cm.author.login) {

@@ -885,3 +885,80 @@ test("handle push/comment merge commits fails", async () => {
     ci.addPRComment.mock.calls.length = 0;
 
 });
+
+test("disallow noreply emails", async () => {
+    const { worktree, gggLocal, gggRemote} = await setupRepos("pu2");
+
+    const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
+    const prNumber = 59;
+
+    const A = await gggRemote.revParse("HEAD");
+    expect(A).not.toBeUndefined();
+
+    // Now come up with a local change
+    // this should be in a separate repo from the worktree
+    await worktree.git(["pull", gggRemote.workDir, "master"]);
+    const B = await worktree.commit("b");
+
+    // get the pr refs in place
+    const pullRequestRef = `refs/pull/${prNumber}`;
+    await gggRemote.git(
+        [ "fetch", worktree.workDir,
+          `refs/heads/master:${pullRequestRef}/head`,
+          `refs/heads/master:${pullRequestRef}/merge`]); // fake merge
+
+    // GitHubGlue Responses
+    const comment = {
+        author: "ggg",
+        body: "/submit   ",
+        prNumber,
+    };
+    const user = {
+        email: "ggg@example.com",
+        login: "ggg",
+        name: "e. e. cummings",
+        type: "basic",
+    };
+    const commits = [{
+        author: {
+            email: "random@users.noreply.github.com",
+            login: "random",
+            name: "random",
+        },
+        commit: "BAD1FEEDBEEF",
+        committer: {
+            email: "ggg@example.com",
+            login: "ggg",
+            name: "e. e. cummings",
+        },
+        message: "Using ineligible email address",
+        parentCount: 1,
+    }];
+
+    const prinfo = {
+        author: "ggg",
+        baseCommit: A,
+        baseLabel: "gitgitgadget:next",
+        baseOwner: "gitgitgadget",
+        baseRepo: "git",
+        body: "Never seen - merge commits.",
+        commits: commits.length,
+        hasComments: false,
+        headCommit: B,
+        headLabel: "somebody:master",
+        mergeable: true,
+        number: prNumber,
+        pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
+        title: "Preview a fun fix",
+    };
+
+    ci.setGHgetPRInfo(prinfo);
+    ci.setGHgetPRComment(comment);
+    ci.setGHgetPRCommits(commits);
+    ci.setGHgetGitHubUserInfo(user);
+
+    // fail for commits with fake email on push
+    await expect(ci.handlePush("gitgitgadget", 433865360)).
+        rejects.toThrow(/Failing check due/);
+
+});
