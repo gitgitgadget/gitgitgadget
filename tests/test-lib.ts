@@ -105,7 +105,7 @@ export class TestRepo {
         };
 
         if (options.committer) {
-            const match = options.committer.match(/^(.*)<(.*)>$/);
+            const match = options.committer.match(/^(.*?)\s*<(.*)>$/);
             if (match) {
                 Object.assign(gitOpts.env, {
                     GIT_COMMITTER_EMAIL: match[2],
@@ -115,7 +115,7 @@ export class TestRepo {
         }
 
         if (options.author) {
-            const match = options.author.match(/^(.*)<(.*)>$/);
+            const match = options.author.match(/^(.*?)\s*<(.*)>$/);
             if (match) {
                 Object.assign(gitOpts.env, {
                     GIT_AUTHOR_EMAIL: match[2],
