@@ -15,11 +15,12 @@ jest.setTimeout(180000);
 // are skipped if the config is not set.
 //
 // Sample config settings:
-//[gitgitgadget]
-//	CIsmtpUser = first.last@ethereal.email
-//	CIsmtphost = smtp.ethereal.email
-//	CIsmtppass = feedeadbeeffeeddeadbeef
-//	CIsmtpopts = { \"port\": 587, \"secure\": false, \"tls\": { \"rejectUnauthorized\": false } }
+// [gitgitgadget]
+//  CIsmtpUser = first.last@ethereal.email
+//  CIsmtphost = smtp.ethereal.email
+//  CIsmtppass = feedeadbeeffeeddeadbeef
+//  CIsmtpopts = { \"port\": 587, \"secure\": false, \
+//     \"tls\": { \"rejectUnauthorized\": false } }
 // The CIsmtpOpts must have the keys quoted.
 
 async function getSMTPInfo():
@@ -528,7 +529,7 @@ test("handle comment submit email success", async () => {
 
     const template = "fine template\r\nnew line";
     // add template to master repo
-    await gggRemote.commit("temple",".github//PULL_REQUEST_TEMPLATE.md",
+    await gggRemote.commit("temple", ".github//PULL_REQUEST_TEMPLATE.md",
                            template);
     const A = await gggRemote.revParse("HEAD");
     expect(A).not.toBeUndefined();
@@ -539,9 +540,11 @@ test("handle comment submit email success", async () => {
 
     // get the pr refs in place
     const pullRequestRef = `refs/pull/${prNumber}`;
-    await gggRemote.git(["fetch", worktree.workDir,
+    await gggRemote.git([
+        "fetch", worktree.workDir,
         `refs/heads/master:${pullRequestRef}/head`,
-        `refs/heads/master:${pullRequestRef}/merge`]); // fake merge
+        `refs/heads/master:${pullRequestRef}/merge`,
+    ]); // fake merge
 
     // GitHubGlue Responses
     const comment = {
@@ -593,7 +596,7 @@ test("handle comment preview email success", async () => {
     const prNumber = 59;
 
     const template = "fine template\nnew line";
-    await gggRemote.commit("temple",".github//PULL_REQUEST_TEMPLATE.md",
+    await gggRemote.commit("temple", ".github//PULL_REQUEST_TEMPLATE.md",
                            template);
     const A = await gggRemote.revParse("HEAD");
     expect(A).not.toBeUndefined();
@@ -604,9 +607,11 @@ test("handle comment preview email success", async () => {
 
     // get the pr refs in place
     const pullRequestRef = `refs/pull/${prNumber}`;
-    await gggRemote.git(["fetch", worktree.workDir,
+    await gggRemote.git([
+        "fetch", worktree.workDir,
         `refs/heads/master:${pullRequestRef}/head`,
-        `refs/heads/master:${pullRequestRef}/merge`]); // fake merge
+        `refs/heads/master:${pullRequestRef}/merge`,
+    ]); // fake merge
 
     // GitHubGlue Responses
     let comment = {
@@ -675,9 +680,11 @@ test("handle push/comment too many commits fails", async () => {
 
     // get the pr refs in place
     const pullRequestRef = `refs/pull/${prNumber}`;
-    await gggRemote.git(["fetch", worktree.workDir,
+    await gggRemote.git([
+        "fetch", worktree.workDir,
         `refs/heads/master:${pullRequestRef}/head`,
-        `refs/heads/master:${pullRequestRef}/merge`]); // fake merge
+        `refs/heads/master:${pullRequestRef}/merge`,
+    ]); // fake merge
 
     const commits = 40;
 
