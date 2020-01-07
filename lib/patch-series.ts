@@ -116,7 +116,8 @@ export class PatchSeries {
             }
         }
 
-        const patchCount = await revListCount(`${baseCommit}..${headCommit}`,
+        const patchCount = await revListCount(["--no-merges",
+                                               `${baseCommit}..${headCommit}`],
                                               project.workDir);
 
         const notes =
@@ -143,7 +144,8 @@ export class PatchSeries {
             await notes.get<IPatchSeriesMetadata>(pullRequestURL);
 
         const currentRange = `${baseCommit}..${headCommit}`;
-        const patchCount = await revListCount(currentRange, workDir);
+        const patchCount = await revListCount(["--no-merges", currentRange],
+                                              workDir);
         if (!patchCount) {
             throw new Error(`Invalid commit range: ${currentRange}`);
         }
