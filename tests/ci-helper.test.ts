@@ -236,7 +236,7 @@ test("handle comment allow basic test", async () => {
     const comment = {
         author: "ggg",              // set in setupRepos
         body: "/allow  user2",
-        prNumber: prNumber,
+        prNumber,
     };
     const user = {
         email: "user2@example.com",
@@ -262,7 +262,7 @@ test("handle comment allow fail invalid user", async () => {
     const comment = {
         author: "ggg",
         body: "/allow  bad_@@@@",
-        prNumber: prNumber,
+        prNumber,
     };
 
     ci.setGHgetPRComment(comment);
@@ -281,7 +281,7 @@ test("handle comment allow no public email", async () => {
     const comment = {
         author: "ggg",
         body: "/allow   bad",
-        prNumber: prNumber,
+        prNumber,
     };
     const user: IGitHubUser = {
         email: null,
@@ -310,7 +310,7 @@ test("handle comment allow already allowed", async () => {
     const comment = {
         author: "ggg",
         body: "/allow  ggg",
-        prNumber: prNumber,
+        prNumber,
     };
     const user = {
         email: "bad@example.com",
@@ -337,7 +337,7 @@ test("handle comment allow no name specified (with trailing white space)", async
     const comment = {
         author: "ggg",
         body: "/allow   ",
-        prNumber: prNumber,
+        prNumber,
     };
     const user = {
         email: "bad@example.com",
@@ -380,7 +380,7 @@ test("handle comment disallow basic test", async () => {
     const comment = {
         author: "ggg",
         body: "/disallow  user1 ",
-        prNumber: prNumber,
+        prNumber,
     };
     const user = {
         email: "user1@example.com",
@@ -407,7 +407,7 @@ test("handle comment disallow was not allowed", async () => {
     const comment = {
         author: "ggg",
         body: "/disallow  unknown1 ",
-        prNumber: prNumber,
+        prNumber,
     };
 
     ci.setGHgetPRComment(comment);
@@ -427,7 +427,7 @@ test("handle comment submit not author", async () => {
     const comment = {
         author: "ggg",
         body: "/submit   ",
-        prNumber: prNumber,
+        prNumber,
     };
     const user = {
         email: "bad@example.com",
@@ -470,7 +470,7 @@ test("handle comment submit not mergable", async () => {
     const comment = {
         author: "ggg",
         body: "/submit   ",
-        prNumber: prNumber,
+        prNumber,
     };
     const user = {
         email: "bad@example.com",
@@ -532,7 +532,7 @@ test("handle comment submit email success", async () => {
     const comment = {
         author: "ggg",
         body: "/submit   ",
-        prNumber: prNumber,
+        prNumber,
     };
     const user = {
         email: "ggg@example.com",
@@ -596,7 +596,7 @@ test("handle comment preview email success", async () => {
     const comment = {
         author: "ggg",
         body: "/submit   ",
-        prNumber: prNumber,
+        prNumber,
     };
     const user = {
         email: "preview@example.com",
@@ -668,7 +668,7 @@ test("handle push/comment too many commits fails", async () => {
     const comment = {
         author: "ggg",
         body: "/submit   ",
-        prNumber: prNumber,
+        prNumber,
     };
     const user = {
         email: "preview@example.com",
@@ -683,7 +683,7 @@ test("handle push/comment too many commits fails", async () => {
         baseOwner: "gitgitgadget",
         baseRepo: "git",
         body: "Never seen - too many commits.",
-        commits: commits,
+        commits,
         hasComments: false,
         headCommit: B,
         headLabel: "somebody:master",
