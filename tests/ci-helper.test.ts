@@ -3,7 +3,7 @@ import { CIHelper } from "../lib/ci-helper";
 import { gitConfig } from "../lib/git";
 import { GitNotes } from "../lib/git-notes";
 import {
-     GitHubGlue, IGitHubUser, IPRComment, IPullRequestInfo,
+     GitHubGlue, IGitHubUser, IPRComment, IPRCommit, IPullRequestInfo,
 } from "../lib/github-glue";
 import { IMailMetadata } from "../lib/mail-metadata";
 import { testCreateRepo, TestRepo } from "./test-lib";
@@ -57,6 +57,11 @@ class TestCIHelper extends CIHelper {
     public setGHgetPRComment(o: IPRComment) {
         this.ghGlue.getPRComment = jest.fn( async ():
             Promise<IPRComment> => o );
+    }
+
+    public setGHgetPRCommits(o: IPRCommit[]) {
+        this.ghGlue.getPRCommits = jest.fn( async ():
+            Promise<IPRCommit[]> => o );
     }
 
     public setGHgetGitHubUserInfo(o: IGitHubUser) {
@@ -733,4 +738,150 @@ test("handle push/comment too many commits fails", async () => {
 
     expect(ci.addPRComment.mock.calls[0][1]).toMatch(/Welcome/);
     expect(ci.addPRComment.mock.calls[1][1]).toMatch(failMsg);
+});
+
+test("handle push/comment merge commits fails", async () => {
+    const { worktree, gggLocal, gggRemote} = await setupRepos("pu2");
+
+    const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
+    const prNumber = 59;
+
+    const A = await gggRemote.revParse("HEAD");
+    expect(A).not.toBeUndefined();
+
+    // Now come up with a local change
+    // this should be in a separate repo from the worktree
+    await worktree.git(["pull", gggRemote.workDir, "master"]);
+    const B = await worktree.commit("b");
+
+    // get the pr refs in place
+    const pullRequestRef = `refs/pull/${prNumber}`;
+    await gggRemote.git(
+        [ "fetch", worktree.workDir,
+          `refs/heads/master:${pullRequestRef}/head`,
+          `refs/heads/master:${pullRequestRef}/merge`]); // fake merge
+
+    // GitHubGlue Responses
+    const comment = {
+        author: "ggg",
+        body: "/submit   ",
+        prNumber,
+    };
+    const user = {
+        email: "ggg@example.com",
+        login: "ggg",
+        name: "e. e. cummings",
+        type: "basic",
+    };
+    const commits = [{
+        author: {
+            email: "ggg@example.com",
+            login: "ggg",
+            name: "e. e. cummings",
+        },
+        commit: "BAD1FEEDBEEF",
+        committer: {
+            email: "ggg@example.com",
+            login: "ggg",
+            name: "e. e. cummings",
+        },
+        message: "Merge a commit",
+        parentCount: 2,
+    }];
+
+    const prinfo = {
+        author: "ggg",
+        baseCommit: A,
+        baseLabel: "gitgitgadget:next",
+        baseOwner: "gitgitgadget",
+        baseRepo: "git",
+        body: "Never seen - merge commits.",
+        commits: commits.length,
+        hasComments: false,
+        headCommit: B,
+        headLabel: "somebody:master",
+        mergeable: true,
+        number: prNumber,
+        pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
+        title: "Preview a fun fix",
+    };
+
+    ci.setGHgetPRInfo(prinfo);
+    ci.setGHgetPRComment(comment);
+    ci.setGHgetPRCommits(commits);
+    ci.setGHgetGitHubUserInfo(user);
+
+    // fail for merge commits on push
+    await expect(ci.handlePush("gitgitgadget", 433865360)).
+        rejects.toThrow(/Failing check due/);
+
+    expect(ci.addPRComment.mock.calls[0][1]).toMatch(commits[0].commit);
+    ci.addPRComment.mock.calls.length = 0;
+
+    // fail for merge commits on submit
+    await ci.handleComment("gitgitgadget", 433865360);
+    expect(ci.addPRComment.mock.calls[0][1]).toMatch(commits[0].commit);
+    ci.addPRComment.mock.calls.length = 0;
+
+    // fail for merge commits on preview
+    comment.body = " /preview";
+    ci.setGHgetPRComment(comment);
+
+    await ci.handleComment("gitgitgadget", 433865360);
+    expect(ci.addPRComment.mock.calls[0][1]).toMatch(commits[0].commit);
+    ci.addPRComment.mock.calls.length = 0;
+
+    // fail for merge commits push new user
+    prinfo.author = "starfish";
+    comment.author = "starfish";
+    user.login = "starfish";
+
+    await expect(ci.handlePush("gitgitgadget", 433865360)).
+        rejects.toThrow(/Failing check due/);
+
+    expect(ci.addPRComment.mock.calls[0][1]).toMatch(/Welcome/);
+    expect(ci.addPRComment.mock.calls[1][1]).toMatch(commits[0].commit);
+    ci.addPRComment.mock.calls.length = 0;
+
+    // Test Multiple merges
+    commits.push({
+        author: {
+            email: "ggg@example.com",
+            login: "ggg",
+            name: "e. e. cummings",
+        },
+        commit: "BAD2FEEDBEEF",
+        committer: {
+            email: "ggg@example.com",
+            login: "ggg",
+            name: "e. e. cummings",
+        },
+        message: "Merge a commit",
+        parentCount: 1,
+    });
+    commits.push({
+        author: {
+            email: "ggg@example.com",
+            login: "ggg",
+            name: "e. e. cummings",
+        },
+        commit: "BAD3FEEDBEEF",
+        committer: {
+            email: "ggg@example.com",
+            login: "ggg",
+            name: "e. e. cummings",
+        },
+        message: "Merge a commit",
+        parentCount: 2,
+    });
+
+    await expect(ci.handlePush("gitgitgadget", 433865360)).
+        rejects.toThrow(/Failing check due/);
+
+    expect(ci.addPRComment.mock.calls[0][1]).toMatch(/Welcome/);
+    expect(ci.addPRComment.mock.calls[1][1]).toMatch(commits[0].commit);
+    expect(ci.addPRComment.mock.calls[1][1]).not.toMatch(commits[1].commit);
+    expect(ci.addPRComment.mock.calls[1][1]).toMatch(commits[2].commit);
+    ci.addPRComment.mock.calls.length = 0;
+
 });
