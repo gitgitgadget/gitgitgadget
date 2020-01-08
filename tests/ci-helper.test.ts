@@ -2,8 +2,9 @@ import "jest";
 import { CIHelper } from "../lib/ci-helper";
 import { gitConfig } from "../lib/git";
 import { GitNotes } from "../lib/git-notes";
-import { GitHubGlue, IGitHubUser, IPullRequestInfo,
-    IPRComment } from "../lib/github-glue";
+import {
+     GitHubGlue, IGitHubUser, IPRComment, IPullRequestInfo,
+} from "../lib/github-glue";
 import { IMailMetadata } from "../lib/mail-metadata";
 import { testCreateRepo, TestRepo } from "./test-lib";
 
@@ -14,11 +15,12 @@ jest.setTimeout(180000);
 // are skipped if the config is not set.
 //
 // Sample config settings:
-//[gitgitgadget]
-//	CIsmtpUser = first.last@ethereal.email
-//	CIsmtphost = smtp.ethereal.email
-//	CIsmtppass = feedeadbeeffeeddeadbeef
-//	CIsmtpopts = { \"port\": 587, \"secure\": false, \"tls\": { \"rejectUnauthorized\": false } }
+// [gitgitgadget]
+//  CIsmtpUser = first.last@ethereal.email
+//  CIsmtphost = smtp.ethereal.email
+//  CIsmtppass = feedeadbeeffeeddeadbeef
+//  CIsmtpopts = { \"port\": 587, \"secure\": false, \
+//     \"tls\": { \"rejectUnauthorized\": false } }
 // The CIsmtpOpts must have the keys quoted.
 
 async function getSMTPInfo():
@@ -89,27 +91,36 @@ async function setupRepos(instance: string):
                         "https://github.com/gitgitgadget/git"]);
 
     // set needed config
-    await worktree.git(["config",
-        '--add', "gitgitgadget.workDir", gggLocal.workDir]);
-    await worktree.git(["config",
-        '--add', "gitgitgadget.publishRemote",
-        "https://github.com/gitgitgadget/git"]);
+    await worktree.git([
+        "config", "--add", "gitgitgadget.workDir", gggLocal.workDir,
+    ]);
+    await worktree.git([
+        "config", "--add", "gitgitgadget.publishRemote",
+        "https://github.com/gitgitgadget/git",
+    ]);
 
     const { smtpUser, smtpHost, smtpPass, smtpOpts } =
         await getSMTPInfo();
 
-    await worktree.git(["config",
-        '--add', "gitgitgadget.smtpUser", smtpUser ? smtpUser : "test"]);
+    await worktree.git([
+        "config", "--add", "gitgitgadget.smtpUser",
+        smtpUser ? smtpUser : "test",
+    ]);
 
-    await worktree.git(["config",
-        '--add', "gitgitgadget.smtpHost", smtpHost ? smtpHost : "test"]);
+    await worktree.git([
+        "config", "--add", "gitgitgadget.smtpHost",
+        smtpHost ? smtpHost : "test",
+    ]);
 
-    await worktree.git(["config",
-        '--add', "gitgitgadget.smtpPass", smtpPass ? smtpPass : "test"]);
+    await worktree.git([
+        "config", "--add", "gitgitgadget.smtpPass",
+        smtpPass ? smtpPass : "test",
+    ]);
 
     if (smtpOpts) {
-        await worktree.git(["config",
-            '--add', "gitgitgadget.smtpOpts", smtpOpts]);
+        await worktree.git([
+            "config", "--add", "gitgitgadget.smtpOpts", smtpOpts,
+        ]);
     }
 
     const notes = new GitNotes(gggRemote.workDir);
@@ -204,13 +215,7 @@ test("identify upstream commit", async () => {
     // "publish" the gitgitgadget notes
     await worktree.git(["push", gggRemote.workDir, notes.notesRef]);
 
-    class TestCIHelper extends CIHelper {
-        public constructor() {
-            super(worktree.workDir);
-            this.testing = true;
-        }
-    }
-    const ci = new TestCIHelper();
+    const ci = new TestCIHelper(worktree.workDir);
     expect(await ci.identifyUpstreamCommit(b)).toEqual(B);
 
     expect(await ci.updateCommitMapping(messageID)).toBeTruthy();
@@ -221,9 +226,7 @@ test("identify upstream commit", async () => {
 });
 
 test("handle comment allow basic test", async () => {
-    let { worktree,
-          gggLocal,
-    } = await setupRepos("a1");
+    const { worktree, gggLocal } = await setupRepos("a1");
 
     // Ready to start testing
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
@@ -233,7 +236,7 @@ test("handle comment allow basic test", async () => {
     const comment = {
         author: "ggg",              // set in setupRepos
         body: "/allow  user2",
-        prNumber: prNumber,
+        prNumber,
     };
     const user = {
         email: "user2@example.com",
@@ -251,9 +254,7 @@ test("handle comment allow basic test", async () => {
 });
 
 test("handle comment allow fail invalid user", async () => {
-    let { worktree,
-          gggLocal,
-    } = await setupRepos("a2");
+    const { worktree, gggLocal } = await setupRepos("a2");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
@@ -261,7 +262,7 @@ test("handle comment allow fail invalid user", async () => {
     const comment = {
         author: "ggg",
         body: "/allow  bad_@@@@",
-        prNumber: prNumber,
+        prNumber,
     };
 
     ci.setGHgetPRComment(comment);
@@ -272,9 +273,7 @@ test("handle comment allow fail invalid user", async () => {
 });
 
 test("handle comment allow no public email", async () => {
-    let { worktree,
-          gggLocal,
-    } = await setupRepos("a3");
+    const { worktree, gggLocal } = await setupRepos("a3");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
@@ -282,7 +281,7 @@ test("handle comment allow no public email", async () => {
     const comment = {
         author: "ggg",
         body: "/allow   bad",
-        prNumber: prNumber,
+        prNumber,
     };
     const user: IGitHubUser = {
         email: null,
@@ -302,9 +301,7 @@ test("handle comment allow no public email", async () => {
 });
 
 test("handle comment allow already allowed", async () => {
-    let { worktree,
-          gggLocal,
-    } = await setupRepos("a4");
+    const { worktree, gggLocal } = await setupRepos("a4");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
@@ -313,7 +310,7 @@ test("handle comment allow already allowed", async () => {
     const comment = {
         author: "ggg",
         body: "/allow  ggg",
-        prNumber: prNumber,
+        prNumber,
     };
     const user = {
         email: "bad@example.com",
@@ -330,10 +327,9 @@ test("handle comment allow already allowed", async () => {
     expect(ci.addPRComment.mock.calls[0][1]).toMatch(/already allowed to use GitGitGadget/);
 });
 
-test("handle comment allow no name specified (with trailing white space)", async () => {
-    let { worktree,
-          gggLocal,
-    } = await setupRepos("a5");
+test("handle comment allow no name specified (with trailing white space)",
+     async () => {
+    const { worktree, gggLocal } = await setupRepos("a5");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
@@ -342,7 +338,7 @@ test("handle comment allow no name specified (with trailing white space)", async
     const comment = {
         author: "ggg",
         body: "/allow   ",
-        prNumber: prNumber,
+        prNumber,
     };
     const user = {
         email: "bad@example.com",
@@ -376,9 +372,7 @@ test("handle comment allow no name specified (with trailing white space)", async
 });
 
 test("handle comment disallow basic test", async () => {
-    let { worktree,
-          gggLocal,
-    } = await setupRepos("d1");
+    const { worktree, gggLocal } = await setupRepos("d1");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
@@ -387,7 +381,7 @@ test("handle comment disallow basic test", async () => {
     const comment = {
         author: "ggg",
         body: "/disallow  user1 ",
-        prNumber: prNumber,
+        prNumber,
     };
     const user = {
         email: "user1@example.com",
@@ -405,9 +399,7 @@ test("handle comment disallow basic test", async () => {
 });
 
 test("handle comment disallow was not allowed", async () => {
-    let { worktree,
-          gggLocal,
-    } = await setupRepos("d2");
+    const { worktree, gggLocal } = await setupRepos("d2");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
@@ -416,7 +408,7 @@ test("handle comment disallow was not allowed", async () => {
     const comment = {
         author: "ggg",
         body: "/disallow  unknown1 ",
-        prNumber: prNumber,
+        prNumber,
     };
 
     ci.setGHgetPRComment(comment);
@@ -427,9 +419,7 @@ test("handle comment disallow was not allowed", async () => {
 });
 
 test("handle comment submit not author", async () => {
-    let { worktree,
-          gggLocal,
-    } = await setupRepos("s1");
+    const { worktree, gggLocal } = await setupRepos("s1");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
@@ -438,7 +428,7 @@ test("handle comment submit not author", async () => {
     const comment = {
         author: "ggg",
         body: "/submit   ",
-        prNumber: prNumber,
+        prNumber,
     };
     const user = {
         email: "bad@example.com",
@@ -472,9 +462,7 @@ test("handle comment submit not author", async () => {
 });
 
 test("handle comment submit not mergable", async () => {
-    let { worktree,
-          gggLocal,
-    } = await setupRepos("s2");
+    const { worktree, gggLocal } = await setupRepos("s2");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
@@ -483,7 +471,7 @@ test("handle comment submit not mergable", async () => {
     const comment = {
         author: "ggg",
         body: "/submit   ",
-        prNumber: prNumber,
+        prNumber,
     };
     const user = {
         email: "bad@example.com",
@@ -517,17 +505,14 @@ test("handle comment submit not mergable", async () => {
 });
 
 test("handle comment submit email success", async () => {
-    let { worktree,
-          gggLocal,
-          gggRemote,
-    } = await setupRepos("s3");
+    const { worktree, gggLocal, gggRemote } = await setupRepos("s3");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
 
     const template = "fine template\r\nnew line";
     // add template to master repo
-    await gggRemote.commit("temple",".github//PULL_REQUEST_TEMPLATE.md",
+    await gggRemote.commit("temple", ".github//PULL_REQUEST_TEMPLATE.md",
                            template);
     const A = await gggRemote.revParse("HEAD");
     expect(A).not.toBeUndefined();
@@ -538,15 +523,17 @@ test("handle comment submit email success", async () => {
 
     // get the pr refs in place
     const pullRequestRef = `refs/pull/${prNumber}`;
-    await gggRemote.git(["fetch", worktree.workDir,
+    await gggRemote.git([
+        "fetch", worktree.workDir,
         `refs/heads/master:${pullRequestRef}/head`,
-        `refs/heads/master:${pullRequestRef}/merge`]); // fake merge
+        `refs/heads/master:${pullRequestRef}/merge`,
+    ]); // fake merge
 
     // GitHubGlue Responses
     const comment = {
         author: "ggg",
         body: "/submit   ",
-        prNumber: prNumber,
+        prNumber,
     };
     const user = {
         email: "ggg@example.com",
@@ -560,7 +547,8 @@ test("handle comment submit email success", async () => {
         baseLabel: "gitgitgadget:next",
         baseOwner: "gitgitgadget",
         baseRepo: "git",
-        body: `Super body\r\n${template}\r\nCc: Copy One <copy@cat.com>\r\nCc: Copy Two <copycat@cat.com>`,
+        body: `Super body\r\n${template}\r\nCc: Copy One <copy@cat.com>\r\n`
+            + `Cc: Copy Two <copycat@cat.com>`,
         hasComments: true,
         headCommit: B,
         headLabel: "somebody:master",
@@ -583,16 +571,13 @@ test("handle comment submit email success", async () => {
 });
 
 test("handle comment preview email success", async () => {
-    let { worktree,
-          gggLocal,
-          gggRemote,
-    } = await setupRepos("p1");
+    const { worktree, gggLocal, gggRemote } = await setupRepos("p1");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
 
     const template = "fine template\nnew line";
-    await gggRemote.commit("temple",".github//PULL_REQUEST_TEMPLATE.md",
+    await gggRemote.commit("temple", ".github//PULL_REQUEST_TEMPLATE.md",
                            template);
     const A = await gggRemote.revParse("HEAD");
     expect(A).not.toBeUndefined();
@@ -603,15 +588,17 @@ test("handle comment preview email success", async () => {
 
     // get the pr refs in place
     const pullRequestRef = `refs/pull/${prNumber}`;
-    await gggRemote.git(["fetch", worktree.workDir,
+    await gggRemote.git([
+        "fetch", worktree.workDir,
         `refs/heads/master:${pullRequestRef}/head`,
-        `refs/heads/master:${pullRequestRef}/merge`]); // fake merge
+        `refs/heads/master:${pullRequestRef}/merge`,
+    ]); // fake merge
 
     // GitHubGlue Responses
-    let comment = {
+    const comment = {
         author: "ggg",
         body: "/submit   ",
-        prNumber: prNumber,
+        prNumber,
     };
     const user = {
         email: "preview@example.com",
@@ -656,10 +643,7 @@ test("handle comment preview email success", async () => {
 });
 
 test("handle push/comment too many commits fails", async () => {
-    let { worktree,
-          gggLocal,
-          gggRemote,
-    } = await setupRepos("pu1");
+    const { worktree, gggLocal, gggRemote } = await setupRepos("pu1");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
@@ -674,17 +658,19 @@ test("handle push/comment too many commits fails", async () => {
 
     // get the pr refs in place
     const pullRequestRef = `refs/pull/${prNumber}`;
-    await gggRemote.git(["fetch", worktree.workDir,
+    await gggRemote.git([
+        "fetch", worktree.workDir,
         `refs/heads/master:${pullRequestRef}/head`,
-        `refs/heads/master:${pullRequestRef}/merge`]); // fake merge
+        `refs/heads/master:${pullRequestRef}/merge`,
+    ]); // fake merge
 
     const commits = 40;
 
     // GitHubGlue Responses
-    let comment = {
+    const comment = {
         author: "ggg",
         body: "/submit   ",
-        prNumber: prNumber,
+        prNumber,
     };
     const user = {
         email: "preview@example.com",
@@ -699,7 +685,7 @@ test("handle push/comment too many commits fails", async () => {
         baseOwner: "gitgitgadget",
         baseRepo: "git",
         body: "Never seen - too many commits.",
-        commits: commits,
+        commits,
         hasComments: false,
         headCommit: B,
         headLabel: "somebody:master",

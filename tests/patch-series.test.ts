@@ -1,7 +1,7 @@
 import "jest";
+import { git } from "../lib/git";
 import { PatchSeries } from "../lib/patch-series";
 import { testCreateRepo } from "./test-lib";
-import { git } from "../lib/git";
 
 const mbox1 =
     `From 38d1082511bb02a709f203481c2787adc6e67c02 Mon Sep 17 00:00:00 2001
@@ -416,7 +416,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             await repo.commit("template", ".github/PULL_REQUEST_TEMPLATE.md", [
                 "This is PR template",
                 "Please read our guide to continue",
-            ].join("\n"))
+            ].join("\n"));
 
             const prTitle = "My test PR!";
             const prBody = [
