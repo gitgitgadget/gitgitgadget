@@ -909,13 +909,6 @@ export class PatchSeries {
     }
 
     protected async generateMBox(): Promise<string> {
-        const commitRange =
-            `${this.project.baseCommit}..${this.project.branchName}`;
-        if (!this.coverLetter && 1 < this.patchCount) {
-            throw new Error("Branch " + this.project.branchName
-                + " needs a description");
-        }
-
         const mergeBase = await git(["merge-base", this.project.baseCommit,
                                      this.project.branchName],
                                     { workDir: this.project.workDir });
@@ -936,14 +929,18 @@ export class PatchSeries {
         if (subjectPrefix) {
             args.push("--subject-prefix=" + subjectPrefix);
         }
-        if (this.coverLetter && this.patchCount > 1) {
+        if (this.patchCount > 1 ) {
+            if (!this.coverLetter) {
+                    throw new Error("Branch " + this.project.branchName
+                        + " needs a description");
+            }
             args.push("--cover-letter");
         }
         if (this.options.patience) {
             args.push("--patience");
         }
 
-        args.push(commitRange);
+        args.push(`${this.project.baseCommit}..${this.project.branchName}`);
 
         return await git(args, { workDir: this.project.workDir });
     }
