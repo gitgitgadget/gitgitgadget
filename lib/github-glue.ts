@@ -25,6 +25,22 @@ export interface IPRComment {
     prNumber: number;
 }
 
+export interface IPRCommit {
+    author: {
+        email: string;
+        login: string;
+        name: string;
+    };
+    commit: string;
+    committer: {
+        email: string;
+        login: string;
+        name: string;
+    };
+    message: string;
+    parentCount: number;
+}
+
 export interface IGitHubUser {
     email: string | null;           // null if no public email
     login: string;
@@ -281,6 +297,42 @@ export class GitHubGlue {
             body: response.data.body,
             prNumber,
         };
+    }
+
+    /**
+     * Retrieves the commits of the specified PR.
+     *
+     * @param repositoryOwner owner of the GitHub repo for the pull request
+     * @param prNumber the Pull Request's number
+     * @returns the set of commits
+     */
+    public async getPRCommits(repositoryOwner: string, prNumber: number):
+         Promise<IPRCommit[]> {
+        const response = await this.client.pulls.listCommits({
+            owner: repositoryOwner,
+            pull_number: prNumber,
+            repo: "git",
+        });
+        const result: IPRCommit[] = [];
+        response.data.map((cm: octokit.PullsListCommitsResponseItem) => {
+            result.push({
+                author: {
+                    email: cm.commit.author.email,
+                    login: cm.author.login,
+                    name: cm.commit.author.name,
+                },
+                commit: cm.sha,
+                committer: {
+                    email: cm.commit.committer.email,
+                    login: cm.committer.login,
+                    name: cm.commit.committer.name,
+                },
+                message: cm.commit.message,
+                parentCount: cm.parents.length,
+            });
+        });
+
+        return result;
     }
 
     /**
