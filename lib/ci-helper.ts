@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as util from "util";
+import { ILintError, LintCommit } from "./commit-lint";
 import { commitExists, git } from "./git";
 import { GitNotes } from "./git-notes";
 import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget";
@@ -685,6 +686,24 @@ export class CIHelper {
                     merges.join("\n    ")
                     }\n\nPlease rebase the branch and force-push.`);
             result = false;
+        }
+
+        // if no initial failure, run linting checks
+
+        if (result) {
+            const results = await Promise.all(
+                commits.map((commit: IPRCommit) => {
+                const linter = new LintCommit(commit);
+                return linter.lint();
+            }));
+
+            for (const lintError of
+                 (results.filter((el) => el) as ILintError[])) {
+                await addComment(lintError.message);
+                if (lintError.checkFailed) {
+                    result = false;
+                }
+            }
         }
 
         return result;
