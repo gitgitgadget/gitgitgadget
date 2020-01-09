@@ -42,7 +42,7 @@ test("project options", async () => {
                 iteration: 1,
             };
             const x = new X(new GitNotes(repo.workDir), {},
-                            options2, prMeta, "");
+                            options2, prMeta, "", 1);
             const mbox = await x.generateMBox();
             const needle =
                 "=?UTF-8?Q?Nguy=E1=BB=85n_Th=C3=A1i_Ng=E1=BB=8Dc?= Duy";

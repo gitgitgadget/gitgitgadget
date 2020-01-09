@@ -11,15 +11,15 @@ const rmdir = util.promisify(fs.rmdir);
 const writeFile = util.promisify(fs.writeFile);
 const unlink = util.promisify(fs.unlink);
 
-export async function removeRecursively(path: string): Promise<void> {
-    if (!await isDirectory(path)) {
-        await unlink(path);
+export async function removeRecursively(directory: string): Promise<void> {
+    if (!await isDirectory(directory)) {
+        await unlink(directory);
     } else {
-        const items = await readdir(path);
+        const items = await readdir(directory);
         for (const name of items) {
-            await removeRecursively(`${path}/${name}`);
+            await removeRecursively(`${directory}/${name}`);
         }
-        await rmdir(path);
+        await rmdir(directory);
     }
 }
 

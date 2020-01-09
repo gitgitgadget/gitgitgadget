@@ -1,7 +1,7 @@
 import addressparser = require("nodemailer/lib/addressparser");
 import { encodeWords } from "nodemailer/lib/mime-funcs";
 import {
-    commitExists, git, gitCommandExists, gitConfig, revParse,
+    commitExists, git, gitCommandExists, gitConfig, revListCount, revParse,
 } from "./git";
 import { GitNotes } from "./git-notes";
 import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget";
@@ -116,9 +116,14 @@ export class PatchSeries {
             }
         }
 
+        const patchCount = await revListCount(["--no-merges",
+                                               `${baseCommit}..${headCommit}`],
+                                              project.workDir);
+
         const notes =
             new GitNotes(project.workDir, "refs/notes/mail-patch-series");
-        return new PatchSeries(notes, options, project, metadata, rangeDiff);
+        return new PatchSeries(notes, options, project, metadata, rangeDiff,
+                               patchCount);
     }
 
     public static async getFromNotes(notes: GitNotes,
@@ -137,6 +142,13 @@ export class PatchSeries {
         }
         let metadata: IPatchSeriesMetadata | undefined =
             await notes.get<IPatchSeriesMetadata>(pullRequestURL);
+
+        const currentRange = `${baseCommit}..${headCommit}`;
+        const patchCount = await revListCount(["--no-merges", currentRange],
+                                              workDir);
+        if (!patchCount) {
+            throw new Error(`Invalid commit range: ${currentRange}`);
+        }
 
         let rangeDiff: string = "";
         if (metadata === undefined) {
@@ -159,7 +171,6 @@ export class PatchSeries {
 
             const previousRange =
                 `${metadata.baseCommit}..${metadata.headCommit}`;
-            const currentRange = `${baseCommit}..${headCommit}`;
             if (await gitCommandExists("range-diff", workDir)) {
                 rangeDiff = await git(["range-diff", "--no-color",
                                        "--creation-factor=95",
@@ -182,13 +193,18 @@ export class PatchSeries {
             metadata.coverLetterMessageId = "not yet sent";
         }
 
+        const indentCoverLetter = patchCount > 1 ? "" : "    ";
+        const wrapCoverLetterAt = 76 - indentCoverLetter.length;
+
         const {
             basedOn,
             cc,
             coverLetter,
         } = await PatchSeries.parsePullRequest(workDir,
                                                pullRequestTitle,
-                                               pullRequestBody);
+                                               pullRequestBody,
+                                               wrapCoverLetterAt,
+                                               indentCoverLetter);
 
         // if known, add submitter to email chain
         if (senderEmail) {
@@ -206,14 +222,16 @@ export class PatchSeries {
                                                  baseCommit);
 
         return new PatchSeries(notes, options, project, metadata,
-                               rangeDiff,
+                               rangeDiff, patchCount,
                                coverLetter,
                                senderName);
     }
 
     protected static async parsePullRequest(workDir: string,
                                             prTitle: string,
-                                            prBody: string):
+                                            prBody: string,
+                                            wrapCoverLetterAtColumn: number,
+                                            indentCoverLetter: string):
     Promise <{
         coverLetter: string,
         basedOn?: string,
@@ -248,9 +266,10 @@ export class PatchSeries {
         } = PatchSeries.parsePullRequestBody(prBody);
 
         const coverLetter = `${prTitle}\n\n${coverLetterBody}`;
-
-        const wrapCoverLetterAtColumn = 76;
-        const wrappedLetter = md2text(coverLetter, wrapCoverLetterAtColumn);
+        let wrappedLetter = md2text(coverLetter, wrapCoverLetterAtColumn);
+        if (indentCoverLetter) {
+            wrappedLetter = wrappedLetter.replace(/^/mg, indentCoverLetter);
+        }
 
         return {
             basedOn,
@@ -611,10 +630,12 @@ export class PatchSeries {
     public readonly rangeDiff: string;
     public readonly coverLetter?: string;
     public readonly senderName?: string;
+    public readonly patchCount: number;
 
     protected constructor(notes: GitNotes, options: PatchSeriesOptions,
                           project: ProjectOptions,
                           metadata: IPatchSeriesMetadata, rangeDiff: string,
+                          patchCount: number,
                           coverLetter?: string, senderName?: string) {
         this.notes = notes;
         this.options = options;
@@ -623,6 +644,7 @@ export class PatchSeries {
         this.rangeDiff = rangeDiff;
         this.coverLetter = coverLetter;
         this.senderName = senderName;
+        this.patchCount = patchCount;
     }
 
     public subjectPrefix(): string {
@@ -783,6 +805,27 @@ export class PatchSeries {
                                                  mails.length > 1, footers);
         }
 
+        /*
+         * Finally, *after* inserting the range-diff and the footers (if any),
+         * insert the cover letter into single-patch submissions.
+         */
+        if (mails.length === 1 && this.coverLetter) {
+            if (this.patchCount !== 1) {
+                throw new Error(`Patch count mismatch: ${mails.length} vs ${
+                    this.patchCount}`);
+            }
+            // Need to insert it into the first mail
+            const splitAtTripleDash = mails[0].match(/([^]*?\n---\n)([^]*)$/);
+            if (!splitAtTripleDash) {
+                throw new Error(`No \`---\` found in\n${mails[0]}`);
+            }
+            console.log(`Insert cover letter into\n${mails[0]}\nwith match:`);
+            console.log(splitAtTripleDash);
+            mails[0] = splitAtTripleDash[1] +
+                this.coverLetter + "\n" + splitAtTripleDash[2];
+            console.log(mails[0]);
+        }
+
         logger.log("Adjusting Date headers");
         if (forceDate) {
             PatchSeries.adjustDateHeaders(mails, forceDate);
@@ -803,7 +846,7 @@ export class PatchSeries {
         }
 
         logger.log("Updating the mail metadata");
-        let isCoverLetter: boolean = true;
+        let isCoverLetter: boolean = mails.length > 1;
         for (const mail of mails) {
             const messageID = mail.match(/\nMessage-ID: <(.*?)>\n/i);
             if (messageID) {
@@ -866,16 +909,6 @@ export class PatchSeries {
     }
 
     protected async generateMBox(): Promise<string> {
-        const commitRange =
-            `${this.project.baseCommit}..${this.project.branchName}`;
-        if (!this.coverLetter &&
-            1 < parseInt(await git(["rev-list", "--count", commitRange],
-                                   { workDir: this.project.workDir }),
-                         10)) {
-            throw new Error("Branch " + this.project.branchName
-                + " needs a description");
-        }
-
         const mergeBase = await git(["merge-base", this.project.baseCommit,
                                      this.project.branchName],
                                     { workDir: this.project.workDir });
@@ -896,14 +929,18 @@ export class PatchSeries {
         if (subjectPrefix) {
             args.push("--subject-prefix=" + subjectPrefix);
         }
-        if (this.coverLetter) {
+        if (this.patchCount > 1 ) {
+            if (!this.coverLetter) {
+                    throw new Error("Branch " + this.project.branchName
+                        + " needs a description");
+            }
             args.push("--cover-letter");
         }
         if (this.options.patience) {
             args.push("--patience");
         }
 
-        args.push(commitRange);
+        args.push(`${this.project.baseCommit}..${this.project.branchName}`);
 
         return await git(args, { workDir: this.project.workDir });
     }

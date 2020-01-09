@@ -433,7 +433,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
 
             const parsed = await PatchSeries.parsePullRequest(repo.workDir,
                                                               prTitle,
-                                                              prBody);
+                                                              prBody, 76, "");
 
             expect(parsed.cc).toEqual([
                 "Some Contributor <contributor@example.com>",
