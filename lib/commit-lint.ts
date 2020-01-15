@@ -92,7 +92,7 @@ export class LintCommit {
     // in lower-case
 
     private async lowerCaseAfterPrefix(): Promise<void> {
-        const match = this.lines[0].match(/^([a-z]+)+?:.*?([A-Z])/);
+        const match = this.lines[0].match(/^([a-z]+)+?:\s*?([A-Z])/);
 
         if (match) {
             this.block(`Prefixed commit message must be in lower case: ${

@@ -76,7 +76,7 @@ test("basic lint tests", async () => {
         }
     }
 
-    commit.message = "doc: success as lower case\n\nSigned-off-by: x";
+    commit.message = "doc: success as Lower Case\n\nSigned-off-by: x";
     {
         const linter = new LintCommit(commit);
         const lintError = await linter.lint();
