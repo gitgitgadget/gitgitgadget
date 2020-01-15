@@ -546,6 +546,21 @@ test("handle comment submit email success", async () => {
         name: "e. e. cummings",
         type: "basic",
     };
+    const commits = [{
+        author: {
+            email: "ggg@example.com",
+            login: "ggg",
+            name: "e. e. cummings",
+        },
+        commit: "BA55FEEDBEEF",
+        committer: {
+            email: "ggg@example.com",
+            login: "ggg",
+            name: "e. e. cummings",
+        },
+        message: "Submit ok\n\nSuccint message\n\nSigned-off-by: x",
+        parentCount: 1,
+    }];
     const prinfo = {
         author: "ggg",
         baseCommit: A,
@@ -568,6 +583,7 @@ test("handle comment submit email success", async () => {
     if (smtpUser) {                 // if configured for this test
         ci.setGHgetPRInfo(prinfo);
         ci.setGHgetPRComment(comment);
+        ci.setGHgetPRCommits(commits);
         ci.setGHgetGitHubUserInfo(user);
 
         await ci.handleComment("gitgitgadget", 433865360);
@@ -611,6 +627,21 @@ test("handle comment preview email success", async () => {
         name: "e. e. cummings",
         type: "basic",
     };
+    const commits = [{
+        author: {
+            email: "ggg@example.com",
+            login: "ggg",
+            name: "e. e. cummings",
+        },
+        commit: "BA55FEEDBEEF",
+        committer: {
+            email: "ggg@example.com",
+            login: "ggg",
+            name: "e. e. cummings",
+        },
+        message: "Submit ok\n\nSigned-off-by: x",
+        parentCount: 1,
+    }];
     const prinfo = {
         author: "ggg",
         baseCommit: A,
@@ -632,6 +663,7 @@ test("handle comment preview email success", async () => {
     if (smtpUser) {                 // if configured for this test
         ci.setGHgetPRInfo(prinfo);
         ci.setGHgetPRComment(comment);
+        ci.setGHgetPRCommits(commits);
         ci.setGHgetGitHubUserInfo(user);
 
         await ci.handleComment("gitgitgadget", 433865360);
@@ -960,5 +992,137 @@ test("disallow noreply emails", async () => {
     // fail for commits with fake email on push
     await expect(ci.handlePush("gitgitgadget", 433865360)).
         rejects.toThrow(/Failing check due/);
+
+});
+
+// Basic tests for ci-helper - lint tests are in commit-lint.tests.ts
+
+test("basic lint tests", async () => {
+    const { worktree, gggLocal, gggRemote} = await setupRepos("pu4");
+
+    const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
+    const prNumber = 59;
+
+    const A = await gggRemote.revParse("HEAD");
+    expect(A).not.toBeUndefined();
+
+    // Now come up with a local change
+    // this should be in a separate repo from the worktree
+    await worktree.git(["pull", gggRemote.workDir, "master"]);
+    const B = await worktree.commit("b");
+
+    // get the pr refs in place
+    const pullRequestRef = `refs/pull/${prNumber}`;
+    await gggRemote.git(
+        [ "fetch", worktree.workDir,
+          `refs/heads/master:${pullRequestRef}/head`,
+          `refs/heads/master:${pullRequestRef}/merge`]); // fake merge
+
+    // GitHubGlue Responses
+    const comment = {
+        author: "ggg",
+        body: "/submit   ",
+        prNumber,
+    };
+    const user = {
+        email: "ggg@example.com",
+        login: "ggg",
+        name: "e. e. cummings",
+        type: "basic",
+    };
+    const commits = [
+        {
+            author: {
+                email: "ggg@example.com",
+                login: "ggg",
+                name: "e. e. cummings",
+            },
+            commit: "BAD1FEEDBEEF",
+            committer: {
+                email: "ggg@example.com",
+                login: "ggg",
+                name: "e. e. cummings",
+            },
+            message: "Message has no description",
+            parentCount: 1,
+        },
+        {
+            author: {
+                email: "ggg@example.com",
+                login: "ggg",
+                name: "e. e. cummings",
+            },
+            commit: "BAD2FEEDBEEF",
+            committer: {
+                email: "ggg@example.com",
+                login: "ggg",
+                name: "e. e. cummings",
+            },
+            message: "Missing blank line is bad\nhere\nSigned-off-by: x",
+            parentCount: 1,
+        },
+        {
+            author: {
+                email: "ggg@example.com",
+                login: "ggg",
+                name: "e. e. cummings",
+            },
+            commit: "F00DFEEDBEEF",
+            committer: {
+                email: "ggg@example.com",
+                login: "ggg",
+                name: "e. e. cummings",
+            },
+            message: "Successful test\n\nSigned-off-by: x",
+            parentCount: 1,
+        },
+        {
+            author: {
+                email: "ggg@example.com",
+                login: "ggg",
+                name: "e. e. cummings",
+            },
+            commit: "BAD5FEEDBEEF",
+            committer: {
+                email: "ggg@example.com",
+                login: "ggg",
+                name: "e. e. cummings",
+            },
+            message: "tests: This should be lower case\n\nSigned-off-by: x",
+            parentCount: 1,
+        },
+    ];
+
+    const prinfo = {
+        author: "ggg",
+        baseCommit: A,
+        baseLabel: "gitgitgadget:next",
+        baseOwner: "gitgitgadget",
+        baseRepo: "git",
+        body: "Never seen - merge commits.",
+        commits: commits.length,
+        hasComments: false,
+        headCommit: B,
+        headLabel: "somebody:master",
+        mergeable: true,
+        number: prNumber,
+        pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
+        title: "Preview a fun fix",
+    };
+
+    ci.setGHgetPRInfo(prinfo);
+    ci.setGHgetPRComment(comment);
+    ci.setGHgetPRCommits(commits);
+    ci.setGHgetGitHubUserInfo(user);
+
+    // fail for commits with lint errors
+    await expect(ci.handlePush("gitgitgadget", 433865360)).
+        rejects.toThrow(/Failing check due/);
+    expect(ci.addPRComment.mock.calls[0][1]).toMatch(commits[0].commit);
+    expect(ci.addPRComment.mock.calls[0][1]).toMatch(/too short/);
+    expect(ci.addPRComment.mock.calls[1][1]).toMatch(commits[1].commit);
+    expect(ci.addPRComment.mock.calls[1][1]).toMatch(/empty line/);
+    expect(ci.addPRComment.mock.calls[2][1]).toMatch(commits[3].commit);
+    expect(ci.addPRComment.mock.calls[2][1]).toMatch(/lower case/);
 
 });

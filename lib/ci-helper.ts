@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as util from "util";
+import { ILintError, LintCommit } from "./commit-lint";
 import { commitExists, git } from "./git";
 import { GitNotes } from "./git-notes";
 import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget";
@@ -645,24 +646,25 @@ export class CIHelper {
         let result: boolean = true;
         const maxCommits = 30;
         if (pr.commits && pr.commits > maxCommits) {
-            addComment(`The pull request has ${pr.commits
-                       } commits.  The max allowed is ${maxCommits
-                       }.  Please split the patch series into multiple pull ${
-                       ""}requests. Also consider squashing related commits.`);
+            await addComment(`The pull request has ${pr.commits
+                             } commits.  The max allowed is ${maxCommits
+                             }.  Please split the patch series into ${
+                             ""}multiple pull requests. Also consider ${
+                             ""}squashing related commits.`);
             result = false;
         }
 
         const commits = await this.github.getPRCommits(pr.baseOwner, pr.number);
 
         const merges: string[] = [];
-        commits.map((cm: IPRCommit) => {
+        await Promise.all(commits.map(async (cm: IPRCommit) => {
             if (cm.parentCount > 1) {
                 merges.push(cm.commit);
             }
 
             if (cm.author.email.endsWith("@users.noreply.github.com")) {
                 addComment(`Invalid author email in ${cm.commit}: "${
-                    cm.author.email}"`);
+                                 cm.author.email}"`);
                 result = false;
                 return;
             }
@@ -675,16 +677,34 @@ export class CIHelper {
                     userInfo.email = cm.committer.email;
                 }
             }
-        });
+        }));
 
         if (merges.length) {
-            addComment(`There ${
-                    merges.length > 1 ?
-                    "are merge commits" : "is a merge commit"
-                    } in this Pull Request:\n\n    ${
-                    merges.join("\n    ")
-                    }\n\nPlease rebase the branch and force-push.`);
+            await addComment(`There ${
+                             merges.length > 1 ?
+                             "are merge commits" : "is a merge commit"
+                             } in this Pull Request:\n\n    ${
+                             merges.join("\n    ")
+                             }\n\nPlease rebase the branch and force-push.`);
             result = false;
+        }
+
+        // if no initial failure, run linting checks
+
+        if (result) {
+            const results = await Promise.all(
+                commits.map((commit: IPRCommit) => {
+                const linter = new LintCommit(commit);
+                return linter.lint();
+            }));
+
+            for (const lintError of
+                 (results.filter((el) => el) as ILintError[])) {
+                await addComment(lintError.message);
+                if (lintError.checkFailed) {
+                    result = false;
+                }
+            }
         }
 
         return result;
