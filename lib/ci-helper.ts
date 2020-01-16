@@ -657,16 +657,16 @@ export class CIHelper {
         const commits = await this.github.getPRCommits(pr.baseOwner, pr.number);
 
         const merges: string[] = [];
-        await Promise.all(commits.map(async (cm: IPRCommit) => {
+        for (const cm of commits) {
             if (cm.parentCount > 1) {
                 merges.push(cm.commit);
             }
 
             if (cm.author.email.endsWith("@users.noreply.github.com")) {
-                addComment(`Invalid author email in ${cm.commit}: "${
+                await addComment(`Invalid author email in ${cm.commit}: "${
                                  cm.author.email}"`);
                 result = false;
-                return;
+                continue;
             }
 
             // Update email from git info if not already set
@@ -677,7 +677,7 @@ export class CIHelper {
                     userInfo.email = cm.committer.email;
                 }
             }
-        }));
+        }
 
         if (merges.length) {
             await addComment(`There ${
