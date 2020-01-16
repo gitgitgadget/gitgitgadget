@@ -101,6 +101,15 @@ test("basic lint tests", async () => {
         expect(lintError).toBeUndefined();
     }
 
+    commit.message = `Success signed off\n\n foo bar
+Signed-off-by: x
+Reviewed-by: y`;
+    {
+        const linter = new LintCommit(commit);
+        const lintError = await linter.lint();
+        expect(lintError).toBeUndefined();
+    }
+
     commit.message = "Fail blanks in sign off\n\n Signed-off-by: x";
     {
         const linter = new LintCommit(commit);
