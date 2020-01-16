@@ -100,17 +100,25 @@ export class LintCommit {
         }
     }
 
-    // Verify the last line is a Signed-off-by: line - DCO check does this
+    // Verify there is a Signed-off-by: line - DCO check does this
     // already, but put out a message if it is indented
 
     private async signedOffBy(): Promise<void> {
-        const line = this.lines[this.lines.length - 1];
-        const match = line.match(/^(\s*)Signed-off-by:\s+(.*)/);
+        let signedFound = false;
 
-        if (!match) {
+        this.lines.map((line) => {
+            const match = line.match(/^(\s*)Signed-off-by:\s+(.*)/);
+
+            if (match) {
+                signedFound = true;
+                if (match[1].length) {
+                    this.block(`Leading whitespace in sign off: ${line}`);
+                }
+            }
+        });
+
+        if (!signedFound) {
             this.block("Commit not signed off");
-        } else if (match[1].length) {
-            this.block(`Leading whitespace in sign off: ${line}`);
         }
     }
 
