@@ -318,13 +318,13 @@ export class GitHubGlue {
             result.push({
                 author: {
                     email: cm.commit.author.email,
-                    login: cm.author.login,
+                    login: cm.author ? cm.author.login : "unknown login",
                     name: cm.commit.author.name,
                 },
                 commit: cm.sha,
                 committer: {
                     email: cm.commit.committer.email,
-                    login: cm.committer.login,
+                    login: cm.committer ? cm.committer.login : "unknown login",
                     name: cm.commit.committer.name,
                 },
                 message: cm.commit.message,
