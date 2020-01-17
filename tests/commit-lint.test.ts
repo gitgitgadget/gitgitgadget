@@ -1,5 +1,6 @@
 import "jest";
 import { LintCommit } from "../lib/commit-lint";
+import { git } from "../lib/git";
 
 jest.setTimeout(180000);
 
@@ -158,3 +159,44 @@ blah http://www.github.com\n\nSigned-off-by: x`;
     }
 
 });
+
+if (process.env.gggdev) {
+    test("verify against existing commits", async () => {
+        const commit = {
+            author: {
+                email: "ggg@example.com",
+                login: "ggg",
+                name: "e. e. cummings",
+            },
+            commit: "BAD1FEEDBEEF",
+            committer: {
+                email: "ggg@example.com",
+                login: "ggg",
+                name: "e. e. cummings",
+            },
+            message: "Message has no description",
+            parentCount: 1,
+        };
+
+        const gitDir = "../git";
+        const patches = await git(["log",
+                                   "-300",
+                                   "--no-merges",
+                                   "--pretty=format:\"%h\""],
+                                  { workDir: gitDir });
+
+        for (const patch of patches.replace(/"/g, "").split("\n")) {
+            commit.commit = patch;
+            commit.message = await git(["log",
+                                        patch,
+                                        "-1",
+                                        "--pretty=format:\"%B\""],
+                                       { workDir: gitDir });
+            const linter = new LintCommit(commit);
+            const lintError = await linter.lint();
+            if (lintError) {
+                console.log(`${lintError.message}\n\n${commit.message}`);
+            }
+        }
+    });
+}

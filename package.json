@@ -11,6 +11,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "dev-test": "set gggdev=1 && jest --env=node",
     "lint": "tslint -c tslint.json '{lib,script,tests}/**/*.{ts,tsx}'",
     "start": "node server.js",
     "test": "tslint --project . && jest --env=node",
