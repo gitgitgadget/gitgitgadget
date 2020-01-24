@@ -426,6 +426,9 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
                 "CC: Capital Letters <shout@out.loud>, Hello <hello@wor.ld>"
                 + ", without@any.explicit.name"
                 + "; Semi Cologne <semi@col.on>",
+                "Cc:No Space <no@outer.space>",
+                "Cc:   Several Space <i@love.spaces>",
+                "Cc:	Even A. Tab <john@tabular.com>",
                 "Cc: Git Maintainer <maintainer@gmail.com>",
                 "This is PR template",
                 "Please read our guide to continue",
@@ -441,6 +444,9 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
                 "Hello <hello@wor.ld>",
                 "without@any.explicit.name",
                 "Semi Cologne <semi@col.on>",
+                "No Space <no@outer.space>",
+                "Several Space <i@love.spaces>",
+                "Even A. Tab <john@tabular.com>",
                 "Git Maintainer <maintainer@gmail.com>",
             ]);
 
