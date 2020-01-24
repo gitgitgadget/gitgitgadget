@@ -293,7 +293,7 @@ export class PatchSeries {
             coverLetterBody = match[1];
             const footer: string[] = [];
             for (const line of match[2].trimRight().split("\n")) {
-                const match2 = line.match(/^([-A-Za-z]+:) (.*)$/);
+                const match2 = line.match(/^([-A-Za-z]+:)\s*(.*)$/);
                 if (!match2) {
                     footer.push(line);
                 } else {
