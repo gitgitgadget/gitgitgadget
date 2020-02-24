@@ -86,20 +86,20 @@ export class PatchSeries {
             match = tagMessage.match(/^[\s\S]*?\n\n([\s\S]*)/);
             (match ? match[1] : tagMessage).split("\n").map((line) => {
                 // tslint:disable-next-line:max-line-length
-                match = line.match(/https:\/\/lore\.kernel\.org\/.*\/([^\/]+)/);
+                match = line.match(/https:\/\/lore\.kernel\.org\/.*\/([^/]+)/);
                 if (!match) {
                     // tslint:disable-next-line:max-line-length
-                    match = line.match(/https:\/\/public-inbox\.org\/.*\/([^\/]+)/);
+                    match = line.match(/https:\/\/public-inbox\.org\/.*\/([^/]+)/);
                 }
                 if (!match) {
                     // tslint:disable-next-line:max-line-length
-                    match = line.match(/https:\/\/www\.mail-archive\.com\/.*\/([^\/]+)/);
+                    match = line.match(/https:\/\/www\.mail-archive\.com\/.*\/([^/]+)/);
                 }
                 if (!match) {
                     match = line.match(/http:\/\/mid.gmane.org\/(.*)/);
                 }
                 if (!match) {
-                    match = line.match(/^[^ :]*: Message-ID: ([^\/]+)/);
+                    match = line.match(/^[^ :]*: Message-ID: ([^/]+)/);
                 }
                 if (match) {
                     if (metadata.referencesMessageIds) {
@@ -718,7 +718,7 @@ export class PatchSeries {
             const email = emailMatch[1];
 
             const prMatch = this.metadata.pullRequestURL
-                .match(/\/([^\/]+)\/([^\/]+)\/pull\/(\d+)$/);
+                .match(/\/([^/]+)\/([^/]+)\/pull\/(\d+)$/);
             if (prMatch) {
                 const infix = this.metadata.iteration > 1 ?
                     `.v${this.metadata.iteration}` : "";
