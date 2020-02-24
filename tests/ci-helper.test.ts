@@ -568,7 +568,7 @@ test("handle comment submit email success", async () => {
         baseOwner: "gitgitgadget",
         baseRepo: "git",
         body: `Super body\r\n${template}\r\nCc: Copy One <copy@cat.com>\r\n`
-            + `Cc: Copy Two <copycat@cat.com>`,
+            + "Cc: Copy Two <copycat@cat.com>",
         hasComments: true,
         headCommit: B,
         headLabel: "somebody:master",

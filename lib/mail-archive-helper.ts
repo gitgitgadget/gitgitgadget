@@ -62,9 +62,8 @@ export class MailArchiveGitHelper {
             return "";
         }
 
-        return "``````````\n" +
-            body + (body.endsWith("\n") ? "" : "\n") +
-            "``````````\n";
+        return "``````````\n"
+            + body + (body.endsWith("\n") ? "" : "\n") + "``````````\n";
     }
 
     protected readonly state: IGitMailingListMirrorState;

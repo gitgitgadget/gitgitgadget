@@ -87,8 +87,8 @@ export class ProjectOptions {
         if (!baseCommit &&
             await git(["rev-list", branchName + ".." + upstreamBranch],
                       { workDir })) {
-            throw new Error("Branch " + branchName + " is not rebased to " +
-                upstreamBranch);
+            throw new Error(`Branch ${branchName} is not rebased to ${
+                upstreamBranch}`);
         }
 
         return new ProjectOptions(branchName, upstreamBranch, basedOn,
@@ -118,8 +118,8 @@ export class ProjectOptions {
         const commit = await git(["rev-parse", "-q", "--verify", remoteRef],
                                  { workDir });
         if (await git(["rev-parse", basedOn]) !== commit) {
-            throw new Error(basedOn + " on " + publishToRemote +
-                " disagrees with local branch");
+            throw new Error(`${basedOn} on ${publishToRemote
+                } disagrees with local branch`);
         }
 
         return basedOn;

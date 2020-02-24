@@ -34,7 +34,7 @@ async function getGitGitWorkDir(): Promise<string> {
         commander.gitWorkDir = await gitConfig("gitgitgadget.workDir",
                                                commander.gitgitgadgetWorkDir);
         if (!commander.gitWorkDir) {
-            throw new Error(`Could not determine gitgitgadget.workDir`);
+            throw new Error("Could not determine gitgitgadget.workDir");
         }
     }
     if (!await isDirectory(commander.gitWorkDir)) {

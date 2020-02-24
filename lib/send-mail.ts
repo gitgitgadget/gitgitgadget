@@ -45,7 +45,7 @@ export async function parseMBox(mbox: string, gentle?: boolean):
     Promise<IParsedMBox> {
     const headerEnd = mbox.indexOf("\n\n");
     if (headerEnd < 0) {
-        throw new Error(`Could not parse mail`);
+        throw new Error("Could not parse mail");
     }
     const headerStart = mbox.startsWith("From ") ? mbox.indexOf("\n") + 1 : 0;
 
