@@ -70,7 +70,7 @@ export class PatchSeries {
             headLabel: project.branchName,
             iteration: 1,
         };
-        let rangeDiff: string = "";
+        let rangeDiff = "";
 
         if (latestTag) {
             const range = latestTag + "..." + project.branchName;
@@ -150,7 +150,7 @@ export class PatchSeries {
             throw new Error(`Invalid commit range: ${currentRange}`);
         }
 
-        let rangeDiff: string = "";
+        let rangeDiff = "";
         if (metadata === undefined) {
             metadata = {
                 baseCommit,

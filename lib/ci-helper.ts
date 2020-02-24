@@ -157,7 +157,7 @@ export class CIHelper {
                         "refs/remotes/upstream/pu"],
                        { workDir: this.workDir })).split("\n"),
         );
-        let result: boolean = false;
+        let result = false;
         for (const pullRequestURL of Object.keys(options.openPRs)) {
             const info = await this.getPRMetadata(pullRequestURL);
             if (info === undefined || info.latestTag === undefined ||
@@ -220,8 +220,8 @@ export class CIHelper {
         if (!options.openPRs) {
             return false;
         }
-        let result: boolean = false;
-        let optionsUpdated: boolean = false;
+        let result = false;
+        let optionsUpdated = false;
         for (const pullRequestURL in options.openPRs) {
             if (!options.openPRs.hasOwnProperty(pullRequestURL)) {
                 continue;
@@ -642,7 +642,7 @@ export class CIHelper {
                               addComment: CommentFunction,
                               userInfo?: IGitHubUser):
         Promise<boolean> {
-        let result: boolean = true;
+        let result = true;
         const maxCommits = 30;
         if (pr.commits && pr.commits > maxCommits) {
             await addComment(`The pull request has ${pr.commits

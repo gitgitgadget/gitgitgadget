@@ -37,7 +37,7 @@ export class ProjectOptions {
         Promise<ProjectOptions> {
         let upstreamBranch: string;
         let to: string;
-        let midUrlPrefix: string = " Message-ID: ";
+        let midUrlPrefix = " Message-ID: ";
 
         if (await commitExists("cb07fc2a29c86d1bc11", workDir) &&
             await revParse(`${baseCommit}:git-gui.sh`, workDir) !== undefined) {

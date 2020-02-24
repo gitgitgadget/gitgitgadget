@@ -65,7 +65,7 @@ async function getCIHelper(): Promise<CIHelper> {
         const gitHub = new GitHubGlue(ci.workDir);
 
         const options = await ci.getGitGitGadgetOptions();
-        let optionsChanged: boolean = false;
+        let optionsChanged = false;
         if (!options.openPRs) {
             options.openPRs = {};
             optionsChanged = true;
@@ -298,7 +298,7 @@ async function getCIHelper(): Promise<CIHelper> {
         }
 
         const options = await ci.getGitGitGadgetOptions();
-        let optionsUpdated: boolean = false;
+        let optionsUpdated = false;
         if (!options.openPRs) {
             options.openPRs = {};
             optionsUpdated = true;
@@ -315,7 +315,7 @@ async function getCIHelper(): Promise<CIHelper> {
             optionsUpdated = true;
         }
 
-        let notesUpdated: boolean = false;
+        let notesUpdated = false;
         if (meta.baseCommit && meta.headCommit) {
             for (const rev of await ci.getOriginalCommitsForPR(meta)) {
                 const messageID = await ci.notes.getLastCommitNote(rev);
