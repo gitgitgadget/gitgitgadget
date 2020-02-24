@@ -211,7 +211,7 @@ export class PatchSeries {
             cc.push(`${senderName} <${senderEmail}>`);
         }
 
-        if (basedOn && !revParse(basedOn, workDir)) {
+        if (basedOn && !await revParse(basedOn, workDir)) {
             throw new Error(`Cannot find base branch ${basedOn}`);
         }
 
@@ -685,8 +685,7 @@ export class PatchSeries {
 
         logger.log("Adding Cc: and explicit From: lines for other authors, "
             + "if needed");
-        await PatchSeries.insertCcAndFromLines(mails, thisAuthor,
-                                               this.senderName);
+        PatchSeries.insertCcAndFromLines(mails, thisAuthor, this.senderName);
         if (mails.length > 1) {
             if (this.coverLetter) {
                 const match2 = mails[0].match(
@@ -698,7 +697,7 @@ export class PatchSeries {
             }
 
             logger.log("Fixing Subject: line of the cover letter");
-            mails[0] = await PatchSeries.adjustCoverLetter(mails[0]);
+            mails[0] = PatchSeries.adjustCoverLetter(mails[0]);
         }
 
         const midMatch = mails[0].match(/\nMessage-ID: <(.*)>/i);
@@ -738,10 +737,9 @@ export class PatchSeries {
 
         logger.log("Generating tag message");
         let tagMessage =
-            await PatchSeries.generateTagMessage(mails[0], mails.length > 1,
-                                                 this.project.midUrlPrefix,
-                                                 this.metadata
-                                                 .referencesMessageIds);
+            PatchSeries.generateTagMessage(mails[0], mails.length > 1,
+                                           this.project.midUrlPrefix,
+                                           this.metadata.referencesMessageIds);
         let tagName;
         if (!this.metadata.pullRequestURL) {
             tagName = `${this.project.branchName}-v${this.metadata.iteration}`;
@@ -763,8 +761,8 @@ export class PatchSeries {
             }
 
             logger.log("Inserting links");
-            tagMessage = await PatchSeries.insertLinks(tagMessage, url, tagName,
-                                                       this.project.basedOn);
+            tagMessage = PatchSeries.insertLinks(tagMessage, url, tagName,
+                                                 this.project.basedOn);
         }
 
         if (this.options.noUpdate) {
