@@ -24,8 +24,8 @@ jest.setTimeout(180000);
 // The CIsmtpOpts must have the keys quoted.
 
 async function getSMTPInfo():
-    Promise <{ smtpUser: string, smtpHost: string,
-               smtpPass: string, smtpOpts: string }> {
+    Promise <{ smtpUser: string; smtpHost: string;
+               smtpPass: string; smtpOpts: string; }> {
     const smtpUser = await gitConfig("gitgitgadget.CIsmtpUser") || "";
     const smtpHost = await gitConfig("gitgitgadget.CIsmtpHost") || "";
     const smtpPass = await gitConfig("gitgitgadget.CIsmtpPass") || "";
@@ -83,7 +83,7 @@ class TestCIHelper extends CIHelper {
 // have objects present).
 
 async function setupRepos(instance: string):
-    Promise <{ worktree: TestRepo, gggLocal: TestRepo, gggRemote: TestRepo }> {
+    Promise <{ worktree: TestRepo; gggLocal: TestRepo; gggRemote: TestRepo }> {
     const worktree = await testCreateRepo(__filename, `-work-cmt${instance}`);
     const gggLocal = await testCreateRepo(__filename, `-git-lcl${instance}`);
     const gggRemote = await testCreateRepo(__filename, `-git-rmt${instance}`);

@@ -7,7 +7,7 @@ export interface IParsedMBox {
     cc?: string[];
     date?: string;
     from?: string;
-    headers?: Array<{ key: string; value: string; }>;
+    headers?: Array<{ key: string; value: string }>;
     messageId?: string;
     subject?: string;
     to?: string;
@@ -55,7 +55,7 @@ export async function parseMBox(mbox: string, gentle?: boolean):
     let cc: string[] | undefined;
     let date: string | undefined;
     let from: string | undefined;
-    const headers = new Array<{ key: string, value: string }>();
+    const headers = new Array<{ key: string; value: string }>();
     let messageId: string | undefined;
     let subject: string | undefined;
     let to: string | undefined;
@@ -98,7 +98,7 @@ export async function parseMBox(mbox: string, gentle?: boolean):
 }
 
 export async function parseMBoxMessageIDAndReferences(mbox: string):
-        Promise<{messageID: string, references: string[]}> {
+        Promise<{messageID: string; references: string[]}> {
     const parsed = await parseMBox(mbox, true);
     if (!parsed.headers) {
         throw new Error(`Could not parse ${mbox}`);

@@ -233,9 +233,9 @@ export class PatchSeries {
                                             wrapCoverLetterAtColumn: number,
                                             indentCoverLetter: string):
     Promise <{
-        coverLetter: string,
-        basedOn?: string,
-        cc: string[],
+        coverLetter: string;
+        basedOn?: string;
+        cc: string[];
     }> {
         // Replace \r\n with \n to simplify remaining parsing.
         // Note that md2text() in the end will do the replacement anyway.
@@ -279,9 +279,9 @@ export class PatchSeries {
     }
 
     protected static parsePullRequestBody(prBody: string): {
-        coverLetterBody: string,
-        basedOn?: string,
-        cc: string[],
+        coverLetterBody: string;
+        basedOn?: string;
+        cc: string[];
     } {
         let basedOn;
         const cc: string[] = [];

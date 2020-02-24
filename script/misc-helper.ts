@@ -354,9 +354,9 @@ async function getCIHelper(): Promise<CIHelper> {
         await glue.addPRComment(pullRequestURL, comment);
     } else if (command === "set-app-token") {
         const set = async (options: {
-             appID: number,
-             installationID?: number,
-             name: string,
+             appID: number;
+             installationID?: number;
+             name: string;
         }): Promise<void> => {
             const client = new octokit();
             const appName = options.name === "gitgitgadget" ?
