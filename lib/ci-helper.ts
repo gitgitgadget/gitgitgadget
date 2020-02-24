@@ -524,7 +524,7 @@ export class CIHelper {
         console.log(`Handling command ${command} with argument ${argument} at ${
             pullRequestURL}#issuecomment-${commentID}`);
 
-        const addComment = async (body: string) => {
+        const addComment = async (body: string): Promise<void> => {
             console.log(`Adding comment to ${pullRequestURL}:\n${body}`);
             await this.github.addPRComment(pullRequestURL, body);
         };
@@ -709,12 +709,13 @@ export class CIHelper {
         return result;
     }
 
-    public async handlePush(repositoryOwner: string, prNumber: number) {
+    public async handlePush(repositoryOwner: string, prNumber: number):
+        Promise<void> {
         const pr = await this.github.getPRInfo(repositoryOwner, prNumber);
         const pullRequestURL = `https://github.com/${repositoryOwner
                                 }/git/pull/${prNumber}`;
 
-        const addComment = async (body: string) => {
+        const addComment = async (body: string): Promise<void>  => {
             console.log(`Adding comment to ${pullRequestURL}:\n${body}`);
             await this.github.addPRComment(pullRequestURL, body);
         };

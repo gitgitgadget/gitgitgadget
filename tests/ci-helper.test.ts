@@ -49,22 +49,22 @@ class TestCIHelper extends CIHelper {
         // this.ghGlue.ensureAuthenticated = async (): Promise<void> => {};
     }
 
-    public setGHgetPRInfo(o: IPullRequestInfo) {
+    public setGHgetPRInfo(o: IPullRequestInfo): void {
         this.ghGlue.getPRInfo = jest.fn( async ():
             Promise<IPullRequestInfo> => o );
     }
 
-    public setGHgetPRComment(o: IPRComment) {
+    public setGHgetPRComment(o: IPRComment): void {
         this.ghGlue.getPRComment = jest.fn( async ():
             Promise<IPRComment> => o );
     }
 
-    public setGHgetPRCommits(o: IPRCommit[]) {
+    public setGHgetPRCommits(o: IPRCommit[]): void {
         this.ghGlue.getPRCommits = jest.fn( async ():
             Promise<IPRCommit[]> => o );
     }
 
-    public setGHgetGitHubUserInfo(o: IGitHubUser) {
+    public setGHgetGitHubUserInfo(o: IGitHubUser): void {
         this.ghGlue.getGitHubUserInfo = jest.fn( async ():
             Promise<IGitHubUser> => o );
     }

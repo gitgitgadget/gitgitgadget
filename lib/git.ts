@@ -121,7 +121,8 @@ export function git(args: string[], options?: IGitOptions | undefined):
  *    the working directory in which to run `git rev-parse`
  * @returns { string | undefined } the full SHA-1, or undefined
  */
-export async function revParse(argument: string, workDir?: string) {
+export async function revParse(argument: string, workDir?: string):
+    Promise<string | undefined> {
     const result = await GitProcess.exec(["rev-parse", "--verify", "-q",
                                           argument],
                                          workDir || ".");
@@ -137,7 +138,7 @@ export async function revParse(argument: string, workDir?: string) {
  * @returns number the number of commits in the commit range
  */
 export async function revListCount(rangeArgs: string | string[],
-                                   workDir: string = "."):
+                                   workDir = "."):
     Promise<number> {
     const gitArgs: string[] = ["rev-list", "--count"];
     if (typeof(rangeArgs) === "string") {

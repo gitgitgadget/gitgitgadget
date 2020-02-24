@@ -53,7 +53,7 @@ async function getCIHelper(): Promise<CIHelper> {
                         commander.gitgitgadgetWorkDir);
 }
 
-(async () => {
+(async (): Promise<void> => {
     const ci = await getCIHelper();
     const command = commander.args[0];
     if (command === "update-open-prs") {

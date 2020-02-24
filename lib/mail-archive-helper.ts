@@ -88,12 +88,12 @@ export class MailArchiveGitHelper {
                 .map((line: string) => {
                     keys.add(line.substr(53).replace(/\//g, ""));
                 });
-        const seen = (messageID: string) => {
+        const seen = (messageID: string): boolean => {
             return keys.has(MailArchiveGitHelper.hashKey(messageID));
         };
 
         const mboxHandler = async (messageID: string, references: string[],
-                                   mbox: string) => {
+                                   mbox: string): Promise<void> => {
                 if (seen(messageID)) {
                     return;
                 }

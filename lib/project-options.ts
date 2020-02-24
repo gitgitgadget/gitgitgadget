@@ -129,7 +129,7 @@ export class ProjectOptions {
         Promise<string[]> {
         // Cc: from config
         const cc: string[] = [];
-        const forEach = (email: string) => {
+        const forEach = (email: string): void => {
             if (email) {
                 cc.push(email);
             }
