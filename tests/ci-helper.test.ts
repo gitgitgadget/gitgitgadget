@@ -24,8 +24,8 @@ jest.setTimeout(180000);
 // The CIsmtpOpts must have the keys quoted.
 
 async function getSMTPInfo():
-    Promise <{ smtpUser: string, smtpHost: string,
-               smtpPass: string, smtpOpts: string }> {
+    Promise <{ smtpUser: string; smtpHost: string;
+               smtpPass: string; smtpOpts: string; }> {
     const smtpUser = await gitConfig("gitgitgadget.CIsmtpUser") || "";
     const smtpHost = await gitConfig("gitgitgadget.CIsmtpHost") || "";
     const smtpPass = await gitConfig("gitgitgadget.CIsmtpPass") || "";
@@ -49,22 +49,22 @@ class TestCIHelper extends CIHelper {
         // this.ghGlue.ensureAuthenticated = async (): Promise<void> => {};
     }
 
-    public setGHgetPRInfo(o: IPullRequestInfo) {
+    public setGHgetPRInfo(o: IPullRequestInfo): void {
         this.ghGlue.getPRInfo = jest.fn( async ():
             Promise<IPullRequestInfo> => o );
     }
 
-    public setGHgetPRComment(o: IPRComment) {
+    public setGHgetPRComment(o: IPRComment): void {
         this.ghGlue.getPRComment = jest.fn( async ():
             Promise<IPRComment> => o );
     }
 
-    public setGHgetPRCommits(o: IPRCommit[]) {
+    public setGHgetPRCommits(o: IPRCommit[]): void {
         this.ghGlue.getPRCommits = jest.fn( async ():
             Promise<IPRCommit[]> => o );
     }
 
-    public setGHgetGitHubUserInfo(o: IGitHubUser) {
+    public setGHgetGitHubUserInfo(o: IGitHubUser): void {
         this.ghGlue.getGitHubUserInfo = jest.fn( async ():
             Promise<IGitHubUser> => o );
     }
@@ -83,7 +83,7 @@ class TestCIHelper extends CIHelper {
 // have objects present).
 
 async function setupRepos(instance: string):
-    Promise <{ worktree: TestRepo, gggLocal: TestRepo, gggRemote: TestRepo }> {
+    Promise <{ worktree: TestRepo; gggLocal: TestRepo; gggRemote: TestRepo }> {
     const worktree = await testCreateRepo(__filename, `-work-cmt${instance}`);
     const gggLocal = await testCreateRepo(__filename, `-git-lcl${instance}`);
     const gggRemote = await testCreateRepo(__filename, `-git-rmt${instance}`);
@@ -568,7 +568,7 @@ test("handle comment submit email success", async () => {
         baseOwner: "gitgitgadget",
         baseRepo: "git",
         body: `Super body\r\n${template}\r\nCc: Copy One <copy@cat.com>\r\n`
-            + `Cc: Copy Two <copycat@cat.com>`,
+            + "Cc: Copy Two <copycat@cat.com>",
         hasComments: true,
         headCommit: B,
         headLabel: "somebody:master",

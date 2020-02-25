@@ -136,16 +136,16 @@ export class CIHelper {
     public async updateCommitMappings(): Promise<boolean> {
         if (!this.gggNotesUpdated) {
             await git(["fetch", "https://github.com/gitgitgadget/git",
-                       `+refs/notes/gitgitgadget:refs/notes/gitgitgadget`,
-                       `+refs/heads/maint:refs/remotes/upstream/maint`,
-                       `+refs/heads/pu:refs/remotes/upstream/pu`],
+                       "+refs/notes/gitgitgadget:refs/notes/gitgitgadget",
+                       "+refs/heads/maint:refs/remotes/upstream/maint",
+                       "+refs/heads/pu:refs/remotes/upstream/pu"],
                       { workDir: this.workDir });
             this.gggNotesUpdated = true;
         }
 
         const options = await this.getGitGitGadgetOptions();
         if (!options) {
-            throw new Error(`There were no GitGitGadget options to be found?`);
+            throw new Error("There were no GitGitGadget options to be found?");
         }
         if (!options.openPRs) {
             return false;
@@ -157,7 +157,7 @@ export class CIHelper {
                         "refs/remotes/upstream/pu"],
                        { workDir: this.workDir })).split("\n"),
         );
-        let result: boolean = false;
+        let result = false;
         for (const pullRequestURL of Object.keys(options.openPRs)) {
             const info = await this.getPRMetadata(pullRequestURL);
             if (info === undefined || info.latestTag === undefined ||
@@ -215,13 +215,13 @@ export class CIHelper {
     public async handleOpenPRs(): Promise<boolean> {
         const options = await this.getGitGitGadgetOptions();
         if (!options) {
-            throw new Error(`There were no GitGitGadget options to be found?`);
+            throw new Error("There were no GitGitGadget options to be found?");
         }
         if (!options.openPRs) {
             return false;
         }
-        let result: boolean = false;
-        let optionsUpdated: boolean = false;
+        let result = false;
+        let optionsUpdated = false;
         for (const pullRequestURL in options.openPRs) {
             if (!options.openPRs.hasOwnProperty(pullRequestURL)) {
                 continue;
@@ -478,7 +478,7 @@ export class CIHelper {
     public async getOriginalCommitsForPR(prMeta: IPatchSeriesMetadata):
         Promise<string[]> {
         if (!this.workDir) {
-            throw new Error(`Need a workDir`);
+            throw new Error("Need a workDir");
         }
         if (!await commitExists(prMeta.headCommit, this.workDir)) {
             if (!prMeta.pullRequestURL) {
@@ -486,7 +486,7 @@ export class CIHelper {
                     JSON.stringify(prMeta, null, 4)}`);
             }
             if (!prMeta.latestTag) {
-                throw new Error(`Cannot fetch commits without tag`);
+                throw new Error("Cannot fetch commits without tag");
             }
             const [owner, repo, nr] =
                 GitGitGadget.parsePullRequestURL(prMeta.pullRequestURL);
@@ -524,7 +524,7 @@ export class CIHelper {
         console.log(`Handling command ${command} with argument ${argument} at ${
             pullRequestURL}#issuecomment-${commentID}`);
 
-        const addComment = async (body: string) => {
+        const addComment = async (body: string): Promise<void> => {
             console.log(`Adding comment to ${pullRequestURL}:\n${body}`);
             await this.github.addPRComment(pullRequestURL, body);
         };
@@ -562,8 +562,8 @@ export class CIHelper {
 
                 if (commitOkay) {
                     const extraComment = userInfo.email === null ?
-                        ( `\n\nWARNING: ${comment.author} has no public email` +
-                        " address set on GitHub" ) : "";
+                        `\n\nWARNING: ${comment.author
+                        } has no public email address set on GitHub` : "";
 
                     const coverMid = await gitGitGadget.submit(pr, userInfo);
                     await addComment(`Submitted as [${
@@ -601,9 +601,8 @@ export class CIHelper {
                     const userInfo = await this.github.getGitHubUserInfo(
                         accountName);
                     if (userInfo.email === null) {
-                        extraComment = `\n\nWARNING: ${
-                            accountName} has no public email address` +
-                            " set on GitHub";
+                        extraComment = `\n\nWARNING: ${accountName
+                            } has no public email address set on GitHub`;
                     }
                 } catch (reason) {
                     throw new Error(`User ${
@@ -643,7 +642,7 @@ export class CIHelper {
                               addComment: CommentFunction,
                               userInfo?: IGitHubUser):
         Promise<boolean> {
-        let result: boolean = true;
+        let result = true;
         const maxCommits = 30;
         if (pr.commits && pr.commits > maxCommits) {
             await addComment(`The pull request has ${pr.commits
@@ -710,12 +709,13 @@ export class CIHelper {
         return result;
     }
 
-    public async handlePush(repositoryOwner: string, prNumber: number) {
+    public async handlePush(repositoryOwner: string, prNumber: number):
+        Promise<void> {
         const pr = await this.github.getPRInfo(repositoryOwner, prNumber);
         const pullRequestURL = `https://github.com/${repositoryOwner
                                 }/git/pull/${prNumber}`;
 
-        const addComment = async (body: string) => {
+        const addComment = async (body: string): Promise<void>  => {
             console.log(`Adding comment to ${pullRequestURL}:\n${body}`);
             await this.github.addPRComment(pullRequestURL, body);
         };

@@ -34,7 +34,7 @@ async function getGitGitWorkDir(): Promise<string> {
         commander.gitWorkDir = await gitConfig("gitgitgadget.workDir",
                                                commander.gitgitgadgetWorkDir);
         if (!commander.gitWorkDir) {
-            throw new Error(`Could not determine gitgitgadget.workDir`);
+            throw new Error("Could not determine gitgitgadget.workDir");
         }
     }
     if (!await isDirectory(commander.gitWorkDir)) {
@@ -53,7 +53,7 @@ async function getCIHelper(): Promise<CIHelper> {
                         commander.gitgitgadgetWorkDir);
 }
 
-(async () => {
+(async (): Promise<void> => {
     const ci = await getCIHelper();
     const command = commander.args[0];
     if (command === "update-open-prs") {
@@ -65,7 +65,7 @@ async function getCIHelper(): Promise<CIHelper> {
         const gitHub = new GitHubGlue(ci.workDir);
 
         const options = await ci.getGitGitGadgetOptions();
-        let optionsChanged: boolean = false;
+        let optionsChanged = false;
         if (!options.openPRs) {
             options.openPRs = {};
             optionsChanged = true;
@@ -298,7 +298,7 @@ async function getCIHelper(): Promise<CIHelper> {
         }
 
         const options = await ci.getGitGitGadgetOptions();
-        let optionsUpdated: boolean = false;
+        let optionsUpdated = false;
         if (!options.openPRs) {
             options.openPRs = {};
             optionsUpdated = true;
@@ -315,7 +315,7 @@ async function getCIHelper(): Promise<CIHelper> {
             optionsUpdated = true;
         }
 
-        let notesUpdated: boolean = false;
+        let notesUpdated = false;
         if (meta.baseCommit && meta.headCommit) {
             for (const rev of await ci.getOriginalCommitsForPR(meta)) {
                 const messageID = await ci.notes.getLastCommitNote(rev);
@@ -354,9 +354,9 @@ async function getCIHelper(): Promise<CIHelper> {
         await glue.addPRComment(pullRequestURL, comment);
     } else if (command === "set-app-token") {
         const set = async (options: {
-             appID: number,
-             installationID?: number,
-             name: string,
+             appID: number;
+             installationID?: number;
+             name: string;
         }): Promise<void> => {
             const client = new octokit();
             const appName = options.name === "gitgitgadget" ?

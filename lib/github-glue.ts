@@ -96,7 +96,7 @@ export class GitHubGlue {
      * @returns the comment ID and the URL to the comment
      */
     public async addPRComment(pullRequestURL: string, comment: string):
-        Promise<{id: number, url: string}> {
+        Promise<{id: number; url: string}> {
         const [owner, repo, nr] =
             GitGitGadget.parsePullRequestURL(pullRequestURL);
         await this.ensureAuthenticated(owner);
@@ -124,7 +124,7 @@ export class GitHubGlue {
                                     commit: string,
                                     gitWorkDir: string | undefined,
                                     comment: string):
-        Promise<{id: number, url: string}> {
+        Promise<{id: number; url: string}> {
         const [owner, repo, nr] =
             GitGitGadget.parsePullRequestURL(pullRequestURL);
         await this.ensureAuthenticated(owner);

@@ -37,7 +37,7 @@ export class ProjectOptions {
         Promise<ProjectOptions> {
         let upstreamBranch: string;
         let to: string;
-        let midUrlPrefix: string = " Message-ID: ";
+        let midUrlPrefix = " Message-ID: ";
 
         if (await commitExists("cb07fc2a29c86d1bc11", workDir) &&
             await revParse(`${baseCommit}:git-gui.sh`, workDir) !== undefined) {
@@ -87,8 +87,8 @@ export class ProjectOptions {
         if (!baseCommit &&
             await git(["rev-list", branchName + ".." + upstreamBranch],
                       { workDir })) {
-            throw new Error("Branch " + branchName + " is not rebased to " +
-                upstreamBranch);
+            throw new Error(`Branch ${branchName} is not rebased to ${
+                upstreamBranch}`);
         }
 
         return new ProjectOptions(branchName, upstreamBranch, basedOn,
@@ -118,8 +118,8 @@ export class ProjectOptions {
         const commit = await git(["rev-parse", "-q", "--verify", remoteRef],
                                  { workDir });
         if (await git(["rev-parse", basedOn]) !== commit) {
-            throw new Error(basedOn + " on " + publishToRemote +
-                " disagrees with local branch");
+            throw new Error(`${basedOn} on ${publishToRemote
+                } disagrees with local branch`);
         }
 
         return basedOn;
@@ -129,7 +129,7 @@ export class ProjectOptions {
         Promise<string[]> {
         // Cc: from config
         const cc: string[] = [];
-        const forEach = (email: string) => {
+        const forEach = (email: string): void => {
             if (email) {
                 cc.push(email);
             }

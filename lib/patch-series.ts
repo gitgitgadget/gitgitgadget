@@ -61,7 +61,7 @@ export class PatchSeries {
         }
         const headCommit = await revParse("HEAD");
         if (!headCommit) {
-            throw new Error(`Cannot determine HEAD revision`);
+            throw new Error("Cannot determine HEAD revision");
         }
         const metadata: IPatchSeriesMetadata = {
             baseCommit,
@@ -70,13 +70,13 @@ export class PatchSeries {
             headLabel: project.branchName,
             iteration: 1,
         };
-        let rangeDiff: string = "";
+        let rangeDiff = "";
 
         if (latestTag) {
             const range = latestTag + "..." + project.branchName;
             if (! await git(["rev-list", range])) {
-                throw new Error("Branch " + project.branchName
-                    + " was already submitted: " + latestTag);
+                throw new Error(`Branch ${project.branchName
+                    } was already submitted: ${latestTag}`);
             }
 
             let match = latestTag.match(/-v([1-9][0-9]*)$/);
@@ -86,20 +86,20 @@ export class PatchSeries {
             match = tagMessage.match(/^[\s\S]*?\n\n([\s\S]*)/);
             (match ? match[1] : tagMessage).split("\n").map((line) => {
                 // tslint:disable-next-line:max-line-length
-                match = line.match(/https:\/\/lore\.kernel\.org\/.*\/([^\/]+)/);
+                match = line.match(/https:\/\/lore\.kernel\.org\/.*\/([^/]+)/);
                 if (!match) {
                     // tslint:disable-next-line:max-line-length
-                    match = line.match(/https:\/\/public-inbox\.org\/.*\/([^\/]+)/);
+                    match = line.match(/https:\/\/public-inbox\.org\/.*\/([^/]+)/);
                 }
                 if (!match) {
                     // tslint:disable-next-line:max-line-length
-                    match = line.match(/https:\/\/www\.mail-archive\.com\/.*\/([^\/]+)/);
+                    match = line.match(/https:\/\/www\.mail-archive\.com\/.*\/([^/]+)/);
                 }
                 if (!match) {
                     match = line.match(/http:\/\/mid.gmane.org\/(.*)/);
                 }
                 if (!match) {
-                    match = line.match(/^[^ :]*: Message-ID: ([^\/]+)/);
+                    match = line.match(/^[^ :]*: Message-ID: ([^/]+)/);
                 }
                 if (match) {
                     if (metadata.referencesMessageIds) {
@@ -150,7 +150,7 @@ export class PatchSeries {
             throw new Error(`Invalid commit range: ${currentRange}`);
         }
 
-        let rangeDiff: string = "";
+        let rangeDiff = "";
         if (metadata === undefined) {
             metadata = {
                 baseCommit,
@@ -211,7 +211,7 @@ export class PatchSeries {
             cc.push(`${senderName} <${senderEmail}>`);
         }
 
-        if (basedOn && !revParse(basedOn, workDir)) {
+        if (basedOn && !await revParse(basedOn, workDir)) {
             throw new Error(`Cannot find base branch ${basedOn}`);
         }
 
@@ -233,9 +233,9 @@ export class PatchSeries {
                                             wrapCoverLetterAtColumn: number,
                                             indentCoverLetter: string):
     Promise <{
-        coverLetter: string,
-        basedOn?: string,
-        cc: string[],
+        coverLetter: string;
+        basedOn?: string;
+        cc: string[];
     }> {
         // Replace \r\n with \n to simplify remaining parsing.
         // Note that md2text() in the end will do the replacement anyway.
@@ -279,9 +279,9 @@ export class PatchSeries {
     }
 
     protected static parsePullRequestBody(prBody: string): {
-        coverLetterBody: string,
-        basedOn?: string,
-        cc: string[],
+        coverLetterBody: string;
+        basedOn?: string;
+        cc: string[];
     } {
         let basedOn;
         const cc: string[] = [];
@@ -513,8 +513,8 @@ export class PatchSeries {
         }
 
         const messageID = mail.match(/\nMessage-ID: <(.*?)>\n/i);
-        let footer: string = messageID ? "Submitted-As: " + midUrlPrefix
-            + messageID[1] : "";
+        let footer: string = messageID ? `Submitted-As: ${midUrlPrefix
+            }${messageID[1]}` : "";
         if (inReplyTo) {
             inReplyTo.map((id: string) => {
                 footer += "\nIn-Reply-To: " + midUrlPrefix + id;
@@ -523,8 +523,8 @@ export class PatchSeries {
 
         // Subjects can contain continuation lines; simply strip out the new
         // line and keep only the space
-        return match[2].replace(/\n */g, " ") + "\n\n" + match[3]
-            + (footer ? "\n\n" + footer : "");
+        return match[2].replace(/\n */g, " ") + `\n\n${match[3]
+            }${footer ? `\n\n${footer}` : ""}`;
     }
 
     protected static insertLinks(tagMessage: string, url: string,
@@ -546,14 +546,13 @@ export class PatchSeries {
         }
 
         let insert =
-            "Published-As: " + url + "/releases/tag/" + tagName + "\n" +
-            "Fetch-It-Via: git fetch " + url + " " + tagName + "\n";
+            `Published-As: ${url}/releases/tag/${tagName
+            }\nFetch-It-Via: git fetch ${url} ${tagName}\n`;
 
         if (basedOn) {
             insert =
-                "Based-On: " + basedOn + " at " + url + "\n" +
-                "Fetch-Base-Via: git fetch " + url + " " + basedOn + "\n" +
-                insert;
+                `Based-On: ${basedOn} at ${url
+                }\nFetch-Base-Via: git fetch ${url} ${basedOn}\n${insert}`;
         }
 
         if (!tagMessage.match(/\n[-A-Za-z]+: [^\n]*\n$/)) {
@@ -662,11 +661,11 @@ export class PatchSeries {
         Promise<string | undefined> {
         let globalOptions: IGitGitGadgetOptions | undefined;
         if (this.options.dryRun) {
-            logger.log("Dry-run " + this.project.branchName
-                + " v" + this.metadata.iteration);
+            logger.log(`Dry-run ${this.project.branchName
+                 } v${this.metadata.iteration}`);
         } else {
-            logger.log("Submitting " + this.project.branchName
-                + " v" + this.metadata.iteration);
+            logger.log(`Submitting ${this.project.branchName
+                 } v${this.metadata.iteration}`);
             globalOptions = await this.notes.get<IGitGitGadgetOptions>("");
         }
 
@@ -686,8 +685,7 @@ export class PatchSeries {
 
         logger.log("Adding Cc: and explicit From: lines for other authors, "
             + "if needed");
-        await PatchSeries.insertCcAndFromLines(mails, thisAuthor,
-                                               this.senderName);
+        PatchSeries.insertCcAndFromLines(mails, thisAuthor, this.senderName);
         if (mails.length > 1) {
             if (this.coverLetter) {
                 const match2 = mails[0].match(
@@ -699,7 +697,7 @@ export class PatchSeries {
             }
 
             logger.log("Fixing Subject: line of the cover letter");
-            mails[0] = await PatchSeries.adjustCoverLetter(mails[0]);
+            mails[0] = PatchSeries.adjustCoverLetter(mails[0]);
         }
 
         const midMatch = mails[0].match(/\nMessage-ID: <(.*)>/i);
@@ -707,7 +705,7 @@ export class PatchSeries {
 
         if (this.metadata.pullRequestURL) {
             if (!coverMid) {
-                throw new Error(`Could not extract cover letter Message-ID`);
+                throw new Error("Could not extract cover letter Message-ID");
             }
 
             const tsMatch = coverMid.match(/cover\.([0-9]+)\./);
@@ -719,7 +717,7 @@ export class PatchSeries {
             const email = emailMatch[1];
 
             const prMatch = this.metadata.pullRequestURL
-                .match(/\/([^\/]+)\/([^\/]+)\/pull\/(\d+)$/);
+                .match(/\/([^/]+)\/([^/]+)\/pull\/(\d+)$/);
             if (prMatch) {
                 const infix = this.metadata.iteration > 1 ?
                     `.v${this.metadata.iteration}` : "";
@@ -739,10 +737,9 @@ export class PatchSeries {
 
         logger.log("Generating tag message");
         let tagMessage =
-            await PatchSeries.generateTagMessage(mails[0], mails.length > 1,
-                                                 this.project.midUrlPrefix,
-                                                 this.metadata
-                                                 .referencesMessageIds);
+            PatchSeries.generateTagMessage(mails[0], mails.length > 1,
+                                           this.project.midUrlPrefix,
+                                           this.metadata.referencesMessageIds);
         let tagName;
         if (!this.metadata.pullRequestURL) {
             tagName = `${this.project.branchName}-v${this.metadata.iteration}`;
@@ -764,16 +761,15 @@ export class PatchSeries {
             }
 
             logger.log("Inserting links");
-            tagMessage = await PatchSeries.insertLinks(tagMessage, url, tagName,
-                                                       this.project.basedOn);
+            tagMessage = PatchSeries.insertLinks(tagMessage, url, tagName,
+                                                 this.project.basedOn);
         }
 
         if (this.options.noUpdate) {
-            logger.log("Would generate tag " + tagName
-                + " with message:\n\n"
-                + tagMessage.split("\n").map((line: string) => {
+            logger.log(`Would generate tag ${tagName} with message:\n\n ${
+                tagMessage.split("\n").map((line: string) => {
                     return "    " + line;
-                }).join("\n"));
+                }).join("\n")}`);
         } else {
             logger.log("Generating tag object");
             await this.generateTagObject(tagName, tagMessage);
@@ -783,7 +779,7 @@ export class PatchSeries {
         const footers: string[] = [];
 
         if (pullRequestURL) {
-            const prefix = `https://github.com/gitgitgadget/git`;
+            const prefix = "https://github.com/gitgitgadget/git";
             const tagName2 = encodeURIComponent(tagName);
             footers.push(`Published-As: ${prefix}/releases/tag/${tagName2}`);
             footers.push(`Fetch-It-Via: git fetch ${prefix} ${tagName}`);
@@ -795,8 +791,8 @@ export class PatchSeries {
                 footers.push(""); // empty line
             }
             // split the range-diff and prefix with a space
-            footers.push(`Range-diff vs v${this.metadata.iteration - 1}:`
-                + `\n\n${this.rangeDiff.replace(/(^|\n(?!$))/g, "$1 ")}\n`);
+            footers.push(`Range-diff vs v${this.metadata.iteration - 1}:\n\n${
+                         this.rangeDiff.replace(/(^|\n(?!$))/g, "$1 ")}\n`);
         }
 
         logger.log("Inserting footers");
@@ -832,10 +828,10 @@ export class PatchSeries {
         }
 
         if (this.options.dryRun) {
-            logger.log("Would send this mbox:\n\n"
-                + mbox.split("\n").map((line) => {
+            logger.log(`Would send this mbox:\n\n${
+                mbox.split("\n").map((line) => {
                     return "    " + line;
-                }).join("\n"));
+                }).join("\n")}`);
         } else if (send) {
             for (const mail of mails) {
                 await send(mail);
@@ -931,8 +927,8 @@ export class PatchSeries {
         }
         if (this.patchCount > 1 ) {
             if (!this.coverLetter) {
-                    throw new Error("Branch " + this.project.branchName
-                        + " needs a description");
+                    throw new Error(`Branch ${this.project.branchName
+                        } needs a description`);
             }
             args.push("--cover-letter");
         }

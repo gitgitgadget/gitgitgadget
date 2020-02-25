@@ -27,7 +27,7 @@ export class GitGitGadget {
         const workDir =
             await gitConfig("gitgitgadget.workDir", gitGitGadgetDir);
         if (!workDir) {
-            throw new Error(`Could not find GitGitGadget's work tree`);
+            throw new Error("Could not find GitGitGadget's work tree");
         }
         return workDir;
     }
@@ -41,7 +41,7 @@ export class GitGitGadget {
         const publishTagsAndNotesToRemote =
             await gitConfig("gitgitgadget.publishRemote", gitGitGadgetDir);
         if (!publishTagsAndNotesToRemote) {
-            throw new Error(`No remote to which to push configured`);
+            throw new Error("No remote to which to push configured");
         }
 
         // Initialize the worktree if necessary
@@ -65,7 +65,7 @@ export class GitGitGadget {
         const smtpOpts = await gitConfig("gitgitgadget.smtpOpts",
                                          gitGitGadgetDir);
         if (!smtpUser || !smtpHost || !smtpPass) {
-            throw new Error(`No SMTP settings configured`);
+            throw new Error("No SMTP settings configured");
         }
 
         const [options, allowedUsers] = await GitGitGadget.readOptions(notes);
@@ -114,7 +114,7 @@ export class GitGitGadget {
                           smtpOptions: ISMTPOptions,
                           publishTagsAndNotesToRemote: string) {
         if (!notes.workDir) {
-            throw new Error(`Could not determine Git worktree`);
+            throw new Error("Could not determine Git worktree");
         }
         this.workDir = notes.workDir;
         this.notes = notes;
@@ -206,10 +206,10 @@ export class GitGitGadget {
             this.publishTagsAndNotesToRemote,
             "--",
             `+${this.notes.notesRef}:${this.notes.notesRef}`,
-            `+refs/heads/maint:refs/remotes/upstream/maint`,
-            `+refs/heads/master:refs/remotes/upstream/master`,
-            `+refs/heads/next:refs/remotes/upstream/next`,
-            `+refs/heads/pu:refs/remotes/upstream/pu`,
+            "+refs/heads/maint:refs/remotes/upstream/maint",
+            "+refs/heads/master:refs/remotes/upstream/master",
+            "+refs/heads/next:refs/remotes/upstream/next",
+            "+refs/heads/pu:refs/remotes/upstream/pu",
         ];
         const prArgs = [
             `+${pullRequestRef}:${pullRequestRef}`,

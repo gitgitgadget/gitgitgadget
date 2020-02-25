@@ -135,7 +135,7 @@ export class LintCommit {
         if (match) {
             if (!match[1].length && !match[2].length &&
                 this.lines.length === 5) {
-                this.block(`A hyperlink requires some explanation`);
+                this.block("A hyperlink requires some explanation");
             }
         }
     }

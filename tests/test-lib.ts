@@ -174,8 +174,8 @@ export async function testCreateRepo(name: string, suffix?: string):
     }
     const opts = {
         env: {
-            GIT_AUTHOR_DATE: `123457689 +0000`,
-            GIT_COMMITTER_DATE: `123457689 +0000`,
+            GIT_AUTHOR_DATE: "123457689 +0000",
+            GIT_COMMITTER_DATE: "123457689 +0000",
         },
         workDir: dir,
     };

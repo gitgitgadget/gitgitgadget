@@ -70,7 +70,7 @@ In-Reply-To: https://mid.lookup/cover.2.git.author@example.com
 In-Reply-To: https://mid.lookup/cover.1.git.author@example.com`;
 
 class PatchSeriesTest extends PatchSeries {
-    public static runTests() {
+    public static runTests(): void {
         const mails = PatchSeries.splitMails(mbox1);
 
         test("mails are split correctly", () => {
