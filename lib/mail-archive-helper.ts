@@ -201,6 +201,10 @@ export class MailArchiveGitHelper {
              */
             this.state.latestRevision =
                 "3b38d8d206c64bf3dc873ba8ae9dbd48ed43f612";
+        } else if (this.state.latestRevision ===
+            "205655703b0501ef14e0f0dddf8e57bb726fae97") {
+            this.state.latestRevision =
+                "26674e9a36ae1871f69197798d30f6d3d2af7a56";
         } else if (await revParse(this.state.latestRevision,
                                   this.mailArchiveGitDir) === undefined) {
             const publicInboxGitDir = process.env.PUBLIC_INBOX_DIR;
