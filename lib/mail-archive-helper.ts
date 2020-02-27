@@ -172,6 +172,9 @@ export class MailArchiveGitHelper {
             if (line.startsWith("@@ ")) {
                 const match = line.match(/^@@ -(\d+,)?\d+ \+(\d+,)?(\d+)?/);
                 if (match) {
+                    if (counter) {
+                        console.log(`Oops: unprocessed buffer ${buffer}`);
+                    }
                     counter = parseInt(match[3], 10);
                     buffer = "";
                 }
