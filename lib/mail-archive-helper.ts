@@ -244,7 +244,7 @@ export class MailArchiveGitHelper {
         }
 
         const range = `${this.state.latestRevision}..${head}`;
-        await git(["log", "-p", "--reverse", range],
+        await git(["log", "-p", "-U99999", "--reverse", range],
                   { lineHandler, workDir: this.mailArchiveGitDir });
 
         this.state.latestRevision = head;
