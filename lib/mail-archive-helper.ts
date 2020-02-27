@@ -178,7 +178,7 @@ export class MailArchiveGitHelper {
                     counter = parseInt(match[3], 10);
                     buffer = "";
                 }
-            } else if (counter) {
+            } else if (counter && line.match(/^[ +]/)) {
                 buffer += line.substr(1) + "\n";
                 if (--counter) {
                     return;
