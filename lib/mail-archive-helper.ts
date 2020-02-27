@@ -95,6 +95,7 @@ export class MailArchiveGitHelper {
         const mboxHandler = async (messageID: string, references: string[],
                                    mbox: string): Promise<void> => {
                 if (seen(messageID)) {
+                    console.log(`Already handled: ${messageID}`);
                     return;
                 }
                 let pullRequestURL: string | undefined;
@@ -248,6 +249,7 @@ export class MailArchiveGitHelper {
         }
 
         const range = `${this.state.latestRevision}..${head}`;
+        console.log(`Handling commit range ${range}`);
         await git(["log", "-p", "-U99999", "--reverse", range],
                   { lineHandler, workDir: this.mailArchiveGitDir });
 
