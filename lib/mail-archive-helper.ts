@@ -95,6 +95,7 @@ export class MailArchiveGitHelper {
         const mboxHandler = async (messageID: string, references: string[],
                                    mbox: string): Promise<void> => {
                 if (seen(messageID)) {
+                    console.log(`Already handled: ${messageID}`);
                     return;
                 }
                 let pullRequestURL: string | undefined;
@@ -172,10 +173,13 @@ export class MailArchiveGitHelper {
             if (line.startsWith("@@ ")) {
                 const match = line.match(/^@@ -(\d+,)?\d+ \+(\d+,)?(\d+)?/);
                 if (match) {
+                    if (counter) {
+                        console.log(`Oops: unprocessed buffer ${buffer}`);
+                    }
                     counter = parseInt(match[3], 10);
                     buffer = "";
                 }
-            } else if (counter) {
+            } else if (counter && line.match(/^[ +]/)) {
                 buffer += line.substr(1) + "\n";
                 if (--counter) {
                     return;
@@ -198,6 +202,10 @@ export class MailArchiveGitHelper {
              */
             this.state.latestRevision =
                 "3b38d8d206c64bf3dc873ba8ae9dbd48ed43f612";
+        } else if (this.state.latestRevision ===
+            "205655703b0501ef14e0f0dddf8e57bb726fae97") {
+            this.state.latestRevision =
+                "26674e9a36ae1871f69197798d30f6d3d2af7a56";
         } else if (await revParse(this.state.latestRevision,
                                   this.mailArchiveGitDir) === undefined) {
             const publicInboxGitDir = process.env.PUBLIC_INBOX_DIR;
@@ -241,7 +249,8 @@ export class MailArchiveGitHelper {
         }
 
         const range = `${this.state.latestRevision}..${head}`;
-        await git(["log", "-p", "--reverse", range],
+        console.log(`Handling commit range ${range}`);
+        await git(["log", "-p", "-U99999", "--reverse", range],
                   { lineHandler, workDir: this.mailArchiveGitDir });
 
         this.state.latestRevision = head;
