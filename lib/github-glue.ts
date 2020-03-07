@@ -1,4 +1,4 @@
-import octokit = require("@octokit/rest");
+import { Octokit } from "@octokit/rest";
 import { git, gitConfig } from "./git";
 import { GitGitGadget } from "./gitgitgadget";
 
@@ -50,7 +50,7 @@ export interface IGitHubUser {
 
 export class GitHubGlue {
     public workDir?: string;
-    protected client = new octokit();
+    protected client = new Octokit();
     protected authenticated?: string;
 
     public constructor(workDir?: string) {
@@ -102,7 +102,7 @@ export class GitHubGlue {
         await this.ensureAuthenticated(owner);
         const status = await this.client.issues.createComment({
             body: comment,
-            number: nr,
+            issue_number: nr,
             owner,
             repo,
         });
@@ -137,10 +137,10 @@ export class GitHubGlue {
         const status = await this.client.pulls.createComment({
             body: comment,
             commit_id: commit,
-            number: nr,
             owner,
             path,
             position: 1,
+            pull_number: nr,
             repo,
         });
         return {
@@ -164,11 +164,11 @@ export class GitHubGlue {
             GitGitGadget.parsePullRequestURL(pullRequestURL);
         await this.ensureAuthenticated(owner);
 
-        const status = await this.client.pulls.createCommentReply({
+        const status = await this.client.pulls.createReviewCommentReply({
             body: comment,
-            in_reply_to: id,
-            number: nr,
+            comment_id: id,
             owner,
+            pull_number: nr,
             repo,
         });
         return {
@@ -184,8 +184,8 @@ export class GitHubGlue {
 
         await this.ensureAuthenticated(owner);
         const result = await this.client.issues.addLabels({
+            issue_number: prNo,
             labels,
-            number: prNo,
             owner,
             repo,
         });
@@ -199,15 +199,15 @@ export class GitHubGlue {
 
         await this.ensureAuthenticated(owner);
         await this.client.pulls.update({
-            number: prNo,
             owner,
+            pull_number: prNo,
             repo,
             state: "closed",
         });
 
         const result = await this.client.issues.createComment({
             body: `Closed via ${viaMergeCommit}.`,
-            number: prNo,
+            issue_number: prNo,
             owner,
             repo,
         });
@@ -225,7 +225,7 @@ export class GitHubGlue {
             repo: "git",
             state: "open",
         });
-        response.data.map((pr: octokit.PullsListResponseItem) => {
+        response.data.map((pr) => {
             result.push({
                 author: pr.user.login,
                 baseCommit: pr.base.sha,
@@ -314,7 +314,7 @@ export class GitHubGlue {
             repo: "git",
         });
         const result: IPRCommit[] = [];
-        response.data.map((cm: octokit.PullsListCommitsResponseItem) => {
+        response.data.map((cm) => {
             result.push({
                 author: {
                     email: cm.commit.author.email,
@@ -370,19 +370,13 @@ export class GitHubGlue {
     protected async ensureAuthenticated(repositoryOwner: string):
         Promise<void> {
         if (repositoryOwner !== this.authenticated) {
-            if (this.authenticated) {
-                this.client = new octokit();
-            }
             const infix = repositoryOwner === "gitgitgadget" ?
                 "" : `.${repositoryOwner}`;
             const token = await gitConfig(`gitgitgadget${infix}.githubToken`);
             if (!token) {
                 throw new Error(`Need a GitHub token for ${repositoryOwner}`);
             }
-            this.client.authenticate({
-                token,
-                type: "token",
-            });
+            this.client = new Octokit({ auth: token });
             this.authenticated = repositoryOwner;
         }
     }

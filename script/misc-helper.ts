@@ -1,6 +1,6 @@
-import octokit = require("@octokit/rest");
+import { createAppAuth } from "@octokit/auth-app";
+import { Octokit } from "@octokit/rest";
 import commander = require("commander");
-import jwt = require("jsonwebtoken");
 import { CIHelper } from "../lib/ci-helper";
 import { isDirectory } from "../lib/fs-util";
 import { git, gitConfig } from "../lib/git";
@@ -358,21 +358,20 @@ async function getCIHelper(): Promise<CIHelper> {
              installationID?: number;
              name: string;
         }): Promise<void> => {
-            const client = new octokit();
             const appName = options.name === "gitgitgadget" ?
                 "gitgitgadget" : "gitgitgadget-git";
             const key = await gitConfig(`${appName}.privateKey`);
             if (!key) {
                 throw new Error(`Need the ${appName} App's private key`);
             }
-            const now = Math.round(Date.now() / 1000);
-            const payload = { iat: now, exp: now + 60, iss: options.appID };
-            const signOpts = { algorithm: "RS256" };
-            const app = jwt.sign(payload, key.replace(/\\n/g, `\n`), signOpts);
-            client.authenticate({
-                token: app,
-                type: "app",
+
+            const auth = createAppAuth({
+                id: options.appID,
+                privateKey: key.replace(/\\n/g, `\n`),
             });
+
+            const appAuthentication = await auth({ type: "app" });
+            const client = new Octokit({auth: appAuthentication.token});
 
             if (options.installationID === undefined) {
                 options.installationID =
