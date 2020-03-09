@@ -138,10 +138,9 @@ export class MailArchiveGitHelper {
                     MailArchiveGitHelper.mbox2markdown(parsed);
 
                 if (issueCommentId) {
-                    const result =  await this.githubGlue
-                        .addPRCommentReply(pullRequestURL, issueCommentId,
-                                           comment);
-                    issueCommentId = result.id;
+                    await this.githubGlue.addPRCommentReply(pullRequestURL,
+                                                            issueCommentId,
+                                                            comment);
                 } else if (originalCommit) {
                     const result = await this.githubGlue
                         .addPRCommitComment(pullRequestURL, originalCommit,

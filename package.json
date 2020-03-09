@@ -46,7 +46,8 @@
     "typescript": "^3.5.3"
   },
   "dependencies": {
-    "@octokit/rest": "^16.25.0",
+    "@octokit/auth-app": "^2.4.3",
+    "@octokit/rest": "^17.0.0",
     "@types/html-to-text": "^1.4.31",
     "@types/rfc2047": "^2.0.1",
     "commander": "^4.0.1",
