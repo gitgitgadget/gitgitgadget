@@ -52,8 +52,10 @@ export class GitHubGlue {
     public workDir?: string;
     protected client = new Octokit();
     protected authenticated?: string;
+    protected repo: string;
 
-    public constructor(workDir?: string) {
+    public constructor(workDir?: string, repo = "git") {
+        this.repo = repo;
         this.workDir = workDir;
     }
 
@@ -82,7 +84,7 @@ export class GitHubGlue {
                 title: `In git.git: ${short}`,
             },
             owner: repositoryOwner,
-            repo: "git",
+            repo: this.repo,
             status: "completed",
         });
         return checks.data.id;
@@ -222,7 +224,7 @@ export class GitHubGlue {
         const response = await this.client.pulls.list({
             owner: repositoryOwner,
             per_page: 1000,
-            repo: "git",
+            repo: this.repo,
             state: "open",
         });
         response.data.map((pr) => {
@@ -257,7 +259,7 @@ export class GitHubGlue {
         const response = await this.client.pulls.get({
             owner: repositoryOwner,
             pull_number: prNumber,
-            repo: "git",
+            repo: this.repo,
         });
         return {
             author: response.data.user.login,
@@ -288,7 +290,7 @@ export class GitHubGlue {
         const response = await this.client.issues.getComment({
             comment_id: commentID,
             owner: repositoryOwner,
-            repo: "git",
+            repo: this.repo,
         });
         const match = response.data.html_url.match(/\/pull\/([0-9]+)/);
         const prNumber = match ? parseInt(match[1], 10) : -1;
@@ -311,7 +313,7 @@ export class GitHubGlue {
         const response = await this.client.pulls.listCommits({
             owner: repositoryOwner,
             pull_number: prNumber,
-            repo: "git",
+            repo: this.repo,
         });
         const result: IPRCommit[] = [];
         response.data.map((cm) => {
