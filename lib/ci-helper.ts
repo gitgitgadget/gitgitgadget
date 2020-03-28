@@ -762,7 +762,7 @@ export class CIHelper {
                 pullRequestURL}`);
         }
 
-        if (!pr.title || !pr.body) {
+        if (!pr.title || (!pr.body && pr.commits !== 1)) {
             throw new Error("Ignoring PR with empty title and/or body");
         }
 
