@@ -1,4 +1,5 @@
 import { createHash } from "crypto";
+import * as libqp from "libqp";
 import { git, revParse } from "./git";
 import { GitNotes } from "./git-notes";
 import { GitHubGlue } from "./github-glue";
@@ -47,13 +48,8 @@ export class MailArchiveGitHelper {
                 if (value === "base64") {
                     body = Buffer.from(body, "base64").toString();
                 } else if (value === "quoted-printable") {
-                    const stringFromCharCode = String.fromCharCode;
-                    body = body.replace(/[\t\x20]$/gm, "")
-                        .replace(/=(?:\r\n?|\n|$)/g, "")
-                        .replace(/=([a-fA-F0-9]{2})/g, (_$0, $1) => {
-                            const codePoint = parseInt($1, 16);
-                            return stringFromCharCode(codePoint);
-                    });
+                    const buffer = libqp.decode(body);
+                    body = buffer.toString("utf-8");
                 }
             }
         }
@@ -62,8 +58,8 @@ export class MailArchiveGitHelper {
             return "";
         }
 
-        return "``````````\n"
-            + body + (body.endsWith("\n") ? "" : "\n") + "``````````\n";
+        const wrap = "``````````\n";
+        return `${wrap}${body}${body.endsWith("\n") ? "" : "\n"}${wrap}`;
     }
 
     protected readonly state: IGitMailingListMirrorState;
