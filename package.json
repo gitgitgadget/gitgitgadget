@@ -52,7 +52,7 @@
     "@types/html-to-text": "^1.4.31",
     "@types/rfc2047": "^2.0.1",
     "commander": "^4.0.1",
-    "dugite": "^1.81.0",
+    "dugite": "^1.88.2",
     "html-to-text": "^4.0.0",
     "json-stable-stringify": "^1.0.1",
     "jsonwebtoken": "^8.4.0",
