@@ -255,17 +255,14 @@ export class PatchSeries {
             // Just ignore it
         }
 
-        if (!prBody.length) {       // reject empty description
-            throw new Error("A pull request description must be provided");
-        }
-
         const {
             basedOn,
             cc,
             coverLetterBody,
         } = PatchSeries.parsePullRequestBody(prBody);
 
-        const coverLetter = `${prTitle}\n\n${coverLetterBody}`;
+        const coverLetter = `${prTitle}\n${coverLetterBody.length ?
+            `\n${coverLetterBody}` : ""}`;
         let wrappedLetter = md2text(coverLetter, wrapCoverLetterAtColumn);
         if (indentCoverLetter) {
             wrappedLetter = wrappedLetter.replace(/^/mg, indentCoverLetter);
@@ -288,7 +285,13 @@ export class PatchSeries {
         let coverLetterBody = prBody.trim();
 
         // parse the footers of the pullRequestDescription
-        const match = prBody.match(/^([^]+)\n\n([^]+)$/);
+        let match = prBody.match(/^([^]+)\n\n([^]+)$/);
+
+        if (!match && !prBody.match(/\n\n/)) {
+            // handle PR descriptions that have no body, just footers
+            match = prBody.match(/^()([-A-Za-z]+: [^]+)$/);
+        }
+
         if (match) {
             coverLetterBody = match[1];
             const footer: string[] = [];
@@ -298,7 +301,7 @@ export class PatchSeries {
                     footer.push(line);
                 } else {
                     switch (match2[1].toLowerCase()) {
-                        case "based-on":
+                        case "based-on:":
                             if (basedOn) {
                                 throw new Error(`Duplicate Based-On footer: ${
                                     basedOn} vs ${match2[2]}`);
