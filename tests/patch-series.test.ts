@@ -3,6 +3,8 @@ import { git } from "../lib/git";
 import { PatchSeries } from "../lib/patch-series";
 import { testCreateRepo } from "./test-lib";
 
+jest.setTimeout(60000);
+
 const mbox1 =
     `From 38d1082511bb02a709f203481c2787adc6e67c02 Mon Sep 17 00:00:00 2001
 Message-Id: <cover.3.git.author@example.com>
@@ -419,9 +421,12 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             ].join("\n"));
 
             const prTitle = "My test PR!";
-            const prBody = [
+            const basedOn = "Disintegration";
+
+            let prBody = [
                 "some description goes here",
                 "",
+                `based-on: ${basedOn}`,
                 "Cc: Some Contributor <contributor@example.com>",
                 "CC: Capital Letters <shout@out.loud>, Hello <hello@wor.ld>"
                 + ", without@any.explicit.name"
@@ -434,9 +439,9 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
                 "Please read our guide to continue",
             ].join("\r\n");
 
-            const parsed = await PatchSeries.parsePullRequest(repo.workDir,
-                                                              prTitle,
-                                                              prBody, 76, "");
+            let parsed = await PatchSeries.parsePullRequest(repo.workDir,
+                                                            prTitle,
+                                                            prBody, 76, "");
 
             expect(parsed.cc).toEqual([
                 "Some Contributor <contributor@example.com>",
@@ -451,12 +456,48 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             ]);
 
             const expectedCover = [
-                "My test PR!",
+                prTitle,
                 "",
                 "some description goes here",
             ].join("\n");
 
             expect(parsed.coverLetter).toEqual(expectedCover);
+            expect(parsed.basedOn).toEqual(basedOn);
+
+            // Only footers test
+            prBody = [
+                "Cc: Some Contributor <contributor@example.com>",
+                "CC: Capital Letters <shout@out.loud>, Hello <hello@wor.ld>",
+                `based-on: ${basedOn}`,
+            ].join("\r\n");
+
+            parsed = await PatchSeries.parsePullRequest(repo.workDir,
+                                                        prTitle,
+                                                        prBody, 76, "");
+
+            expect(parsed.cc).toEqual([
+                "Some Contributor <contributor@example.com>",
+                "Capital Letters <shout@out.loud>",
+                "Hello <hello@wor.ld>",
+            ]);
+
+            const expectedCover1 = [
+                prTitle,
+            ].join("\n");
+
+            expect(parsed.coverLetter).toEqual(expectedCover1);
+            expect(parsed.basedOn).toEqual(basedOn);
+
+            // Empty body test
+            prBody = "";
+
+            parsed = await PatchSeries.parsePullRequest(repo.workDir,
+                                                        prTitle,
+                                                        prBody, 76, "");
+
+            expect(parsed.cc).toEqual([]);
+
+            expect(parsed.coverLetter).toEqual(expectedCover1);
         });
     }
 }
