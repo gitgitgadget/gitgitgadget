@@ -309,7 +309,8 @@ export class PatchSeries {
                             basedOn = match2[2];
                             break;
                         case "cc:":
-                            addressparser(match2[2]).forEach((e) => {
+                            addressparser(match2[2], { flatten: true })
+                                .forEach((e: addressparser.Address) => {
                                 if (e.name) {
                                     cc.push(`${e.name} <${e.address}>`);
                                 } else {
