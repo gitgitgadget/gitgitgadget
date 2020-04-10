@@ -15,6 +15,7 @@
             ]
         },
         "no-unused-expression": true,
-        "no-console": false
+        "no-console": false,
+        "array-type": [true, "array-simple"]
     }
 }
