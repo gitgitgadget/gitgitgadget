@@ -525,8 +525,9 @@ export class CIHelper {
             pullRequestURL}#issuecomment-${commentID}`);
 
         const addComment = async (body: string): Promise<void> => {
-            console.log(`Adding comment to ${pullRequestURL}:\n${body}`);
-            await this.github.addPRComment(pullRequestURL, body);
+            const redacted = CIHelper.redactGitHubToken(body);
+            console.log(`Adding comment to ${pullRequestURL}:\n${redacted}`);
+            await this.github.addPRComment(pullRequestURL, redacted);
         };
 
         try {
@@ -709,6 +710,10 @@ export class CIHelper {
         return result;
     }
 
+    public static redactGitHubToken(text: string): string {
+        return text.replace(/(https:\/\/)x-access-token:.*?@/g, "$1");
+    }
+
     public async handlePush(repositoryOwner: string, prNumber: number):
         Promise<void> {
         const pr = await this.github.getPRInfo(repositoryOwner, prNumber);
@@ -716,8 +721,9 @@ export class CIHelper {
                                 }/git/pull/${prNumber}`;
 
         const addComment = async (body: string): Promise<void>  => {
-            console.log(`Adding comment to ${pullRequestURL}:\n${body}`);
-            await this.github.addPRComment(pullRequestURL, body);
+            const redacted = CIHelper.redactGitHubToken(body);
+            console.log(`Adding comment to ${pullRequestURL}:\n${redacted}`);
+            await this.github.addPRComment(pullRequestURL, redacted);
         };
 
         const gitGitGadget = await GitGitGadget.get(this.gggConfigDir,
