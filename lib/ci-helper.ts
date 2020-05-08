@@ -184,10 +184,16 @@ export class CIHelper {
                 result = true;
             }
 
+            const start = Date.now();
             const out = await git(["-c", "core.abbrev=40", "range-diff", "-s",
                                    info.baseCommit, info.headCommit,
                                    "refs/remotes/upstream/pu"],
                                   { workDir: this.workDir });
+            const duration = Date.now() - start;
+            if (duration > 2000)
+                console.log(`warning: \`git range-diff ${
+                    info.baseCommit} ${info.headCommit} upstream/pu\` took ${
+                    duration / 1000} seconds`);
             for (const line of out.split("\n")) {
                 const match =
                     line.match(/^[^:]*: *([^ ]*) [!=][^:]*: *([^ ]*)/);
