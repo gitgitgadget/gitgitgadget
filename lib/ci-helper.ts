@@ -111,7 +111,7 @@ export class CIHelper {
                 await this.mail2commit.getGitGitCommitForMessageId(messageID);
         }
         if (!upstreamCommit || upstreamCommit === mailMeta.commitInGitGit) {
-                return false;
+            return false;
         }
         mailMeta.commitInGitGit = upstreamCommit;
         if (!mailMeta.originalCommit) {
