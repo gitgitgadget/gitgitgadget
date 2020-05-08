@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as util from "util";
 import { ILintError, LintCommit } from "./commit-lint";
-import { commitExists, git } from "./git";
+import { commitExists, git, emptyTreeName } from "./git";
 import { GitNotes } from "./git-notes";
 import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget";
 import { GitHubGlue, IGitHubUser, IPRCommit,
@@ -159,6 +159,14 @@ export class CIHelper {
                        { workDir: this.workDir })).split("\n"),
         );
         let result = false;
+        /*
+         * Both `bases` and `heads` accumulate the `-p<commit-hash>` parameters
+         * for the `git commit-tree` command for the two octopus merges. We
+         * need to make sure that no parent is listed twice, as `git
+         * commit-tree` would error out on that.
+         */
+        const bases = new Set<string>();
+        const heads = new Set<string>();
         for (const pullRequestURL of Object.keys(options.openPRs)) {
             const info = await this.getPRMetadata(pullRequestURL);
             if (info === undefined || info.latestTag === undefined ||
@@ -183,16 +191,36 @@ export class CIHelper {
                 meta.commitInGitGit = undefined;
                 result = true;
             }
+            bases.add(`-p${info.baseCommit}`);
+            heads.add(`-p${info.headCommit}`);
+        }
 
+        if (heads.size > 0) {
+            /*
+             * Generate throw-away octopus merges to combine multiple commit
+             * ranges into a single one.
+             */
+            const octopus = async (set: Set<string>): Promise<string> => {
+                const array = Array.from(set);
+                if (array.length === 1) {
+                    return array[0];
+                }
+                return await
+                    git(["commit-tree", ...array, emptyTreeName, "-m", "()"],
+                        { workDir: this.workDir });
+            };
+
+            const range1 = `${await octopus(bases)}..${await octopus(heads)}`;
+            const range2 =
+                "refs/remotes/upstream/maint~100..refs/remotes/upstream/pu";
             const start = Date.now();
             const out = await git(["-c", "core.abbrev=40", "range-diff", "-s",
-                                   info.baseCommit, info.headCommit,
-                                   "refs/remotes/upstream/pu"],
+                                   range1, range2],
                                   { workDir: this.workDir });
             const duration = Date.now() - start;
             if (duration > 2000)
                 console.log(`warning: \`git range-diff ${
-                    info.baseCommit} ${info.headCommit} upstream/pu\` took ${
+                    range1} ${range2}\` took ${
                     duration / 1000} seconds`);
             for (const line of out.split("\n")) {
                 const match =
@@ -200,7 +228,7 @@ export class CIHelper {
                 if (!match) {
                     continue;
                 }
-                const messageID2 = match[1] === info.headCommit ? messageID :
+                const messageID2 =
                     await this.getMessageIdForOriginalCommit(match[1]);
                 if (messageID2 === undefined) {
                     continue;

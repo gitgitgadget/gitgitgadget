@@ -13,6 +13,7 @@ export interface IGitOptions {
 }
 
 export const emptyBlobName = "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391";
+export const emptyTreeName = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
 
 function trimTrailingNewline(str: string): string {
     return str.replace(/\r?\n$/, "");
