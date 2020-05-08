@@ -136,6 +136,7 @@ export class CIHelper {
     public async updateCommitMappings(): Promise<boolean> {
         if (!this.gggNotesUpdated) {
             await git(["fetch", "https://github.com/gitgitgadget/git",
+                       "--tags",
                        "+refs/notes/gitgitgadget:refs/notes/gitgitgadget",
                        "+refs/heads/maint:refs/remotes/upstream/maint",
                        "+refs/heads/pu:refs/remotes/upstream/pu"],
