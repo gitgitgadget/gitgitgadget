@@ -37,7 +37,7 @@
     "@types/json-stable-stringify": "^1.0.32",
     "@types/jsonwebtoken": "^8.3.8",
     "@types/libqp": "^1.1.0",
-    "@types/marked": "^0.7.3",
+    "@types/marked": "^0.7.4",
     "@types/nodemailer": "^6.4.0",
     "jest": "^25.2.4",
     "jest-junit": "^10.0.0",
