@@ -51,7 +51,7 @@
     "@octokit/rest": "^17.9.3",
     "@types/html-to-text": "^1.4.31",
     "@types/rfc2047": "^2.0.1",
-    "commander": "^5.0.0",
+    "commander": "^5.1.0",
     "dugite": "^1.91.0",
     "html-to-text": "^5.1.1",
     "json-stable-stringify": "^1.0.1",
