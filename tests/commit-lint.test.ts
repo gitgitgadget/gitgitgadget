@@ -1,4 +1,4 @@
-import "jest";
+import { expect, jest, test } from "@jest/globals";
 import { LintCommit } from "../lib/commit-lint";
 
 jest.setTimeout(180000);

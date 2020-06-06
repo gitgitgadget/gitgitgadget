@@ -1,4 +1,4 @@
-import "jest";
+import { expect, jest, test } from "@jest/globals";
 import { git } from "../lib/git";
 import { PatchSeries } from "../lib/patch-series";
 import { testCreateRepo } from "./test-lib";

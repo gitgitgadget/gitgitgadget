@@ -1,4 +1,4 @@
-import "jest";
+import { expect, jest, test } from "@jest/globals";
 import { isDirectory } from "../lib/fs-util";
 import { git, revParse } from "../lib/git";
 import { GitNotes } from "../lib/git-notes";

@@ -1,4 +1,4 @@
-import "jest";
+import { expect, test } from "@jest/globals";
 import { md2text } from "../lib/markdown-renderer";
 
 const md = `# Welcome to GitGitGadget
