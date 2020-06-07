@@ -1,4 +1,4 @@
-import "jest";
+import { expect, jest, test } from "@jest/globals";
 import { git, gitCommandExists } from "../lib/git";
 import { GitNotes } from "../lib/git-notes";
 import { GitGitGadget, IGitGitGadgetOptions } from "../lib/gitgitgadget";

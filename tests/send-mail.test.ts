@@ -1,4 +1,4 @@
-import "jest";
+import { expect, test } from "@jest/globals";
 import { MailArchiveGitHelper } from "../lib/mail-archive-helper";
 import { parseMBox } from "../lib/send-mail";
 

@@ -1,5 +1,5 @@
 import { Octokit } from "@octokit/rest";
-import "jest";
+import { beforeAll, expect, jest, test } from "@jest/globals";
 import { git, gitConfig } from "../lib/git";
 import { GitHubGlue } from "../lib/github-glue";
 

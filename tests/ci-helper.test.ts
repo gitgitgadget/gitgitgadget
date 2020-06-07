@@ -1,4 +1,4 @@
-import "jest";
+import { expect, jest, test } from "@jest/globals";
 import { CIHelper } from "../lib/ci-helper";
 import { gitConfig } from "../lib/git";
 import { GitNotes } from "../lib/git-notes";
