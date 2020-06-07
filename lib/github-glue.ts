@@ -85,6 +85,7 @@ export class GitHubGlue {
             },
             owner: repositoryOwner,
             repo: this.repo,
+            started_at: completedAt,
             status: "completed",
         });
         return checks.data.id;
