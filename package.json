@@ -35,7 +35,7 @@
   "devDependencies": {
     "@types/jest": "^25.2.3",
     "@types/json-stable-stringify": "^1.0.32",
-    "@types/jsonwebtoken": "^8.3.8",
+    "@types/jsonwebtoken": "^8.5.0",
     "@types/libqp": "^1.1.0",
     "@types/marked": "^0.7.4",
     "@types/nodemailer": "^6.4.0",
