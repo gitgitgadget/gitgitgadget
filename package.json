@@ -49,7 +49,7 @@
   "dependencies": {
     "@octokit/auth-app": "^2.4.4",
     "@octokit/rest": "^17.9.3",
-    "@types/html-to-text": "^1.4.31",
+    "@types/html-to-text": "^5.1.0",
     "@types/rfc2047": "^2.0.1",
     "commander": "^5.1.0",
     "dugite": "^1.91.1",
