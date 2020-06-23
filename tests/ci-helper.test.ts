@@ -138,7 +138,7 @@ async function setupRepos(instance: string):
     // Set up fake upstream branches
     await gggRemote.git(["branch", "maint"]);
     await gggRemote.git(["branch", "next"]);
-    await gggRemote.git(["branch", "pu"]);
+    await gggRemote.git(["branch", "seen"]);
 
     return { worktree, gggLocal, gggRemote };
 }
@@ -165,13 +165,13 @@ test("identify merge that integrated some commit", async () => {
     const b = await repo.commit("b");
     const c = await repo.merge("c", e);
     const d = await repo.merge("d", f);
-    await repo.git(["update-ref", "refs/remotes/upstream/pu", d]);
+    await repo.git(["update-ref", "refs/remotes/upstream/seen", d]);
 
     const ci = new CIHelper(repo.workDir);
     expect(b).not.toBeUndefined();
-    expect(await ci.identifyMergeCommit("pu", g)).toEqual(d);
-    expect(await ci.identifyMergeCommit("pu", e)).toEqual(c);
-    expect(await ci.identifyMergeCommit("pu", h)).toEqual(d);
+    expect(await ci.identifyMergeCommit("seen", g)).toEqual(d);
+    expect(await ci.identifyMergeCommit("seen", e)).toEqual(c);
+    expect(await ci.identifyMergeCommit("seen", h)).toEqual(d);
 });
 
 test("identify upstream commit", async () => {
@@ -188,7 +188,7 @@ test("identify upstream commit", async () => {
     expect(A).not.toBeUndefined();
     await gggRemote.git(["branch", "maint"]);
     await gggRemote.git(["branch", "next"]);
-    await gggRemote.git(["branch", "pu"]);
+    await gggRemote.git(["branch", "seen"]);
 
     // Now come up with a local change
     await worktree.git(["pull", gggRemote.workDir, "master"]);
@@ -209,7 +209,7 @@ test("identify upstream commit", async () => {
     // "Apply" the patch, and merge it
     await gggRemote.newBranch("gg/via-pull-request");
     const B = await gggRemote.commit("B");
-    await gggRemote.git(["checkout", "pu"]);
+    await gggRemote.git(["checkout", "seen"]);
     await gggRemote.git(["merge", "--no-ff", "gg/via-pull-request"]);
 
     // Update the `mail-to-commit` notes ref, at least the part we care about

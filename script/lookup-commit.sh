@@ -63,7 +63,7 @@ update_gitgit_dir () {
 	git -C "$GITGIT_DIR" fetch https://github.com/gitgitgadget/git refs/notes/commit-to-mail:refs/notes/commit-to-mail ||
 	die "Could not update refs/notes/commit-to-mail"
 
-	if git -C "$GITGIT_DIR" rev-parse --verify refs/remotes/gitster/pu >/dev/null 2>&1
+	if git -C "$GITGIT_DIR" rev-parse --verify refs/remotes/gitster/seen >/dev/null 2>&1
 	then
 		git -C "$GITGIT_DIR" fetch gitster ||
 		die "Could not update the 'gitster' remote to $GITGIT_DIR"
@@ -175,8 +175,8 @@ test notes != "$mode" || {
 		update_gitgit_dir ||
 		die "Could not update $GITGIT_DIR"
 
-		to="$(git -C "$GITGIT_DIR" rev-parse --verify refs/remotes/gitster/pu)" ||
-		die "Could not determine tip rev of gitster/pu"
+		to="$(git -C "$GITGIT_DIR" rev-parse --verify refs/remotes/gitster/seen)" ||
+		die "Could not determine tip rev of gitster/seen"
 		from="$(git -C "$GITGIT_DIR" show -s --format=%s refs/notes/commit-to-mail^{/Update.from.commit.range} 2>/dev/null | sed -ne 's/"//g' -e 's/^Update from commit range \(.*\.\.\)\?//p')"
 
 		# Already the newest? Skip

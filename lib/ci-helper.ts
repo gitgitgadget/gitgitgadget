@@ -139,7 +139,7 @@ export class CIHelper {
                        "--tags",
                        "+refs/notes/gitgitgadget:refs/notes/gitgitgadget",
                        "+refs/heads/maint:refs/remotes/upstream/maint",
-                       "+refs/heads/pu:refs/remotes/upstream/pu"],
+                       "+refs/heads/seen:refs/remotes/upstream/seen"],
                       { workDir: this.workDir });
             this.gggNotesUpdated = true;
         }
@@ -152,10 +152,10 @@ export class CIHelper {
             return false;
         }
 
-        const commitsInPu: Set<string> = new Set<string>(
+        const commitsInSeen: Set<string> = new Set<string>(
             (await git(["rev-list", "--no-merges",
                         "^refs/remotes/upstream/maint~100",
-                        "refs/remotes/upstream/pu"],
+                        "refs/remotes/upstream/seen"],
                        { workDir: this.workDir })).split("\n"),
         );
         let result = false;
@@ -182,12 +182,12 @@ export class CIHelper {
             }
             const meta = await this.getMailMetadata(messageID);
             if (!meta || meta.commitInGitGit !== undefined) {
-                if (!meta || commitsInPu.has(meta.commitInGitGit!)) {
+                if (!meta || commitsInSeen.has(meta.commitInGitGit!)) {
                     continue;
                 }
                 console.log(`Upstream commit ${meta.commitInGitGit} for ${
                     info.headCommit} of ${
-                    info.pullRequestURL} no longer found in pu`);
+                    info.pullRequestURL} no longer found in 'seen'`);
                 meta.commitInGitGit = undefined;
                 result = true;
             }
@@ -212,7 +212,7 @@ export class CIHelper {
 
             const range1 = `${await octopus(bases)}..${await octopus(heads)}`;
             const range2 =
-                "refs/remotes/upstream/maint~100..refs/remotes/upstream/pu";
+                "refs/remotes/upstream/maint~100..refs/remotes/upstream/seen";
             const start = Date.now();
             const out = await git(["-c", "core.abbrev=40", "range-diff", "-s",
                                    range1, range2],
@@ -367,7 +367,7 @@ export class CIHelper {
 
         let closePR: string | undefined;
         const prLabelsToAdd = [];
-        for (const branch of ["pu", "next", "master", "maint"]) {
+        for (const branch of ["seen", "next", "master", "maint"]) {
             const mergeCommit =
                 await this.identifyMergeCommit(branch, tipCommitInGitGit);
             if (!mergeCommit) {

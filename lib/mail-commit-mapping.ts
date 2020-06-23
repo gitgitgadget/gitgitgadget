@@ -32,7 +32,7 @@ export class MailCommitMapping {
             refs.push("refs/notes/mail-to-commit:refs/notes/mail-to-commit");
         }
         if (includeUpstreamBranches) {
-            for (const ref of ["pu", "next", "master", "maint"]) {
+            for (const ref of ["seen", "next", "master", "maint"]) {
                 refs.push(`+refs/heads/${ref}:refs/remotes/upstream/${ref}`);
             }
         }

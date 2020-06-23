@@ -49,7 +49,7 @@ export class ProjectOptions {
             // Git
             to = "--to=git@vger.kernel.org";
             // Do *not* Cc: Junio Hamano by default
-            upstreamBranch = "upstream/pu";
+            upstreamBranch = "upstream/seen";
             if (await git(["rev-list", branchName + ".." + upstreamBranch],
                           { workDir })) {
                 upstreamBranch = "upstream/next";
