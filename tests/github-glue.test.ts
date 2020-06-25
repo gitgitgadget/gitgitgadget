@@ -125,7 +125,7 @@ test("pull requests", async () => {
 
         expect(cRef.data.object.sha).toMatch(gRef.data.object.sha);
 
-        const cFile = await github.octo.repos.createOrUpdateFile({
+        const cFile = await github.octo.repos.createOrUpdateFileContents({
             branch,
             content,
             message: "Commit a new file",

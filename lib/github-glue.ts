@@ -137,7 +137,7 @@ export class GitHubGlue {
                                 {workDir: gitWorkDir});
         const path = files.replace(/\n[^]*/, "");
 
-        const status = await this.client.pulls.createComment({
+        const status = await this.client.pulls.createReviewComment({
             body: comment,
             commit_id: commit,
             owner,
@@ -167,7 +167,7 @@ export class GitHubGlue {
             GitGitGadget.parsePullRequestURL(pullRequestURL);
         await this.ensureAuthenticated(owner);
 
-        const status = await this.client.pulls.createReviewCommentReply({
+        const status = await this.client.pulls.createReplyForReviewComment({
             body: comment,
             comment_id: id,
             owner,
