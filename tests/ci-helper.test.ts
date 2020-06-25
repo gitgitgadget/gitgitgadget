@@ -19,9 +19,7 @@ jest.setTimeout(180000);
 //  CIsmtpUser = first.last@ethereal.email
 //  CIsmtphost = smtp.ethereal.email
 //  CIsmtppass = feedeadbeeffeeddeadbeef
-//  CIsmtpopts = { \"port\": 587, \"secure\": false, \
-//     \"tls\": { \"rejectUnauthorized\": false } }
-// The CIsmtpOpts must have the keys quoted.
+//  CIsmtpopts = {port: 587, secure: false, tls: {rejectUnauthorized: false}}
 
 async function getSMTPInfo():
     Promise <{ smtpUser: string; smtpHost: string;
