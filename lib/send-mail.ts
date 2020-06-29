@@ -159,7 +159,10 @@ export async function sendMail(mail: IParsedMBox,
     };
 
     if (smtpOptions.smtpOpts) {
-        Object.entries(JSON.parse(smtpOptions.smtpOpts))
+        // Add quoting for JSON.parse
+        const smtpOpts = smtpOptions.smtpOpts
+            .replace(/([ {])([a-zA-Z0-9.]+?) *?:/g,"$1\"$2\":");
+        Object.entries(JSON.parse(smtpOpts))
             .forEach(([key, value]) => transportOpts[key] = value);
     }
 
