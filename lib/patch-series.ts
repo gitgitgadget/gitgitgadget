@@ -662,7 +662,7 @@ export class PatchSeries {
                                  publishTagsAndNotesToRemote?: string,
                                  pullRequestURL?: string,
                                  forceDate?: Date):
-        Promise<string | undefined> {
+        Promise<IPatchSeriesMetadata | undefined> {
         let globalOptions: IGitGitGadgetOptions | undefined;
         if (this.options.dryRun) {
             logger.log(`Dry-run ${this.project.branchName
@@ -755,6 +755,9 @@ export class PatchSeries {
             tagName = `${tagPrefix}${prNumber}/${branch}-v${
                 this.metadata.iteration}`;
         }
+
+        this.metadata.latestTag = tagName;
+
         if (this.project.publishToRemote) {
             const url =
                 await gitConfig(`remote.${this.project.publishToRemote}.url`,
@@ -777,7 +780,6 @@ export class PatchSeries {
         } else {
             logger.log("Generating tag object");
             await this.generateTagObject(tagName, tagMessage);
-            this.metadata.latestTag = tagName;
         }
 
         const footers: string[] = [];
@@ -905,7 +907,7 @@ export class PatchSeries {
                       { workDir: this.notes.workDir });
         }
 
-        return this.metadata.coverLetterMessageId;
+        return this.metadata;
     }
 
     protected async generateMBox(): Promise<string> {

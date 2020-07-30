@@ -601,9 +601,19 @@ export class CIHelper {
                         `\n\nWARNING: ${comment.author
                         } has no public email address set on GitHub` : "";
 
-                    const coverMid = await gitGitGadget.submit(pr, userInfo);
+                    const metadata = await gitGitGadget.submit(pr, userInfo);
+                    const uri = "https://github.com/gitgitgadget/git";
+                    const code = "\n```";
                     await addComment(`Submitted as [${
-                        coverMid}](https://lore.kernel.org/git/${coverMid})${
+                            metadata?.coverLetterMessageId
+                            }](https://lore.kernel.org/git/${
+                            metadata?.coverLetterMessageId
+                            })\n\nTo fetch this version into \`FETCH_HEAD\`:${
+                            code}\ngit fetch ${uri} ${metadata?.latestTag}${code
+                            }\n\nTo fetch this version to local tag \`${
+                            metadata?.latestTag}\`:${
+                            code}\ngit fetch --no-tags ${
+                            uri} tag ${metadata?.latestTag}${code}${
                             extraComment}`);
                 }
 
@@ -626,8 +636,9 @@ export class CIHelper {
                                                            userInfo);
 
                 if (commitOkay) {
-                    const coverMid = await gitGitGadget.preview(pr, userInfo);
-                    await addComment(`Preview email sent as ${coverMid}`);
+                    const metadata = await gitGitGadget.preview(pr, userInfo);
+                    await addComment(`Preview email sent as ${
+                        metadata?.coverLetterMessageId}`);
                 }
 
             } else if (command === "/allow") {
