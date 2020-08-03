@@ -58,7 +58,7 @@
     "jsonwebtoken": "^8.5.1",
     "libqp": "^1.1.0",
     "marked": "^1.1.0",
-    "nodemailer": "^6.4.10",
+    "nodemailer": "^6.4.11",
     "rfc2047": "^2.0.1"
   },
   "engines": {
