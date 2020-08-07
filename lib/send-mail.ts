@@ -9,6 +9,7 @@ export interface IParsedMBox {
     from?: string;
     headers?: Array<{ key: string; value: string }>;
     messageId?: string;
+    sender?: string;
     subject?: string;
     to?: string;
     raw: string;
@@ -57,6 +58,7 @@ export async function parseMBox(mbox: string, gentle?: boolean):
     let from: string | undefined;
     const headers = new Array<{ key: string; value: string }>();
     let messageId: string | undefined;
+    let sender: string | undefined;
     let subject: string | undefined;
     let to: string | undefined;
 
@@ -73,6 +75,7 @@ export async function parseMBox(mbox: string, gentle?: boolean):
             case "fcc": break;
             case "from": from = decode(value.trim()); break;
             case "message-id": messageId = value; break;
+            case "sender": sender = value.trim(); break;
             case "subject": subject = value; break;
             case "to": to = value; break;
             default:
@@ -92,6 +95,7 @@ export async function parseMBox(mbox: string, gentle?: boolean):
         headers,
         messageId,
         raw: mbox,
+        sender,
         subject,
         to,
     };
@@ -177,6 +181,7 @@ export async function sendMail(mail: IParsedMBox,
                 to: mail.to,
             },
             raw: mail.raw,
+            sender: mail.sender ? mail.sender : undefined,
         };
 
         transporter.sendMail(mailOptions, (error, info): void => {
