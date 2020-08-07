@@ -10,6 +10,7 @@ import { md2text } from "./markdown-renderer";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
 import { PatchSeriesOptions } from "./patch-series-options";
 import { ProjectOptions } from "./project-options";
+import { decode } from "rfc2047";
 
 export interface ILogger {
     log(message: string): void;
@@ -450,7 +451,7 @@ export class PatchSeries {
             let header = match[1];
 
             const authorMatch =
-                header.match(/^([^]*\nFrom: )(.*?)(\n(?![ \t])[^]*)$/);
+                header.match(/^([^]*\nFrom: )(.*?>)(\n(?![ \t])[^]*)$/s);
             if (!authorMatch) {
                 throw new Error("No From: line found in header:\n\n" + header);
             }
@@ -486,7 +487,8 @@ export class PatchSeries {
                 header += "\nCc: " + authorMatch[2];
             }
 
-            mails[i] = header + "\n\nFrom: " + authorMatch[2] + match[2];
+            mails[i] = header + "\n\nFrom: " + decode(authorMatch[2]) +
+                match[2];
         });
     }
 
