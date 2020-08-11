@@ -1,0 +1,79 @@
+# Run tests against developer push
+
+# Runs jobs on linux and windows to maintain compatibility.
+# The main repo is checked out into a sub-directory because an optional
+# second repo may be checked out for testing.
+
+# Optional GitHub secrets
+
+# See ci-helper.test.ts for information on the following
+# GGG_SMTP_USER = 'gitgitgadget.cismtpuser=<email_userid>'
+# GGG_SMTP_PASS = 'gitgitgadget.cismtppass=<email_password>'
+# GGG_SMTP_HOST = 'gitgitgadget.cismtphost=<email_hostname>'
+# GGG_SMTP_OPTS = 'gitgitgadget.cismtpopts=<email_smtp_options>'
+
+# See github-glue.test.ts for information on the following
+# GGG_TOKEN = token to access the test repo
+# GGG_REPOSITORY = name of test repo to update in tests.  Tests will
+# open a PR, create comments, etc.  This can be a private or public
+# repo.
+
+name: pr-test
+
+on:
+  push:
+    branches-ignore: [ master, main ]
+
+jobs:
+  build-test:
+    name: Node v${{ matrix.node-version }} on ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [14.x]
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    # job level env vars used for a couple of steps
+    env:
+      # see github-glue.test.ts for info on setting these
+      GGG_TOKEN: ${{ secrets.GGG_TOKEN }}
+      GGG_REPOSITORY: ${{ secrets.GGG_REPOSITORY }}
+
+    steps:
+    # Check out repo under sub-dir so other repo can be checked out
+    - uses: actions/checkout@v2
+      with:
+        path: gitgitgadget
+
+    # Check out github-glue.test.ts repo if configured for it
+    - uses: actions/checkout@v2
+      with:
+        repository: ${{ github.repository_owner }}/${{ env.GGG_REPOSITORY }}
+        token: ${{ env.GGG_TOKEN }}
+        path: ${{ env.GGG_REPOSITORY }}
+      if: env.GGG_TOKEN
+
+    - uses: actions/setup-node@v1.4.2
+      with:
+        node-version: '${{ matrix.node-version }}' # optional, default is 10.x
+
+    - name: Install packages
+      run: npm ci
+      working-directory: gitgitgadget
+
+    - name: Set git test repo config
+      shell: bash
+      run: echo "::set-env name=GGG_REPO::'gitgitgadget.githubtest.githubuser=$GITHUB_REPOSITORY_OWNER' 'gitgitgadget.$GITHUB_REPOSITORY_OWNER.githubrepo=$GGG_REPOSITORY' 'gitgitgadget.$GITHUB_REPOSITORY_OWNER.githubtoken=$GGG_TOKEN'"
+      if: env.GGG_TOKEN
+
+    - name: Run build
+      run: npm run build
+      working-directory: gitgitgadget
+
+    - name: Run tests
+      env:
+        GIT_CONFIG_PARAMETERS: ${{ secrets.GGG_SMTP_USER }} ${{ secrets.GGG_SMTP_PASS }} ${{ secrets.GGG_SMTP_HOST }} ${{ secrets.GGG_SMTP_OPTS }} ${{ env.GGG_REPO }}
+      run: npm run test
+      working-directory: gitgitgadget
