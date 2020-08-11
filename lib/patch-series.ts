@@ -207,11 +207,6 @@ export class PatchSeries {
                                                wrapCoverLetterAt,
                                                indentCoverLetter);
 
-        // if known, add submitter to email chain
-        if (senderEmail) {
-            cc.push(`${senderName} <${senderEmail}>`);
-        }
-
         if (basedOn && !await revParse(basedOn, workDir)) {
             throw new Error(`Cannot find base branch ${basedOn}`);
         }
@@ -225,7 +220,7 @@ export class PatchSeries {
         return new PatchSeries(notes, options, project, metadata,
                                rangeDiff, patchCount,
                                coverLetter,
-                               senderName);
+                               senderName, senderEmail || undefined);
     }
 
     protected static async parsePullRequest(workDir: string,
@@ -438,10 +433,26 @@ export class PatchSeries {
         return `"${match[1].replace(/["\\\\]/g, "\\$&")}"${match[2]}${match[3]}`;
     }
 
+/*
+Record the user who did the pull request on the "From:" header of cover
+letter and patches in the series.
+Keep adding in-body From: as necessary to record the commit author name
+when it is different from the user who created the pull request (whose name
+and address is recorded on the "From:" header of the e-mail).
+Use "Sender:" to record the fact that the message is sent from
+gitgitgadget@gmail.com instead. Add the same on "Cc:" if needed to ensure
+that responses will be seen by GGG.
+*/
     protected static insertCcAndFromLines(mails: string[], thisAuthor: string,
-                                          senderName?: string):
+                                          senderName?: string,
+                                          senderEmail?: string):
         void {
         const isGitGitGadget = thisAuthor.match(/^GitGitGadget </);
+        const author = PatchSeries.encodeSender(thisAuthor);
+        const senderHdr = isGitGitGadget ? `\nSender: ${author}` : "";
+        const sender = `${senderName ? PatchSeries.encodeSender(senderName)
+                       : ""}${senderEmail ? ` <${senderEmail}>` : ""}`;
+        const replaceSender = sender ? sender : author;
 
         mails.map((mail, i) => {
             const match = mail.match(/^([^]*?)(\n\n[^]*)$/);
@@ -456,39 +467,44 @@ export class PatchSeries {
                 throw new Error("No From: line found in header:\n\n" + header);
             }
 
-            let replaceSender = PatchSeries.encodeSender(thisAuthor);
-            if (isGitGitGadget) {
-                const onBehalfOf = i === 0 && senderName ?
-                    PatchSeries.encodeSender(senderName) :
-                    authorMatch[2].replace(/ <.*>$/, "");
-                // Special-case GitGitGadget to send from
-                // "<author> via GitGitGadget"
-                replaceSender = "\""
-                    + onBehalfOf.replace(/^"(.*)"$/, "$1")
-                                .replace(/"/g, "\\\"")
-                    + " via GitGitGadget\" "
-                    + thisAuthor.replace(/^GitGitGadget /, "");
-            } else if (authorMatch[2] === thisAuthor) {
-                return;
+            const fromInfo = authorMatch[2].match(/(.*?)\n*( <.*>)/);
+            if (!fromInfo) {
+                throw new Error(`Bad email address:\n\n${authorMatch[2]}`);
             }
 
-            header = authorMatch[1] + replaceSender + authorMatch[3];
-            if (mails.length > 1 && i === 0 && senderName) {
-                // skip Cc:ing and From:ing in the cover letter
-                mails[i] = header + match[2];
-                return;
+// if ggg, from = thisAuthor != sender for cover letter
+// iow replaceSender for cover letter
+// replace sender but no cc or from append
+// if not ggg, from = thisAuthor for cover letter
+// do nothing
+// from = patch author for not cover letter
+// do nothing
+// from != patch author for not cover letter
+// replace sender. cc if not there; append from
+
+            const fromSender = replaceSender.match(fromInfo[2]); // match?
+
+            let from = "";
+            if (!fromSender) {
+                header = authorMatch[1] + replaceSender + authorMatch[3];
+
+                if ( i || 1 === mails.length) {
+                    const ccMatch =
+                        header.match(/^([^]*\nCc: [^]*?)(|\n(?![ \t])[^]*)$/);
+                    if (ccMatch) {
+                        if (!ccMatch[1].match(fromInfo[2])) {
+                            header = ccMatch[1] + ",\n    " + authorMatch[2] +
+                                ccMatch[2];
+                        }
+                    } else {
+                        header += "\nCc: " + authorMatch[2];
+                    }
+
+                    from = `\n\nFrom: ${decode(fromInfo[1])}${fromInfo[2]}`;
+                }
             }
 
-            const ccMatch =
-                header.match(/^([^]*\nCc: [^]*?)(|\n(?![ \t])[^]*)$/);
-            if (ccMatch) {
-                header = ccMatch[1] + ",\n    " + authorMatch[2] + ccMatch[2];
-            } else {
-                header += "\nCc: " + authorMatch[2];
-            }
-
-            mails[i] = header + "\n\nFrom: " + decode(authorMatch[2]) +
-                match[2];
+            mails[i] = header + senderHdr + from + match[2];
         });
     }
 
@@ -634,6 +650,7 @@ export class PatchSeries {
     public readonly metadata: IPatchSeriesMetadata;
     public readonly rangeDiff: string;
     public readonly coverLetter?: string;
+    public readonly senderEmail?: string;
     public readonly senderName?: string;
     public readonly patchCount: number;
 
@@ -641,13 +658,15 @@ export class PatchSeries {
                           project: ProjectOptions,
                           metadata: IPatchSeriesMetadata, rangeDiff: string,
                           patchCount: number,
-                          coverLetter?: string, senderName?: string) {
+                          coverLetter?: string, senderName?: string,
+                          senderEmail?: string) {
         this.notes = notes;
         this.options = options;
         this.project = project;
         this.metadata = metadata;
         this.rangeDiff = rangeDiff;
         this.coverLetter = coverLetter;
+        this.senderEmail = senderEmail;
         this.senderName = senderName;
         this.patchCount = patchCount;
     }
@@ -677,6 +696,7 @@ export class PatchSeries {
 
         logger.log("Generating mbox");
         const mbox = await this.generateMBox();
+        logger.log(mbox);
         const mails: string[] = PatchSeries.splitMails(mbox);
         PatchSeries.removeDuplicateHeaders(mails);
 
@@ -691,7 +711,8 @@ export class PatchSeries {
 
         logger.log("Adding Cc: and explicit From: lines for other authors, "
             + "if needed");
-        PatchSeries.insertCcAndFromLines(mails, thisAuthor, this.senderName);
+        PatchSeries.insertCcAndFromLines(mails, thisAuthor, this.senderName,
+                                         this.senderEmail);
         if (mails.length > 1) {
             if (this.coverLetter) {
                 const match2 = mails[0].match(
