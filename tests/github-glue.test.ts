@@ -155,6 +155,18 @@ test("pull requests", async () => {
         const prInfo = await github.getPRInfo(owner, prData.number);
         expect(prInfo.headLabel).toMatch(branch);
 
+        // Test update to PR body
+        const prBody = `${prInfo.body}\nGlue`;
+        await github.updatePR(owner, prData.number, prBody);
+        const prNewInfo = await github.getPRInfo(owner, prData.number);
+        expect(prNewInfo.body).toMatch(prBody);
+
+        // Test update to PR title
+        const prTitle = `${prInfo.title} Glue`;
+        await github.updatePR(owner, prData.number, undefined, prTitle);
+        const prNewTitle = await github.getPRInfo(owner, prData.number);
+        expect(prNewTitle.title).toMatch(prTitle);
+
         const newComment = "Adding a comment to the PR";
         const {id, url} = await github.addPRComment(prData.html_url,
                                                     newComment);

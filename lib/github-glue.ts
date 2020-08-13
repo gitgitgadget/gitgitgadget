@@ -180,6 +180,30 @@ export class GitHubGlue {
         };
     }
 
+    /**
+     * Update a Pull Request body or title
+     *
+     * @param {string} pullRequestURL the Pull Request to comment on
+     * @param {string} body the updated body
+     * @param {string} title the updated title
+     * @returns the PR number
+     */
+    public async updatePR(owner: string, prNumber: number,
+                          body?: string | undefined, title?: string):
+        Promise<number> {
+
+        await this.ensureAuthenticated(owner);
+        const result = await this.client.pulls.update({
+            "body": body || undefined,
+            owner,
+            pull_number: prNumber,
+            repo: this.repo,
+            "title": title || undefined,
+        });
+
+        return result.data.id;
+    }
+
     public async setPRLabels(pullRequestURL: string, labels: string[]):
         Promise<string[]> {
         const [owner, repo, prNo] =
