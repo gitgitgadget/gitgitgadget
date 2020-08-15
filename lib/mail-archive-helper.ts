@@ -88,16 +88,21 @@ export class MailArchiveGitHelper {
             return keys.has(MailArchiveGitHelper.hashKey(messageID));
         };
 
-        const mboxHandler = async (messageID: string, references: string[],
-                                   mbox: string): Promise<void> => {
-                if (seen(messageID)) {
-                    console.log(`Already handled: ${messageID}`);
+        const mboxHandler = async (mbox: string): Promise<void> => {
+                const parsedMbox = await parseMBox(mbox, true);
+                if (!parsedMbox.headers) {
+                    throw new Error(`Could not parse ${mbox}`);
+                }
+                const parsed =
+                    await parseMBoxMessageIDAndReferences(parsedMbox);
+                if (seen(parsed.messageID)) {
+                    console.log(`Already handled: ${parsed.messageID}`);
                     return;
                 }
                 let pullRequestURL: string | undefined;
                 let originalCommit: string | undefined;
                 let issueCommentId: number | undefined;
-                for (const reference of references.filter(seen)) {
+                for (const reference of parsed.references.filter(seen)) {
                     const data =
                         await this.gggNotes.get<IMailMetadata>(reference);
                     if (data && data.pullRequestURL) {
@@ -119,19 +124,20 @@ export class MailArchiveGitHelper {
                 if (!pullRequestURL) {
                     return;
                 }
-                console.log(`Message-ID ${messageID} (length ${mbox.length
+                console.log(`Message-ID ${parsed.messageID
+                            } (length ${mbox.length
                             }) for PR ${pullRequestURL
                             }, commit ${originalCommit
                             }, comment ID: ${issueCommentId}`);
 
-                const parsed = await parseMBox(mbox);
-                const archiveURL = `https://lore.kernel.org/git/${messageID}`;
+                const archiveURL = `https://lore.kernel.org/git/${
+                    parsed.messageID}`;
                 const header = `[On the Git mailing list](${archiveURL}), ` +
-                    (parsed.from ?
-                     parsed.from.replace(/ *<.*>/, "") : "Somebody") +
+                    (parsedMbox.from ?
+                     parsedMbox.from.replace(/ *<.*>/, "") : "Somebody") +
                      ` wrote ([reply to this](${replyToThisURL})):\n\n`;
                 const comment = header +
-                    MailArchiveGitHelper.mbox2markdown(parsed);
+                    MailArchiveGitHelper.mbox2markdown(parsedMbox);
 
                 if (issueCommentId) {
                     await this.githubGlue.addPRCommentReply(pullRequestURL,
@@ -151,15 +157,15 @@ export class MailArchiveGitHelper {
                         .addPRComment(pullRequestURL, comment);
                 }
 
-                await this.gggNotes.set(messageID, {
+                await this.gggNotes.set(parsed.messageID, {
                     issueCommentId,
-                    messageID,
+                    messageID: parsed.messageID,
                     originalCommit,
                     pullRequestURL,
                 } as IMailMetadata);
 
                 /* It is now known */
-                keys.add(MailArchiveGitHelper.hashKey(messageID));
+                keys.add(MailArchiveGitHelper.hashKey(parsed.messageID));
             };
 
         let buffer = "";
@@ -180,10 +186,7 @@ export class MailArchiveGitHelper {
                     return;
                 }
                 try {
-                    const parsed =
-                        await parseMBoxMessageIDAndReferences(buffer);
-                    await mboxHandler(parsed.messageID, parsed.references,
-                                      buffer);
+                    await mboxHandler(buffer);
                 } catch (reason) {
                     console.log(`${reason}: skipping`);
                 }
