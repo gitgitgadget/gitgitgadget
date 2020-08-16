@@ -167,6 +167,17 @@ test("pull requests", async () => {
         const prNewTitle = await github.getPRInfo(owner, prData.number);
         expect(prNewTitle.title).toMatch(prTitle);
 
+        // Test cc update to PR
+        const prCc = "Not Real <ReallyNot@saturn.cosmos>";
+        const prCcGitster = "Git Real <gitster@pobox.com>"; // filtered out
+        await github.addPRCc(prData.html_url, prCc);
+        await github.addPRCc(prData.html_url, prCc);
+        const prccinfo = await github.getPRInfo(owner, prData.number);
+        expect(prccinfo.body).toMatch(prCc);
+        const ccFound = prccinfo.body.match(prCc);
+        expect(ccFound?.length).toEqual(1);
+        expect(prccinfo.body).not.toMatch(prCcGitster);
+
         const newComment = "Adding a comment to the PR";
         const {id, url} = await github.addPRComment(prData.html_url,
                                                     newComment);

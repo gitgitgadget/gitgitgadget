@@ -157,6 +157,9 @@ export class MailArchiveGitHelper {
                         .addPRComment(pullRequestURL, comment);
                 }
 
+                await this.githubGlue.addPRCc(pullRequestURL,
+                                              parsedMbox.from || "");
+
                 await this.gggNotes.set(parsed.messageID, {
                     issueCommentId,
                     messageID: parsed.messageID,
