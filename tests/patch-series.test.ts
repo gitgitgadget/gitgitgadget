@@ -89,7 +89,7 @@ class PatchSeriesTest extends PatchSeries {
 
         test("non-ASCII characters are encoded correctly", () => {
             // tslint:disable-next-line:max-line-length
-            const needle = "=?UTF-8?Q?Nguy=E1=BB=85n_Th=C3=A1i_Ng=E1=BB=8Dc?= Duy";
+            const needle = "\"=?UTF-8?Q?Nguy=E1=BB=85n_Th=C3=A1i_Ng=E1=BB=8Dc?= Duy via GitGitGadget\" ";
             expect(mails[0]).toEqual(expect.stringContaining(needle));
         });
 
@@ -119,7 +119,7 @@ class PatchSeriesTest extends PatchSeries {
         test("Cc: is inserted correctly", () => {
             expect(mails[1]).toMatch(
                 // tslint:disable-next-line:max-line-length
-                /Cc: Some One Else[^]*\nSender[^]*\n\nFrom: Some One Else.*\n\n/);
+                /From: "Some One Else via GitGitGadget"[^]*\nCc: Some One Else[^]*\n\nFrom: Some One Else.*\n\n/);
         });
 
         const coverLetter = PatchSeries.adjustCoverLetter(mails[0]);
