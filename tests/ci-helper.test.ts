@@ -539,22 +539,22 @@ test("handle comment submit email success", async () => {
         prNumber,
     };
     const user = {
-        email: "ggg@example.com",
+        email: "user@example.com",
         login: "ggg",
-        name: "e. e. cummings",
+        name: "Test User",
         type: "basic",
     };
     const commits = [{
         author: {
-            email: "ggg@example.com",
-            login: "ggg",
-            name: "e. e. cummings",
+            email: "bbb@exampleb.com",
+            login: "bbb",
+            name: "b. b. cummings",
         },
-        commit: "BA55FEEDBEEF",
+        commit: B,
         committer: {
-            email: "ggg@example.com",
-            login: "ggg",
-            name: "e. e. cummings",
+            email: "bbb@exampleb.com",
+            login: "bbb",
+            name: "b. b. cummings",
         },
         message: "Submit ok\n\nSuccint message\n\nSigned-off-by: x",
         parentCount: 1,
@@ -567,6 +567,150 @@ test("handle comment submit email success", async () => {
         baseRepo: "git",
         body: `Super body\r\n${template}\r\nCc: Copy One <copy@cat.com>\r\n`
             + "Cc: Copy Two <copycat@cat.com>",
+        hasComments: true,
+        headCommit: B,
+        headLabel: "somebody:master",
+        mergeable: true,
+        number: prNumber,
+        pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
+        title: "Submit a fun fix",
+    };
+
+    const { smtpUser } = await getSMTPInfo();
+
+    if (smtpUser) {                 // if configured for this test
+        ci.setGHgetPRInfo(prinfo);
+        ci.setGHgetPRComment(comment);
+        ci.setGHgetPRCommits(commits);
+        ci.setGHgetGitHubUserInfo(user);
+
+        await ci.handleComment("gitgitgadget", 433865360);
+        expect(ci.addPRComment.mock.calls[0][1]).toMatch(/Submitted as/);
+    }
+});
+
+// Multiple commits with different authors.  The email needs to be
+// correct.
+test("handle comment submit email success multi commits", async () => {
+    const { worktree, gggLocal, gggRemote } = await setupRepos("s4");
+
+    const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
+    const prNumber = 59;
+
+    const template = "fine template\r\nnew line";
+    // add template to master repo
+    await gggRemote.commit("temple", ".github//PULL_REQUEST_TEMPLATE.md",
+                           template);
+    const A = await gggRemote.revParse("HEAD");
+    expect(A).not.toBeUndefined();
+
+    // Now come up with a local change
+    await worktree.git(["pull", gggRemote.workDir, "master"]);
+    const b1Author = "b1 Author";
+    const b1AuthorEmail = "b1Author@example.com";
+    const b1Commit = "b1 Commit";
+    const b1CommitEmail = "b1Commit@example.com";
+    process.env.GIT_AUTHOR_EMAIL = b1AuthorEmail;
+    process.env.GIT_AUTHOR_NAME = b1Author;
+    process.env.GIT_COMMITTER_EMAIL = b1CommitEmail;
+    process.env.GIT_COMMITTER_NAME = b1Commit;
+    const B1 = await worktree.commit("b1");
+
+    const b2Author = "Ævar Arnfjörð Bjarmason"; // "b2 Author";
+    const b2AuthorEmail = "b2Author@example.com";
+    const b2Commit = "b2 Commit";
+    const b2CommitEmail = "b2Commit@example.com";
+    process.env.GIT_AUTHOR_EMAIL = b2AuthorEmail;
+    process.env.GIT_AUTHOR_NAME = b2Author;
+    process.env.GIT_COMMITTER_EMAIL = b2CommitEmail;
+    process.env.GIT_COMMITTER_NAME = b2Commit;
+    const B2 = await worktree.commit("b2");
+
+    delete process.env.GIT_AUTHOR_EMAIL;
+    delete process.env.GIT_AUTHOR_NAME;
+    delete process.env.GIT_COMMITTER_EMAIL;
+    delete process.env.GIT_COMMITTER_NAME;
+
+    const B = await worktree.commit("b");
+
+    // get the pr refs in place
+    const pullRequestRef = `refs/pull/${prNumber}`;
+    await gggRemote.git([
+        "fetch", worktree.workDir,
+        `refs/heads/master:${pullRequestRef}/head`,
+        `refs/heads/master:${pullRequestRef}/merge`,
+    ]); // fake merge
+
+    await gggLocal.git(["config", "user.name", "GitGitGadget"]);
+    await gggLocal.git(["config", "user.email", "gitgitgadget@example.com"]);
+
+    // GitHubGlue Responses
+    const comment = {
+        author: "ggg",
+        body: "/submit   ",
+        prNumber,
+    };
+    const user = {
+        email: "user@example.com",
+        login: "ggg",
+        name: "Test User",
+        type: "basic",
+    };
+    const commits = [{
+        author: {
+            email: "ggg@example.com",
+            login: "ggg",
+            name: "e. e. cummings",
+        },
+        commit: B1,
+        committer: {
+            email: "ggg@example.com",
+            login: "ggg",
+            name: "e. e. cummings",
+        },
+        message: `Submit ok\n\nSigned-off-by: ${b1Author}`,
+        parentCount: 1,
+    },
+                     {
+        author: {
+            email: "ggg@example.com",
+            login: "ggg",
+            name: "e. e. cummings",
+        },
+        commit: B2,
+        committer: {
+            email: "ggg@example.com",
+            login: "ggg",
+            name: "e. e. cummings",
+        },
+        message: `Submit ok\n\nSigned-off-by: ${b2Author}`,
+        parentCount: 1,
+    },
+                     {
+        author: {
+            email: "bbb@exampleb.com",
+            login: "bbb",
+            name: "b. b. cummings",
+        },
+        commit: B,
+        committer: {
+            email: "bbb@exampleb.com",
+            login: "bbb",
+            name: "b. b. cummings",
+        },
+        message: "Submit ok\n\nSuccint message\n\nSigned-off-by: x",
+        parentCount: 1,
+    }];
+    // test that cc is not re-added
+    const prinfo = {
+        author: "ggg",
+        baseCommit: A,
+        baseLabel: "gitgitgadget:next",
+        baseOwner: "gitgitgadget",
+        baseRepo: "git",
+        body: `Super body\r\n${template}\r\nCc: Copy One <copy@cat.com>\r\n`
+            + `Cc: Copy Two <copycat@cat.com>, ${
+                b1Author} <${b1AuthorEmail}>`,
         hasComments: true,
         headCommit: B,
         headLabel: "somebody:master",
@@ -631,7 +775,7 @@ test("handle comment preview email success", async () => {
             login: "ggg",
             name: "e. e. cummings",
         },
-        commit: "BA55FEEDBEEF",
+        commit: B,
         committer: {
             email: "ggg@example.com",
             login: "ggg",

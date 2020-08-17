@@ -12,7 +12,7 @@ jest.setTimeout(60000);
 const expectedMails = [
     `From 91fba7811291c1064b2603765a2297c34fc843c0 Mon Sep 17 00:00:00 2001
 Message-Id: <pull.<Message-ID>>
-From: "GitHub User via GitGitGadget" <gitgitgadget@example.com>
+From: GitHub User <ghuser@example.net>
 Date: <Cover-Letter-Date>
 Subject: [PATCH 0/3] My first Pull Request!
 Fcc: Sent
@@ -21,6 +21,7 @@ Content-Transfer-Encoding: 8bit
 MIME-Version: 1.0
 To: reviewer@example.com
 Cc: Some Body <somebody@example.com>
+Sender: GitGitGadget <gitgitgadget@example.com>
 
 This Pull Request contains some really important changes that I would love
 to have included in git.git [https://github.com/git/git].
@@ -56,7 +57,7 @@ gitgitgadget
 Message-Id: <3a632624f5927565b178664f9a12b9802d2714b1.<Message-ID>>
 In-Reply-To: <pull.<Message-ID>>
 References: <pull.<Message-ID>>
-From: "Test H. Dev via GitGitGadget" <gitgitgadget@example.com>
+From: GitHub User <ghuser@example.net>
 Date: Fri, 13 Feb 2009 23:33:30 +0000
 Subject: [PATCH 1/3] A
 Fcc: Sent
@@ -66,6 +67,7 @@ MIME-Version: 1.0
 To: reviewer@example.com
 Cc: Some Body <somebody@example.com>,
     "Test H. Dev" <dev@example.com>
+Sender: GitGitGadget <gitgitgadget@example.com>
 
 From: "Test H. Dev" <dev@example.com>
 
@@ -90,7 +92,7 @@ gitgitgadget
 Message-Id: <0076a21b90c6e1f4f380deb464fe7145d4a7a56d.<Message-ID>>
 In-Reply-To: <pull.<Message-ID>>
 References: <pull.<Message-ID>>
-From: "Contributor via GitGitGadget" <gitgitgadget@example.com>
+From: GitHub User <ghuser@example.net>
 Date: Fri, 13 Feb 2009 23:34:30 +0000
 Subject: [PATCH 2/3] B
 Fcc: Sent
@@ -100,6 +102,7 @@ MIME-Version: 1.0
 To: reviewer@example.com
 Cc: Some Body <somebody@example.com>,
     Contributor <contributor@example.com>
+Sender: GitGitGadget <gitgitgadget@example.com>
 
 From: Contributor <contributor@example.com>
 
@@ -124,7 +127,7 @@ gitgitgadget
 Message-Id: <91fba7811291c1064b2603765a2297c34fc843c0.<Message-ID>>
 In-Reply-To: <pull.<Message-ID>>
 References: <pull.<Message-ID>>
-From: "Developer via GitGitGadget" <gitgitgadget@example.com>
+From: GitHub User <ghuser@example.net>
 Date: Fri, 13 Feb 2009 23:35:30 +0000
 Subject: [PATCH 3/3] C
 Fcc: Sent
@@ -134,6 +137,7 @@ MIME-Version: 1.0
 To: reviewer@example.com
 Cc: Some Body <somebody@example.com>,
     Developer <developer@example.com>
+Sender: GitGitGadget <gitgitgadget@example.com>
 
 From: Developer <developer@example.com>
 
@@ -210,7 +214,7 @@ Cc: Some Body <somebody@example.com>
                                        pullRequestBody,
                                        "gitgitgadget:next", baseCommit,
                                        "somebody:master", headCommit,
-                                       {}, "GitHub User", undefined);
+                                       {}, "GitHub User", "ghuser@example.net");
 
     expect(patches.coverLetter).toEqual(`My first Pull Request!
 
