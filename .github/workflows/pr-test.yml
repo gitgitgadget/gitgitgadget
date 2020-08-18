@@ -68,12 +68,19 @@ jobs:
       run: echo "::set-env name=GGG_REPO::'gitgitgadget.githubtest.githubuser=$GITHUB_REPOSITORY_OWNER' 'gitgitgadget.$GITHUB_REPOSITORY_OWNER.githubrepo=$GGG_REPOSITORY' 'gitgitgadget.$GITHUB_REPOSITORY_OWNER.githubtoken=$GGG_TOKEN'"
       if: env.GGG_TOKEN
 
+    - name: Set git test smtp config
+      env:
+        SMTP_PARAMETERS: ${{ secrets.GGG_SMTP_USER }} ${{ secrets.GGG_SMTP_PASS }} ${{ secrets.GGG_SMTP_HOST }} ${{ secrets.GGG_SMTP_OPTS }}
+      shell: bash
+      run: echo "::set-env name=GGG_SMTP::$SMTP_PARAMETERS ${{ ' ' }}"
+      if: secrets.GGG_SMTP_USER
+
     - name: Run build
       run: npm run build
       working-directory: gitgitgadget
 
     - name: Run tests
       env:
-        GIT_CONFIG_PARAMETERS: ${{ secrets.GGG_SMTP_USER }} ${{ secrets.GGG_SMTP_PASS }} ${{ secrets.GGG_SMTP_HOST }} ${{ secrets.GGG_SMTP_OPTS }} ${{ env.GGG_REPO }}
+        GIT_CONFIG_PARAMETERS: ${{ GGG_SMTP }}${{ env.GGG_REPO }}
       run: npm run test
       working-directory: gitgitgadget
