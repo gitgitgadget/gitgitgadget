@@ -229,8 +229,11 @@ to have included in git.git [https://github.com/git/git].`);
 
         return "Message-ID";
     }
-    expect(await patches.generateAndSend(logger, send, undefined,
-                                         pullRequestURL))
+
+    const metadata = await patches.generateAndSend(logger, send, undefined,
+                                                   pullRequestURL);
+
+    expect(metadata?.coverLetterMessageId)
         .toMatch(/pull\.1\.git\.\d+\.gitgitgadget@example\.com/);
     expect(mails).toEqual(expectedMails);
 
@@ -244,8 +247,10 @@ to have included in git.git [https://github.com/git/git].`);
                                        "somebody:master", headCommit2,
                                        {}, "GitHub User", undefined);
     mails.splice(0);
-    expect(await patches2.generateAndSend(logger, send, undefined,
-                                          pullRequestURL))
+    const metadata2 = await patches2.generateAndSend(logger, send, undefined,
+                                                     pullRequestURL);
+
+    expect(metadata2?.coverLetterMessageId)
         .toMatch(/pull\.1\.v2\.git\.\d+\.gitgitgadget@example\.com/);
     expect(mails.length).toEqual(5);
     if (await gitCommandExists("range-diff", repo.workDir)) {

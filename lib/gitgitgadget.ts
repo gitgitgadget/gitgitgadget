@@ -171,7 +171,7 @@ export class GitGitGadget {
 
     // Send emails only to the user
     public async preview(pr: IPullRequestInfo, userInfo: IGitHubUser):
-        Promise<string | undefined> {
+        Promise<IPatchSeriesMetadata | undefined> {
 
         const send = async (mail: string): Promise<string> => {
             const mbox = await parseMBox(mail);
@@ -186,7 +186,7 @@ export class GitGitGadget {
 
     // Send emails out for review
     public async submit(pr: IPullRequestInfo, userInfo: IGitHubUser):
-        Promise<string | undefined> {
+        Promise<IPatchSeriesMetadata | undefined> {
 
         const send = async (mail: string): Promise<string> => {
             return await parseHeadersAndSendMail(mail, this.smtpOptions);
@@ -256,7 +256,7 @@ export class GitGitGadget {
     protected async genAndSend(pr: IPullRequestInfo, userInfo: IGitHubUser,
                                options: PatchSeriesOptions,
                                send: SendFunction):
-        Promise<string | undefined> {
+        Promise<IPatchSeriesMetadata | undefined> {
 
         if (!new Set(["gitgitgadget", "dscho", "git"]).has(pr.baseOwner) ||
             pr.baseRepo !== "git") {
@@ -278,10 +278,10 @@ export class GitGitGadget {
                                            pr.headCommit, options,
                                            userInfo.name, userInfo.email);
 
-        const coverMid =
+        const patchSeriesMetadata =
             await series.generateAndSend(console, send,
                                          this.publishTagsAndNotesToRemote,
                                          pr.pullRequestURL, new Date());
-        return coverMid;
+        return patchSeriesMetadata;
     }
 }
