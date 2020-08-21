@@ -36,6 +36,7 @@ async function getSMTPInfo():
 class TestCIHelper extends CIHelper {
     public ghGlue: GitHubGlue;      // not readonly reference
     public addPRComment: any;
+    public updatePR: any;
 
     public constructor(workDir?: string, debug = false, gggDir = ".") {
         super(workDir, debug, gggDir);
@@ -43,6 +44,8 @@ class TestCIHelper extends CIHelper {
         this.ghGlue = this.github;
         this.addPRComment = jest.fn();
         this.ghGlue.addPRComment = this.addPRComment;
+        this.updatePR = jest.fn();
+        this.ghGlue.updatePR = this.updatePR;
         // need keys to authenticate
         // this.ghGlue.ensureAuthenticated = async (): Promise<void> => {};
     }
@@ -1122,5 +1125,68 @@ test("basic lint tests", async () => {
     expect(ci.addPRComment.mock.calls[1][1]).toMatch(/empty line/);
     expect(ci.addPRComment.mock.calls[2][1]).toMatch(commits[3].commit);
     expect(ci.addPRComment.mock.calls[2][1]).toMatch(/lower case/);
+
+});
+
+test("Handle comment cc", async () => {
+    const {worktree, gggLocal} = await setupRepos("cc");
+
+    const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
+    const prNumber = 59;
+
+    // GitHubGlue Responses
+    const comment = {
+        author: "ggg",
+        body: "/cc \"Some Body\" <sbody@example.com>",
+        prNumber,
+    };
+    const user = {
+        email: "ggg@example.com",
+        login: "ggg",
+        name: "e. e. cummings",
+        type: "basic",
+    };
+
+    const prinfo = {
+        author: "ggg",
+        baseCommit: "foo",
+        baseLabel: "gitgitgadget:next",
+        baseOwner: "gitgitgadget",
+        baseRepo: "git",
+        body: "Never seen - no cc.",
+        commits: 1,
+        hasComments: false,
+        headCommit: "bar",
+        headLabel: "somebody:master",
+        mergeable: true,
+        number: prNumber,
+        pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
+        title: "Preview a fun fix",
+    };
+
+    ci.setGHgetPRInfo(prinfo);
+    ci.setGHgetPRComment(comment);
+    ci.setGHgetGitHubUserInfo(user);
+
+    await ci.handleComment("gitgitgadget", prNumber);
+
+    expect(ci.updatePR.mock.calls[0][2]).toMatch(/Some Body/);
+    ci.updatePR.mock.calls.length = 0;
+
+    comment.body = "/cc \"A Body\" <abody@example.com>, \"S Body\" <sbody@example.com>";
+
+    await ci.handleComment("gitgitgadget", prNumber);
+
+    expect(ci.updatePR.mock.calls[0][2]).toMatch(/A Body/);
+    expect(ci.updatePR.mock.calls[1][2]).toMatch(/S Body/);
+    ci.updatePR.mock.calls.length = 0;
+
+    // email will not be readded to list
+    prinfo.body = "changes\n\ncc: <abody@example.com>";
+
+    await ci.handleComment("gitgitgadget", prNumber);
+
+    expect(ci.updatePR.mock.calls[0][2]).toMatch(/S Body/);
+    expect(ci.updatePR.mock.calls.length).toEqual(1);
 
 });
