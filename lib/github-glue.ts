@@ -92,6 +92,33 @@ export class GitHubGlue {
     }
 
     /**
+     * Add a cc to a Pull Request
+     *
+     * @param {string} pullRequestURL the Pull Request to comment on
+     * @param {string} cc to add
+     * @returns the comment ID and the URL to the comment
+     */
+    public async addPRCc(pullRequestURL: string, cc: string):
+        Promise<void> {
+        const id = cc.match(/(<.*>)/);
+
+        if (!id || id[1].match(/gitster@pobox\.com/)) {
+            return;
+        }
+
+        const url = GitGitGadget.parsePullRequestURL(pullRequestURL);
+        const pr = await this.getPRInfo(url[0], url[2]);
+        const ccNow = pr.body.match(/\n\n(cc:.*)/is);
+
+        if (!ccNow || !ccNow[1].match(id[1])) {
+            await this.updatePR(url[0], url[2], `${pr.body}${
+                ccNow ? "" : "\n"}\ncc: ${cc}`);
+            await this.addPRComment(pullRequestURL, `User \`${
+                                    cc}\` has been added to the cc: list.`);
+        }
+    }
+
+    /**
      * Add a Pull Request comment
      *
      * @param {string} pullRequestURL the Pull Request to comment on
@@ -178,6 +205,30 @@ export class GitHubGlue {
             id: status.data.id,
             url: status.data.html_url,
         };
+    }
+
+    /**
+     * Update a Pull Request body or title
+     *
+     * @param {string} pullRequestURL the Pull Request to comment on
+     * @param {string} body the updated body
+     * @param {string} title the updated title
+     * @returns the PR number
+     */
+    public async updatePR(owner: string, prNumber: number,
+                          body?: string | undefined, title?: string):
+        Promise<number> {
+
+        await this.ensureAuthenticated(owner);
+        const result = await this.client.pulls.update({
+            "body": body || undefined,
+            owner,
+            pull_number: prNumber,
+            repo: this.repo,
+            "title": title || undefined,
+        });
+
+        return result.data.id;
     }
 
     public async setPRLabels(pullRequestURL: string, labels: string[]):

@@ -97,12 +97,8 @@ export async function parseMBox(mbox: string, gentle?: boolean):
     };
 }
 
-export async function parseMBoxMessageIDAndReferences(mbox: string):
+export async function parseMBoxMessageIDAndReferences(parsed: IParsedMBox):
         Promise<{messageID: string; references: string[]}> {
-    const parsed = await parseMBox(mbox, true);
-    if (!parsed.headers) {
-        throw new Error(`Could not parse ${mbox}`);
-    }
     const references: string[] = [];
     const seen: Set<string> = new Set<string>();
     /*
@@ -117,7 +113,7 @@ export async function parseMBoxMessageIDAndReferences(mbox: string):
      */
     const msgIdRegex =
         /^\s*<([^>]+)>(\s*|,)(\([^")]*("[^"]*")?\)\s*|\([^)]*\)$)?(<.*)?$/;
-    for (const header of parsed.headers) {
+    for (const header of parsed.headers ?? []) {
         if (header.key === "In-Reply-To" || header.key === "References") {
             let value: string = header.value;
             while (value) {
@@ -137,7 +133,7 @@ export async function parseMBoxMessageIDAndReferences(mbox: string):
         }
     }
     if (!parsed.messageId) {
-        throw new Error(`No Message-ID found in ${mbox}`);
+        throw new Error(`No Message-ID found in ${parsed.raw}`);
     }
     const messageID = parsed.messageId.match(/^<(.*)>$/);
     if (!messageID) {
