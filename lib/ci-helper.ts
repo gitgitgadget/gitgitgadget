@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as util from "util";
+import addressparser = require("nodemailer/lib/addressparser");
 import { ILintError, LintCommit } from "./commit-lint";
 import { commitExists, git, emptyTreeName } from "./git";
 import { GitNotes } from "./git-notes";
@@ -674,6 +675,8 @@ export class CIHelper {
                     await addComment(`User ${
                         accountName} already not allowed to use GitGitGadget.`);
                 }
+            } else if (command === "/cc") {
+                await this.handleCC(argument, pullRequestURL);
             } else if (command === "/test") {
                 await addComment(`Received test '${argument}'`);
             } else {
@@ -758,6 +761,17 @@ export class CIHelper {
 
     public static redactGitHubToken(text: string): string {
         return text.replace(/(https:\/\/)x-access-token:.*?@/g, "$1");
+    }
+
+    public async handleCC(ccSet: string, pullRequestURL: string):
+        Promise<void> {
+        const addresses = addressparser(ccSet, { flatten: true });
+
+        for (const address of addresses) {
+            const cc = address.name ? `${address.name} <${address.address}>`
+                : address.address;
+            await this.github.addPRCc(pullRequestURL, cc);
+        }
     }
 
     public async handlePush(repositoryOwner: string, prNumber: number):
