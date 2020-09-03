@@ -108,11 +108,11 @@ export class GitHubGlue {
 
         const url = GitGitGadget.parsePullRequestURL(pullRequestURL);
         const pr = await this.getPRInfo(url[0], url[2]);
-        const ccNow = pr.body.match(/\n\n(cc:.*)/is);
+        const ccNow = pr.body.match(/\r?\n\r?\n(cc:.*)/is);
 
         if (!ccNow || !ccNow[1].match(id[1])) {
             await this.updatePR(url[0], url[2], `${pr.body}${
-                ccNow ? "" : "\n"}\ncc: ${cc}`);
+                ccNow ? "" : "\r\n"}\r\ncc: ${cc}`);
             await this.addPRComment(pullRequestURL, `User \`${
                                     cc}\` has been added to the cc: list.`);
         }

@@ -156,7 +156,7 @@ test("pull requests", async () => {
         expect(prInfo.headLabel).toMatch(branch);
 
         // Test update to PR body
-        const prBody = `${prInfo.body}\nGlue`;
+        const prBody = `${prInfo.body}\r\nGlue`;
         await github.updatePR(owner, prData.number, prBody);
         const prNewInfo = await github.getPRInfo(owner, prData.number);
         expect(prNewInfo.body).toMatch(prBody);
@@ -169,13 +169,17 @@ test("pull requests", async () => {
 
         // Test cc update to PR
         const prCc = "Not Real <ReallyNot@saturn.cosmos>";
+        const prCc2 = "Not Real <RealNot@saturn.cosmos>";
         const prCcGitster = "Git Real <gitster@pobox.com>"; // filtered out
         await github.addPRCc(prData.html_url, prCc);
         await github.addPRCc(prData.html_url, prCc);
+        await github.addPRCc(prData.html_url, prCc2);
+        await github.addPRCc(prData.html_url, prCcGitster);
         const prccinfo = await github.getPRInfo(owner, prData.number);
         expect(prccinfo.body).toMatch(prCc);
         const ccFound = prccinfo.body.match(prCc);
         expect(ccFound?.length).toEqual(1);
+        expect(prccinfo.body).toMatch(prCc2);
         expect(prccinfo.body).not.toMatch(prCcGitster);
 
         const newComment = "Adding a comment to the PR";
