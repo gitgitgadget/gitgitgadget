@@ -111,10 +111,13 @@ export class GitHubGlue {
         const ccNow = pr.body.match(/\r?\n\r?\n(cc:.*)/is);
 
         if (!ccNow || !ccNow[1].match(id[1])) {
-            await this.updatePR(url[0], url[2], `${pr.body}${
-                ccNow ? "" : "\r\n"}\r\ncc: ${cc}`);
-            await this.addPRComment(pullRequestURL, `User \`${
-                                    cc}\` has been added to the cc: list.`);
+            const user = await this.getGitHubUserInfo(pr.author);
+            if (!user.email || !user.email.match(id[1])) {
+                await this.updatePR(url[0], url[2], `${pr.body}${
+                    ccNow ? "" : "\r\n"}\r\ncc: ${cc}`);
+                await this.addPRComment(pullRequestURL, `User \`${
+                                        cc}\` has been added to the cc: list.`);
+            }
         }
     }
 
