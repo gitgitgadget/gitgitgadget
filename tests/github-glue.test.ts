@@ -171,16 +171,24 @@ test("pull requests", async () => {
         const prCc = "Not Real <ReallyNot@saturn.cosmos>";
         const prCc2 = "Not Real <RealNot@saturn.cosmos>";
         const prCcGitster = "Git Real <gitster@pobox.com>"; // filtered out
+        const ghUser = await github.getGitHubUserInfo(owner);
+
         await github.addPRCc(prData.html_url, prCc);
         await github.addPRCc(prData.html_url, prCc);
         await github.addPRCc(prData.html_url, prCc2);
         await github.addPRCc(prData.html_url, prCcGitster);
+        if (ghUser.email) {
+            await github.addPRCc(prData.html_url, `PR Owner <${ghUser.email}>`);
+        }
         const prccinfo = await github.getPRInfo(owner, prData.number);
         expect(prccinfo.body).toMatch(prCc);
         const ccFound = prccinfo.body.match(prCc);
         expect(ccFound?.length).toEqual(1);
         expect(prccinfo.body).toMatch(prCc2);
         expect(prccinfo.body).not.toMatch(prCcGitster);
+        if (ghUser.email) {
+            expect(prccinfo.body).not.toMatch(ghUser.email);
+        }
 
         const newComment = "Adding a comment to the PR";
         const {id, url} = await github.addPRComment(prData.html_url,
