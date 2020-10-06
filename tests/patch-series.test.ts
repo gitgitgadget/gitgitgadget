@@ -94,13 +94,13 @@ class PatchSeriesTest extends PatchSeries {
         });
 
         test("sender names are quoted properly", () => {
-            const pairs: { [sender: string]: string | boolean } = {
+            const pairs: { [sender: string]: string | string[] | boolean } = {
                 "bee <nobody <email.org>": "\"bee <nobody\" <email.org>",
                 "bob@obo <email.org>": "\"bob@obo\" <email.org>",
                 "excited! <email.org>": false,
                 "foo [bar] name <email.org>": "\"foo [bar] name\" <email.org>",
                 "harry \"s\" truman <usa.gov>":
-                    "\"harry \\\"s\\\" truman\" <usa.gov>",
+                    [ "\"harry \\\"s\\\" truman\" <usa.gov>", "harry =?UTF-8?Q?=22s=22?= truman <usa.gov>" ],
                 "mr. name <email.org>": "\"mr. name\" <email.org>",
                 "ms. \\backslash <email.org>":
                     "\"ms. \\\\backslash\" <email.org>",
@@ -112,7 +112,11 @@ class PatchSeriesTest extends PatchSeries {
             for (const sender of Object.keys(pairs)) {
                 const expected = pairs[sender] || sender;
                 const quoted = PatchSeries.encodeSender(sender);
-                expect(quoted).toEqual(expected);
+                if (Array.isArray(expected)) {
+                    expect(expected).toContain(quoted);
+                } else {
+                    expect(quoted).toEqual(expected);
+                }
             }
         });
 
