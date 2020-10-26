@@ -33,7 +33,7 @@
     "testRegex": "/tests/(?!test-lib).*\\.(ts|tsx|js)$"
   },
   "devDependencies": {
-    "@types/jest": "^26.0.14",
+    "@types/jest": "^26.0.15",
     "@types/json-stable-stringify": "^1.0.32",
     "@types/jsonwebtoken": "^8.5.0",
     "@types/libqp": "^1.1.0",
