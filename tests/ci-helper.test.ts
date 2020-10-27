@@ -265,8 +265,8 @@ test("handle comment allow basic test", async () => {
     ci.setGHgetGitHubUserInfo(user);
 
     await ci.handleComment("gitgitgadget", 433865360);
-    // tslint:disable-next-line:max-line-length
-    expect(ci.addPRCommentCalls[0][1]).toMatch(/is now allowed to use GitGitGadget/);
+    expect(ci.addPRCommentCalls[0][1])
+        .toMatch(/is now allowed to use GitGitGadget/);
 });
 
 test("handle comment allow fail invalid user", async () => {
@@ -284,8 +284,8 @@ test("handle comment allow fail invalid user", async () => {
     ci.setGHgetPRComment(comment);
 
     await ci.handleComment("gitgitgadget", 433865360);
-    // tslint:disable-next-line:max-line-length
-    expect(ci.addPRCommentCalls[0][1]).toMatch(/is not a valid GitHub username/);
+    expect(ci.addPRCommentCalls[0][1])
+        .toMatch(/is not a valid GitHub username/);
 });
 
 test("handle comment allow no public email", async () => {
@@ -310,10 +310,10 @@ test("handle comment allow no public email", async () => {
     ci.setGHgetGitHubUserInfo(user);
 
     await ci.handleComment("gitgitgadget", 433865360);
-    // tslint:disable-next-line:max-line-length
-    expect(ci.addPRCommentCalls[0][1]).toMatch(/is now allowed to use GitGitGadget/);
-    // tslint:disable-next-line:max-line-length
-    expect(ci.addPRCommentCalls[0][1]).toMatch(/no public email address set/);
+    expect(ci.addPRCommentCalls[0][1])
+        .toMatch(/is now allowed to use GitGitGadget/);
+    expect(ci.addPRCommentCalls[0][1])
+        .toMatch(/no public email address set/);
 });
 
 test("handle comment allow already allowed", async () => {
@@ -339,8 +339,8 @@ test("handle comment allow already allowed", async () => {
     ci.setGHgetGitHubUserInfo(user);
 
     await ci.handleComment("gitgitgadget", 433865360);
-    // tslint:disable-next-line:max-line-length
-    expect(ci.addPRCommentCalls[0][1]).toMatch(/already allowed to use GitGitGadget/);
+    expect(ci.addPRCommentCalls[0][1])
+        .toMatch(/already allowed to use GitGitGadget/);
 });
 
 test("handle comment allow no name specified (with trailing white space)",
@@ -383,8 +383,8 @@ test("handle comment allow no name specified (with trailing white space)",
     ci.setGHgetGitHubUserInfo(user);
 
     await ci.handleComment("gitgitgadget", 433865360);
-    // tslint:disable-next-line:max-line-length
-    expect(ci.addPRCommentCalls[0][1]).toMatch(/already allowed to use GitGitGadget/);
+    expect(ci.addPRCommentCalls[0][1])
+        .toMatch(/already allowed to use GitGitGadget/);
 });
 
 test("handle comment disallow basic test", async () => {
@@ -410,8 +410,8 @@ test("handle comment disallow basic test", async () => {
     ci.setGHgetGitHubUserInfo(user);
 
     await ci.handleComment("gitgitgadget", 433865360);
-    // tslint:disable-next-line:max-line-length
-    expect(ci.addPRCommentCalls[0][1]).toMatch(/is no longer allowed to use GitGitGadget/);
+    expect(ci.addPRCommentCalls[0][1])
+        .toMatch(/is no longer allowed to use GitGitGadget/);
 });
 
 test("handle comment disallow was not allowed", async () => {
@@ -430,8 +430,8 @@ test("handle comment disallow was not allowed", async () => {
     ci.setGHgetPRComment(comment);
 
     await ci.handleComment("gitgitgadget", 433865360);
-    // tslint:disable-next-line:max-line-length
-    expect(ci.addPRCommentCalls[0][1]).toMatch(/already not allowed to use GitGitGadget/);
+    expect(ci.addPRCommentCalls[0][1])
+        .toMatch(/already not allowed to use GitGitGadget/);
 });
 
 test("handle comment submit not author", async () => {
@@ -473,8 +473,8 @@ test("handle comment submit not author", async () => {
     ci.setGHgetGitHubUserInfo(user);
 
     await ci.handleComment("gitgitgadget", 433865360);
-    // tslint:disable-next-line:max-line-length
-    expect(ci.addPRCommentCalls[0][1]).toMatch(/Only the owner of a PR can submit/);
+    expect(ci.addPRCommentCalls[0][1])
+        .toMatch(/Only the owner of a PR can submit/);
 });
 
 test("handle comment submit not mergeable", async () => {
@@ -516,8 +516,8 @@ test("handle comment submit not mergeable", async () => {
     ci.setGHgetGitHubUserInfo(user);
 
     await ci.handleComment("gitgitgadget", 433865360);
-    // tslint:disable-next-line:max-line-length
-    expect(ci.addPRCommentCalls[0][1]).toMatch(/does not merge cleanly/);
+    expect(ci.addPRCommentCalls[0][1])
+        .toMatch(/does not merge cleanly/);
 });
 
 test("handle comment submit email success", async () => {
@@ -683,8 +683,8 @@ test("handle comment preview email success", async () => {
         comment.body = " /preview";
         ci.setGHgetPRComment(comment);
         await ci.handleComment("gitgitgadget", 433865360); // do it again
-        // tslint:disable-next-line:max-line-length
-        expect(ci.addPRCommentCalls[1][1]).toMatch(/Preview email sent as/);
+        expect(ci.addPRCommentCalls[1][1])
+            .toMatch(/Preview email sent as/);
 
         await ci.handleComment("gitgitgadget", 433865360); // should still be v2
     }
@@ -1183,7 +1183,8 @@ test("Handle comment cc", async () => {
     expect(ci.updatePRCalls[0][2]).toMatch(/Some Body/);
     ci.updatePRCalls.length = 0;
 
-    comment.body = "/cc \"A Body\" <abody@example.com>, \"S Body\" <sbody@example.com>";
+    comment.body = "/cc \"A Body\" <abody@example.com>, "
+        + "\"S Body\" <sbody@example.com>";
 
     await ci.handleComment("gitgitgadget", prNumber);
 

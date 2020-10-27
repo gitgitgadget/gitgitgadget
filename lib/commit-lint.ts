@@ -81,8 +81,8 @@ export class LintCommit {
         }
 
         if (this.lines[1].length) {
-            // tslint:disable-next-line:max-line-length
-            this.block("The first line must be separated from the rest by an empty line");
+            this.block("The first line must be separated from the rest by an "
+                        + "empty line");
         }
     }
 

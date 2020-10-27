@@ -88,8 +88,8 @@ class PatchSeriesTest extends PatchSeries {
         PatchSeries.insertCcAndFromLines(mails, thisAuthor, senderName);
 
         test("non-ASCII characters are encoded correctly", () => {
-            // tslint:disable-next-line:max-line-length
-            const needle = "\"=?UTF-8?Q?Nguy=E1=BB=85n_Th=C3=A1i_Ng=E1=BB=8Dc?= Duy via GitGitGadget\" ";
+            const needle = "\"=?UTF-8?Q?Nguy=E1=BB=85n_Th=C3=A1i_Ng=E1=BB=8Dc?="
+                +" Duy via GitGitGadget\" ";
             expect(mails[0]).toEqual(expect.stringContaining(needle));
         });
 
@@ -100,7 +100,8 @@ class PatchSeriesTest extends PatchSeries {
                 "excited! <email.org>": false,
                 "foo [bar] name <email.org>": "\"foo [bar] name\" <email.org>",
                 "harry \"s\" truman <usa.gov>":
-                    [ "\"harry \\\"s\\\" truman\" <usa.gov>", "harry =?UTF-8?Q?=22s=22?= truman <usa.gov>" ],
+                    [ "\"harry \\\"s\\\" truman\" <usa.gov>",
+                      "harry =?UTF-8?Q?=22s=22?= truman <usa.gov>" ],
                 "mr. name <email.org>": "\"mr. name\" <email.org>",
                 "ms. \\backslash <email.org>":
                     "\"ms. \\\\backslash\" <email.org>",
@@ -121,9 +122,9 @@ class PatchSeriesTest extends PatchSeries {
         });
 
         test("Cc: is inserted correctly", () => {
-            expect(mails[1]).toMatch(
-                // tslint:disable-next-line:max-line-length
-                /From: "Some One Else via GitGitGadget"[^]*\nCc: Some One Else[^]*\n\nFrom: Some One Else.*\n\n/);
+            expect(mails[1]).toMatch(new RegExp("From: \"Some One Else via "
+                + "GitGitGadget\"[^]*\\nCc: Some One Else[^]*\\n\\n"
+                + "From: Some One Else.*\\n\\n"));
         });
 
         const coverLetter = PatchSeries.adjustCoverLetter(mails[0]);
@@ -167,11 +168,9 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             PatchSeries.insertFooters(mails[1], false, footers);
         test("range-diff is inserted correctly", () => {
             expect(coverLetterWithRangeDiff).toMatch(
-                // tslint:disable-next-line:max-line-length
                 /\n\nHEADER\n This\n is\n a\n fake\n cover letter\n-- \n2\.17/);
-            expect(mailWithRangeDiff).toMatch(
-                // tslint:disable-next-line:max-line-length
-                /\n---\n\nHEADER\n This\n is\n a\n fake\n cover letter\n\n README/);
+            expect(mailWithRangeDiff).toMatch(new RegExp("\\n---\\n\\nHEADER\\n"
+                + " This\\n is\\n a\\n fake\\n cover letter\\n\\n README"));
         });
 
         test("adjust mbox to forced date", () => {
@@ -303,8 +302,8 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
              () => {
             const mails1 = [ContentTransferEncodingBox1];
             PatchSeries.removeDuplicateHeaders(mails1);
-            // tslint:disable-next-line:max-line-length
-            expect(mails1[0]).not.toMatch(/Content-Transfer-Encoding[^]*Content-Transfer-Encoding/);
+            expect(mails1[0]).not.toMatch(new RegExp("Content-Transfer-Encoding"
+                + "[^]*Content-Transfer-Encoding"));
         });
 
         const ContentTransferEncodingBox2 = [
@@ -344,8 +343,8 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         test("duplicate Content-Description headers throw error", () => {
             const mails1 = [ContentDescriptionBox1];
             PatchSeries.removeDuplicateHeaders(mails1);
-            // tslint:disable-next-line:max-line-length
-            expect(mails1[0]).not.toMatch(/Content-Description[^]*Content-Description/);
+            expect(mails1[0]).not.toMatch(new RegExp("Content-Description"
+            + "[^]*Content-Description"));
         });
 
         const ContentDescriptionBox2 = [
