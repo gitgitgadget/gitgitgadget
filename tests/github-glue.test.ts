@@ -100,13 +100,15 @@ test("pull requests", async () => {
                 ref: `heads/${branch}`,
                 repo,
                 });
-        } catch (error) {
+        } catch (e) {
+            const error = e as Error;
             expect(error.toString()).toMatch(/Reference does not exist/);
         }
 
         try {                       // delete local branch
             await git(["branch", "-D", branch], { workDir: repoDir });
-        } catch (error) {
+        } catch (e) {
+            const error = e as Error;
             expect(error.toString()).toMatch(/not found/);
         }
 

@@ -687,7 +687,8 @@ export class CIHelper {
                     pullRequestURL}#issuecomment-${commentID}`);
             }
         } catch (e) {
-            await addComment(e.toString());
+            const error = e as Error;
+            await addComment(error.toString());
         }
     }
 
