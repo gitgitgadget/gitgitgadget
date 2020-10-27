@@ -24,7 +24,7 @@ export interface ISMTPOptions {
 export async function parseHeadersAndSendMail(mbox: string,
                                               smtpOptions: ISMTPOptions):
     Promise<string> {
-    return await sendMail(await parseMBox(mbox), smtpOptions);
+    return await sendMail(parseMBox(mbox), smtpOptions);
 }
 
 function replaceAll(input: string, pattern: string, replacement: string):
@@ -41,8 +41,8 @@ function replaceAll(input: string, pattern: string, replacement: string):
  * @param {string} mbox The mail, in mbox format
  * @returns {IParsedMBox} the parsed headers/body
  */
-export async function parseMBox(mbox: string, gentle?: boolean):
-    Promise<IParsedMBox> {
+export function parseMBox(mbox: string, gentle?: boolean):
+    IParsedMBox {
     const headerEnd = mbox.indexOf("\n\n");
     if (headerEnd < 0) {
         throw new Error("Could not parse mail");
@@ -97,8 +97,8 @@ export async function parseMBox(mbox: string, gentle?: boolean):
     };
 }
 
-export async function parseMBoxMessageIDAndReferences(parsed: IParsedMBox):
-        Promise<{messageID: string; references: string[]}> {
+export function parseMBoxMessageIDAndReferences(parsed: IParsedMBox):
+        {messageID: string; references: string[]} {
     const references: string[] = [];
     const seen: Set<string> = new Set<string>();
     /*

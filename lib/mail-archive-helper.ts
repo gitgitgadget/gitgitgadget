@@ -90,12 +90,12 @@ export class MailArchiveGitHelper {
         };
 
         const mboxHandler = async (mbox: string): Promise<void> => {
-                const parsedMbox = await parseMBox(mbox, true);
+                const parsedMbox = parseMBox(mbox, true);
                 if (!parsedMbox.headers) {
                     throw new Error(`Could not parse ${mbox}`);
                 }
                 const parsed =
-                    await parseMBoxMessageIDAndReferences(parsedMbox);
+                    parseMBoxMessageIDAndReferences(parsedMbox);
                 if (seen(parsed.messageID)) {
                     console.log(`Already handled: ${parsed.messageID}`);
                     return;

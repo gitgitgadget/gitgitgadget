@@ -42,8 +42,8 @@ base-commit: 0ae4d8d45ce43d7ad56faff2feeacf8ed5293518
 2.17.0.windows.1
 `;
 
-test("parse mbox", async () => {
-    const parsed = await parseMBox(mbox0);
+test("parse mbox", () => {
+    const parsed = parseMBox(mbox0);
     expect(parsed.from).toEqual("Ævar Arnfjörð Bjarmason <avarab@gmail.com>");
     expect(parsed.cc).toEqual([
         "Some Body <somebody@example.com>",
@@ -58,7 +58,7 @@ test("parse mbox", async () => {
     expect(parsed.to).toEqual("reviewer@example.com");
 });
 
-test("test quoted printable", async () => {
+test("test quoted printable", () => {
     const mbox =
     `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
 Message-Id: <pull.12345.v17.git.gitgitgadget@example.com>
@@ -80,7 +80,7 @@ three byte /=[Ee][0-9A-Fa-f]/=e1=99=ad
 four byte /=[Ff][0-7]/=f0=90=8d=88
 `;
 
-    const parsed = await parseMBox(mbox);
+    const parsed = parseMBox(mbox);
     const body = MailArchiveGitHelper.mbox2markdown(parsed);
     expect(body).toMatch(/1234/);
     expect(body).toMatch(/©/);
@@ -88,7 +88,7 @@ four byte /=[Ff][0-7]/=f0=90=8d=88
     expect(body).toMatch(/𐍈/);
 });
 
-test("test quoted printable ascii", async () => {
+test("test quoted printable ascii", () => {
     const mbox =
     `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
 Message-Id: <pull.12345.v17.git.gitgitgadget@example.com>
@@ -109,12 +109,12 @@ have included in git.git.
 2.17.0.windows.1
 `;
 
-    const parsed = await parseMBox(mbox);
+    const parsed = parseMBox(mbox);
     const body = MailArchiveGitHelper.mbox2markdown(parsed);
     expect(body).toMatch(/1234/);
 });
 
-test("test base64", async () => {
+test("test base64", () => {
     const mailBody = "Base 64 Data";
     const mbox =
     `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
@@ -132,12 +132,12 @@ Cc: Some Body <somebody@example.com>,
 
 ${Buffer.from(mailBody).toString("base64")}`;
 
-    const parsed = await parseMBox(mbox);
+    const parsed = parseMBox(mbox);
     const body = MailArchiveGitHelper.mbox2markdown(parsed);
     expect(body).toMatch(mailBody);
 });
 
-test("test empty body", async () => {
+test("test empty body", () => {
     const mbox =
     `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
 Message-Id: <pull.12345.v17.git.gitgitgadget@example.com>
@@ -154,7 +154,7 @@ Cc: Some Body <somebody@example.com>,
 
 `;
 
-    const parsed = await parseMBox(mbox);
+    const parsed = parseMBox(mbox);
     const body = MailArchiveGitHelper.mbox2markdown(parsed);
     expect(body).toMatch(/^$/);
 });
