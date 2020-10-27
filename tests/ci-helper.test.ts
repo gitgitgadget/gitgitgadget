@@ -62,21 +62,25 @@ class TestCIHelper extends CIHelper {
 
     public setGHGetPRInfo(o: IPullRequestInfo): void {
         this.ghGlue.getPRInfo = jest.fn( async ():
+            // eslint-disable-next-line @typescript-eslint/require-await
             Promise<IPullRequestInfo> => o );
     }
 
     public setGHGetPRComment(o: IPRComment): void {
         this.ghGlue.getPRComment = jest.fn( async ():
+            // eslint-disable-next-line @typescript-eslint/require-await
             Promise<IPRComment> => o );
     }
 
     public setGHGetPRCommits(o: IPRCommit[]): void {
         this.ghGlue.getPRCommits = jest.fn( async ():
+            // eslint-disable-next-line @typescript-eslint/require-await
             Promise<IPRCommit[]> => o );
     }
 
     public setGHGetGitHubUserInfo(o: IGitHubUser): void {
         this.ghGlue.getGitHubUserInfo = jest.fn( async ():
+            // eslint-disable-next-line @typescript-eslint/require-await
             Promise<IGitHubUser> => o );
     }
 }

@@ -220,6 +220,7 @@ to have included in git.git [https://github.com/git/git].`);
     const mails: string[] = [];
     const midRegex = new RegExp("<(pull|[0-9a-f]{40})\\.\\d+(\\.v\\d+)?"
         + "\\.git(\\.*\\d*)\\.gitgitgadget@example\\.com>", "g");
+    // eslint-disable-next-line @typescript-eslint/require-await
     async function send(mail: string): Promise<string> {
         if (mails.length === 0) {
             mail = mail.replace(/(\nDate: ).*/, "$1<Cover-Letter-Date>");
