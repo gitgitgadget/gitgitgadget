@@ -434,7 +434,7 @@ async function getCIHelper(): Promise<CIHelper> {
         process.stderr.write(`${command}: unhandled sub-command\n`);
         process.exit(1);
     }
-})().catch((reason) => {
+})().catch((reason: Error) => {
     console.log(`Caught error ${reason}:\n${reason.stack}\n`);
     process.stderr.write(`Caught error ${reason}:\n${reason.stack}\n`);
     process.exit(1);

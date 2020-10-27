@@ -145,7 +145,7 @@ export function parseMBoxMessageIDAndReferences(parsed: IParsedMBox):
 export async function sendMail(mail: IParsedMBox,
                                smtpOptions: ISMTPOptions):
     Promise<string> {
-    const transportOpts: SMTPTransport.Options | any = {
+    const transportOpts: SMTPTransport.Options = {
         auth: {
             pass: smtpOptions.smtpPass,
             user: smtpOptions.smtpUser,
@@ -158,8 +158,7 @@ export async function sendMail(mail: IParsedMBox,
         // Add quoting for JSON.parse
         const smtpOpts = smtpOptions.smtpOpts
             .replace(/([ {])([a-zA-Z0-9.]+?) *?:/g,"$1\"$2\":");
-        Object.entries(JSON.parse(smtpOpts))
-            .forEach(([key, value]) => transportOpts[key] = value);
+        Object.assign(transportOpts, JSON.parse(smtpOpts));
     }
 
     return new Promise<string>((resolve, reject) => {
@@ -175,7 +174,8 @@ export async function sendMail(mail: IParsedMBox,
             raw: mail.raw,
         };
 
-        transporter.sendMail(mailOptions, (error, info): void => {
+        transporter.sendMail(mailOptions, (error, info: { messageId: string })
+            : void => {
             if (error) {
                 reject(error);
             } else {

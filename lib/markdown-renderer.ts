@@ -10,13 +10,13 @@ export function md2text(markdown: string, columns = 76): string {
         wordwrap: columns,
 
         format: {
-            heading: (elem, fn, options) => {
+            heading: (elem: { children: any[] }, fn, options) => {
                 const heading = fn(elem.children, options);
                 const underline = heading.substr(heading.lastIndexOf("\n") + 1)
                     .replace(/./g, "=");
                 return `${heading}\n${underline}\n\n`;
             },
-            blockquote: (elem, fn, options) => {
+            blockquote: (elem: { children: any[] }, fn, options) => {
                 const indentOptions = Object.assign({ wordwrap: 76 }, options);
                 // decrease word wrap, but only to a minimum of 20 columns/line
                 indentOptions.wordwrap = Math.max(20, indentOptions.wordwrap-2);
