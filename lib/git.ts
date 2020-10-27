@@ -85,7 +85,8 @@ export function git(args: string[], options?: IGitOptions | undefined):
                         handleLine(buffer);
                     }
                     if (linePromise) {
-                        linePromise.then(() => { resolve(""); });
+                        linePromise.then(() => { resolve(""); })
+                            .catch((reason) => { reject(reason) });
                     } else {
                         resolve("");
                     }

@@ -795,7 +795,7 @@ export class CIHelper {
         if (!pr.hasComments && !gitGitGadget.isUserAllowed(pr.author)) {
             const welcome = (await readFile("res/WELCOME.md")).toString()
                     .replace(/\${username}/g, pr.author);
-            this.github.addPRComment(pullRequestURL, welcome);
+            await this.github.addPRComment(pullRequestURL, welcome);
         }
 
         const commitOkay = await this.checkCommits(pr, addComment);
