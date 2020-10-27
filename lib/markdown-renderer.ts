@@ -11,6 +11,7 @@ export function md2text(markdown: string, columns = 76): string {
 
         format: {
             heading: (elem, fn, options) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 const heading = fn(elem.children, options);
                 const underline = heading.substr(heading.lastIndexOf("\n") + 1)
                     .replace(/./g, "=");
@@ -21,6 +22,7 @@ export function md2text(markdown: string, columns = 76): string {
                 // decrease word wrap, but only to a minimum of 20 columns/line
                 indentOptions.wordwrap = Math.max(20, indentOptions.wordwrap-2);
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 const block = fn(elem.children, indentOptions);
                 return block.replace(/^>/mg, ">>") // add to quote
                     .replace(/^(?!>|$)/mg, "> ")   // new quote

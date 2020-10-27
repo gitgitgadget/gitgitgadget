@@ -194,7 +194,7 @@ test("generate tag/notes from a Pull Request", async () => {
 
     const pullRequestURL = "https://github.com/gitgitgadget/git/pull/1";
     const pullRequestTitle = "My first Pull Request!";
-    // tslint:disable-next-line:max-line-length
+    // eslint-disable-next-line max-len
     const pullRequestBody = `This Pull Request contains some really important changes that I would love to${
         ""} have included in [git.git](https://github.com/git/git).
 
@@ -219,8 +219,9 @@ to have included in git.git [https://github.com/git/git].`);
 
     const mails: string[] = [];
     const midRegex =
-        // tslint:disable-next-line:max-line-length
+        // eslint-disable-next-line max-len
         /<(pull|[0-9a-f]{40})\.\d+(\.v\d+)?\.git(\.*\d*)\.gitgitgadget@example\.com>/g;
+    // eslint-disable-next-line @typescript-eslint/require-await
     async function send(mail: string): Promise<string> {
         if (mails.length === 0) {
             mail = mail.replace(/(\nDate: ).*/, "$1<Cover-Letter-Date>");
@@ -260,12 +261,13 @@ to have included in git.git [https://github.com/git/git].`);
 
     const seriesMeta = await notes.get<IPatchSeriesMetadata>(pullRequestURL);
     expect(seriesMeta).not.toBeNull();
-    expect(seriesMeta!.coverLetterMessageId).not.toBeUndefined();
-    const coverMid: string = seriesMeta!.coverLetterMessageId!;
+    expect(seriesMeta?.coverLetterMessageId).not.toBeUndefined();
+    const coverMid = seriesMeta?.coverLetterMessageId as string;
     expect(coverMid)
         .toMatch(/pull\.1\.v2\.git\.\d+\.gitgitgadget@example\.com/);
-    expect(seriesMeta!.referencesMessageIds).not.toBeUndefined();
-    const refMid: string = seriesMeta!.referencesMessageIds![0];
+    expect(seriesMeta?.referencesMessageIds).not.toBeUndefined();
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const refMid = (seriesMeta?.referencesMessageIds![0]) as string;
     expect(refMid)
         .toMatch(/pull\.1\.git\.\d+\.gitgitgadget@example\.com/);
     expect(seriesMeta).toEqual({

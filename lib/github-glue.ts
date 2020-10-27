@@ -79,7 +79,7 @@ export class GitHubGlue {
             head_sha: originalCommit,
             name: "upstream commit",
             output: {
-                // tslint:disable-next-line:max-line-length
+                // eslint-disable-next-line max-len
                 summary: `Integrated into git.git as [${short}](${url}).`,
                 title: `In git.git: ${short}`,
             },
@@ -235,7 +235,7 @@ export class GitHubGlue {
     }
 
     public async setPRLabels(pullRequestURL: string, labels: string[]):
-        Promise<string[]> {
+        Promise<number[]> {
         const [owner, repo, prNo] =
             GitGitGadget.parsePullRequestURL(pullRequestURL);
 
@@ -246,7 +246,9 @@ export class GitHubGlue {
             owner,
             repo,
         });
-        return result.data.map((res: any) => res.id);
+
+        const items = result.data;
+        return items.map((item) => item.id);
     }
 
     public async closePR(pullRequestURL: string, viaMergeCommit: string):

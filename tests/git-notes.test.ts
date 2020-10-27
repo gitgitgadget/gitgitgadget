@@ -38,9 +38,9 @@ test("set/get notes", async () => {
 
     const commit = await revParse(notes.notesRef, notes.workDir);
     expect(commit).not.toBeUndefined();
-    expect(await notes.appendCommitNote(commit!, "1")).toEqual("");
-    expect(await notes.getCommitNotes(commit!)).toEqual("1");
-    expect(await notes.appendCommitNote(commit!, "2")).toEqual("");
-    expect(await notes.getCommitNotes(commit!)).toEqual("1\n\n2");
-    expect(await notes.getLastCommitNote(commit!)).toEqual("2");
+    expect(await notes.appendCommitNote(commit as string, "1")).toEqual("");
+    expect(await notes.getCommitNotes(commit as string)).toEqual("1");
+    expect(await notes.appendCommitNote(commit as string, "2")).toEqual("");
+    expect(await notes.getCommitNotes(commit as string)).toEqual("1\n\n2");
+    expect(await notes.getLastCommitNote(commit as string)).toEqual("2");
 });

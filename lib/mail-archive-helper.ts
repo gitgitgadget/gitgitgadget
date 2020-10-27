@@ -4,7 +4,7 @@ import { git, revParse } from "./git";
 import { GitNotes } from "./git-notes";
 import { GitHubGlue } from "./github-glue";
 import { IMailMetadata } from "./mail-metadata";
-import { IParsedMBox, parseMBox,
+import { IHeaderHash, IParsedMBox, parseMBox,
     parseMBoxMessageIDAndReferences } from "./send-mail";
 
 const stateKey = "git@vger.kernel.org <-> GitGitGadget";
@@ -42,7 +42,7 @@ export class MailArchiveGitHelper {
     public static mbox2markdown(mbox: IParsedMBox): string {
         let body = mbox.body;
 
-        for (const header of mbox.headers!) {
+        for (const header of mbox.headers as IHeaderHash[]) {
             if (header.key === "Content-Transfer-Encoding") {
                 const value = header.value.toLowerCase();
                 if (value === "base64") {

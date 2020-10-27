@@ -29,9 +29,9 @@ located at the same directory level as this project (ie ../).
 */
 
 class GitHubProxy extends GitHubGlue {
-    public octo: Octokit | any;
-    public constructor(workDir?: string, repo = "git") {
-        super(workDir, repo);
+    public octo: Octokit;
+    public constructor(workDir?: string, repoName = "git") {
+        super(workDir, repoName);
         this.octo = this.client;
     }
 
@@ -101,13 +101,13 @@ test("pull requests", async () => {
                 repo,
                 });
         } catch (error) {
-            expect(error.toString()).toMatch(/Reference does not exist/);
+            expect((error as Error).toString()).toMatch(/does not exist/);
         }
 
         try {                       // delete local branch
             await git(["branch", "-D", branch], { workDir: repoDir });
         } catch (error) {
-            expect(error.toString()).toMatch(/not found/);
+            expect((error as Error).toString()).toMatch(/not found/);
         }
 
         const gRef = await github.octo.git.getRef({

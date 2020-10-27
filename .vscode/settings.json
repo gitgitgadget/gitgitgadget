@@ -1,5 +1,4 @@
 {
-    "tslint.autoFixOnSave": true,
     "[typescript]": {
         "editor.detectIndentation": false,
         "editor.autoIndent": false,
@@ -9,13 +8,20 @@
         "editor.wordWrapColumn": 80,
         "files.trimTrailingWhitespace": true
     },
-    "markdownlint.config": {
-        "MD033": {
-            "allowed_elements": [
-                "img"
-            ]
-        }
-    },
+    "cSpell.enabledLanguageIds": [
+        "git-commit",
+        "html",
+        "javascript",
+        "json",
+        "markdown",
+        "plaintext",
+        "typescript"
+    ],
+    "cSpell.ignorePaths": [
+        "node_modules",
+        "**/node_modules"
+    ],
+    "cSpell.language": "en-US",
     "cSpell.words": [
         "Arnfjörð",
         "Bjarmason",
@@ -79,18 +85,12 @@
         "yadavpratyush",
         "Ævar"
     ],
-    "cSpell.language": "en-US",
-    "cSpell.enabledLanguageIds": [
-        "git-commit",
-        "html",
-        "javascript",
-        "json",
-        "markdown",
-        "plaintext",
-        "typescript"
-    ],
-    "cSpell.ignorePaths": [
-        "node_modules",
-        "**/node_modules"
-    ]
+    "markdownlint.config": {
+        "MD033": {
+            "allowed_elements": [
+                "img"
+            ]
+        }
+    },
+    "tslint.autoFixOnSave": true
 }

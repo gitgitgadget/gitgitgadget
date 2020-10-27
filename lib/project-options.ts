@@ -12,7 +12,7 @@ export class ProjectOptions {
         if (!match) {
             throw new Error("Not on a branch (" + ref + ")?");
         }
-        return match![1];
+        return match[1];
     }
 
     public static async getLocal(workDir?: string): Promise<ProjectOptions> {

@@ -62,6 +62,7 @@ export class LintCommit {
     // Test for a minimum viable commit message.
     // - the body of the commit message should not be empty
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     private async commitViable(): Promise<boolean> {
         if (this.lines.length < 3) {
             this.block("Commit checks stopped - the message is too short");
@@ -75,6 +76,7 @@ export class LintCommit {
     // - the first line should not exceed 76 characters
     // - the first line should be followed by an empty line
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     private async commitMessageLength(): Promise<void> {
         const maxColumns = 76;
         if (this.lines[0].length > maxColumns) {
@@ -83,7 +85,7 @@ export class LintCommit {
         }
 
         if (this.lines[1].length) {
-            // tslint:disable-next-line:max-line-length
+            // eslint-disable-next-line max-len
             this.block("The first line must be separated from the rest by an empty line");
         }
     }
@@ -91,6 +93,7 @@ export class LintCommit {
     // Verify if the first line starts with a prefix (e.g. tests:), it continues
     // in lower-case
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     private async lowerCaseAfterPrefix(): Promise<void> {
         const match = this.lines[0].match(/^\S+?:\s*?([A-Z])/);
 
@@ -103,6 +106,7 @@ export class LintCommit {
     // Verify there is a Signed-off-by: line - DCO check does this
     // already, but put out a message if it is indented
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     private async signedOffBy(): Promise<void> {
         let signedFound = false;
 
@@ -128,6 +132,7 @@ export class LintCommit {
     // Low hanging fruit: check the first line.
     // Hyperlink validation is NOT part of the test.
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     private async moreThanAHyperlink(): Promise<void> {
         const line = this.lines[2];
         const match = line.match(/^(\w*)\s*https*:\/\/\S+\s*(\w*)/);

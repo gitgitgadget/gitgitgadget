@@ -2,12 +2,17 @@ import { createTransport, SendMailOptions } from "nodemailer";
 import SMTPTransport = require("nodemailer/lib/smtp-transport");
 import { decode } from "rfc2047";
 
+export interface IHeaderHash {
+    key: string;
+    value: string
+}
+
 export interface IParsedMBox {
     body: string;
     cc?: string[];
     date?: string;
     from?: string;
-    headers?: Array<{ key: string; value: string }>;
+    headers?: IHeaderHash[];
     messageId?: string;
     subject?: string;
     to?: string;
@@ -41,6 +46,7 @@ function replaceAll(input: string, pattern: string, replacement: string):
  * @param {string} mbox The mail, in mbox format
  * @returns {IParsedMBox} the parsed headers/body
  */
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function parseMBox(mbox: string, gentle?: boolean):
     Promise<IParsedMBox> {
     const headerEnd = mbox.indexOf("\n\n");
@@ -97,6 +103,7 @@ export async function parseMBox(mbox: string, gentle?: boolean):
     };
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function parseMBoxMessageIDAndReferences(parsed: IParsedMBox):
         Promise<{messageID: string; references: string[]}> {
     const references: string[] = [];
@@ -159,6 +166,7 @@ export async function sendMail(mail: IParsedMBox,
         const smtpOpts = smtpOptions.smtpOpts
             .replace(/([ {])([a-zA-Z0-9.]+?) *?:/g,"$1\"$2\":");
         Object.entries(JSON.parse(smtpOpts))
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             .forEach(([key, value]) => transportOpts[key] = value);
     }
 
@@ -179,6 +187,7 @@ export async function sendMail(mail: IParsedMBox,
             if (error) {
                 reject(error);
             } else {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 resolve(info.messageId);
             }
         });
