@@ -217,8 +217,9 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("different MIME-Version headers write to log", () => {
             const mails1 = [mimeBox2];
-            const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
+            // eslint-disable-next-line @typescript-eslint/unbound-method
+            const realLog = global.console.log; // capture calls to log
             global.console.log = log;
 
             PatchSeries.removeDuplicateHeaders(mails1);
@@ -259,6 +260,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("different Content-Type headers write to log", () => {
             const mails1 = [contentTypeBox2];
+            // eslint-disable-next-line @typescript-eslint/unbound-method
             const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;
@@ -318,6 +320,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("different Content-Transfer-Encoding headers write to log", () => {
             const mails1 = [contentTransferEncodingBox2];
+            // eslint-disable-next-line @typescript-eslint/unbound-method
             const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;
@@ -360,6 +363,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("different Content-Description headers write to log", () => {
             const mails1 = [contentDescriptionBox2];
+            // eslint-disable-next-line @typescript-eslint/unbound-method
             const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;
@@ -401,6 +405,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("different Content-ID headers write to log", () => {
             const mails1 = [contentIDBox2];
+            // eslint-disable-next-line @typescript-eslint/unbound-method
             const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;
