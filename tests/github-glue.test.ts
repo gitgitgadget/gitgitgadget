@@ -29,7 +29,7 @@ located at the same directory level as this project (ie ../).
 */
 
 class GitHubProxy extends GitHubGlue {
-    public octo: Octokit | any;
+    public octo: Octokit;
     public constructor(workDir?: string, repo = "git") {
         super(workDir, repo);
         this.octo = this.client;
