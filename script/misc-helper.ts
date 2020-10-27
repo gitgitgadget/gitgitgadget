@@ -45,7 +45,7 @@ async function getGitGitWorkDir(): Promise<string> {
             commander.gitWorkDir,
         ]);
     }
-    return commander.gitWorkDir;
+    return commander.gitWorkDir as string;
 }
 
 async function getCIHelper(): Promise<CIHelper> {

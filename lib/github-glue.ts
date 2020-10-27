@@ -246,7 +246,7 @@ export class GitHubGlue {
             owner,
             repo,
         });
-        return result.data.map((res: any) => res.id);
+        return result.data.map((res: { id: number }) => `${res.id}`);
     }
 
     public async closePR(pullRequestURL: string, viaMergeCommit: string):
