@@ -260,12 +260,12 @@ to have included in git.git [https://github.com/git/git].`);
 
     const seriesMeta = await notes.get<IPatchSeriesMetadata>(pullRequestURL);
     expect(seriesMeta).not.toBeNull();
-    expect(seriesMeta!.coverLetterMessageId).not.toBeUndefined();
-    const coverMid: string = seriesMeta!.coverLetterMessageId!;
+    expect(seriesMeta?.coverLetterMessageId).not.toBeUndefined();
+    const coverMid: string | undefined = seriesMeta?.coverLetterMessageId;
     expect(coverMid)
         .toMatch(/pull\.1\.v2\.git\.\d+\.gitgitgadget@example\.com/);
-    expect(seriesMeta!.referencesMessageIds).not.toBeUndefined();
-    const refMid: string = seriesMeta!.referencesMessageIds![0];
+    expect(seriesMeta?.referencesMessageIds).not.toBeUndefined();
+    const refMid: string | undefined = seriesMeta?.referencesMessageIds?.[0];
     expect(refMid)
         .toMatch(/pull\.1\.git\.\d+\.gitgitgadget@example\.com/);
     expect(seriesMeta).toEqual({

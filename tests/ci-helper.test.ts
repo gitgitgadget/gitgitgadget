@@ -237,8 +237,8 @@ test("identify upstream commit", async () => {
     expect(await ci.updateCommitMapping(messageID)).toBeTruthy();
     const bMetaNew = await notes.get<IMailMetadata>(messageID);
     expect(bMetaNew).not.toBeUndefined();
-    expect(bMetaNew!.originalCommit).toEqual(b);
-    expect(bMetaNew!.commitInGitGit).toEqual(B);
+    expect(bMetaNew?.originalCommit).toEqual(b);
+    expect(bMetaNew?.commitInGitGit).toEqual(B);
 });
 
 test("handle comment allow basic test", async () => {

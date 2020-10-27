@@ -173,10 +173,15 @@ export class GitGitGadget {
     public async preview(pr: IPullRequestInfo, userInfo: IGitHubUser):
         Promise<IPatchSeriesMetadata | undefined> {
 
+        if (!userInfo.email) {
+            throw new Error(`No email in user info for ${userInfo.login}`);
+        }
+        const email = userInfo.email;
+
         const send = async (mail: string): Promise<string> => {
             const mbox = await parseMBox(mail);
             mbox.cc = [];
-            mbox.to = userInfo.email!;
+            mbox.to = email;
             console.log(mbox);
             return await sendMail(mbox, this.smtpOptions);
         };

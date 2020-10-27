@@ -42,7 +42,8 @@ export class MailArchiveGitHelper {
     public static mbox2markdown(mbox: IParsedMBox): string {
         let body = mbox.body;
 
-        for (const header of mbox.headers!) {
+        const headers = mbox.headers || [];
+        for (const header of headers) {
             if (header.key === "Content-Transfer-Encoding") {
                 const value = header.value.toLowerCase();
                 if (value === "base64") {

@@ -182,8 +182,11 @@ export class CIHelper {
                 continue;
             }
             const meta = await this.getMailMetadata(messageID);
-            if (!meta || meta.commitInGitGit !== undefined) {
-                if (!meta || commitsInSeen.has(meta.commitInGitGit!)) {
+            if (!meta) {
+                continue;
+            }
+            if (meta.commitInGitGit !== undefined) {
+                if (commitsInSeen.has(meta.commitInGitGit)) {
                     continue;
                 }
                 console.log(`Upstream commit ${meta.commitInGitGit} for ${

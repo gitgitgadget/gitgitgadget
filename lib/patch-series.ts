@@ -711,6 +711,7 @@ export class PatchSeries {
             if (!coverMid) {
                 throw new Error("Could not extract cover letter Message-ID");
             }
+            const mid = coverMid;
 
             const tsMatch = coverMid.match(/cover\.([0-9]+)\./);
             const timeStamp = tsMatch ? tsMatch[1] : `${Date.now()}`;
@@ -732,7 +733,7 @@ export class PatchSeries {
                     timeStamp}.${email}`;
                 mails.map((value: string, index: number): void => {
                     // cheap replace-all
-                    mails[index] = value.split(coverMid!).join(newCoverMid);
+                    mails[index] = value.split(mid).join(newCoverMid);
                 });
                 coverMid = newCoverMid;
             }

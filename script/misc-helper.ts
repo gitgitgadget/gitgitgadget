@@ -381,7 +381,7 @@ async function getCIHelper(): Promise<CIHelper> {
                 })).data.id;
             }
             const result = await client.apps.createInstallationAccessToken({
-                installation_id: options.installationID!,
+                installation_id: options.installationID,
             });
             const configKey = options.name === "gitgitgadget" ?
                 "gitgitgadget.githubToken" :
@@ -428,7 +428,7 @@ async function getCIHelper(): Promise<CIHelper> {
         for (const arg of commander.args.slice(1)) {
             onlyPRs.add(parseInt(arg, 10));
         }
-        await ci.handleNewMails(mailArchiveGitDir!,
+        await ci.handleNewMails(mailArchiveGitDir,
                                 onlyPRs.size ? onlyPRs : undefined);
     } else {
         process.stderr.write(`${command}: unhandled sub-command\n`);

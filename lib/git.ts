@@ -29,6 +29,7 @@ export function git(args: string[], options?: IGitOptions | undefined):
 
     return new Promise<string>((resolve, reject) => {
         if (options && options.lineHandler) {
+            const lineHandler = options.lineHandler;
             if (options.processCallback) {
                 reject(new Error("line handler *and* process callback set"));
                 return;
@@ -41,14 +42,17 @@ export function git(args: string[], options?: IGitOptions | undefined):
                         reject(new Error(`Received code ${code}`));
                     }
                 });
+                if (!process.stdout) {
+                    throw new Error(`No stdout for "git ${args.join(" ")}`);
+                }
                 let linePromise: Promise<void> | undefined;
                 const handleLine = (line: string): boolean => {
                     try {
                         if (!linePromise) {
-                            linePromise = options.lineHandler!(line);
+                            linePromise = lineHandler(line);
                         } else {
                             linePromise = linePromise.then(() => {
-                                return options.lineHandler!(line);
+                                return lineHandler(line);
                             });
                         }
                         linePromise.catch((reason) => {
@@ -63,7 +67,7 @@ export function git(args: string[], options?: IGitOptions | undefined):
                     return true;
                 };
                 let buffer = "";
-                process.stdout!.on("data", (chunk: any) => {
+                process.stdout.on("data", (chunk: any) => {
                     buffer += chunk;
                     for (;;) {
                         const eol = buffer.indexOf("\n");
@@ -76,7 +80,7 @@ export function git(args: string[], options?: IGitOptions | undefined):
                         buffer = buffer.substr(eol + 1);
                     }
                 });
-                process.stdout!.on("end", () => {
+                process.stdout.on("end", () => {
                     if (buffer.length > 0) {
                         handleLine(buffer);
                     }
