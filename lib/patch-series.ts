@@ -444,7 +444,7 @@ export class PatchSeries {
         mails.map((mail, i) => {
             const match = mail.match(/^([^]*?)(\n\n[^]*)$/);
             if (!match) {
-                throw new Error("No header found in mail #" + i + ":\n" + mail);
+                throw new Error(`No header found in mail #${i}:\n${mail}`);
             }
             let header = match[1];
 
