@@ -15,6 +15,7 @@ module.exports = {
         "sourceType": "module"
     },
     "plugins": [
+        "eslint-plugin-jest",
         "eslint-plugin-jsdoc",
         "@typescript-eslint"
     ],
@@ -164,6 +165,11 @@ module.exports = {
             }
         ],
         "use-isnan": "error",
-        "valid-typeof": "off"
+        "valid-typeof": "off",
+        "jest/no-disabled-tests": "warn",
+        "jest/no-focused-tests": "error",
+        "jest/no-identical-title": "error",
+        "jest/prefer-to-have-length": "warn",
+        "jest/valid-expect": "error"
     }
 };
