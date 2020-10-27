@@ -283,7 +283,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             "",
             "Hi!",
         ].join("\n");
-        test("duplicate Content-Type headers are eliminated", () => {
+        test("duplicate Content-Type headers are eliminated (take 2)", () => {
             const mails1 = [contentTypeBox3];
             PatchSeries.removeDuplicateHeaders(mails1);
             expect(mails1[0]).not.toMatch(/Content-Type[^]*Content-Type/);
