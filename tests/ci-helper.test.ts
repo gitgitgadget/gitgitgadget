@@ -60,22 +60,22 @@ class TestCIHelper extends CIHelper {
         // this.ghGlue.ensureAuthenticated = async (): Promise<void> => {};
     }
 
-    public setGHgetPRInfo(o: IPullRequestInfo): void {
+    public setGHGetPRInfo(o: IPullRequestInfo): void {
         this.ghGlue.getPRInfo = jest.fn( async ():
             Promise<IPullRequestInfo> => o );
     }
 
-    public setGHgetPRComment(o: IPRComment): void {
+    public setGHGetPRComment(o: IPRComment): void {
         this.ghGlue.getPRComment = jest.fn( async ():
             Promise<IPRComment> => o );
     }
 
-    public setGHgetPRCommits(o: IPRCommit[]): void {
+    public setGHGetPRCommits(o: IPRCommit[]): void {
         this.ghGlue.getPRCommits = jest.fn( async ():
             Promise<IPRCommit[]> => o );
     }
 
-    public setGHgetGitHubUserInfo(o: IGitHubUser): void {
+    public setGHGetGitHubUserInfo(o: IGitHubUser): void {
         this.ghGlue.getGitHubUserInfo = jest.fn( async ():
             Promise<IGitHubUser> => o );
     }
@@ -143,8 +143,8 @@ async function setupRepos(instance: string):
     await notes.set("", {allowedUsers: ["ggg", "user1"]}, true);
 
     // Initial empty commit
-    const A = await gggRemote.commit("A");
-    expect(A).not.toBeUndefined();
+    const commitA = await gggRemote.commit("A");
+    expect(commitA).not.toBeUndefined();
 
     // Set up fake upstream branches
     await gggRemote.git(["branch", "maint"]);
@@ -166,23 +166,23 @@ test("identify merge that integrated some commit", async () => {
      *   \       /
      *     g - h
      */
-    const a = await repo.commit("a");
-    const g = await repo.commit("g");
-    const h = await repo.commit("h");
-    await repo.git(["reset", "--hard", a]);
-    const e = await repo.commit("e");
-    const f = await repo.merge("f", h);
-    await repo.git(["reset", "--hard", a]);
-    const b = await repo.commit("b");
-    const c = await repo.merge("c", e);
-    const d = await repo.merge("d", f);
-    await repo.git(["update-ref", "refs/remotes/upstream/seen", d]);
+    const commitA = await repo.commit("a");
+    const commitG = await repo.commit("g");
+    const commitH = await repo.commit("h");
+    await repo.git(["reset", "--hard", commitA]);
+    const commitE = await repo.commit("e");
+    const commitF = await repo.merge("f", commitH);
+    await repo.git(["reset", "--hard", commitA]);
+    const commitB = await repo.commit("b");
+    const commitC = await repo.merge("c", commitE);
+    const commitD = await repo.merge("d", commitF);
+    await repo.git(["update-ref", "refs/remotes/upstream/seen", commitD]);
 
     const ci = new CIHelper(repo.workDir);
-    expect(b).not.toBeUndefined();
-    expect(await ci.identifyMergeCommit("seen", g)).toEqual(d);
-    expect(await ci.identifyMergeCommit("seen", e)).toEqual(c);
-    expect(await ci.identifyMergeCommit("seen", h)).toEqual(d);
+    expect(commitB).not.toBeUndefined();
+    expect(await ci.identifyMergeCommit("seen", commitG)).toEqual(commitD);
+    expect(await ci.identifyMergeCommit("seen", commitE)).toEqual(commitC);
+    expect(await ci.identifyMergeCommit("seen", commitH)).toEqual(commitD);
 });
 
 test("identify upstream commit", async () => {
@@ -195,50 +195,50 @@ test("identify upstream commit", async () => {
                         "https://github.com/gitgitgadget/git"]);
 
     // Set up fake upstream branches
-    const A = await gggRemote.commit("A");
-    expect(A).not.toBeUndefined();
+    const commitA = await gggRemote.commit("A");
+    expect(commitA).not.toBeUndefined();
     await gggRemote.git(["branch", "maint"]);
     await gggRemote.git(["branch", "next"]);
     await gggRemote.git(["branch", "seen"]);
 
     // Now come up with a local change
     await worktree.git(["pull", gggRemote.workDir, "master"]);
-    const b = await worktree.commit("b");
+    const commitB = await worktree.commit("b");
 
     // "Contribute" it via a PullRequest
     const pullRequestURL = "https://example.com/pull/123";
     const messageID = "fake-1st-mail@example.com";
     const notes = new GitNotes(worktree.workDir);
-    await notes.appendCommitNote(b, messageID);
+    await notes.appendCommitNote(commitB, messageID);
     const bMeta = {
         messageID,
-        originalCommit: b,
+        originalCommit: commitB,
         pullRequestURL,
     } as IMailMetadata;
     await notes.set(messageID, bMeta);
 
     // "Apply" the patch, and merge it
     await gggRemote.newBranch("gg/via-pull-request");
-    const B = await gggRemote.commit("B");
+    const commitBNew = await gggRemote.commit("B");
     await gggRemote.git(["checkout", "seen"]);
     await gggRemote.git(["merge", "--no-ff", "gg/via-pull-request"]);
 
     // Update the `mail-to-commit` notes ref, at least the part we care about
     const mail2CommitNotes = new GitNotes(gggRemote.workDir,
                                           "refs/notes/mail-to-commit");
-    await mail2CommitNotes.setString(messageID, B);
+    await mail2CommitNotes.setString(messageID, commitBNew);
 
     // "publish" the gitgitgadget notes
     await worktree.git(["push", gggRemote.workDir, notes.notesRef]);
 
     const ci = new TestCIHelper(worktree.workDir);
-    expect(await ci.identifyUpstreamCommit(b)).toEqual(B);
+    expect(await ci.identifyUpstreamCommit(commitB)).toEqual(commitBNew);
 
     expect(await ci.updateCommitMapping(messageID)).toBeTruthy();
     const bMetaNew = await notes.get<IMailMetadata>(messageID);
     expect(bMetaNew).not.toBeUndefined();
-    expect(bMetaNew?.originalCommit).toEqual(b);
-    expect(bMetaNew?.commitInGitGit).toEqual(B);
+    expect(bMetaNew?.originalCommit).toEqual(commitB);
+    expect(bMetaNew?.commitInGitGit).toEqual(commitBNew);
 });
 
 test("handle comment allow basic test", async () => {
@@ -261,8 +261,8 @@ test("handle comment allow basic test", async () => {
         type: "basic",
     };
 
-    ci.setGHgetPRComment(comment);
-    ci.setGHgetGitHubUserInfo(user);
+    ci.setGHGetPRComment(comment);
+    ci.setGHGetGitHubUserInfo(user);
 
     await ci.handleComment("gitgitgadget", 433865360);
     expect(ci.addPRCommentCalls[0][1])
@@ -281,7 +281,7 @@ test("handle comment allow fail invalid user", async () => {
         prNumber,
     };
 
-    ci.setGHgetPRComment(comment);
+    ci.setGHGetPRComment(comment);
 
     await ci.handleComment("gitgitgadget", 433865360);
     expect(ci.addPRCommentCalls[0][1])
@@ -301,13 +301,13 @@ test("handle comment allow no public email", async () => {
     };
     const user: IGitHubUser = {
         email: null,
-        login: "noemail",
+        login: "noEmail",
         name: "no email",
         type: "basic",
     };
 
-    ci.setGHgetPRComment(comment);
-    ci.setGHgetGitHubUserInfo(user);
+    ci.setGHGetPRComment(comment);
+    ci.setGHGetGitHubUserInfo(user);
 
     await ci.handleComment("gitgitgadget", 433865360);
     expect(ci.addPRCommentCalls[0][1])
@@ -335,8 +335,8 @@ test("handle comment allow already allowed", async () => {
         type: "basic",
     };
 
-    ci.setGHgetPRComment(comment);
-    ci.setGHgetGitHubUserInfo(user);
+    ci.setGHGetPRComment(comment);
+    ci.setGHGetGitHubUserInfo(user);
 
     await ci.handleComment("gitgitgadget", 433865360);
     expect(ci.addPRCommentCalls[0][1])
@@ -362,7 +362,7 @@ test("handle comment allow no name specified (with trailing white space)",
         name: "not so bad",
         type: "basic",
     };
-    const prinfo = {
+    const prInfo = {
         author: "ggg",
         baseCommit: "A",
         baseLabel: "gitgitgadget:next",
@@ -378,9 +378,9 @@ test("handle comment allow no name specified (with trailing white space)",
         title: "Submit a fun fix",
     };
 
-    ci.setGHgetPRInfo(prinfo);
-    ci.setGHgetPRComment(comment);
-    ci.setGHgetGitHubUserInfo(user);
+    ci.setGHGetPRInfo(prInfo);
+    ci.setGHGetPRComment(comment);
+    ci.setGHGetGitHubUserInfo(user);
 
     await ci.handleComment("gitgitgadget", 433865360);
     expect(ci.addPRCommentCalls[0][1])
@@ -406,8 +406,8 @@ test("handle comment disallow basic test", async () => {
         type: "basic",
     };
 
-    ci.setGHgetPRComment(comment);
-    ci.setGHgetGitHubUserInfo(user);
+    ci.setGHGetPRComment(comment);
+    ci.setGHGetGitHubUserInfo(user);
 
     await ci.handleComment("gitgitgadget", 433865360);
     expect(ci.addPRCommentCalls[0][1])
@@ -427,7 +427,7 @@ test("handle comment disallow was not allowed", async () => {
         prNumber,
     };
 
-    ci.setGHgetPRComment(comment);
+    ci.setGHGetPRComment(comment);
 
     await ci.handleComment("gitgitgadget", 433865360);
     expect(ci.addPRCommentCalls[0][1])
@@ -452,7 +452,7 @@ test("handle comment submit not author", async () => {
         name: "ee cummings",
         type: "basic",
     };
-    const prinfo = {
+    const prInfo = {
         author: "ggNOTg",
         baseCommit: "A",
         baseLabel: "gitgitgadget:next",
@@ -468,9 +468,9 @@ test("handle comment submit not author", async () => {
         title: "Submit a fun fix",
     };
 
-    ci.setGHgetPRInfo(prinfo);
-    ci.setGHgetPRComment(comment);
-    ci.setGHgetGitHubUserInfo(user);
+    ci.setGHGetPRInfo(prInfo);
+    ci.setGHGetPRComment(comment);
+    ci.setGHGetGitHubUserInfo(user);
 
     await ci.handleComment("gitgitgadget", 433865360);
     expect(ci.addPRCommentCalls[0][1])
@@ -495,7 +495,7 @@ test("handle comment submit not mergeable", async () => {
         name: "ee cummings",
         type: "basic",
     };
-    const prinfo = {
+    const prInfo = {
         author: "ggg",
         baseCommit: "A",
         baseLabel: "gitgitgadget:next",
@@ -511,9 +511,9 @@ test("handle comment submit not mergeable", async () => {
         title: "Do Not Submit a fun fix",
     };
 
-    ci.setGHgetPRInfo(prinfo);
-    ci.setGHgetPRComment(comment);
-    ci.setGHgetGitHubUserInfo(user);
+    ci.setGHGetPRInfo(prInfo);
+    ci.setGHGetPRComment(comment);
+    ci.setGHGetGitHubUserInfo(user);
 
     await ci.handleComment("gitgitgadget", 433865360);
     expect(ci.addPRCommentCalls[0][1])
@@ -530,12 +530,12 @@ test("handle comment submit email success", async () => {
     // add template to master repo
     await gggRemote.commit("temple", ".github//PULL_REQUEST_TEMPLATE.md",
                            template);
-    const A = await gggRemote.revParse("HEAD");
-    expect(A).not.toBeUndefined();
+    const commitA = await gggRemote.revParse("HEAD");
+    expect(commitA).not.toBeUndefined();
 
     // Now come up with a local change
     await worktree.git(["pull", gggRemote.workDir, "master"]);
-    const B = await worktree.commit("b");
+    const commitB = await worktree.commit("b");
 
     // get the pr refs in place
     const pullRequestRef = `refs/pull/${prNumber}`;
@@ -572,16 +572,16 @@ test("handle comment submit email success", async () => {
         message: "Submit ok\n\nSuccinct message\n\nSigned-off-by: x",
         parentCount: 1,
     }];
-    const prinfo = {
+    const prInfo = {
         author: "ggg",
-        baseCommit: A,
+        baseCommit: commitA,
         baseLabel: "gitgitgadget:next",
         baseOwner: "gitgitgadget",
         baseRepo: "git",
         body: `Super body\r\n${template}\r\nCc: Copy One <copy@cat.com>\r\n`
             + "Cc: Copy Two <copycat@cat.com>",
         hasComments: true,
-        headCommit: B,
+        headCommit: commitB,
         headLabel: "somebody:master",
         mergeable: true,
         number: prNumber,
@@ -592,10 +592,10 @@ test("handle comment submit email success", async () => {
     const { smtpUser } = await getSMTPInfo();
 
     if (smtpUser) {                 // if configured for this test
-        ci.setGHgetPRInfo(prinfo);
-        ci.setGHgetPRComment(comment);
-        ci.setGHgetPRCommits(commits);
-        ci.setGHgetGitHubUserInfo(user);
+        ci.setGHGetPRInfo(prInfo);
+        ci.setGHGetPRComment(comment);
+        ci.setGHGetPRCommits(commits);
+        ci.setGHGetGitHubUserInfo(user);
 
         await ci.handleComment("gitgitgadget", 433865360);
         expect(ci.addPRCommentCalls[0][1]).toMatch(/Submitted as/);
@@ -611,12 +611,12 @@ test("handle comment preview email success", async () => {
     const template = "fine template\nnew line";
     await gggRemote.commit("temple", ".github//PULL_REQUEST_TEMPLATE.md",
                            template);
-    const A = await gggRemote.revParse("HEAD");
-    expect(A).not.toBeUndefined();
+    const commitA = await gggRemote.revParse("HEAD");
+    expect(commitA).not.toBeUndefined();
 
     // Now come up with a local change
     await worktree.git(["pull", gggRemote.workDir, "master"]);
-    const B = await worktree.commit("b");
+    const commitB = await worktree.commit("b");
 
     // get the pr refs in place
     const pullRequestRef = `refs/pull/${prNumber}`;
@@ -653,15 +653,15 @@ test("handle comment preview email success", async () => {
         message: "Submit ok\n\nSigned-off-by: x",
         parentCount: 1,
     }];
-    const prinfo = {
+    const prInfo = {
         author: "ggg",
-        baseCommit: A,
+        baseCommit: commitA,
         baseLabel: "gitgitgadget:next",
         baseOwner: "gitgitgadget",
         baseRepo: "git",
         body: "There will be a submit email and a preview email.",
         hasComments: true,
-        headCommit: B,
+        headCommit: commitB,
         headLabel: "somebody:master",
         mergeable: true,
         number: prNumber,
@@ -672,16 +672,16 @@ test("handle comment preview email success", async () => {
     const { smtpUser } = await getSMTPInfo();
 
     if (smtpUser) {                 // if configured for this test
-        ci.setGHgetPRInfo(prinfo);
-        ci.setGHgetPRComment(comment);
-        ci.setGHgetPRCommits(commits);
-        ci.setGHgetGitHubUserInfo(user);
+        ci.setGHGetPRInfo(prInfo);
+        ci.setGHGetPRComment(comment);
+        ci.setGHGetPRCommits(commits);
+        ci.setGHGetGitHubUserInfo(user);
 
         await ci.handleComment("gitgitgadget", 433865360);
         expect(ci.addPRCommentCalls[0][1]).toMatch(/Submitted as/);
 
         comment.body = " /preview";
-        ci.setGHgetPRComment(comment);
+        ci.setGHGetPRComment(comment);
         await ci.handleComment("gitgitgadget", 433865360); // do it again
         expect(ci.addPRCommentCalls[1][1])
             .toMatch(/Preview email sent as/);
@@ -696,13 +696,13 @@ test("handle push/comment too many commits fails", async () => {
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
 
-    const A = await gggRemote.revParse("HEAD");
-    expect(A).not.toBeUndefined();
+    const commitA = await gggRemote.revParse("HEAD");
+    expect(commitA).not.toBeUndefined();
 
     // Now come up with a local change
     // this should be in a separate repo from the worktree
     await worktree.git(["pull", gggRemote.workDir, "master"]);
-    const B = await worktree.commit("b");
+    const commitB = await worktree.commit("b");
 
     // get the pr refs in place
     const pullRequestRef = `refs/pull/${prNumber}`;
@@ -726,16 +726,16 @@ test("handle push/comment too many commits fails", async () => {
         name: "e. e. cummings",
         type: "basic",
     };
-    const prinfo = {
+    const prInfo = {
         author: "ggg",
-        baseCommit: A,
+        baseCommit: commitA,
         baseLabel: "gitgitgadget:next",
         baseOwner: "gitgitgadget",
         baseRepo: "git",
         body: "Never seen - too many commits.",
         commits,
         hasComments: false,
-        headCommit: B,
+        headCommit: commitB,
         headLabel: "somebody:master",
         mergeable: true,
         number: prNumber,
@@ -743,9 +743,9 @@ test("handle push/comment too many commits fails", async () => {
         title: "Preview a fun fix",
     };
 
-    ci.setGHgetPRInfo(prinfo);
-    ci.setGHgetPRComment(comment);
-    ci.setGHgetGitHubUserInfo(user);
+    ci.setGHGetPRInfo(prInfo);
+    ci.setGHGetPRComment(comment);
+    ci.setGHGetGitHubUserInfo(user);
 
     const failMsg = `The pull request has ${commits} commits.`;
     // fail for too many commits on push
@@ -762,19 +762,19 @@ test("handle push/comment too many commits fails", async () => {
 
     // fail for too many commits on preview
     comment.body = " /preview";
-    ci.setGHgetPRComment(comment);
+    ci.setGHGetPRComment(comment);
 
     await ci.handleComment("gitgitgadget", 433865360);
     expect(ci.addPRCommentCalls[0][1]).toMatch(failMsg);
     ci.addPRCommentCalls.length = 0;
 
     // fail for too many commits push new user
-    prinfo.author = "starfish";
+    prInfo.author = "starfish";
     comment.author = "starfish";
     user.login = "starfish";
-    ci.setGHgetPRInfo(prinfo);
-    ci.setGHgetPRComment(comment);
-    ci.setGHgetGitHubUserInfo(user);
+    ci.setGHGetPRInfo(prInfo);
+    ci.setGHGetPRComment(comment);
+    ci.setGHGetGitHubUserInfo(user);
 
     await expect(ci.handlePush("gitgitgadget", 433865360)).
         rejects.toThrow(/Failing check due/);
@@ -789,13 +789,13 @@ test("handle push/comment merge commits fails", async () => {
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
 
-    const A = await gggRemote.revParse("HEAD");
-    expect(A).not.toBeUndefined();
+    const commitA = await gggRemote.revParse("HEAD");
+    expect(commitA).not.toBeUndefined();
 
     // Now come up with a local change
     // this should be in a separate repo from the worktree
     await worktree.git(["pull", gggRemote.workDir, "master"]);
-    const B = await worktree.commit("b");
+    const commitB = await worktree.commit("b");
 
     // get the pr refs in place
     const pullRequestRef = `refs/pull/${prNumber}`;
@@ -832,16 +832,16 @@ test("handle push/comment merge commits fails", async () => {
         parentCount: 2,
     }];
 
-    const prinfo = {
+    const prInfo = {
         author: "ggg",
-        baseCommit: A,
+        baseCommit: commitA,
         baseLabel: "gitgitgadget:next",
         baseOwner: "gitgitgadget",
         baseRepo: "git",
         body: "Never seen - merge commits.",
         commits: commits.length,
         hasComments: false,
-        headCommit: B,
+        headCommit: commitB,
         headLabel: "somebody:master",
         mergeable: true,
         number: prNumber,
@@ -849,10 +849,10 @@ test("handle push/comment merge commits fails", async () => {
         title: "Preview a fun fix",
     };
 
-    ci.setGHgetPRInfo(prinfo);
-    ci.setGHgetPRComment(comment);
-    ci.setGHgetPRCommits(commits);
-    ci.setGHgetGitHubUserInfo(user);
+    ci.setGHGetPRInfo(prInfo);
+    ci.setGHGetPRComment(comment);
+    ci.setGHGetPRCommits(commits);
+    ci.setGHGetGitHubUserInfo(user);
 
     // fail for merge commits on push
     await expect(ci.handlePush("gitgitgadget", 433865360)).
@@ -868,14 +868,14 @@ test("handle push/comment merge commits fails", async () => {
 
     // fail for merge commits on preview
     comment.body = " /preview";
-    ci.setGHgetPRComment(comment);
+    ci.setGHGetPRComment(comment);
 
     await ci.handleComment("gitgitgadget", 433865360);
     expect(ci.addPRCommentCalls[0][1]).toMatch(commits[0].commit);
     ci.addPRCommentCalls.length = 0;
 
     // fail for merge commits push new user
-    prinfo.author = "starfish";
+    prInfo.author = "starfish";
     comment.author = "starfish";
     user.login = "starfish";
 
@@ -935,13 +935,13 @@ test("disallow no-reply emails", async () => {
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
 
-    const A = await gggRemote.revParse("HEAD");
-    expect(A).not.toBeUndefined();
+    const commitA = await gggRemote.revParse("HEAD");
+    expect(commitA).not.toBeUndefined();
 
     // Now come up with a local change
     // this should be in a separate repo from the worktree
     await worktree.git(["pull", gggRemote.workDir, "master"]);
-    const B = await worktree.commit("b");
+    const commitB = await worktree.commit("b");
 
     // get the pr refs in place
     const pullRequestRef = `refs/pull/${prNumber}`;
@@ -978,16 +978,16 @@ test("disallow no-reply emails", async () => {
         parentCount: 1,
     }];
 
-    const prinfo = {
+    const prInfo = {
         author: "ggg",
-        baseCommit: A,
+        baseCommit: commitA,
         baseLabel: "gitgitgadget:next",
         baseOwner: "gitgitgadget",
         baseRepo: "git",
         body: "Never seen - merge commits.",
         commits: commits.length,
         hasComments: false,
-        headCommit: B,
+        headCommit: commitB,
         headLabel: "somebody:master",
         mergeable: true,
         number: prNumber,
@@ -995,10 +995,10 @@ test("disallow no-reply emails", async () => {
         title: "Preview a fun fix",
     };
 
-    ci.setGHgetPRInfo(prinfo);
-    ci.setGHgetPRComment(comment);
-    ci.setGHgetPRCommits(commits);
-    ci.setGHgetGitHubUserInfo(user);
+    ci.setGHGetPRInfo(prInfo);
+    ci.setGHGetPRComment(comment);
+    ci.setGHGetPRCommits(commits);
+    ci.setGHGetGitHubUserInfo(user);
 
     // fail for commits with fake email on push
     await expect(ci.handlePush("gitgitgadget", 433865360)).
@@ -1014,13 +1014,13 @@ test("basic lint tests", async () => {
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
 
-    const A = await gggRemote.revParse("HEAD");
-    expect(A).not.toBeUndefined();
+    const commitA = await gggRemote.revParse("HEAD");
+    expect(commitA).not.toBeUndefined();
 
     // Now come up with a local change
     // this should be in a separate repo from the worktree
     await worktree.git(["pull", gggRemote.workDir, "master"]);
-    const B = await worktree.commit("b");
+    const commitB = await worktree.commit("b");
 
     // get the pr refs in place
     const pullRequestRef = `refs/pull/${prNumber}`;
@@ -1104,16 +1104,16 @@ test("basic lint tests", async () => {
         },
     ];
 
-    const prinfo = {
+    const prInfo = {
         author: "ggg",
-        baseCommit: A,
+        baseCommit: commitA,
         baseLabel: "gitgitgadget:next",
         baseOwner: "gitgitgadget",
         baseRepo: "git",
         body: "Never seen - merge commits.",
         commits: commits.length,
         hasComments: false,
-        headCommit: B,
+        headCommit: commitB,
         headLabel: "somebody:master",
         mergeable: true,
         number: prNumber,
@@ -1121,10 +1121,10 @@ test("basic lint tests", async () => {
         title: "Preview a fun fix",
     };
 
-    ci.setGHgetPRInfo(prinfo);
-    ci.setGHgetPRComment(comment);
-    ci.setGHgetPRCommits(commits);
-    ci.setGHgetGitHubUserInfo(user);
+    ci.setGHGetPRInfo(prInfo);
+    ci.setGHGetPRComment(comment);
+    ci.setGHGetPRCommits(commits);
+    ci.setGHGetGitHubUserInfo(user);
 
     // fail for commits with lint errors
     await expect(ci.handlePush("gitgitgadget", 433865360)).
@@ -1157,7 +1157,7 @@ test("Handle comment cc", async () => {
         type: "basic",
     };
 
-    const prinfo = {
+    const prInfo = {
         author: "ggg",
         baseCommit: "foo",
         baseLabel: "gitgitgadget:next",
@@ -1174,9 +1174,9 @@ test("Handle comment cc", async () => {
         title: "Preview a fun fix",
     };
 
-    ci.setGHgetPRInfo(prinfo);
-    ci.setGHgetPRComment(comment);
-    ci.setGHgetGitHubUserInfo(user);
+    ci.setGHGetPRInfo(prInfo);
+    ci.setGHGetPRComment(comment);
+    ci.setGHGetGitHubUserInfo(user);
 
     await ci.handleComment("gitgitgadget", prNumber);
 
@@ -1193,7 +1193,7 @@ test("Handle comment cc", async () => {
     ci.updatePRCalls.length = 0;
 
     // email will not be re-added to list
-    prinfo.body = "changes\n\ncc: <abody@example.com>";
+    prInfo.body = "changes\n\ncc: <abody@example.com>";
 
     await ci.handleComment("gitgitgadget", prNumber);
 

@@ -228,7 +228,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             expect(log).toHaveBeenCalledTimes(1); // verify no more errors
         });
 
-        const ContentTypeBox1 = [
+        const contentTypeBox1 = [
             "From xyz",
             "Content-Type: text/plain; charset=UTF-8",
             "From: bogus@example.org",
@@ -242,12 +242,12 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             "Hi!",
         ].join("\n");
         test("duplicate Content-Type headers are eliminated", () => {
-            const mails1 = [ContentTypeBox1];
+            const mails1 = [contentTypeBox1];
             PatchSeries.removeDuplicateHeaders(mails1);
             expect(mails1[0]).not.toMatch(/Content-Type[^]*Content-Type/);
         });
 
-        const ContentTypeBox2 = [
+        const contentTypeBox2 = [
             "From xyz",
             "Content-Type: text/plain; charset=UTF-8",
             "From: bogus@example.org",
@@ -258,7 +258,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             "Hi!",
         ].join("\n");
         test("different Content-Type headers write to log", () => {
-            const mails1 = [ContentTypeBox2];
+            const mails1 = [contentTypeBox2];
             const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;
@@ -270,7 +270,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             expect(log).toHaveBeenCalledTimes(1); // verify no more errors
         });
 
-        const ContentTypeBox3 = [
+        const contentTypeBox3 = [
             "From xyz",
             "Content-Type: text/plain; charset=UTF-8",
             "From: bogus@example.org",
@@ -282,12 +282,12 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             "Hi!",
         ].join("\n");
         test("duplicate Content-Type headers are eliminated", () => {
-            const mails1 = [ContentTypeBox3];
+            const mails1 = [contentTypeBox3];
             PatchSeries.removeDuplicateHeaders(mails1);
             expect(mails1[0]).not.toMatch(/Content-Type[^]*Content-Type/);
         });
 
-        const ContentTransferEncodingBox1 = [
+        const contentTransferEncodingBox1 = [
             "From xyz",
             "Content-Transfer-Encoding: 8bit",
             "From: bogus@example.org",
@@ -300,13 +300,13 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("duplicate Content-Transfer-Encoding headers are eliminated",
              () => {
-            const mails1 = [ContentTransferEncodingBox1];
+            const mails1 = [contentTransferEncodingBox1];
             PatchSeries.removeDuplicateHeaders(mails1);
             expect(mails1[0]).not.toMatch(new RegExp("Content-Transfer-Encoding"
                 + "[^]*Content-Transfer-Encoding"));
         });
 
-        const ContentTransferEncodingBox2 = [
+        const contentTransferEncodingBox2 = [
             "From xyz",
             "Content-Transfer-Encoding: 8bit",
             "From: bogus@example.org",
@@ -317,7 +317,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             "Hi!",
         ].join("\n");
         test("different Content-Transfer-Encoding headers write to log", () => {
-            const mails1 = [ContentTransferEncodingBox2];
+            const mails1 = [contentTransferEncodingBox2];
             const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;
@@ -329,7 +329,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             expect(log).toHaveBeenCalledTimes(1); // verify no more errors
         });
 
-        const ContentDescriptionBox1 = [
+        const contentDescriptionBox1 = [
             "From xyz",
             "Content-Description: fooba",
             "From: bogus@example.org",
@@ -341,13 +341,13 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             "Hi!",
         ].join("\n");
         test("duplicate Content-Description headers throw error", () => {
-            const mails1 = [ContentDescriptionBox1];
+            const mails1 = [contentDescriptionBox1];
             PatchSeries.removeDuplicateHeaders(mails1);
             expect(mails1[0]).not.toMatch(new RegExp("Content-Description"
             + "[^]*Content-Description"));
         });
 
-        const ContentDescriptionBox2 = [
+        const contentDescriptionBox2 = [
             "From xyz",
             "Content-Description: fooba",
             "From: bogus@example.org",
@@ -359,7 +359,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             "Hi!",
         ].join("\n");
         test("different Content-Description headers write to log", () => {
-            const mails1 = [ContentDescriptionBox2];
+            const mails1 = [contentDescriptionBox2];
             const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;
@@ -371,7 +371,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             expect(log).toHaveBeenCalledTimes(1); // verify no more errors
         });
 
-        const ContentIDBox1 = [
+        const contentIDBox1 = [
             "From xyz",
             "Content-ID: 1.0",
             "From: bogus@example.org",
@@ -383,12 +383,12 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             "Hi!",
         ].join("\n");
         test("duplicate Content-ID headers throw error", () => {
-            const mails1 = [ContentIDBox1];
+            const mails1 = [contentIDBox1];
             PatchSeries.removeDuplicateHeaders(mails1);
             expect(mails1[0]).not.toMatch(/Content-ID[^]*Content-ID/);
         });
 
-        const ContentIDBox2 = [
+        const contentIDBox2 = [
             "From xyz",
             "Content-ID: 1.0",
             "From: bogus@example.org",
@@ -400,7 +400,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             "Hi!",
         ].join("\n");
         test("different Content-ID headers write to log", () => {
-            const mails1 = [ContentIDBox2];
+            const mails1 = [contentIDBox2];
             const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;
