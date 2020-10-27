@@ -2,7 +2,7 @@
     "tslint.autoFixOnSave": true,
     "[typescript]": {
         "editor.detectIndentation": false,
-        "editor.autoIndent": false,
+        "editor.autoIndent": "none",
         "editor.insertSpaces": true,
         "editor.tabSize": 4,
         "editor.wordWrap": "wordWrapColumn",
