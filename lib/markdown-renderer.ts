@@ -1,7 +1,7 @@
 import { fromString, HtmlToTextOptions } from "html-to-text";
 import marked from "marked";
 
-// Provide our own renderings of headings and blockquotes.
+// Provide our own renderings of headings and block quotes.
 
 export function md2text(markdown: string, columns = 76): string {
     const formatOptions: HtmlToTextOptions = {

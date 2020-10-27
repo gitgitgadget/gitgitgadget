@@ -24,7 +24,7 @@ export class LintCommit {
      * Linter method to run checks on the commit message.
      * @param {IPRCommit} the patch to be checked
      *
-     * The lintings are in methods called from here.  If
+     * The lints are in methods called from here.  If
      * a lint check is too severe to continue, it will throw
      * an error.
      */

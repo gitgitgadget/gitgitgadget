@@ -17,7 +17,7 @@ commander.version("1.0.0")
             + "`gitgitgadget.workDir`",
             undefined)
     .option("-G, --gitgitgadget-work-dir [directory]",
-            "Use a different gitgitgitgadget working directory than the "
+            "Use a different gitgitgadget working directory than the "
             + "current working directory to access the Git config e.g. for "
             + "`gitgitgadget.workDir`",
             ".")

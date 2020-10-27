@@ -467,7 +467,7 @@ test("handle comment submit not author", async () => {
     expect(ci.addPRComment.mock.calls[0][1]).toMatch(/Only the owner of a PR can submit/);
 });
 
-test("handle comment submit not mergable", async () => {
+test("handle comment submit not mergeable", async () => {
     const { worktree, gggLocal } = await setupRepos("s2");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
@@ -559,7 +559,7 @@ test("handle comment submit email success", async () => {
             login: "ggg",
             name: "e. e. cummings",
         },
-        message: "Submit ok\n\nSuccint message\n\nSigned-off-by: x",
+        message: "Submit ok\n\nSuccinct message\n\nSigned-off-by: x",
         parentCount: 1,
     }];
     const prinfo = {
@@ -919,7 +919,7 @@ test("handle push/comment merge commits fails", async () => {
 
 });
 
-test("disallow noreply emails", async () => {
+test("disallow no-reply emails", async () => {
     const { worktree, gggLocal, gggRemote} = await setupRepos("pu2");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
@@ -1181,7 +1181,7 @@ test("Handle comment cc", async () => {
     expect(ci.updatePR.mock.calls[1][2]).toMatch(/S Body/);
     ci.updatePR.mock.calls.length = 0;
 
-    // email will not be readded to list
+    // email will not be re-added to list
     prinfo.body = "changes\n\ncc: <abody@example.com>";
 
     await ci.handleComment("gitgitgadget", prNumber);

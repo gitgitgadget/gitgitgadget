@@ -228,7 +228,7 @@ test("pull requests", async () => {
 
             await git(["branch", "-D", branch], { workDir: repoDir });
         } catch (error) {
-            console.log(`commmand failed\n${error}`);
+            console.log(`command failed\n${error}`);
         }
     }
 });
