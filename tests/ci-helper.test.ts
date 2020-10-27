@@ -1202,5 +1202,5 @@ test("Handle comment cc", async () => {
     await ci.handleComment("gitgitgadget", prNumber);
 
     expect(ci.updatePRCalls[0][2]).toMatch(/S Body/);
-    expect(ci.updatePRCalls.length).toEqual(1);
+    expect(ci.updatePRCalls).toHaveLength(1);
 });

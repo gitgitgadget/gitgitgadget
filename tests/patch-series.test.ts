@@ -76,7 +76,7 @@ class PatchSeriesTest extends PatchSeries {
         const mails = PatchSeries.splitMails(mbox1);
 
         test("mails are split correctly", () => {
-            expect(mails.length).toBe(2);
+            expect(mails).toHaveLength(2);
             expect(mails[0]).toMatch(
                 /^From [^]*\n-- \n2\.17\.0\.windows\.1\n$/);
             expect(mails[1]).toMatch(
@@ -174,7 +174,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         });
 
         test("adjust mbox to forced date", () => {
-            expect(mails.length).toEqual(2);
+            expect(mails).toHaveLength(2);
             const endDate = new Date(987654321000);
             expect(PatchSeries.adjustDateHeaders(mails, endDate)).toEqual(2);
             const dates = mails.map((mail: string): string => {

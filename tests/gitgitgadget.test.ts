@@ -252,7 +252,7 @@ to have included in git.git [https://github.com/git/git].`);
 
     expect(metadata2?.coverLetterMessageId)
         .toMatch(/pull\.1\.v2\.git\.\d+\.gitgitgadget@example\.com/);
-    expect(mails.length).toEqual(5);
+    expect(mails).toHaveLength(5);
     if (await gitCommandExists("range-diff", repo.workDir)) {
         expect(mails[0]).toMatch(/Range-diff vs v1:\n[^]*\n -: .* 4: /);
     }
