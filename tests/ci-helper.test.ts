@@ -35,17 +35,27 @@ async function getSMTPInfo():
 
 class TestCIHelper extends CIHelper {
     public ghGlue: GitHubGlue;      // not readonly reference
-    public addPRComment: any;
-    public updatePR: any;
+    public addPRCommentCalls: string[][]; // reference mock.calls
+    public updatePRCalls: string[][]; // reference mock.calls
 
     public constructor(workDir?: string, debug = false, gggDir = ".") {
         super(workDir, debug, gggDir);
         this.testing = true;
         this.ghGlue = this.github;
-        this.addPRComment = jest.fn();
-        this.ghGlue.addPRComment = this.addPRComment;
-        this.updatePR = jest.fn();
-        this.ghGlue.updatePR = this.updatePR;
+
+        const commentInfo = { id: 1, url: "ok" };
+        const addPRComment = jest.fn( async ():
+            // eslint-disable-next-line @typescript-eslint/require-await
+            Promise<{id: number; url: string}> => commentInfo );
+        this.ghGlue.addPRComment = addPRComment;
+        this.addPRCommentCalls = addPRComment.mock.calls;
+
+        const updatePR = jest.fn( async ():
+            // eslint-disable-next-line @typescript-eslint/require-await
+            Promise<number> => 1 );
+        this.ghGlue.updatePR = updatePR;
+        this.updatePRCalls = updatePR.mock.calls;
+
         // need keys to authenticate
         // this.ghGlue.ensureAuthenticated = async (): Promise<void> => {};
     }
@@ -256,7 +266,7 @@ test("handle comment allow basic test", async () => {
 
     await ci.handleComment("gitgitgadget", 433865360);
     // tslint:disable-next-line:max-line-length
-    expect(ci.addPRComment.mock.calls[0][1]).toMatch(/is now allowed to use GitGitGadget/);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(/is now allowed to use GitGitGadget/);
 });
 
 test("handle comment allow fail invalid user", async () => {
@@ -275,7 +285,7 @@ test("handle comment allow fail invalid user", async () => {
 
     await ci.handleComment("gitgitgadget", 433865360);
     // tslint:disable-next-line:max-line-length
-    expect(ci.addPRComment.mock.calls[0][1]).toMatch(/is not a valid GitHub username/);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(/is not a valid GitHub username/);
 });
 
 test("handle comment allow no public email", async () => {
@@ -301,9 +311,9 @@ test("handle comment allow no public email", async () => {
 
     await ci.handleComment("gitgitgadget", 433865360);
     // tslint:disable-next-line:max-line-length
-    expect(ci.addPRComment.mock.calls[0][1]).toMatch(/is now allowed to use GitGitGadget/);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(/is now allowed to use GitGitGadget/);
     // tslint:disable-next-line:max-line-length
-    expect(ci.addPRComment.mock.calls[0][1]).toMatch(/no public email address set/);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(/no public email address set/);
 });
 
 test("handle comment allow already allowed", async () => {
@@ -330,7 +340,7 @@ test("handle comment allow already allowed", async () => {
 
     await ci.handleComment("gitgitgadget", 433865360);
     // tslint:disable-next-line:max-line-length
-    expect(ci.addPRComment.mock.calls[0][1]).toMatch(/already allowed to use GitGitGadget/);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(/already allowed to use GitGitGadget/);
 });
 
 test("handle comment allow no name specified (with trailing white space)",
@@ -374,7 +384,7 @@ test("handle comment allow no name specified (with trailing white space)",
 
     await ci.handleComment("gitgitgadget", 433865360);
     // tslint:disable-next-line:max-line-length
-    expect(ci.addPRComment.mock.calls[0][1]).toMatch(/already allowed to use GitGitGadget/);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(/already allowed to use GitGitGadget/);
 });
 
 test("handle comment disallow basic test", async () => {
@@ -401,7 +411,7 @@ test("handle comment disallow basic test", async () => {
 
     await ci.handleComment("gitgitgadget", 433865360);
     // tslint:disable-next-line:max-line-length
-    expect(ci.addPRComment.mock.calls[0][1]).toMatch(/is no longer allowed to use GitGitGadget/);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(/is no longer allowed to use GitGitGadget/);
 });
 
 test("handle comment disallow was not allowed", async () => {
@@ -421,7 +431,7 @@ test("handle comment disallow was not allowed", async () => {
 
     await ci.handleComment("gitgitgadget", 433865360);
     // tslint:disable-next-line:max-line-length
-    expect(ci.addPRComment.mock.calls[0][1]).toMatch(/already not allowed to use GitGitGadget/);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(/already not allowed to use GitGitGadget/);
 });
 
 test("handle comment submit not author", async () => {
@@ -464,7 +474,7 @@ test("handle comment submit not author", async () => {
 
     await ci.handleComment("gitgitgadget", 433865360);
     // tslint:disable-next-line:max-line-length
-    expect(ci.addPRComment.mock.calls[0][1]).toMatch(/Only the owner of a PR can submit/);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(/Only the owner of a PR can submit/);
 });
 
 test("handle comment submit not mergeable", async () => {
@@ -507,7 +517,7 @@ test("handle comment submit not mergeable", async () => {
 
     await ci.handleComment("gitgitgadget", 433865360);
     // tslint:disable-next-line:max-line-length
-    expect(ci.addPRComment.mock.calls[0][1]).toMatch(/does not merge cleanly/);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(/does not merge cleanly/);
 });
 
 test("handle comment submit email success", async () => {
@@ -588,7 +598,7 @@ test("handle comment submit email success", async () => {
         ci.setGHgetGitHubUserInfo(user);
 
         await ci.handleComment("gitgitgadget", 433865360);
-        expect(ci.addPRComment.mock.calls[0][1]).toMatch(/Submitted as/);
+        expect(ci.addPRCommentCalls[0][1]).toMatch(/Submitted as/);
     }
 });
 
@@ -668,13 +678,13 @@ test("handle comment preview email success", async () => {
         ci.setGHgetGitHubUserInfo(user);
 
         await ci.handleComment("gitgitgadget", 433865360);
-        expect(ci.addPRComment.mock.calls[0][1]).toMatch(/Submitted as/);
+        expect(ci.addPRCommentCalls[0][1]).toMatch(/Submitted as/);
 
         comment.body = " /preview";
         ci.setGHgetPRComment(comment);
         await ci.handleComment("gitgitgadget", 433865360); // do it again
         // tslint:disable-next-line:max-line-length
-        expect(ci.addPRComment.mock.calls[1][1]).toMatch(/Preview email sent as/);
+        expect(ci.addPRCommentCalls[1][1]).toMatch(/Preview email sent as/);
 
         await ci.handleComment("gitgitgadget", 433865360); // should still be v2
     }
@@ -742,21 +752,21 @@ test("handle push/comment too many commits fails", async () => {
     await expect(ci.handlePush("gitgitgadget", 433865360)).
         rejects.toThrow(/Failing check due/);
 
-    expect(ci.addPRComment.mock.calls[0][1]).toMatch(failMsg);
-    ci.addPRComment.mock.calls.length = 0;
+    expect(ci.addPRCommentCalls[0][1]).toMatch(failMsg);
+    ci.addPRCommentCalls.length = 0;
 
     // fail for too many commits on submit
     await ci.handleComment("gitgitgadget", 433865360);
-    expect(ci.addPRComment.mock.calls[0][1]).toMatch(failMsg);
-    ci.addPRComment.mock.calls.length = 0;
+    expect(ci.addPRCommentCalls[0][1]).toMatch(failMsg);
+    ci.addPRCommentCalls.length = 0;
 
     // fail for too many commits on preview
     comment.body = " /preview";
     ci.setGHgetPRComment(comment);
 
     await ci.handleComment("gitgitgadget", 433865360);
-    expect(ci.addPRComment.mock.calls[0][1]).toMatch(failMsg);
-    ci.addPRComment.mock.calls.length = 0;
+    expect(ci.addPRCommentCalls[0][1]).toMatch(failMsg);
+    ci.addPRCommentCalls.length = 0;
 
     // fail for too many commits push new user
     prinfo.author = "starfish";
@@ -769,8 +779,8 @@ test("handle push/comment too many commits fails", async () => {
     await expect(ci.handlePush("gitgitgadget", 433865360)).
         rejects.toThrow(/Failing check due/);
 
-    expect(ci.addPRComment.mock.calls[0][1]).toMatch(/Welcome/);
-    expect(ci.addPRComment.mock.calls[1][1]).toMatch(failMsg);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(/Welcome/);
+    expect(ci.addPRCommentCalls[1][1]).toMatch(failMsg);
 });
 
 test("handle push/comment merge commits fails", async () => {
@@ -848,21 +858,21 @@ test("handle push/comment merge commits fails", async () => {
     await expect(ci.handlePush("gitgitgadget", 433865360)).
         rejects.toThrow(/Failing check due/);
 
-    expect(ci.addPRComment.mock.calls[0][1]).toMatch(commits[0].commit);
-    ci.addPRComment.mock.calls.length = 0;
+    expect(ci.addPRCommentCalls[0][1]).toMatch(commits[0].commit);
+    ci.addPRCommentCalls.length = 0;
 
     // fail for merge commits on submit
     await ci.handleComment("gitgitgadget", 433865360);
-    expect(ci.addPRComment.mock.calls[0][1]).toMatch(commits[0].commit);
-    ci.addPRComment.mock.calls.length = 0;
+    expect(ci.addPRCommentCalls[0][1]).toMatch(commits[0].commit);
+    ci.addPRCommentCalls.length = 0;
 
     // fail for merge commits on preview
     comment.body = " /preview";
     ci.setGHgetPRComment(comment);
 
     await ci.handleComment("gitgitgadget", 433865360);
-    expect(ci.addPRComment.mock.calls[0][1]).toMatch(commits[0].commit);
-    ci.addPRComment.mock.calls.length = 0;
+    expect(ci.addPRCommentCalls[0][1]).toMatch(commits[0].commit);
+    ci.addPRCommentCalls.length = 0;
 
     // fail for merge commits push new user
     prinfo.author = "starfish";
@@ -872,9 +882,9 @@ test("handle push/comment merge commits fails", async () => {
     await expect(ci.handlePush("gitgitgadget", 433865360)).
         rejects.toThrow(/Failing check due/);
 
-    expect(ci.addPRComment.mock.calls[0][1]).toMatch(/Welcome/);
-    expect(ci.addPRComment.mock.calls[1][1]).toMatch(commits[0].commit);
-    ci.addPRComment.mock.calls.length = 0;
+    expect(ci.addPRCommentCalls[0][1]).toMatch(/Welcome/);
+    expect(ci.addPRCommentCalls[1][1]).toMatch(commits[0].commit);
+    ci.addPRCommentCalls.length = 0;
 
     // Test Multiple merges
     commits.push({
@@ -911,11 +921,11 @@ test("handle push/comment merge commits fails", async () => {
     await expect(ci.handlePush("gitgitgadget", 433865360)).
         rejects.toThrow(/Failing check due/);
 
-    expect(ci.addPRComment.mock.calls[0][1]).toMatch(/Welcome/);
-    expect(ci.addPRComment.mock.calls[1][1]).toMatch(commits[0].commit);
-    expect(ci.addPRComment.mock.calls[1][1]).not.toMatch(commits[1].commit);
-    expect(ci.addPRComment.mock.calls[1][1]).toMatch(commits[2].commit);
-    ci.addPRComment.mock.calls.length = 0;
+    expect(ci.addPRCommentCalls[0][1]).toMatch(/Welcome/);
+    expect(ci.addPRCommentCalls[1][1]).toMatch(commits[0].commit);
+    expect(ci.addPRCommentCalls[1][1]).not.toMatch(commits[1].commit);
+    expect(ci.addPRCommentCalls[1][1]).toMatch(commits[2].commit);
+    ci.addPRCommentCalls.length = 0;
 
 });
 
@@ -1119,12 +1129,12 @@ test("basic lint tests", async () => {
     // fail for commits with lint errors
     await expect(ci.handlePush("gitgitgadget", 433865360)).
         rejects.toThrow(/Failing check due/);
-    expect(ci.addPRComment.mock.calls[0][1]).toMatch(commits[0].commit);
-    expect(ci.addPRComment.mock.calls[0][1]).toMatch(/too short/);
-    expect(ci.addPRComment.mock.calls[1][1]).toMatch(commits[1].commit);
-    expect(ci.addPRComment.mock.calls[1][1]).toMatch(/empty line/);
-    expect(ci.addPRComment.mock.calls[2][1]).toMatch(commits[3].commit);
-    expect(ci.addPRComment.mock.calls[2][1]).toMatch(/lower case/);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(commits[0].commit);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(/too short/);
+    expect(ci.addPRCommentCalls[1][1]).toMatch(commits[1].commit);
+    expect(ci.addPRCommentCalls[1][1]).toMatch(/empty line/);
+    expect(ci.addPRCommentCalls[2][1]).toMatch(commits[3].commit);
+    expect(ci.addPRCommentCalls[2][1]).toMatch(/lower case/);
 
 });
 
@@ -1170,23 +1180,22 @@ test("Handle comment cc", async () => {
 
     await ci.handleComment("gitgitgadget", prNumber);
 
-    expect(ci.updatePR.mock.calls[0][2]).toMatch(/Some Body/);
-    ci.updatePR.mock.calls.length = 0;
+    expect(ci.updatePRCalls[0][2]).toMatch(/Some Body/);
+    ci.updatePRCalls.length = 0;
 
     comment.body = "/cc \"A Body\" <abody@example.com>, \"S Body\" <sbody@example.com>";
 
     await ci.handleComment("gitgitgadget", prNumber);
 
-    expect(ci.updatePR.mock.calls[0][2]).toMatch(/A Body/);
-    expect(ci.updatePR.mock.calls[1][2]).toMatch(/S Body/);
-    ci.updatePR.mock.calls.length = 0;
+    expect(ci.updatePRCalls[0][2]).toMatch(/A Body/);
+    expect(ci.updatePRCalls[1][2]).toMatch(/S Body/);
+    ci.updatePRCalls.length = 0;
 
     // email will not be re-added to list
     prinfo.body = "changes\n\ncc: <abody@example.com>";
 
     await ci.handleComment("gitgitgadget", prNumber);
 
-    expect(ci.updatePR.mock.calls[0][2]).toMatch(/S Body/);
-    expect(ci.updatePR.mock.calls.length).toEqual(1);
-
+    expect(ci.updatePRCalls[0][2]).toMatch(/S Body/);
+    expect(ci.updatePRCalls.length).toEqual(1);
 });
