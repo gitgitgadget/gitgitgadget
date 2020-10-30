@@ -24,21 +24,19 @@ export class LintCommit {
      * Linter method to run checks on the commit message.
      * @param {IPRCommit} the patch to be checked
      *
-     * The lintings are in methods called from here.  If
+     * The lints are in methods called from here.  If
      * a lint check is too severe to continue, it will throw
      * an error.
      */
-    public async lint(): Promise<ILintError | void> {
+    public lint(): ILintError | void {
 
         // Basic test before all others
 
-        if (await this.commitViable()) {
-            await Promise.all([
-                this.commitMessageLength(),
-                this.lowerCaseAfterPrefix(),
-                this.signedOffBy(),
-                this.moreThanAHyperlink(),
-            ]);
+        if (this.commitViable()) {
+            this.commitMessageLength();
+            this.lowerCaseAfterPrefix();
+            this.signedOffBy();
+            this.moreThanAHyperlink();
         }
 
         if (this.messages.length) {
@@ -62,7 +60,7 @@ export class LintCommit {
     // Test for a minimum viable commit message.
     // - the body of the commit message should not be empty
 
-    private async commitViable(): Promise<boolean> {
+    private commitViable(): boolean {
         if (this.lines.length < 3) {
             this.block("Commit checks stopped - the message is too short");
             return false;
@@ -75,7 +73,7 @@ export class LintCommit {
     // - the first line should not exceed 76 characters
     // - the first line should be followed by an empty line
 
-    private async commitMessageLength(): Promise<void> {
+    private commitMessageLength(): void {
         const maxColumns = 76;
         if (this.lines[0].length > maxColumns) {
             this.block(`First line of commit message is too long (> ${
@@ -83,15 +81,15 @@ export class LintCommit {
         }
 
         if (this.lines[1].length) {
-            // tslint:disable-next-line:max-line-length
-            this.block("The first line must be separated from the rest by an empty line");
+            this.block("The first line must be separated from the rest by an "
+                        + "empty line");
         }
     }
 
     // Verify if the first line starts with a prefix (e.g. tests:), it continues
     // in lower-case
 
-    private async lowerCaseAfterPrefix(): Promise<void> {
+    private lowerCaseAfterPrefix(): void {
         const match = this.lines[0].match(/^\S+?:\s*?([A-Z])/);
 
         if (match) {
@@ -103,7 +101,7 @@ export class LintCommit {
     // Verify there is a Signed-off-by: line - DCO check does this
     // already, but put out a message if it is indented
 
-    private async signedOffBy(): Promise<void> {
+    private signedOffBy(): void {
         let signedFound = false;
 
         this.lines.map((line) => {
@@ -128,7 +126,7 @@ export class LintCommit {
     // Low hanging fruit: check the first line.
     // Hyperlink validation is NOT part of the test.
 
-    private async moreThanAHyperlink(): Promise<void> {
+    private moreThanAHyperlink(): void {
         const line = this.lines[2];
         const match = line.match(/^(\w*)\s*https*:\/\/\S+\s*(\w*)/);
 

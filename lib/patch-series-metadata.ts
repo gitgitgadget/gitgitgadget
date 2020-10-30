@@ -1,4 +1,5 @@
-export type GitGitIntegrationBranch = "maint" | "master" | "next" | "seen" | "pu";
+export type GitGitIntegrationBranch =
+    "maint" | "master" | "next" | "seen" | "pu";
 
 export interface IPatchSeriesMetadata {
     readonly pullRequestURL?: string;

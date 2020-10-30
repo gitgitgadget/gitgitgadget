@@ -76,7 +76,7 @@ class PatchSeriesTest extends PatchSeries {
         const mails = PatchSeries.splitMails(mbox1);
 
         test("mails are split correctly", () => {
-            expect(mails.length).toBe(2);
+            expect(mails).toHaveLength(2);
             expect(mails[0]).toMatch(
                 /^From [^]*\n-- \n2\.17\.0\.windows\.1\n$/);
             expect(mails[1]).toMatch(
@@ -88,8 +88,8 @@ class PatchSeriesTest extends PatchSeries {
         PatchSeries.insertCcAndFromLines(mails, thisAuthor, senderName);
 
         test("non-ASCII characters are encoded correctly", () => {
-            // tslint:disable-next-line:max-line-length
-            const needle = "\"=?UTF-8?Q?Nguy=E1=BB=85n_Th=C3=A1i_Ng=E1=BB=8Dc?= Duy via GitGitGadget\" ";
+            const needle = "\"=?UTF-8?Q?Nguy=E1=BB=85n_Th=C3=A1i_Ng=E1=BB=8Dc?="
+                +" Duy via GitGitGadget\" ";
             expect(mails[0]).toEqual(expect.stringContaining(needle));
         });
 
@@ -100,7 +100,8 @@ class PatchSeriesTest extends PatchSeries {
                 "excited! <email.org>": false,
                 "foo [bar] name <email.org>": "\"foo [bar] name\" <email.org>",
                 "harry \"s\" truman <usa.gov>":
-                    [ "\"harry \\\"s\\\" truman\" <usa.gov>", "harry =?UTF-8?Q?=22s=22?= truman <usa.gov>" ],
+                    [ "\"harry \\\"s\\\" truman\" <usa.gov>",
+                      "harry =?UTF-8?Q?=22s=22?= truman <usa.gov>" ],
                 "mr. name <email.org>": "\"mr. name\" <email.org>",
                 "ms. \\backslash <email.org>":
                     "\"ms. \\\\backslash\" <email.org>",
@@ -121,9 +122,9 @@ class PatchSeriesTest extends PatchSeries {
         });
 
         test("Cc: is inserted correctly", () => {
-            expect(mails[1]).toMatch(
-                // tslint:disable-next-line:max-line-length
-                /From: "Some One Else via GitGitGadget"[^]*\nCc: Some One Else[^]*\n\nFrom: Some One Else.*\n\n/);
+            expect(mails[1]).toMatch(new RegExp("From: \"Some One Else via "
+                + "GitGitGadget\"[^]*\\nCc: Some One Else[^]*\\n\\n"
+                + "From: Some One Else.*\\n\\n"));
         });
 
         const coverLetter = PatchSeries.adjustCoverLetter(mails[0]);
@@ -167,15 +168,13 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             PatchSeries.insertFooters(mails[1], false, footers);
         test("range-diff is inserted correctly", () => {
             expect(coverLetterWithRangeDiff).toMatch(
-                // tslint:disable-next-line:max-line-length
                 /\n\nHEADER\n This\n is\n a\n fake\n cover letter\n-- \n2\.17/);
-            expect(mailWithRangeDiff).toMatch(
-                // tslint:disable-next-line:max-line-length
-                /\n---\n\nHEADER\n This\n is\n a\n fake\n cover letter\n\n README/);
+            expect(mailWithRangeDiff).toMatch(new RegExp("\\n---\\n\\nHEADER\\n"
+                + " This\\n is\\n a\\n fake\\n cover letter\\n\\n README"));
         });
 
         test("adjust mbox to forced date", () => {
-            expect(mails.length).toEqual(2);
+            expect(mails).toHaveLength(2);
             const endDate = new Date(987654321000);
             expect(PatchSeries.adjustDateHeaders(mails, endDate)).toEqual(2);
             const dates = mails.map((mail: string): string => {
@@ -218,8 +217,9 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("different MIME-Version headers write to log", () => {
             const mails1 = [mimeBox2];
-            const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
+            // eslint-disable-next-line @typescript-eslint/unbound-method
+            const realLog = global.console.log; // capture calls to log
             global.console.log = log;
 
             PatchSeries.removeDuplicateHeaders(mails1);
@@ -229,7 +229,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             expect(log).toHaveBeenCalledTimes(1); // verify no more errors
         });
 
-        const ContentTypeBox1 = [
+        const contentTypeBox1 = [
             "From xyz",
             "Content-Type: text/plain; charset=UTF-8",
             "From: bogus@example.org",
@@ -243,12 +243,12 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             "Hi!",
         ].join("\n");
         test("duplicate Content-Type headers are eliminated", () => {
-            const mails1 = [ContentTypeBox1];
+            const mails1 = [contentTypeBox1];
             PatchSeries.removeDuplicateHeaders(mails1);
             expect(mails1[0]).not.toMatch(/Content-Type[^]*Content-Type/);
         });
 
-        const ContentTypeBox2 = [
+        const contentTypeBox2 = [
             "From xyz",
             "Content-Type: text/plain; charset=UTF-8",
             "From: bogus@example.org",
@@ -259,7 +259,8 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             "Hi!",
         ].join("\n");
         test("different Content-Type headers write to log", () => {
-            const mails1 = [ContentTypeBox2];
+            const mails1 = [contentTypeBox2];
+            // eslint-disable-next-line @typescript-eslint/unbound-method
             const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;
@@ -271,7 +272,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             expect(log).toHaveBeenCalledTimes(1); // verify no more errors
         });
 
-        const ContentTypeBox3 = [
+        const contentTypeBox3 = [
             "From xyz",
             "Content-Type: text/plain; charset=UTF-8",
             "From: bogus@example.org",
@@ -282,13 +283,13 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             "",
             "Hi!",
         ].join("\n");
-        test("duplicate Content-Type headers are eliminated", () => {
-            const mails1 = [ContentTypeBox3];
+        test("duplicate Content-Type headers are eliminated (take 2)", () => {
+            const mails1 = [contentTypeBox3];
             PatchSeries.removeDuplicateHeaders(mails1);
             expect(mails1[0]).not.toMatch(/Content-Type[^]*Content-Type/);
         });
 
-        const ContentTransferEncodingBox1 = [
+        const contentTransferEncodingBox1 = [
             "From xyz",
             "Content-Transfer-Encoding: 8bit",
             "From: bogus@example.org",
@@ -301,13 +302,13 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("duplicate Content-Transfer-Encoding headers are eliminated",
              () => {
-            const mails1 = [ContentTransferEncodingBox1];
+            const mails1 = [contentTransferEncodingBox1];
             PatchSeries.removeDuplicateHeaders(mails1);
-            // tslint:disable-next-line:max-line-length
-            expect(mails1[0]).not.toMatch(/Content-Transfer-Encoding[^]*Content-Transfer-Encoding/);
+            expect(mails1[0]).not.toMatch(new RegExp("Content-Transfer-Encoding"
+                + "[^]*Content-Transfer-Encoding"));
         });
 
-        const ContentTransferEncodingBox2 = [
+        const contentTransferEncodingBox2 = [
             "From xyz",
             "Content-Transfer-Encoding: 8bit",
             "From: bogus@example.org",
@@ -318,7 +319,8 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             "Hi!",
         ].join("\n");
         test("different Content-Transfer-Encoding headers write to log", () => {
-            const mails1 = [ContentTransferEncodingBox2];
+            const mails1 = [contentTransferEncodingBox2];
+            // eslint-disable-next-line @typescript-eslint/unbound-method
             const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;
@@ -330,7 +332,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             expect(log).toHaveBeenCalledTimes(1); // verify no more errors
         });
 
-        const ContentDescriptionBox1 = [
+        const contentDescriptionBox1 = [
             "From xyz",
             "Content-Description: fooba",
             "From: bogus@example.org",
@@ -342,13 +344,13 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             "Hi!",
         ].join("\n");
         test("duplicate Content-Description headers throw error", () => {
-            const mails1 = [ContentDescriptionBox1];
+            const mails1 = [contentDescriptionBox1];
             PatchSeries.removeDuplicateHeaders(mails1);
-            // tslint:disable-next-line:max-line-length
-            expect(mails1[0]).not.toMatch(/Content-Description[^]*Content-Description/);
+            expect(mails1[0]).not.toMatch(new RegExp("Content-Description"
+            + "[^]*Content-Description"));
         });
 
-        const ContentDescriptionBox2 = [
+        const contentDescriptionBox2 = [
             "From xyz",
             "Content-Description: fooba",
             "From: bogus@example.org",
@@ -360,7 +362,8 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             "Hi!",
         ].join("\n");
         test("different Content-Description headers write to log", () => {
-            const mails1 = [ContentDescriptionBox2];
+            const mails1 = [contentDescriptionBox2];
+            // eslint-disable-next-line @typescript-eslint/unbound-method
             const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;
@@ -372,7 +375,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             expect(log).toHaveBeenCalledTimes(1); // verify no more errors
         });
 
-        const ContentIDBox1 = [
+        const contentIDBox1 = [
             "From xyz",
             "Content-ID: 1.0",
             "From: bogus@example.org",
@@ -384,12 +387,12 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             "Hi!",
         ].join("\n");
         test("duplicate Content-ID headers throw error", () => {
-            const mails1 = [ContentIDBox1];
+            const mails1 = [contentIDBox1];
             PatchSeries.removeDuplicateHeaders(mails1);
             expect(mails1[0]).not.toMatch(/Content-ID[^]*Content-ID/);
         });
 
-        const ContentIDBox2 = [
+        const contentIDBox2 = [
             "From xyz",
             "Content-ID: 1.0",
             "From: bogus@example.org",
@@ -401,7 +404,8 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             "Hi!",
         ].join("\n");
         test("different Content-ID headers write to log", () => {
-            const mails1 = [ContentIDBox2];
+            const mails1 = [contentIDBox2];
+            // eslint-disable-next-line @typescript-eslint/unbound-method
             const realLog = global.console.log; // capture calls to log
             const log = jest.fn();
             global.console.log = log;

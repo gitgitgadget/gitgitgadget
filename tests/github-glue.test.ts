@@ -10,26 +10,26 @@ branch to be deleted on github and the local repo.  The test will
 attempt cleanup of a previously failed test.
 
 Setup:
-gitgitgadget.githubtest.githubuser must be configured for this test to
+gitgitgadget.githubTest.gitHubUser must be configured for this test to
 identify your GitHub login.
 The value must also be configured to identify a test repo to use as
-gitgitgadget.<login>.githubrepo.
+gitgitgadget.<login>.gitHubRepo.
 
 Additionally, a GitHub personal access token must be set for the
 login to succeed.  This can be restricted to the test repo.
 
 For example, these configuration settings are needed (where
-`octokity` is your GitHub login):
-git config --add gitgitgadget.githubtest.githubuser octokity
-git config --add gitgitgadget.octokity.githubrepo ggg-test
-git config --add gitgitgadget.octokity.githubtoken feedbeef...
+`octo-kitty` is your GitHub login):
+git config --add gitgitgadget.gitHubTest.gitHubUser octo-kitty
+git config --add gitgitgadget.octo-kitty.gitHubRepo ggg-test
+git config --add gitgitgadget.octo-kitty.gitHubToken feedbeef...
 
 The test repo must exist in github and locally.  It is expected to be
 located at the same directory level as this project (ie ../).
 */
 
 class GitHubProxy extends GitHubGlue {
-    public octo: Octokit | any;
+    public octo: Octokit;
     public constructor(workDir?: string, repo = "git") {
         super(workDir, repo);
         this.octo = this.client;
@@ -47,8 +47,8 @@ let owner: string;
 let repo: string;
 
 beforeAll(async () => {
-    owner = await gitConfig(`gitgitgadget.githubtest.githubuser`) || "";
-    repo = await gitConfig(`gitgitgadget.${owner}.githubrepo`) || "";
+    owner = await gitConfig(`gitgitgadget.gitHubTest.gitHubUser`) || "";
+    repo = await gitConfig(`gitgitgadget.${owner}.gitHubRepo`) || "";
 });
 
 test("identify user", async () => {
@@ -100,13 +100,15 @@ test("pull requests", async () => {
                 ref: `heads/${branch}`,
                 repo,
                 });
-        } catch (error) {
+        } catch (e) {
+            const error = e as Error;
             expect(error.toString()).toMatch(/Reference does not exist/);
         }
 
         try {                       // delete local branch
             await git(["branch", "-D", branch], { workDir: repoDir });
-        } catch (error) {
+        } catch (e) {
+            const error = e as Error;
             expect(error.toString()).toMatch(/not found/);
         }
 
@@ -180,14 +182,14 @@ test("pull requests", async () => {
         if (ghUser.email) {
             await github.addPRCc(prData.html_url, `PR Owner <${ghUser.email}>`);
         }
-        const prccinfo = await github.getPRInfo(owner, prData.number);
-        expect(prccinfo.body).toMatch(prCc);
-        const ccFound = prccinfo.body.match(prCc);
+        const prCcInfo = await github.getPRInfo(owner, prData.number);
+        expect(prCcInfo.body).toMatch(prCc);
+        const ccFound = prCcInfo.body.match(prCc);
         expect(ccFound?.length).toEqual(1);
-        expect(prccinfo.body).toMatch(prCc2);
-        expect(prccinfo.body).not.toMatch(prCcGitster);
+        expect(prCcInfo.body).toMatch(prCc2);
+        expect(prCcInfo.body).not.toMatch(prCcGitster);
         if (ghUser.email) {
-            expect(prccinfo.body).not.toMatch(ghUser.email);
+            expect(prCcInfo.body).not.toMatch(ghUser.email);
         }
 
         const newComment = "Adding a comment to the PR";
@@ -228,7 +230,7 @@ test("pull requests", async () => {
 
             await git(["branch", "-D", branch], { workDir: repoDir });
         } catch (error) {
-            console.log(`commmand failed\n${error}`);
+            console.log(`command failed\n${error}`);
         }
     }
 });

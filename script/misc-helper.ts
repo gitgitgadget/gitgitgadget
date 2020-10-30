@@ -17,7 +17,7 @@ commander.version("1.0.0")
             + "`gitgitgadget.workDir`",
             undefined)
     .option("-G, --gitgitgadget-work-dir [directory]",
-            "Use a different gitgitgitgadget working directory than the "
+            "Use a different gitgitgadget working directory than the "
             + "current working directory to access the Git config e.g. for "
             + "`gitgitgadget.workDir`",
             ".")
@@ -45,7 +45,7 @@ async function getGitGitWorkDir(): Promise<string> {
             commander.gitWorkDir,
         ]);
     }
-    return commander.gitWorkDir;
+    return commander.gitWorkDir as string;
 }
 
 async function getCIHelper(): Promise<CIHelper> {
@@ -381,7 +381,7 @@ async function getCIHelper(): Promise<CIHelper> {
                 })).data.id;
             }
             const result = await client.apps.createInstallationAccessToken({
-                installation_id: options.installationID!,
+                installation_id: options.installationID,
             });
             const configKey = options.name === "gitgitgadget" ?
                 "gitgitgadget.githubToken" :
@@ -428,13 +428,13 @@ async function getCIHelper(): Promise<CIHelper> {
         for (const arg of commander.args.slice(1)) {
             onlyPRs.add(parseInt(arg, 10));
         }
-        await ci.handleNewMails(mailArchiveGitDir!,
+        await ci.handleNewMails(mailArchiveGitDir,
                                 onlyPRs.size ? onlyPRs : undefined);
     } else {
         process.stderr.write(`${command}: unhandled sub-command\n`);
         process.exit(1);
     }
-})().catch((reason) => {
+})().catch((reason: Error) => {
     console.log(`Caught error ${reason}:\n${reason.stack}\n`);
     process.stderr.write(`Caught error ${reason}:\n${reason.stack}\n`);
     process.exit(1);

@@ -24,7 +24,7 @@ export interface ISMTPOptions {
 export async function parseHeadersAndSendMail(mbox: string,
                                               smtpOptions: ISMTPOptions):
     Promise<string> {
-    return await sendMail(await parseMBox(mbox), smtpOptions);
+    return await sendMail(parseMBox(mbox), smtpOptions);
 }
 
 function replaceAll(input: string, pattern: string, replacement: string):
@@ -41,8 +41,8 @@ function replaceAll(input: string, pattern: string, replacement: string):
  * @param {string} mbox The mail, in mbox format
  * @returns {IParsedMBox} the parsed headers/body
  */
-export async function parseMBox(mbox: string, gentle?: boolean):
-    Promise<IParsedMBox> {
+export function parseMBox(mbox: string, gentle?: boolean):
+    IParsedMBox {
     const headerEnd = mbox.indexOf("\n\n");
     if (headerEnd < 0) {
         throw new Error("Could not parse mail");
@@ -97,8 +97,8 @@ export async function parseMBox(mbox: string, gentle?: boolean):
     };
 }
 
-export async function parseMBoxMessageIDAndReferences(parsed: IParsedMBox):
-        Promise<{messageID: string; references: string[]}> {
+export function parseMBoxMessageIDAndReferences(parsed: IParsedMBox):
+        {messageID: string; references: string[]} {
     const references: string[] = [];
     const seen: Set<string> = new Set<string>();
     /*
@@ -145,7 +145,7 @@ export async function parseMBoxMessageIDAndReferences(parsed: IParsedMBox):
 export async function sendMail(mail: IParsedMBox,
                                smtpOptions: ISMTPOptions):
     Promise<string> {
-    const transportOpts: SMTPTransport.Options | any = {
+    const transportOpts: SMTPTransport.Options = {
         auth: {
             pass: smtpOptions.smtpPass,
             user: smtpOptions.smtpUser,
@@ -158,8 +158,7 @@ export async function sendMail(mail: IParsedMBox,
         // Add quoting for JSON.parse
         const smtpOpts = smtpOptions.smtpOpts
             .replace(/([ {])([a-zA-Z0-9.]+?) *?:/g,"$1\"$2\":");
-        Object.entries(JSON.parse(smtpOpts))
-            .forEach(([key, value]) => transportOpts[key] = value);
+        Object.assign(transportOpts, JSON.parse(smtpOpts));
     }
 
     return new Promise<string>((resolve, reject) => {
@@ -175,7 +174,8 @@ export async function sendMail(mail: IParsedMBox,
             raw: mail.raw,
         };
 
-        transporter.sendMail(mailOptions, (error, info): void => {
+        transporter.sendMail(mailOptions, (error, info: { messageId: string })
+            : void => {
             if (error) {
                 reject(error);
             } else {

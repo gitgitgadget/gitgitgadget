@@ -3,7 +3,7 @@ import { LintCommit } from "../lib/commit-lint";
 
 jest.setTimeout(180000);
 
-test("basic lint tests", async () => {
+test("basic lint tests", () => {
     const commit = {
         author: {
             email: "ggg@example.com",
@@ -22,7 +22,7 @@ test("basic lint tests", async () => {
 
     {
         const linter = new LintCommit(commit);
-        const lintError = await linter.lint();
+        const lintError = linter.lint();
         expect(lintError).not.toBeUndefined();
         if (lintError) {
             expect(lintError.checkFailed).toBe(true);
@@ -33,7 +33,7 @@ test("basic lint tests", async () => {
     commit.message = "Missing blank line is bad\nhere\nSigned-off-by: x";
     {
         const linter = new LintCommit(commit);
-        const lintError = await linter.lint();
+        const lintError = linter.lint();
         expect(lintError).not.toBeUndefined();
         if (lintError) {
             expect(lintError.checkFailed).toBe(true);
@@ -44,7 +44,7 @@ test("basic lint tests", async () => {
     commit.message = "";
     {
         const linter = new LintCommit(commit);
-        const lintError = await linter.lint();
+        const lintError = linter.lint();
         expect(lintError).not.toBeUndefined();
         if (lintError) {
             expect(lintError.checkFailed).toBe(true);
@@ -56,7 +56,7 @@ test("basic lint tests", async () => {
                 ""}123456789012345678901234567890\nmore bad\nSigned-off-by: x`;
     {
         const linter = new LintCommit(commit);
-        const lintError = await linter.lint();
+        const lintError = linter.lint();
         expect(lintError).not.toBeUndefined();
         if (lintError) {
             expect(lintError.checkFailed).toBe(true);
@@ -68,7 +68,7 @@ test("basic lint tests", async () => {
     commit.message = "tests: This should be lower case\n\nSigned-off-by: x";
     {
         const linter = new LintCommit(commit);
-        const lintError = await linter.lint();
+        const lintError = linter.lint();
         expect(lintError).not.toBeUndefined();
         if (lintError) {
             expect(lintError.checkFailed).toBe(true);
@@ -79,14 +79,14 @@ test("basic lint tests", async () => {
     commit.message = "doc: success as Lower Case\n\nSigned-off-by: x";
     {
         const linter = new LintCommit(commit);
-        const lintError = await linter.lint();
+        const lintError = linter.lint();
         expect(lintError).toBeUndefined();
     }
 
     commit.message = "Fail not signed off\n\nNotSigned-off-by: x";
     {
         const linter = new LintCommit(commit);
-        const lintError = await linter.lint();
+        const lintError = linter.lint();
         expect(lintError).not.toBeUndefined();
         if (lintError) {
             expect(lintError.checkFailed).toBe(true);
@@ -97,7 +97,7 @@ test("basic lint tests", async () => {
     commit.message = "Success signed off\n\n foo bar\nSigned-off-by: x";
     {
         const linter = new LintCommit(commit);
-        const lintError = await linter.lint();
+        const lintError = linter.lint();
         expect(lintError).toBeUndefined();
     }
 
@@ -106,14 +106,14 @@ Signed-off-by: x
 Reviewed-by: y`;
     {
         const linter = new LintCommit(commit);
-        const lintError = await linter.lint();
+        const lintError = linter.lint();
         expect(lintError).toBeUndefined();
     }
 
     commit.message = "Fail blanks in sign off\n\n Signed-off-by: x";
     {
         const linter = new LintCommit(commit);
-        const lintError = await linter.lint();
+        const lintError = linter.lint();
         expect(lintError).not.toBeUndefined();
         if (lintError) {
             expect(lintError.checkFailed).toBe(true);
@@ -125,7 +125,7 @@ Reviewed-by: y`;
 http://www.github.com\n\nSigned-off-by: x`;
     {
         const linter = new LintCommit(commit);
-        const lintError = await linter.lint();
+        const lintError = linter.lint();
         expect(lintError).not.toBeUndefined();
         if (lintError) {
             expect(lintError.checkFailed).toBe(true);
@@ -137,7 +137,7 @@ http://www.github.com\n\nSigned-off-by: x`;
 http://www.github.com\nblah\n\nSigned-off-by: x`;
     {
         const linter = new LintCommit(commit);
-        const lintError = await linter.lint();
+        const lintError = linter.lint();
         expect(lintError).toBeUndefined();
     }
 
@@ -145,7 +145,7 @@ http://www.github.com\nblah\n\nSigned-off-by: x`;
 http://www.github.com blah\n\nSigned-off-by: x`;
     {
         const linter = new LintCommit(commit);
-        const lintError = await linter.lint();
+        const lintError = linter.lint();
         expect(lintError).toBeUndefined();
     }
 
@@ -153,7 +153,7 @@ http://www.github.com blah\n\nSigned-off-by: x`;
 blah http://www.github.com\n\nSigned-off-by: x`;
     {
         const linter = new LintCommit(commit);
-        const lintError = await linter.lint();
+        const lintError = linter.lint();
         expect(lintError).toBeUndefined();
     }
 

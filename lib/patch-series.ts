@@ -85,15 +85,15 @@ export class PatchSeries {
             const tagMessage = await git(["cat-file", "tag", latestTag]);
             match = tagMessage.match(/^[\s\S]*?\n\n([\s\S]*)/);
             (match ? match[1] : tagMessage).split("\n").map((line) => {
-                // tslint:disable-next-line:max-line-length
-                match = line.match(/https:\/\/lore\.kernel\.org\/.*\/([^/]+)/);
+                match = line
+                    .match(/https:\/\/lore\.kernel\.org\/.*\/([^/]+)/);
                 if (!match) {
-                    // tslint:disable-next-line:max-line-length
-                    match = line.match(/https:\/\/public-inbox\.org\/.*\/([^/]+)/);
+                    const re = /https:\/\/public-inbox\.org\/.*\/([^/]+)/;
+                    match = line.match(re);
                 }
                 if (!match) {
-                    // tslint:disable-next-line:max-line-length
-                    match = line.match(/https:\/\/www\.mail-archive\.com\/.*\/([^/]+)/);
+                    const re = /https:\/\/www\.mail-archive\.com\/.*\/([^/]+)/;
+                    match = line.match(re);
                 }
                 if (!match) {
                     match = line.match(/http:\/\/mid.gmane.org\/(.*)/);
@@ -350,9 +350,8 @@ export class PatchSeries {
     }
 
     protected static splitMails(mbox: string): string[] {
-        // tslint:disable-next-line:max-line-length
-        const separatorRegex = /\n(?=From [0-9a-f]{40} Mon Sep 17 00:00:00 2001\n)/;
-        return mbox.split(separatorRegex);
+        const re = /\n(?=From [0-9a-f]{40} Mon Sep 17 00:00:00 2001\n)/;
+        return mbox.split(re);
     }
 
     protected static removeDuplicateHeaders(mails: string[]): void {
@@ -433,8 +432,8 @@ export class PatchSeries {
             return encoded;
         }
 
-        // tslint:disable-next-line:max-line-length
-        return `"${match[1].replace(/["\\\\]/g, "\\$&")}"${match[2]}${match[3]}`;
+        return `"${match[1]
+            .replace(/["\\\\]/g, "\\$&")}"${match[2]}${match[3]}`;
     }
 
     protected static insertCcAndFromLines(mails: string[], thisAuthor: string,
@@ -445,7 +444,7 @@ export class PatchSeries {
         mails.map((mail, i) => {
             const match = mail.match(/^([^]*?)(\n\n[^]*)$/);
             if (!match) {
-                throw new Error("No header found in mail #" + i + ":\n" + mail);
+                throw new Error(`No header found in mail #${i}:\n${mail}`);
             }
             let header = match[1];
 
@@ -491,9 +490,11 @@ export class PatchSeries {
     }
 
     protected static adjustCoverLetter(coverLetter: string): string {
-        const regex =
-            // tslint:disable-next-line:max-line-length
-            /^([^]*?\nSubject: .* )\*\*\* SUBJECT HERE \*\*\*(?=\n)([^]*?\n\n)\*\*\* BLURB HERE \*\*\*\n\n([^]*?)\n\n([^]*)$/;
+        const regex = new RegExp("^([^]*?\\nSubject: .* )"
+            + "\\*\\*\\* SUBJECT HERE \\*\\*\\*"
+            + "(?=\\n)([^]*?\\n\\n)"
+            + "\\*\\*\\* BLURB HERE \\*\\*\\*\\n\\n"
+            + "([^]*?)\\n\\n([^]*)$");
         const match = coverLetter.match(regex);
         if (!match) {
             throw new Error("Could not parse cover letter:\n\n" + coverLetter);
@@ -711,6 +712,7 @@ export class PatchSeries {
             if (!coverMid) {
                 throw new Error("Could not extract cover letter Message-ID");
             }
+            const mid = coverMid;
 
             const tsMatch = coverMid.match(/cover\.([0-9]+)\./);
             const timeStamp = tsMatch ? tsMatch[1] : `${Date.now()}`;
@@ -732,7 +734,7 @@ export class PatchSeries {
                     timeStamp}.${email}`;
                 mails.map((value: string, index: number): void => {
                     // cheap replace-all
-                    mails[index] = value.split(coverMid!).join(newCoverMid);
+                    mails[index] = value.split(mid).join(newCoverMid);
                 });
                 coverMid = newCoverMid;
             }

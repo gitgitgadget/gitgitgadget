@@ -194,9 +194,9 @@ test("generate tag/notes from a Pull Request", async () => {
 
     const pullRequestURL = "https://github.com/gitgitgadget/git/pull/1";
     const pullRequestTitle = "My first Pull Request!";
-    // tslint:disable-next-line:max-line-length
-    const pullRequestBody = `This Pull Request contains some really important changes that I would love to${
-        ""} have included in [git.git](https://github.com/git/git).
+    const pullRequestBody = `This Pull Request contains some really important ${
+        ""}changes that I would love to have included in ${
+        ""}[git.git](https://github.com/git/git).
 
 Cc: Some Body <somebody@example.com>
 `;
@@ -218,9 +218,9 @@ This Pull Request contains some really important changes that I would love
 to have included in git.git [https://github.com/git/git].`);
 
     const mails: string[] = [];
-    const midRegex =
-        // tslint:disable-next-line:max-line-length
-        /<(pull|[0-9a-f]{40})\.\d+(\.v\d+)?\.git(\.*\d*)\.gitgitgadget@example\.com>/g;
+    const midRegex = new RegExp("<(pull|[0-9a-f]{40})\\.\\d+(\\.v\\d+)?"
+        + "\\.git(\\.*\\d*)\\.gitgitgadget@example\\.com>", "g");
+    // eslint-disable-next-line @typescript-eslint/require-await
     async function send(mail: string): Promise<string> {
         if (mails.length === 0) {
             mail = mail.replace(/(\nDate: ).*/, "$1<Cover-Letter-Date>");
@@ -252,7 +252,7 @@ to have included in git.git [https://github.com/git/git].`);
 
     expect(metadata2?.coverLetterMessageId)
         .toMatch(/pull\.1\.v2\.git\.\d+\.gitgitgadget@example\.com/);
-    expect(mails.length).toEqual(5);
+    expect(mails).toHaveLength(5);
     if (await gitCommandExists("range-diff", repo.workDir)) {
         expect(mails[0]).toMatch(/Range-diff vs v1:\n[^]*\n -: .* 4: /);
     }
@@ -260,12 +260,12 @@ to have included in git.git [https://github.com/git/git].`);
 
     const seriesMeta = await notes.get<IPatchSeriesMetadata>(pullRequestURL);
     expect(seriesMeta).not.toBeNull();
-    expect(seriesMeta!.coverLetterMessageId).not.toBeUndefined();
-    const coverMid: string = seriesMeta!.coverLetterMessageId!;
+    expect(seriesMeta?.coverLetterMessageId).not.toBeUndefined();
+    const coverMid: string | undefined = seriesMeta?.coverLetterMessageId;
     expect(coverMid)
         .toMatch(/pull\.1\.v2\.git\.\d+\.gitgitgadget@example\.com/);
-    expect(seriesMeta!.referencesMessageIds).not.toBeUndefined();
-    const refMid: string = seriesMeta!.referencesMessageIds![0];
+    expect(seriesMeta?.referencesMessageIds).not.toBeUndefined();
+    const refMid: string | undefined = seriesMeta?.referencesMessageIds?.[0];
     expect(refMid)
         .toMatch(/pull\.1\.git\.\d+\.gitgitgadget@example\.com/);
     expect(seriesMeta).toEqual({

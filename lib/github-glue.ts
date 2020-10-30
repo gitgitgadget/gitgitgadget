@@ -79,8 +79,8 @@ export class GitHubGlue {
             head_sha: originalCommit,
             name: "upstream commit",
             output: {
-                // tslint:disable-next-line:max-line-length
-                summary: `Integrated into git.git as [${short}](${url}).`,
+                summary: `Integrated into git.git as [${
+                    short}](${url}).`,
                 title: `In git.git: ${short}`,
             },
             owner: repositoryOwner,
@@ -246,7 +246,7 @@ export class GitHubGlue {
             owner,
             repo,
         });
-        return result.data.map((res: any) => res.id);
+        return result.data.map((res: { id: number }) => `${res.id}`);
     }
 
     public async closePR(pullRequestURL: string, viaMergeCommit: string):

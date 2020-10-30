@@ -182,8 +182,11 @@ export class CIHelper {
                 continue;
             }
             const meta = await this.getMailMetadata(messageID);
-            if (!meta || meta.commitInGitGit !== undefined) {
-                if (!meta || commitsInSeen.has(meta.commitInGitGit!)) {
+            if (!meta) {
+                continue;
+            }
+            if (meta.commitInGitGit !== undefined) {
+                if (commitsInSeen.has(meta.commitInGitGit)) {
                     continue;
                 }
                 console.log(`Upstream commit ${meta.commitInGitGit} for ${
@@ -684,7 +687,8 @@ export class CIHelper {
                     pullRequestURL}#issuecomment-${commentID}`);
             }
         } catch (e) {
-            await addComment(e.toString());
+            const error = e as Error;
+            await addComment(error.toString());
         }
     }
 
@@ -791,7 +795,7 @@ export class CIHelper {
         if (!pr.hasComments && !gitGitGadget.isUserAllowed(pr.author)) {
             const welcome = (await readFile("res/WELCOME.md")).toString()
                     .replace(/\${username}/g, pr.author);
-            this.github.addPRComment(pullRequestURL, welcome);
+            await this.github.addPRComment(pullRequestURL, welcome);
         }
 
         const commitOkay = await this.checkCommits(pr, addComment);
