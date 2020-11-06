@@ -54,7 +54,7 @@ jobs:
       run: |
         if [ -n "$GGG_TOKEN" ] && [ -n "$GGG_REPOSITORY" ];
         then
-          echo "::set-env name=GGG_REPO::'gitgitgadget.githubtest.githubuser=$GITHUB_REPOSITORY_OWNER' 'gitgitgadget.$GITHUB_REPOSITORY_OWNER.githubrepo=$GGG_REPOSITORY' 'gitgitgadget.$GITHUB_REPOSITORY_OWNER.githubtoken=$GGG_TOKEN'"
+          echo "GGG_REPO='gitgitgadget.githubtest.githubuser=$GITHUB_REPOSITORY_OWNER' 'gitgitgadget.$GITHUB_REPOSITORY_OWNER.githubrepo=$GGG_REPOSITORY' 'gitgitgadget.$GITHUB_REPOSITORY_OWNER.githubtoken=$GGG_TOKEN'" >> $GITHUB_ENV
         else
           echo "::error::Both GGG_TOKEN and GGG_REPOSITORY secrets must be set"
           exit 1
@@ -74,7 +74,7 @@ jobs:
             m+=" 'gitgitgadget.cismtpopts=$GGG_SMTP_OPTS'"
           fi
           # trailing space is required
-          echo "::set-env name=GGG_SMTP::$m "
+          echo "GGG_SMTP=$m " >> $GITHUB_ENV
         else
           echo "::error::All of GGG_SMTP_USER, GGG_SMTP_PASS and GGG_SMTP_HOST secrets must be set"
           exit 1
