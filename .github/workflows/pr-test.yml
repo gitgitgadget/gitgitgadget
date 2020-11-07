@@ -22,7 +22,9 @@ name: pr-test
 
 on:
   push:
-    branches-ignore: [ master, main ]
+    branches-ignore:
+      - master
+      - main
 
 jobs:
   build-test:
