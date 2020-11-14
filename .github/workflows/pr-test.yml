@@ -56,7 +56,7 @@ jobs:
       run: |
         if [ -n "$GGG_TOKEN" ] && [ -n "$GGG_REPOSITORY" ];
         then
-          echo "GGG_REPO='gitgitgadget.githubtest.githubuser=$GITHUB_REPOSITORY_OWNER' 'gitgitgadget.$GITHUB_REPOSITORY_OWNER.githubrepo=$GGG_REPOSITORY' 'gitgitgadget.$GITHUB_REPOSITORY_OWNER.githubtoken=$GGG_TOKEN'" >> $GITHUB_ENV
+          echo "GGG_REPO='gitgitgadget.CIGitHubTestUser=$GITHUB_REPOSITORY_OWNER' 'gitgitgadget.$GITHUB_REPOSITORY_OWNER.githubrepo=$GGG_REPOSITORY' 'gitgitgadget.$GITHUB_REPOSITORY_OWNER.githubtoken=$GGG_TOKEN'" >> $GITHUB_ENV
         else
           echo "::error::Both GGG_TOKEN and GGG_REPOSITORY secrets must be set"
           exit 1
