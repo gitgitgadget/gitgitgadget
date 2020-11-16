@@ -40,7 +40,7 @@
     "@types/marked": "^1.1.0",
     "@types/nodemailer": "^6.4.0",
     "@typescript-eslint/eslint-plugin": "^4.2.0",
-    "@typescript-eslint/parser": "^4.2.0",
+    "@typescript-eslint/parser": "^4.7.0",
     "eslint": "^7.10.0",
     "eslint-config-prettier": "^6.15.0",
     "eslint-plugin-import": "^2.22.1",
