@@ -20,7 +20,7 @@ login to succeed.  This can be restricted to the test repo.
 
 For example, these configuration settings are needed (where
 `octo-kitty` is your GitHub login):
-git config --add gitgitgadget.gitHubTest.gitHubUser octo-kitty
+git config --add gitgitgadget.CIGitHubTestUser octo-kitty
 git config --add gitgitgadget.octo-kitty.gitHubRepo ggg-test
 git config --add gitgitgadget.octo-kitty.gitHubToken feedbeef...
 
@@ -47,7 +47,7 @@ let owner: string;
 let repo: string;
 
 beforeAll(async () => {
-    owner = await gitConfig(`gitgitgadget.gitHubTest.gitHubUser`) || "";
+    owner = await gitConfig(`gitgitgadget.CIGitHubTestUser`) || "";
     repo = await gitConfig(`gitgitgadget.${owner}.gitHubRepo`) || "";
 });
 
