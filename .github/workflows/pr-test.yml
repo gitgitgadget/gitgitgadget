@@ -7,6 +7,7 @@
 # Optional GitHub secrets
 
 # See ci-helper.test.ts for information on the following
+# GGG_IMAP_HOST = <email_imap_hostname>
 # GGG_SMTP_USER = <email_userid>
 # GGG_SMTP_PASS = <email_password>
 # GGG_SMTP_HOST = <email_hostname>
@@ -44,6 +45,7 @@ jobs:
       GGG_SMTP_USER: ${{ secrets.GGG_SMTP_USER }}
       GGG_SMTP_PASS: ${{ secrets.GGG_SMTP_PASS }}
       GGG_SMTP_HOST: ${{ secrets.GGG_SMTP_HOST }}
+      GGG_IMAP_HOST: ${{ secrets.GGG_IMAP_HOST }}
 
     steps:
     # Check out repo under sub-dir so other repo can be checked out
@@ -68,9 +70,9 @@ jobs:
         GGG_SMTP_OPTS: ${{ secrets.GGG_SMTP_OPTS }}
       shell: bash
       run: |
-        if [ -n "$GGG_SMTP_USER" ] && [ -n "$GGG_SMTP_PASS" ] && [ -n "$GGG_SMTP_HOST" ];
+        if [ -n "$GGG_SMTP_USER" ] && [ -n "$GGG_SMTP_PASS" ] && [ -n "$GGG_SMTP_HOST" ] && [ -n "$GGG_IMAP_HOST" ];
         then
-          m="'gitgitgadget.cismtpuser=$GGG_SMTP_USER' 'gitgitgadget.cismtppass=$GGG_SMTP_PASS' 'gitgitgadget.cismtphost=$GGG_SMTP_HOST'";
+          m="'gitgitgadget.cismtpuser=$GGG_SMTP_USER' 'gitgitgadget.cismtppass=$GGG_SMTP_PASS' 'gitgitgadget.cismtphost=$GGG_SMTP_HOST' 'gitgitgadget.ciimaphost=$GGG_IMAP_HOST'";
           if [ -n "$GGG_SMTP_OPTS" ];
           then
             m+=" 'gitgitgadget.cismtpopts=$GGG_SMTP_OPTS'"
