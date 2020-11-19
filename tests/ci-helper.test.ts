@@ -667,7 +667,7 @@ test("handle comment submit email success", async () => {
         title: "Submit a fun fix",
     };
 
-    const { smtpUser } = await getEmailInfo();
+    const { smtpUser, imapHost } = await getEmailInfo();
 
     if (smtpUser) {                 // if configured for this test
         ci.setGHGetPRInfo(prInfo);
@@ -680,7 +680,7 @@ test("handle comment submit email success", async () => {
 
         const msgId = ci.addPRCommentCalls[0][1].match(/\[(.*)\]/);
         expect(msgId).not.toBeUndefined();
-        if (msgId && msgId[1]) {
+        if (msgId && msgId[1] && imapHost) {
             const msgFound = await checkMsgId(msgId[1]);
             expect(msgFound).toBeTruthy();
         }
@@ -754,7 +754,7 @@ test("handle comment preview email success", async () => {
         title: "Preview a fun fix",
     };
 
-    const { smtpUser } = await getEmailInfo();
+    const { smtpUser, imapHost } = await getEmailInfo();
 
     if (smtpUser) {                 // if configured for this test
         ci.setGHGetPRInfo(prInfo);
@@ -767,7 +767,7 @@ test("handle comment preview email success", async () => {
 
         const msgId1 = ci.addPRCommentCalls[0][1].match(/\[(.*)\]/);
         expect(msgId1).not.toBeUndefined();
-        if (msgId1 && msgId1[1]) {
+        if (msgId1 && msgId1[1] && imapHost) {
             const msgFound1 = await checkMsgId(msgId1[1]);
             expect(msgFound1).toBeTruthy();
         }
@@ -780,7 +780,7 @@ test("handle comment preview email success", async () => {
 
         const msgId2 = ci.addPRCommentCalls[0][1].match(/\[(.*)\]/);
         expect(msgId2).not.toBeUndefined();
-        if (msgId2 && msgId2[1]) {
+        if (msgId2 && msgId2[1] && imapHost) {
             const msgFound2 = await checkMsgId(msgId2[1]);
             expect(msgFound2).toBeTruthy();
         }
@@ -789,7 +789,7 @@ test("handle comment preview email success", async () => {
 
         const msgId3 = ci.addPRCommentCalls[0][1].match(/\[(.*)\]/);
         expect(msgId3).not.toBeUndefined();
-        if (msgId3 && msgId3[1]) {
+        if (msgId3 && msgId3[1] && imapHost) {
             const msgFound3 = await checkMsgId(msgId3[1]);
             expect(msgFound3).toBeTruthy();
         }
