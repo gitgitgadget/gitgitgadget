@@ -21,6 +21,7 @@ steps:
     git config gitgitgadget.CIsmtpHost '$(gitgitgadget.CIsmtpHost)'
     git config gitgitgadget.CIsmtpPass '$(gitgitgadget.CIsmtpPass)'
     git config gitgitgadget.CIsmtpOpts '$(gitgitgadget.CIsmtpOpts)'
+    git config gitgitgadget.CIimapHost '$(gitgitgadget.CIimapHost)'
   displayName: 'Configure ethereal SMTP'
   condition: ne(variables['gitgitgadget.CIsmtpPass'], '')
 
