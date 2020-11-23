@@ -77,8 +77,12 @@ jobs:
           then
             m+=" 'gitgitgadget.cismtpopts=$GGG_SMTP_OPTS'"
           fi
-          # trailing space is required
-          echo "GGG_SMTP=$m " >> $GITHUB_ENV
+          # trailing space is required if repo set
+          if [ -n "$GGG_REPO" ];
+          then
+            m+=" "
+          fi
+          echo "GGG_SMTP=$m" >> $GITHUB_ENV
         else
           echo "::error::All of GGG_SMTP_USER, GGG_SMTP_PASS and GGG_SMTP_HOST secrets must be set"
           exit 1
