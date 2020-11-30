@@ -1,7 +1,7 @@
 import { Octokit } from "@octokit/rest";
 import { beforeAll, expect, jest, test } from "@jest/globals";
 import { git, gitConfig } from "../lib/git";
-import { GitHubGlue } from "../lib/github-glue";
+import { GitHubGlue, IGitHubUser, IPullRequestInfo } from "../lib/github-glue";
 
 /*
 This test requires setup.  It will run successfully if setup has
@@ -169,103 +169,6 @@ test("pull requests", async () => {
         const prNewTitle = await github.getPRInfo(owner, prData.number);
         expect(prNewTitle.title).toMatch(prTitle);
 
-        // Test cc update to PR
-        const prCc = "Not Real <ReallyNot@saturn.cosmos>";
-        const prCc2 = "Not Real <RealNot@saturn.cosmos>";
-        const prCcGitster = "Git Real <gitster@pobox.com>"; // filtered out
-        const ghUser = await github.getGitHubUserInfo(owner);
-        const ccRegex = /<ReallyNot@saturn\.cosmos>/g;
-
-        // Test with no linefeed
-        const prBodyCc1 = `${prInfo.body}`;
-        await github.updatePR(owner, prData.number, prBodyCc1);
-        await github.addPRCc(prData.html_url, prCc);
-        await github.addPRCc(prData.html_url, prCc);
-        const prCcInfo1 = await github.getPRInfo(owner, prData.number);
-        const ccFound1 = prCcInfo1.body.match(ccRegex);
-        expect(ccFound1?.length).toEqual(1);
-
-        // Test with linefeeds present
-        const prBodyCc2 = `${prInfo.body}\r\n\r\nGlue`;
-        await github.updatePR(owner, prData.number, prBodyCc2);
-        await github.addPRCc(prData.html_url, prCc);
-        await github.addPRCc(prData.html_url, prCc);
-        await github.addPRCc(prData.html_url, prCc.toLowerCase());
-        await github.addPRCc(prData.html_url, prCc2);
-        await github.addPRCc(prData.html_url, prCcGitster);
-        if (ghUser.email) {
-            await github.addPRCc(prData.html_url, `PR Owner <${ghUser.email}>`);
-            await github.addPRCc(prData.html_url,
-                `PR Owner <${ghUser.email.toUpperCase()}>`);
-        }
-        const prCcInfo2 = await github.getPRInfo(owner, prData.number);
-        const ccFound2 = prCcInfo1.body.match(ccRegex);
-        expect(ccFound2?.length).toEqual(1);
-        expect(prCcInfo2.body).toMatch(/RealNot@saturn\.cosmos/);
-        expect(prCcInfo2.body).not.toMatch(/gitster@pobox\.com/);
-        if (ghUser.email) {
-            expect(prCcInfo2.body).not.
-                toMatch(new RegExp(ghUser.email, "i"));
-        }
-
-        // Test with linefeeds and unknown footers
-        const prBodyCC3 = `${prInfo.body}\r\n \t\r\nbb: x\r\ncc: ${prCc}`;
-        await github.updatePR(owner, prData.number, prBodyCC3);
-        await github.addPRCc(prData.html_url, prCc);
-        await github.addPRCc(prData.html_url, prCc);
-        const prCcInfo3 = await github.getPRInfo(owner, prData.number);
-        const ccFound3 = prCcInfo3.body.match(ccRegex);
-        expect(ccFound3?.length).toEqual(1);
-
-        // Test with linefeeds and unknown footer containing email
-        const prBodyCC4 = `${prInfo.body}\r\n \t\r\nbb: ${prCc}`;
-        await github.updatePR(owner, prData.number, prBodyCC4);
-        await github.addPRCc(prData.html_url, prCc);
-        await github.addPRCc(prData.html_url, prCc);
-        const prCcInfo4 = await github.getPRInfo(owner, prData.number);
-        const ccFound4 = prCcInfo4.body.match(ccRegex);
-        expect(ccFound4?.length).toEqual(2);
-
-        // Test to ignore last block in body with cc: for last line
-        const prBodyCC5 = `${prInfo.body}\r\n\r\nfoo\r\nCC: ${prCc}`;
-        await github.updatePR(owner, prData.number, prBodyCC5);
-        await github.addPRCc(prData.html_url, prCc);
-        const prCcInfo5 = await github.getPRInfo(owner, prData.number);
-        const ccFound5 = prCcInfo5.body.match(ccRegex);
-        expect(ccFound5?.length).toEqual(2);
-
-        // Test to catch only block in body is footers
-        const prBodyCC6 = `CC: ${prCc}\r\nbb: bar`;
-        await github.updatePR(owner, prData.number, prBodyCC6);
-        await github.addPRCc(prData.html_url, prCc);
-        const prCcInfo6 = await github.getPRInfo(owner, prData.number);
-        const ccFound6 = prCcInfo6.body.match(ccRegex);
-        expect(ccFound6?.length).toEqual(1);
-
-        // Test to catch only block in body is cc footer
-        const prBodyCC7 = `CC: ${prCc}; ${prCc2}`;
-        await github.updatePR(owner, prData.number, prBodyCC7);
-        await github.addPRCc(prData.html_url, prCc);
-        const prCcInfo7 = await github.getPRInfo(owner, prData.number);
-        const ccFound7 = prCcInfo7.body.match(ccRegex);
-        expect(ccFound7?.length).toEqual(1);
-
-        // Test to catch only block in body is not really footers
-        const prBodyCC8 = `foo bar\r\nCC: ${prCc}`;
-        await github.updatePR(owner, prData.number, prBodyCC8);
-        await github.addPRCc(prData.html_url, prCc);
-        const prCcInfo8 = await github.getPRInfo(owner, prData.number);
-        const ccFound8 = prCcInfo8.body.match(ccRegex);
-        expect(ccFound8?.length).toEqual(2);
-
-        // Test to catch only block in body is not really footers
-        const prBodyCC9 = `CC: ${prCc}\r\nfoo bar`;
-        await github.updatePR(owner, prData.number, prBodyCC9);
-        await github.addPRCc(prData.html_url, prCc);
-        const prCcInfo9 = await github.getPRInfo(owner, prData.number);
-        const ccFound9 = prCcInfo9.body.match(ccRegex);
-        expect(ccFound9?.length).toEqual(2);
-
         const newComment = "Adding a comment to the PR";
         const {id, url} = await github.addPRComment(prData.html_url,
                                                     newComment);
@@ -307,4 +210,134 @@ test("pull requests", async () => {
             console.log(`command failed\n${error}`);
         }
     }
+});
+
+test("add PR cc requests", async () => {
+    const github = new GitHubGlue();
+
+    const prInfo = {
+        author: "ggg",
+        baseCommit: "A",
+        baseLabel: "gitgitgadget:next",
+        baseOwner: "gitgitgadget",
+        baseRepo: "git",
+        body: "Basic commit description.",
+        hasComments: true,
+        headCommit: "B",
+        headLabel: "somebody:master",
+        mergeable: true,
+        number: 59,
+        pullRequestURL: "https://github.com/webstech/gitout/pull/59",
+        title: "Submit a fun fix",
+    };
+
+    const commentInfo = { id: 1, url: "ok" };
+    github.addPRComment = jest.fn( async ():
+        // eslint-disable-next-line @typescript-eslint/require-await
+        Promise<{id: number; url: string}> => commentInfo );
+
+    const updatePR = jest.fn( async (_owner: string, _prNumber: number,
+                        body: string):
+        // eslint-disable-next-line @typescript-eslint/require-await
+        Promise<number> => {
+        prInfo.body = body;     // set new body for next test
+        return 1;
+    });
+
+    github.updatePR = updatePR;
+
+    github.getPRInfo = jest.fn( async ():
+        // eslint-disable-next-line @typescript-eslint/require-await
+        Promise<IPullRequestInfo> => prInfo);
+
+    const ghUser = {
+        email: "joe_kerr@example.org",
+        login: "joekerr",
+        name: "Joe Kerr",
+        type: "unknown",
+    };
+
+    github.getGitHubUserInfo= jest.fn( async ():
+        // eslint-disable-next-line @typescript-eslint/require-await
+        Promise<IGitHubUser> => ghUser);
+
+    // Test cc update to PR
+    const prCc = "Not Real <ReallyNot@saturn.cosmos>";
+    const prCc2 = "Not Real <RealNot@saturn.cosmos>";
+    const prCcGitster = "Git Real <gitster@pobox.com>"; // filtered out
+
+    // Test with no linefeed
+    await github.addPRCc(prInfo.pullRequestURL, prCc);
+    expect(updatePR.mock.calls).toHaveLength(1);
+    await github.addPRCc(prInfo.pullRequestURL, prCc);
+    expect(updatePR.mock.calls).toHaveLength(1);
+    updatePR.mock.calls.length = 0;
+
+    // Test with linefeeds present
+    prInfo.body = `Test\r\n\r\nGlue`;
+    await github.addPRCc(prInfo.pullRequestURL, prCc);
+    expect(updatePR.mock.calls).toHaveLength(1);
+    await github.addPRCc(prInfo.pullRequestURL, prCc);
+    expect(updatePR.mock.calls).toHaveLength(1);
+    await github.addPRCc(prInfo.pullRequestURL, prCc.toLowerCase());
+    expect(updatePR.mock.calls).toHaveLength(1);
+    await github.addPRCc(prInfo.pullRequestURL, prCc2);
+    expect(updatePR.mock.calls).toHaveLength(2);
+    await github.addPRCc(prInfo.pullRequestURL, prCcGitster);
+    expect(updatePR.mock.calls).toHaveLength(2);
+    const prCcOwner = `${ghUser.name} <${ghUser.email}>`;
+    await github.addPRCc(prInfo.pullRequestURL, prCcOwner);
+    expect(updatePR.mock.calls).toHaveLength(2);
+    await github.addPRCc(prInfo.pullRequestURL, prCcOwner.toUpperCase());
+    expect(updatePR.mock.calls).toHaveLength(2);
+    updatePR.mock.calls.length = 0;
+
+    // Test with linefeeds and unknown footers
+    prInfo.body = `Test\r\n \t\r\nbb: x\r\ncc: ${prCc}`;
+    await github.addPRCc(prInfo.pullRequestURL, prCc);
+    expect(updatePR.mock.calls).toHaveLength(0);
+    await github.addPRCc(prInfo.pullRequestURL, prCc);
+    expect(updatePR.mock.calls).toHaveLength(0);
+
+    // Test with linefeeds and unknown footer containing email
+    prInfo.body = `Test\r\n \t\r\nbb: ${prCc}`;
+    await github.addPRCc(prInfo.pullRequestURL, prCc);
+    expect(updatePR.mock.calls).toHaveLength(1);
+    await github.addPRCc(prInfo.pullRequestURL, prCc);
+    expect(updatePR.mock.calls).toHaveLength(1);
+    updatePR.mock.calls.length = 0;
+
+    // Test to ignore last block in body with cc: for last line
+    prInfo.body = `Test\r\n\r\nfoo\r\nCC: ${prCc}`;
+    await github.addPRCc(prInfo.pullRequestURL, prCc);
+    expect(updatePR.mock.calls).toHaveLength(1);
+    updatePR.mock.calls.length = 0;
+
+    // Test to catch only block in body is footers
+    prInfo.body = `CC: ${prCc}\r\nbb: bar`;
+    await github.addPRCc(prInfo.pullRequestURL, prCc);
+    expect(updatePR.mock.calls).toHaveLength(0);
+
+    // Test to catch only block in body is footers
+    prInfo.body = `CC: ${prCc}\r\nbb: bar`;
+    await github.addPRCc(prInfo.pullRequestURL, prCc2);
+    expect(updatePR.mock.calls).toHaveLength(1);
+    updatePR.mock.calls.length = 0;
+
+    // Test to catch only block in body is cc footer
+    prInfo.body = `CC: ${prCc}; ${prCc2}`;
+    await github.addPRCc(prInfo.pullRequestURL, prCc);
+    expect(updatePR.mock.calls).toHaveLength(0);
+
+    // Test to catch only block in body is not really footers
+    prInfo.body = `foo bar\r\nCC: ${prCc}`;
+    await github.addPRCc(prInfo.pullRequestURL, prCc);
+    expect(updatePR.mock.calls).toHaveLength(1);
+    updatePR.mock.calls.length = 0;
+
+    // Test to catch only block in body is not really footers
+    prInfo.body = `CC: ${prCc}\r\nfoo bar`;
+    await github.addPRCc(prInfo.pullRequestURL, prCc);
+    expect(updatePR.mock.calls).toHaveLength(1);
+    updatePR.mock.calls.length = 0;
 });
