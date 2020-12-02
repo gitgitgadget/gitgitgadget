@@ -1,3 +1,4 @@
+import addressparser = require("nodemailer/lib/addressparser");
 import { Octokit } from "@octokit/rest";
 import { git, gitConfig } from "./git";
 import { GitGitGadget } from "./gitgitgadget";
@@ -100,21 +101,52 @@ export class GitHubGlue {
      */
     public async addPRCc(pullRequestURL: string, cc: string):
         Promise<void> {
-        const id = cc.match(/(<.*>)/);
+        const id = cc.match(/<(.*)>/);
 
-        if (!id || id[1].match(/gitster@pobox\.com/)) {
+        if (!id || id[1] === "gitster@pobox.com") {
             return;
         }
 
+        const ccLower = id[1].toLowerCase();
         const url = GitGitGadget.parsePullRequestURL(pullRequestURL);
         const pr = await this.getPRInfo(url[0], url[2]);
-        const ccNow = pr.body.match(/\r?\n\r?\n(cc:.*)/is);
+        const trimBody = pr.body.trimRight();
+        const bodyEnd = trimBody.split(/\r?\n\s*?\r?\n/).pop() as string;
 
-        if (!ccNow || !ccNow[1].match(id[1])) {
+        let found = false;
+        let footerSeparator = "\r\n";
+
+        if (bodyEnd.match(/:/)) try {
+            bodyEnd.split(/\r?\n/).reverse().forEach(line => {
+                const match = line.match(/^([a-z][-a-z0-9]+):\s*(.*)$/i);
+
+                if (!match) {       // stop if not a footer
+                    throw new Error("No Footer");
+                }
+
+                footerSeparator = ""; // body already has footers
+                if (!found && match[1].toLowerCase() === "cc") try {
+                    addressparser(match[2], {flatten: true}).forEach(email => {
+                        if (ccLower === email.address.toLowerCase()) {
+                            found = true;
+                            throw new Error("Found");
+                        }
+                    });
+                } catch {
+                    // quick exit for cc matched (comment to quiet linter)
+                }
+            });
+        } catch {
+            found = false;          // ensure it was not a cc: false positive
+            footerSeparator = "\r\n"; // reset
+        }
+
+        if (!found) {
             const user = await this.getGitHubUserInfo(pr.author);
-            if (!user.email || !user.email.match(id[1])) {
+
+            if (!user.email || ccLower !== user.email.toLowerCase()) {
                 await this.updatePR(url[0], url[2], `${pr.body}${
-                    ccNow ? "" : "\r\n"}\r\ncc: ${cc}`);
+                    footerSeparator}\r\ncc: ${cc}`);
                 await this.addPRComment(pullRequestURL, `User \`${
                                         cc}\` has been added to the cc: list.`);
             }
