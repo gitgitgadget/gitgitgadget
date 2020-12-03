@@ -33,6 +33,7 @@
     "testRegex": "/tests/(?!test-lib).*\\.(ts|tsx|js)$"
   },
   "devDependencies": {
+    "@types/html-to-text": "^6.0.0",
     "@types/imap-simple": "^4.2.4",
     "@types/jest": "^26.0.15",
     "@types/json-stable-stringify": "^1.0.32",
@@ -40,6 +41,7 @@
     "@types/libqp": "^1.1.0",
     "@types/marked": "^1.2.0",
     "@types/nodemailer": "^6.4.0",
+    "@types/rfc2047": "^2.0.1",
     "@typescript-eslint/eslint-plugin": "^4.8.2",
     "@typescript-eslint/parser": "^4.8.2",
     "eslint": "^7.14.0",
@@ -56,8 +58,6 @@
   "dependencies": {
     "@octokit/auth-app": "^2.10.2",
     "@octokit/rest": "^18.0.9",
-    "@types/html-to-text": "^6.0.0",
-    "@types/rfc2047": "^2.0.1",
     "commander": "^6.2.0",
     "dugite": "^1.92.0",
     "html-to-text": "^6.0.0",
