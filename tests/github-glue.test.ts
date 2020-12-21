@@ -75,42 +75,57 @@ test("pull requests", async () => {
         await github.authenticate(owner);
         const content = Buffer.from("test data").toString("base64");
 
-        const branch = "test-branch";
-        const branchRef = `refs/heads/${branch}`;
-        const title = "Test pulls integration";
+        const branchBase = `ggg-test-branch-${process.platform}`;
+        const titleBase = `ggg Test pulls integration-${process.platform}`;
 
         const oldPrs = await github.getOpenPRs(owner);
-        let pullRequestURL = "";
+        let suffix = "";
 
         // Clean up in case a previous test failed
+        // NOTE: Runs on GitHub and Azure pipelines use a timestamped
+        // branch/PR request that gets cleaned up separately.
 
-        oldPrs.map(pr => {
-            if (pr.title === title) { // need to clean up?
-                pullRequestURL = pr.pullRequestURL;
+        if (!process.env.GITHUB_WORKFLOW &&
+            !process.env.hasOwnProperty("system.definitionId")) {
+            let pullRequestURL = "";
+
+            oldPrs.map(pr => {
+                if (pr.title === titleBase) { // need to clean up?
+                    pullRequestURL = pr.pullRequestURL;
+                }
+            });
+
+            if (pullRequestURL.length) {
+                await github.closePR(pullRequestURL, "Not merged");
             }
-        });
 
-        if (pullRequestURL.length) {
-            await github.closePR(pullRequestURL, "Not merged");
+            try {                   // delete remote branch
+                await github.octo.git.deleteRef({
+                    owner,
+                    ref: `heads/${branchBase}`,
+                    repo,
+                    });
+            } catch (e) {
+                const error = e as Error;
+                expect(error.toString()).toMatch(/Reference does not exist/);
+            }
+
+            try {                   // delete local branch
+                await git(["branch", "-D", branchBase], { workDir: repoDir });
+            } catch (e) {
+                const error = e as Error;
+                expect(error.toString()).toMatch(/not found/);
+            }
+        }
+        else
+        {
+            const now = new Date();
+            suffix = `_${now.toISOString().replace(/[:.]/g, "_")}`;
         }
 
-        try {                       // delete remote branch
-            await github.octo.git.deleteRef({
-                owner,
-                ref: `heads/${branch}`,
-                repo,
-                });
-        } catch (e) {
-            const error = e as Error;
-            expect(error.toString()).toMatch(/Reference does not exist/);
-        }
-
-        try {                       // delete local branch
-            await git(["branch", "-D", branch], { workDir: repoDir });
-        } catch (e) {
-            const error = e as Error;
-            expect(error.toString()).toMatch(/not found/);
-        }
+        const branch = branchBase + suffix;
+        const branchRef = `refs/heads/${branch}`;
+        const title = titleBase + suffix;
 
         const gRef = await github.octo.git.getRef({
             owner,
