@@ -114,3 +114,12 @@ jobs:
         GIT_CONFIG_PARAMETERS: ${{ env.GGG_SMTP }}${{ env.GGG_REPO }}
       run: npm run test
       working-directory: gitgitgadget
+
+    - name: Clean up two day old branches and PRs
+      uses: actions/github-script@v3
+      id: clean-up
+      with:
+        script: |
+            const exports = require(`${process.env.GITHUB_WORKSPACE}/gitgitgadget/build/lib/delete-ci-test-branches.js`)
+            await exports.deleteBranches(github, process.env.GITHUB_REPOSITORY_OWNER, process.env.GGG_REPOSITORY);
+      if: env.GGG_REPOSITORY
