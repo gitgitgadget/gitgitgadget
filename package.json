@@ -11,6 +11,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "cleanbranch": "node ./build/script/delete-test-branches.js",
     "lint": "eslint -c .eslintrc.js --ext .ts,.js {lib,script,tests}/**/*.{ts,tsx,js}",
     "start": "node server.js",
     "test": "npm run lint && jest --env=node",
