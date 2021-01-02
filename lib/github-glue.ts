@@ -314,14 +314,20 @@ export class GitHubGlue {
             repo: this.repo,
             state: "open",
         });
+
         response.data.map((pr) => {
+            if (!pr.user || !pr.base.repo.owner) {
+                throw new Error(`PR ${pr.number} is missing information. ${
+                    pr.toString()}`);
+            }
+
             result.push({
                 author: pr.user.login,
                 baseCommit: pr.base.sha,
                 baseLabel: pr.base.label,
                 baseOwner: pr.base.repo.owner.login,
                 baseRepo: pr.base.repo.name,
-                body: pr.body,
+                body: pr.body || "",
                 hasComments: pr.updated_at !== pr.created_at,
                 headCommit: pr.head.sha,
                 headLabel: pr.head.label,
@@ -348,21 +354,28 @@ export class GitHubGlue {
             pull_number: prNumber,
             repo: this.repo,
         });
+
+        const pullRequest = response.data;
+        if (!pullRequest.user) {
+            throw new Error(`PR ${pullRequest.number} is missing information. ${
+                pullRequest.toString()}`);
+        }
+
         return {
-            author: response.data.user.login,
-            baseCommit: response.data.base.sha,
-            baseLabel: response.data.base.label,
-            baseOwner: response.data.base.repo.owner.login,
-            baseRepo: response.data.base.repo.name,
-            body: response.data.body,
-            commits: response.data.commits,
-            hasComments: response.data.comments > 0,
-            headCommit: response.data.head.sha,
-            headLabel: response.data.head.label,
-            mergeable: response.data.mergeable,
-            number: response.data.number,
-            pullRequestURL: response.data.html_url,
-            title: response.data.title,
+            author: pullRequest.user.login,
+            baseCommit: pullRequest.base.sha,
+            baseLabel: pullRequest.base.label,
+            baseOwner: pullRequest.base.repo.owner.login,
+            baseRepo: pullRequest.base.repo.name,
+            body: pullRequest.body || "",
+            commits: pullRequest.commits,
+            hasComments: pullRequest.comments > 0,
+            headCommit: pullRequest.head.sha,
+            headLabel: pullRequest.head.label,
+            mergeable: pullRequest.mergeable || true,
+            number: pullRequest.number,
+            pullRequestURL: pullRequest.html_url,
+            title: pullRequest.title,
         };
     }
 
@@ -381,9 +394,15 @@ export class GitHubGlue {
         });
         const match = response.data.html_url.match(/\/pull\/([0-9]+)/);
         const prNumber = match ? parseInt(match[1], 10) : -1;
+
+        if (!response.data.user) {
+            throw new Error(`PR ${prNumber} comment is missing information. ${
+                response.data.toString()}`);
+        }
+
         return {
             author: response.data.user.login,
-            body: response.data.body,
+            body: response.data.body || "",
             prNumber,
         };
     }
@@ -404,17 +423,25 @@ export class GitHubGlue {
         });
         const result: IPRCommit[] = [];
         response.data.map((cm) => {
+            if (!cm.commit.committer || !cm.commit.author || !cm.sha) {
+                throw new Error(`Commit information missing for PR ${
+                    prNumber} - ${cm.toString()}`);
+            }
+
+            const committer = cm.commit.committer;
+            const author = cm.commit.author
+
             result.push({
                 author: {
-                    email: cm.commit.author.email,
+                    email: author.email || "unknown email",
                     login: cm.author ? cm.author.login : "unknown login",
-                    name: cm.commit.author.name,
+                    name: author.name || "unknown name",
                 },
                 commit: cm.sha,
                 committer: {
-                    email: cm.commit.committer.email,
+                    email: committer.email || "unknown email",
                     login: cm.committer ? cm.committer.login : "unknown login",
-                    name: cm.commit.committer.name,
+                    name: committer.name || "unknown name",
                 },
                 message: cm.commit.message,
                 parentCount: cm.parents.length,
@@ -436,6 +463,12 @@ export class GitHubGlue {
         const response = await this.client.users.getByUsername({
             username: login,
         });
+
+        if (!response.data.name) {
+            throw new Error(`Unable to get name for ${login} - ${
+                response.data.toString()}`);
+        }
+
         return {
             email: response.data.email,
             login: response.data.login,
@@ -453,6 +486,12 @@ export class GitHubGlue {
         const response = await this.client.users.getByUsername({
             username: login,
         });
+
+        if (!response.data.name) {
+            throw new Error(`Unable to get name for ${login} - ${
+                response.data.toString()}`);
+        }
+
         return response.data.name;
     }
 
