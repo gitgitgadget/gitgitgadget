@@ -1,4 +1,5 @@
 import { Octokit } from "@octokit/rest";
+import { OctokitResponse } from "@octokit/types";
 import { beforeAll, expect, jest, test } from "@jest/globals";
 import { git, gitConfig } from "../lib/git";
 import { GitHubGlue, IGitHubUser, IPullRequestInfo } from "../lib/github-glue";
@@ -38,6 +39,10 @@ class GitHubProxy extends GitHubGlue {
     public async authenticate(repositoryOwner: string): Promise<void> {
         await this.ensureAuthenticated(repositoryOwner);
         this.octo = this.client;
+    }
+
+    public fakeAuthenticated(repositoryOwner: string): void {
+        this.authenticated = repositoryOwner;
     }
 }
 
@@ -355,4 +360,239 @@ test("add PR cc requests", async () => {
     await github.addPRCc(prInfo.pullRequestURL, prCc);
     expect(updatePR.mock.calls).toHaveLength(1);
     updatePR.mock.calls.length = 0;
+});
+
+test("test missing values in response using small schema", async () => {
+    if (!owner) {
+        owner = "tester";
+    }
+    const github = new GitHubProxy();
+    github.fakeAuthenticated(owner);
+
+    /**
+     * These tests use a basic schema consisting of only fields of interest.  To
+     * use the full schema, the types have to match octokit.
+     *
+     * For example:
+     *
+     * @example Objects would be typed like this:
+     * const sampleUser: components["schemas"]["simple-user"] = {...};
+     * const pullRequestSimple:
+     * components["schemas"]["pull-request-simple"] = {...};
+     *
+     * @example Responses would be typed like this:
+     * const prListResponse:
+     * RestEndpointMethodTypes["pulls"]["list"]["response"] = {
+     * status: 200,
+     * headers: { status: "200 OK" },
+     * url: "",
+     * data: [pullRequestSimple],
+     * };
+     *
+     */
+
+    interface IBasicUser {
+        login: string;
+        type: string;
+        email: string | null;
+    }
+
+    interface ISimpleUser extends IBasicUser {
+        name: string;
+    }
+
+    const sampleUser: ISimpleUser = {
+        login: "someString",
+        type: "someString",
+        name: "foo",
+        email: null,
+    };
+
+    interface IRepository {
+        name: string;
+        owner: ISimpleUser | null;
+    }
+
+    const testRepo: IRepository = {
+        name: "gitout",
+        owner: sampleUser,
+    };
+
+    interface IPullRequestSimple {
+        html_url: string;
+        number: number;
+        title: string;
+        user: ISimpleUser | null;
+        body: string | null;
+        created_at: string;
+        updated_at: string;
+        head: {
+            label: string;
+            repo: IRepository;
+            sha: string;
+        };
+        base: {
+            label: string;
+            repo: IRepository;
+            sha: string;
+        };
+        mergeable: boolean;
+        comments: number;
+        commits: number;
+    }
+
+    const pullRequestSimple: IPullRequestSimple = {
+        html_url: "someString",
+        number: 22,
+        title: "someString",
+        user: null, // ISimpleUser | null,
+        body: null, // string | null,
+        created_at: "someString",
+        updated_at: "someString",
+        head: {
+            label: "someString",
+            repo: testRepo,
+            sha: "someString",
+        },
+        base: {
+            label: "someString",
+            repo: testRepo,
+            sha: "someString",
+        },
+        mergeable: true,
+        comments: 0,
+        commits: 1,
+    };
+
+    const prListResponse: OctokitResponse<[IPullRequestSimple]> = {
+        status: 200,
+        headers: { status: "200 OK" },
+        url: "",
+        data: [pullRequestSimple],
+    };
+
+    // Response for any octokit calls - will be returned by the hook.wrap()
+    // being set below.
+
+    let response: any = prListResponse;
+
+    // eslint-disable-next-line @typescript-eslint/require-await
+    github.octo.hook.wrap("request", async () => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        return response;
+    });
+
+    // if (!pr.user || !pr.base.repo.owner) {
+    await expect(github.getOpenPRs(owner)).rejects.toThrow(/is missing info/);
+
+    pullRequestSimple.user = sampleUser;
+    pullRequestSimple.base.repo.owner = null;
+    await expect(github.getOpenPRs(owner)).rejects.toThrow(/is missing info/);
+
+    const prInfoResponse: OctokitResponse<IPullRequestSimple> = {
+        status: 200,
+        headers: { status: "200 OK" },
+        url: "",
+        data: pullRequestSimple,
+    };
+
+    response = prInfoResponse; // reset response value
+
+    pullRequestSimple.user = null;
+    pullRequestSimple.base.repo.owner = sampleUser;
+    // if (!pullRequest.user) {
+    await expect(github.getPRInfo(owner, 2)).rejects.toThrow(/is missing info/);
+
+    interface IIssueComment {
+        body?: string;
+        html_url: string;
+        user: ISimpleUser | null;
+    }
+
+    const issueCommentResponse: OctokitResponse<IIssueComment> = {
+        status: 200,
+        headers: { status: "200 OK" },
+        url: "",
+        data: {
+            html_url: "someString",
+            user: null, // sampleUser,
+        },
+    };
+
+    response = issueCommentResponse; // reset response value
+
+    // if (!response.data.user) {
+    await expect(github.getPRComment(owner, 77)).rejects.toThrow(
+        /is missing info/
+    );
+
+    interface ICommit {
+        commit: {
+            author: ISimpleUser | null;
+            committer: ISimpleUser | null;
+            message: string;
+        };
+        author: ISimpleUser | null;
+        committer: ISimpleUser | null;
+        parents: [{ sha: string; url: string; html_url?: string }];
+    }
+
+    const commitObj: ICommit = {
+        commit: {
+            author: sampleUser, // ISimpleUser | null;
+            committer: sampleUser, // ISimpleUser | null;
+            message: "someString",
+        },
+        author: null,
+        committer: null,
+        parents: [{ sha: "someString", url: "someString" }],
+    };
+
+    const getCommitsResponse: OctokitResponse<[ICommit]> = {
+        status: 200,
+        headers: { status: "200 OK" },
+        url: "",
+        data: [commitObj],
+    };
+
+    response = getCommitsResponse; // reset response value
+
+    // if (!cm.commit.committer || !cm.commit.author || !cm.sha) {
+    await expect(github.getPRCommits(owner, 22)).rejects.toThrow(
+        /information missing/
+    );
+
+    commitObj.commit.author = null;
+    await expect(github.getPRCommits(owner, 22)).rejects.toThrow(
+        /information missing/
+    );
+
+    commitObj.commit.committer = null;
+    await expect(github.getPRCommits(owner, 22)).rejects.toThrow(
+        /information missing/
+    );
+
+    interface IPrivateUser extends IBasicUser {
+        name: string | null;
+    }
+
+    const userNameResponse: OctokitResponse<IPrivateUser> = {
+        status: 200,
+        headers: { status: "200 OK" },
+        url: "",
+        data: sampleUser,
+    };
+
+    response = userNameResponse; // reset response value
+
+    (sampleUser as IPrivateUser).name = null;
+    // if (!response.data.name) {
+    await expect(github.getGitHubUserInfo(owner)).rejects.toThrow(
+        /Unable to get name/
+    );
+
+    // if (!response.data.name) {
+    await expect(github.getGitHubUserName(owner)).rejects.toThrow(
+        /Unable to get name/
+    );
 });
