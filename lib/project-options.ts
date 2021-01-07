@@ -42,7 +42,6 @@ export class ProjectOptions {
         if (await commitExists("e83c5163316f89bfbde", workDir)) {
             // Git
             to = "--to=git@vger.kernel.org";
-            cc.push("Junio C Hamano <gitster@pobox.com>");
             upstreamBranch = "upstream/pu";
             if (await git(["rev-list", branchName + ".." + upstreamBranch],
                 { workDir })) {

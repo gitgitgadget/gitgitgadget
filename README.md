@@ -22,6 +22,10 @@ update the description to include information about changes performed relative
 to the latest patch series iteration, and then another `/submit` will ask
 GitGitGadget to send a new iteration of the patch series.
 
+If the patch is meant for consideration and inclusion by the
+maintainer of Git make sure to put `cc: gitster@pobox.com` in the
+description before doing `/submit`.
+
 All relevant information, such as the current iteration of the patch series,
 the Message-ID of the sent mails, etc is stored in the Git notes in
 `refs/notes/gitgitgadget`.
