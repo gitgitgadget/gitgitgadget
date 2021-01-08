@@ -477,24 +477,6 @@ export class GitHubGlue {
         };
     }
 
-    /**
-     * Obtain the full name (if any) for a given GitHub user.
-     *
-     * @param login the GitHub login
-     */
-    public async getGitHubUserName(login: string): Promise<string> {
-        const response = await this.client.users.getByUsername({
-            username: login,
-        });
-
-        if (!response.data.name) {
-            throw new Error(`Unable to get name for ${login} - ${
-                response.data.toString()}`);
-        }
-
-        return response.data.name;
-    }
-
     protected async ensureAuthenticated(repositoryOwner: string):
         Promise<void> {
         if (repositoryOwner !== this.authenticated) {
