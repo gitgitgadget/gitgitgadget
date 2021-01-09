@@ -464,15 +464,11 @@ export class GitHubGlue {
             username: login,
         });
 
-        if (!response.data.name) {
-            throw new Error(`Unable to get name for ${login} - ${
-                response.data.toString()}`);
-        }
 
         return {
             email: response.data.email,
             login: response.data.login,
-            name: response.data.name,
+            name: response.data.name || "",
             type: response.data.type,
         };
     }
