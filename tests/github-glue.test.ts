@@ -63,9 +63,6 @@ test("identify user", async () => {
         const github = new GitHubProxy(`../${repo}`, repo);
         await github.authenticate(owner);
 
-        const name = await github.getGitHubUserName(owner);
-        expect(name).toMatch(userName);
-
         const ghUser = await github.getGitHubUserInfo(owner);
         expect(ghUser.login).toMatch(owner);
         expect(ghUser.name).toMatch(userName);
@@ -588,9 +585,4 @@ test("test missing values in response using small schema", async () => {
     (sampleUser as IPrivateUser).name = null;
     // if (!response.data.name) {
     await expect(github.getGitHubUserInfo(owner)).toBeTruthy();
-
-    // if (!response.data.name) {
-    await expect(github.getGitHubUserName(owner)).rejects.toThrow(
-        /Unable to get name/
-    );
 });
