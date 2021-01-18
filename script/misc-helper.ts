@@ -29,28 +29,30 @@ if (commander.args.length === 0) {
     commander.help();
 }
 
+const commandOptions = commander.opts();
+
 async function getGitGitWorkDir(): Promise<string> {
-    if (!commander.gitWorkDir) {
-        commander.gitWorkDir = await gitConfig("gitgitgadget.workDir",
-                                               commander.gitgitgadgetWorkDir);
-        if (!commander.gitWorkDir) {
+    if (!commandOptions.gitWorkDir) {
+        commandOptions.gitWorkDir = await gitConfig("gitgitgadget.workDir",
+            commandOptions.gitgitgadgetWorkDir);
+        if (!commandOptions.gitWorkDir) {
             throw new Error("Could not determine gitgitgadget.workDir");
         }
     }
-    if (!await isDirectory(commander.gitWorkDir)) {
-        console.log(`Cloning git into ${commander.gitWorkDir}`);
+    if (!await isDirectory(commandOptions.gitWorkDir)) {
+        console.log(`Cloning git into ${commandOptions.gitWorkDir}`);
         await git([
             "clone",
             "https://github.com/gitgitgadget/git",
-            commander.gitWorkDir,
+            commandOptions.gitWorkDir,
         ]);
     }
-    return commander.gitWorkDir as string;
+    return commandOptions.gitWorkDir as string;
 }
 
 async function getCIHelper(): Promise<CIHelper> {
-    return new CIHelper(await getGitGitWorkDir(), commander.skipUpdate,
-                        commander.gitgitgadgetWorkDir);
+    return new CIHelper(await getGitGitWorkDir(), commandOptions.skipUpdate,
+                        commandOptions.gitgitgadgetWorkDir);
 }
 
 (async (): Promise<void> => {
