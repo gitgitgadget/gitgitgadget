@@ -420,7 +420,7 @@ export class CIHelper {
                 optionsUpdated = true;
             }
 
-            await this.github.closePR(pullRequestURL, closePR);
+            await this.github.closePR(pullRequestURL, `Closed via ${closePR}.`);
         }
 
         if (notesUpdated) {

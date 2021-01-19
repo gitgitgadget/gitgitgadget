@@ -281,7 +281,7 @@ export class GitHubGlue {
         return result.data.map((res: { id: number }) => `${res.id}`);
     }
 
-    public async closePR(pullRequestURL: string, viaMergeCommit: string):
+    public async closePR(pullRequestURL: string, closeComment: string):
         Promise<number> {
         const [owner, repo, prNo] =
             GitGitGadget.parsePullRequestURL(pullRequestURL);
@@ -295,7 +295,7 @@ export class GitHubGlue {
         });
 
         const result = await this.client.issues.createComment({
-            body: `Closed via ${viaMergeCommit}.`,
+            body: closeComment,
             issue_number: prNo,
             owner,
             repo,
