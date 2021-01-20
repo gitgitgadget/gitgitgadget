@@ -402,7 +402,7 @@ export class CIHelper {
         }
 
         if (prLabelsToAdd.length) {
-            await this.github.setPRLabels(pullRequestURL, prLabelsToAdd);
+            await this.github.addPRLabels(pullRequestURL, prLabelsToAdd);
         }
 
         let optionsUpdated = false;

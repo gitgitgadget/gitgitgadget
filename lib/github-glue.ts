@@ -266,7 +266,7 @@ export class GitHubGlue {
         return result.data.id;
     }
 
-    public async setPRLabels(pullRequestURL: string, labels: string[]):
+    public async addPRLabels(pullRequestURL: string, labels: string[]):
         Promise<string[]> {
         const [owner, repo, prNo] =
             GitGitGadget.parsePullRequestURL(pullRequestURL);
