@@ -796,6 +796,8 @@ export class CIHelper {
             const welcome = (await readFile("res/WELCOME.md")).toString()
                     .replace(/\${username}/g, pr.author);
             await this.github.addPRComment(pullRequestURL, welcome);
+
+            await this.github.addPRLabels(pullRequestURL, ["new user"]);
         }
 
         const commitOkay = await this.checkCommits(pr, addComment);
