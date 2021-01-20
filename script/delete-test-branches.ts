@@ -52,22 +52,22 @@ if (commander.args.length > 0) {
 
 (async (): Promise<void> => {
     const options: deletionOptions = {};
-
-    if (commander.dryRun) {
+    const commandOptions = commander.opts();
+    if (commandOptions.dryRun) {
         options.dryRun = true;
     }
 
-    if (commander.hours) {
-        options.hours = commander.hours as number;
-    } else if (commander.minutes) {
-        options.minutes = commander.minutes as number;
+    if (commandOptions.hours) {
+        options.hours = commandOptions.hours as number;
+    } else if (commandOptions.minutes) {
+        options.minutes = commandOptions.minutes as number;
     }
 
     const github = new GitHubProxy(/* repoDir */);
-    await github.authenticate(commander.owner);
+    await github.authenticate(commandOptions.owner);
 
-    await deleteBranches(github.octo, commander.owner,
-        commander.repo, options );
+    await deleteBranches(github.octo, commandOptions.owner,
+        commandOptions.repo, options );
 
 })().catch((reason: Error) => {
     console.log(`Caught error ${reason}:\n${reason.stack}\n`);
