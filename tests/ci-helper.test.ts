@@ -42,6 +42,7 @@ class TestCIHelper extends CIHelper {
     public ghGlue: GitHubGlue;      // not readonly reference
     public addPRCommentCalls: string[][]; // reference mock.calls
     public updatePRCalls: string[][]; // reference mock.calls
+    public addPRLabelsCalls: any[][]; // reference mock.calls
 
     public constructor(workDir?: string, debug = false, gggDir = ".") {
         super(workDir, debug, gggDir);
@@ -60,6 +61,12 @@ class TestCIHelper extends CIHelper {
             Promise<number> => 1 );
         this.ghGlue.updatePR = updatePR;
         this.updatePRCalls = updatePR.mock.calls;
+
+        const addPRLabels = jest.fn( async (_: string, labels: string[]):
+            // eslint-disable-next-line @typescript-eslint/require-await
+            Promise<string[]> => labels );
+        this.ghGlue.addPRLabels = addPRLabels;
+        this.addPRLabelsCalls = addPRLabels.mock.calls;
 
         // need keys to authenticate
         // this.ghGlue.ensureAuthenticated = async (): Promise<void> => {};
@@ -887,6 +894,7 @@ test("handle push/comment too many commits fails", async () => {
 
     expect(ci.addPRCommentCalls[0][1]).toMatch(/Welcome/);
     expect(ci.addPRCommentCalls[1][1]).toMatch(failMsg);
+    expect(ci.addPRLabelsCalls[0][1]).toEqual(["new user"]);
 });
 
 test("handle push/comment merge commits fails", async () => {
@@ -990,6 +998,7 @@ test("handle push/comment merge commits fails", async () => {
 
     expect(ci.addPRCommentCalls[0][1]).toMatch(/Welcome/);
     expect(ci.addPRCommentCalls[1][1]).toMatch(commits[0].commit);
+    expect(ci.addPRLabelsCalls[0][1]).toEqual(["new user"]);
     ci.addPRCommentCalls.length = 0;
 
     // Test Multiple merges

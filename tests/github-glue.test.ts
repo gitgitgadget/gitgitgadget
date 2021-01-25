@@ -209,7 +209,7 @@ test("pull requests", async () => {
 
         expect(commentReply.url).toMatch(commentReply.id.toString());
 
-        await github.setPRLabels(prData.html_url, ["bug"]);
+        await github.addPRLabels(prData.html_url, ["bug"]);
 
         const cNumber = await github.closePR(prData.html_url, "Not merged");
         expect(cNumber).toBeGreaterThan(id);
