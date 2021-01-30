@@ -954,7 +954,7 @@ test("handle push/comment merge commits fails", async () => {
         baseRepo: "git",
         body: "Never seen - merge commits.",
         commits: commits.length,
-        hasComments: false,
+        hasComments: true,
         headCommit: commitB,
         headLabel: "somebody:master",
         mergeable: true,
@@ -996,9 +996,7 @@ test("handle push/comment merge commits fails", async () => {
     await expect(ci.handlePush("gitgitgadget", 433865360)).
         rejects.toThrow(/Failing check due/);
 
-    expect(ci.addPRCommentCalls[0][1]).toMatch(/Welcome/);
-    expect(ci.addPRCommentCalls[1][1]).toMatch(commits[0].commit);
-    expect(ci.addPRLabelsCalls[0][1]).toEqual(["new user"]);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(commits[0].commit);
     ci.addPRCommentCalls.length = 0;
 
     // Test Multiple merges
@@ -1036,10 +1034,9 @@ test("handle push/comment merge commits fails", async () => {
     await expect(ci.handlePush("gitgitgadget", 433865360)).
         rejects.toThrow(/Failing check due/);
 
-    expect(ci.addPRCommentCalls[0][1]).toMatch(/Welcome/);
-    expect(ci.addPRCommentCalls[1][1]).toMatch(commits[0].commit);
-    expect(ci.addPRCommentCalls[1][1]).not.toMatch(commits[1].commit);
-    expect(ci.addPRCommentCalls[1][1]).toMatch(commits[2].commit);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(commits[0].commit);
+    expect(ci.addPRCommentCalls[0][1]).not.toMatch(commits[1].commit);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(commits[2].commit);
     ci.addPRCommentCalls.length = 0;
 
 });
