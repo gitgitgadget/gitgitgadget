@@ -60,7 +60,7 @@
     "@octokit/auth-app": "^2.10.5",
     "@octokit/rest": "^18.0.14",
     "commander": "^7.0.0",
-    "dugite": "^1.95.0",
+    "dugite": "^1.96.0",
     "html-to-text": "^6.0.0",
     "imap-simple": "^5.0.0",
     "json-stable-stringify": "^1.0.1",
