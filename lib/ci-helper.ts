@@ -1,5 +1,8 @@
 import * as fs from "fs";
+import * as path from "path";
 import * as util from "util";
+import type { PullRequestChangedFile, Repository
+    } from "@octokit/graphql-schema";
 import addressparser = require("nodemailer/lib/addressparser");
 import { ILintError, LintCommit } from "./commit-lint";
 import { commitExists, git, emptyTreeName } from "./git";
@@ -14,6 +17,12 @@ import { IPatchSeriesMetadata } from "./patch-series-metadata";
 
 const readFile = util.promisify(fs.readFile);
 type CommentFunction = (comment: string) => Promise<void>;
+
+type labelInfo = {
+    label: string;
+    message: string;
+}
+type setLabelInfo = (label: string, message: string) => labelInfo;
 
 /*
  * This class offers functions to support the operations we want to perform from
@@ -763,6 +772,212 @@ export class CIHelper {
         return result;
     }
 
+    /**
+     * Check pull requests from new users to see if the request looks valid.
+     *
+     * @param pr pull request information
+     */
+    public async checkNewUser(pr: IPullRequestInfo): Promise<boolean> {
+        let result = true;
+        const query = `query {
+            repository(name: "${pr.baseRepo}", owner: "${pr.baseOwner}") {
+                pullRequest(number: ${pr.number}) {
+                    author {
+                        login
+                    }
+                    baseRef {
+                        name
+                        prefix
+                    }
+                    baseRefName
+                    closed
+                    commits(last: 30) {
+                        nodes {
+                            commit {
+                                additions,
+                                deletions,
+                                committer {
+                                    date,
+                                    email,
+                                    name,
+                                    user {
+                                        login
+                                    }
+                                }
+                                author {
+                                    date
+                                    email
+                                    name
+                                    user {
+                                        login
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    url
+                    files(last:20) {
+                        totalCount,
+                        nodes {
+                            additions,
+                            deletions,
+                            path
+                        }
+                    }
+                }
+            }
+        }`;
+
+        type queryResponse = {
+            repository: Repository;
+        }
+
+        const repository =
+            await this.github.graphql<queryResponse>(
+            pr.baseOwner,
+            query
+        );
+
+        if (!repository || !repository.repository.pullRequest) {
+            throw new Error(`Pull request not found.`);
+        }
+        const prInfo = repository.repository.pullRequest;
+
+        if (prInfo.closed) {
+            return false;           // nothing to see here
+        }
+
+        const genLabel = (label: string, message: string): labelInfo => {
+            return {label, message};
+        };
+
+        try {
+            const commits = prInfo.commits.nodes;
+
+            if (commits) {
+                commits.map(node => {
+                    const login = node?.commit.committer?.user?.login ??
+                        node?.commit.author?.user?.login;
+
+                    // login may not be present if email unknown to github
+                    if (login && pr.author !== login) {
+                        throw new Error("Request author is not commit author.");
+                    }
+                });
+            }
+
+            const files = prInfo.files;
+            if (files && files.totalCount && files.nodes) {
+                files.nodes.map(node => {
+                    const changedFile = node as PullRequestChangedFile;
+                    this.checkNewUserFile(changedFile, files.totalCount,
+                        genLabel);
+                });
+            } else {
+                throw new Error("No files updated.");
+            }
+
+            const queryRef = `query {
+                repository(name: "${pr.baseRepo}", owner: "${pr.author}") {
+                    ref(qualifiedName: "${prInfo.baseRefName}") {
+                        name
+                    }
+                }
+            }`;
+
+            const refInfo = await this.github.graphql<queryResponse>(
+                pr.baseOwner,
+                queryRef
+            );
+
+            if (!refInfo || !refInfo.repository.ref) {
+                throw new Error(`Base branch ${prInfo.baseRefName
+                    } not found in ${pr.author}/${pr.baseRepo}.`);
+            }
+        } catch (e) {
+            if ((e as labelInfo).label === undefined ) {
+                const error = e as Error;
+                result = false;
+                await this.github.closePR(prInfo.url, `PR is being closed:\n\n${
+                    error.message}`);
+            } else {
+                const label = e as labelInfo;
+                await this.github.addPRLabels(prInfo.url, [label.label]);
+                await this.github.addPRComment(prInfo.url, `Label \`${
+                    label.label}\` added for this reason:\n\n${
+                    label.message}`);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Perform some validation tests on a file in a pull request.
+     *
+     * @param changedFile file that is part of a commit in a pull request
+     * @param files number of files that are changed in the pull request
+     */
+    public checkNewUserFile(changedFile: PullRequestChangedFile,
+        fileCount: number, setLabel: setLabelInfo):
+        void {
+        const filenameParts = path.parse(changedFile.path);
+
+        // one file with only deletions?
+        if (fileCount === 1 &&
+            !changedFile.additions && changedFile.deletions) {
+            throw setLabel("validate", `File \`${changedFile.path
+                }\` expecting more than one change.`)
+        }
+
+        if (filenameParts.name.match(/.+\./)) {
+            throw new Error(`File \`${changedFile.path
+                }\` not allowed with multi-part name`);
+        }
+
+        if (filenameParts.name.match(/ /) &&
+            !filenameParts.dir.match(/^t\//))  { // ignore test files
+            throw new Error(`File \`${changedFile.path
+                }\` not allowed with space in name`);
+        }
+
+        const badNames = ["SECURITY.md", "README"];
+        badNames.map(name => {
+            if (filenameParts.base.match(name)) {
+                throw setLabel("validate", `File \`${changedFile.path
+                    }\` not expected to be updated.`)
+            }
+        });
+
+        if (filenameParts.ext) {
+            if (filenameParts.ext.length > 11) { // allow .dockerfile?
+                throw new Error(`File \`${changedFile.path
+                    }\` has an invalid extension.`);
+            }
+
+            if (!filenameParts.ext.match(/^\.(png|ico|icns)$/)) {
+                if (!changedFile.additions && !changedFile.deletions) {
+                    throw new Error(`File \`${changedFile.path
+                        }\` not updated.`);
+                }
+            }
+
+            if (fileCount === 1 &&
+                filenameParts.ext.match(/^\.([ch]|py|yml)$/)) {
+                // what if they rewrote some logic?
+                if (!changedFile.additions || !changedFile.deletions) {
+                    throw setLabel("validate", `File \`${changedFile.path
+                        }\` expecting more than one change.`)
+                }
+            }
+        } else {
+            if (!changedFile.deletions && !filenameParts.dir) {
+                throw new Error(`File \`${changedFile.path
+                    }\` not expected in root directory.`);
+            }
+        }
+    }
+
     public static redactGitHubToken(text: string): string {
         return text.replace(/(https:\/\/)x-access-token:.*?@/g, "$1");
     }
@@ -792,18 +1007,26 @@ export class CIHelper {
 
         const gitGitGadget = await GitGitGadget.get(this.gggConfigDir,
                                                     this.workDir);
-        if (!pr.hasComments && !gitGitGadget.isUserAllowed(pr.author)) {
-            const welcome = (await readFile("res/WELCOME.md")).toString()
-                    .replace(/\${username}/g, pr.author);
-            await this.github.addPRComment(pullRequestURL, welcome);
+        let contentsOkay = true;
 
-            await this.github.addPRLabels(pullRequestURL, ["new user"]);
+        if (!pr.hasComments && !gitGitGadget.isUserAllowed(pr.author)) {
+            contentsOkay = await this.checkNewUser(pr);
+
+            if (contentsOkay) {
+                const welcome = (await readFile("res/WELCOME.md")).toString()
+                        .replace(/\${username}/g, pr.author);
+                await this.github.addPRComment(pullRequestURL, welcome);
+
+                await this.github.addPRLabels(pullRequestURL, ["new user"]);
+            }
         }
 
-        const commitOkay = await this.checkCommits(pr, addComment);
+        if (contentsOkay) {
+            const commitOkay = await this.checkCommits(pr, addComment);
 
-        if (!commitOkay) {          // make check fail to get user attention
-            throw new Error("Failing check due to commit linting errors.");
+            if (!commitOkay) {          // make check fail to get user attention
+                throw new Error("Failing check due to commit linting errors.");
+            }
         }
     }
 

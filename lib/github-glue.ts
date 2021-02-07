@@ -473,6 +473,20 @@ export class GitHubGlue {
         };
     }
 
+    /**
+     * Perform a graphql query or mutation.  The results are managed and known
+     * by the requestor.  The caller specifies the return data type.
+     *
+     * @param owner GitHub user to be authenticated for this request
+     * @param query graphql query/mutate to operate on data
+     * @returns the set of data based on the user request
+     */
+    public async graphql<ResponseData>(owner: string, query: string):
+        Promise<ResponseData> {
+        await this.ensureAuthenticated(owner);
+        return await this.client.graphql<ResponseData>(query);
+    }
+
     protected async ensureAuthenticated(repositoryOwner: string):
         Promise<void> {
         if (repositoryOwner !== this.authenticated) {

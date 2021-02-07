@@ -860,6 +860,11 @@ test("handle push/comment too many commits fails", async () => {
     ci.setGHGetPRComment(comment);
     ci.setGHGetGitHubUserInfo(user);
 
+    // Remove from the test - tested separately
+    ci.checkNewUser = jest.fn( async ():
+        // eslint-disable-next-line @typescript-eslint/require-await
+        Promise<boolean> => true );
+
     const failMsg = `The pull request has ${commits} commits.`;
     // fail for too many commits on push
     await expect(ci.handlePush("gitgitgadget", 433865360)).
@@ -1311,4 +1316,273 @@ test("Handle comment cc", async () => {
 
     expect(ci.updatePRCalls[0][2]).toMatch(/S Body/);
     expect(ci.updatePRCalls).toHaveLength(1);
+});
+
+test("Test new user", async () => {
+    const {worktree, gggLocal} = await setupRepos("nu");
+
+    const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
+    const prNumber = 11159;
+    const prInfo = {
+        author: "ggg",
+        baseCommit: "foo",
+        baseLabel: "gitgitgadget:next",
+        baseOwner: "webstech",
+        baseRepo: "git",
+        body: "Never seen - no cc.",
+        commits: 1,
+        hasComments: false,
+        headCommit: "bar",
+        headLabel: "somebody:master",
+        mergeable: true,
+        number: prNumber,
+        pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
+        title: "Preview a fun fix",
+    };
+
+    // define internal view of graphql results
+    type pullRequest = {
+        author: {
+            login: string;
+        }
+        baseRef: {
+            name: string;
+            prefix: string;
+        }
+        baseRefName: string;
+        closed: boolean;
+        commits: {
+            nodes: [ {
+                commit: {
+                    additions: number;
+                    deletions: number;
+                    committer: {
+                        date: string;
+                        email: string;
+                        name: string;
+                        user: {
+                            login: string;
+                        }
+                    }
+                    author: {
+                        date: string;
+                        email: string;
+                        name: string;
+                        user: {
+                            login: string;
+                        }
+                    }
+                }
+            } ]
+        },
+        url: string;
+        number?: number;
+        files: {
+            totalCount: number;
+            nodes: [ {
+                additions: number;
+                deletions: number;
+                path: string;
+            } ]
+        }
+    }
+
+    type Repository = {
+        pullRequest: pullRequest;
+    }
+
+    type queryRepoResponse = {
+        repository: Repository;
+    };
+
+    const queryResponse: queryRepoResponse = {
+        repository: {
+            pullRequest: {
+                author: {
+                    login: prInfo.author,
+                },
+                baseRef: {
+                    name: "next",
+                    prefix: "refs/heads/",
+                },
+                baseRefName: "next",
+                closed: false,
+                url: "foo",
+                files: {
+                    nodes: [ {
+                        additions: 2,
+                        deletions: 1,
+                        path: ".gitignore",
+                    } ],
+                    totalCount: 1,
+                },
+                commits: {
+                    nodes: [ {
+                        commit: {
+                            additions: 2,
+                            deletions: 2,
+                            committer: {
+                                date: "2018-06-01T20:39:28+05:45",
+                                email: "",
+                                name: "",
+                                user: {
+                                    login: prInfo.author,
+                                },
+                            },
+                            author: {
+                                date: "2018-06-01T20:39:28+05:45",
+                                email: "",
+                                name: "",
+                                user: {
+                                    login: prInfo.author,
+                                },
+                            },
+                        },
+                    }, ],
+                },
+            },
+        },
+    };
+
+    type refName = {
+        name: string;
+    };
+
+    type refType = {
+        repository: {
+            ref: refName | null;
+        },
+    };
+
+    const refResponse: refType = {
+        repository: {
+            ref: {
+                name: "next",
+            }
+        }
+    };
+
+    const results = [queryResponse, refResponse];
+    let result = 0;                 // reset for each test set
+
+    const graphql = jest.fn( async ():
+        // eslint-disable-next-line @typescript-eslint/require-await
+        Promise<any> => results[result++] );
+    ci.ghGlue.graphql = graphql;
+
+    const closePR = jest.fn( async ():
+        // eslint-disable-next-line @typescript-eslint/require-await
+        Promise<number> => 3 );
+    ci.ghGlue.closePR = closePR;
+    const closePRCalls: string[][] = closePR.mock.calls;
+
+    {
+        const ok = await ci.checkNewUser(prInfo);
+        expect(ok).toBeTruthy();
+    }
+
+    // Test failures in reverse order of checks.
+
+    {
+        result = 0;
+        refResponse.repository.ref = null;
+        const ok = await ci.checkNewUser(prInfo);
+        expect(ok).toBeFalsy();
+        expect(closePRCalls[0][1]).toMatch(/not found/);
+    }
+
+    {
+        result = 0;
+        queryResponse.repository.pullRequest.files.nodes[0].path = "notallowed";
+        queryResponse.repository.pullRequest.files.nodes[0].additions = 4;
+        queryResponse.repository.pullRequest.files.nodes[0].deletions = 0;
+        closePRCalls.length = 0;
+        const ok = await ci.checkNewUser(prInfo);
+        expect(ok).toBeFalsy();
+        expect(closePRCalls[0][1]).toMatch(/root directory/);
+    }
+
+    {
+        result = 0;
+        queryResponse.repository.pullRequest.files.nodes[0].path = "no.txt";
+        queryResponse.repository.pullRequest.files.nodes[0].additions = 0;
+        queryResponse.repository.pullRequest.files.nodes[0].deletions = 0;
+        closePRCalls.length = 0;
+        const ok = await ci.checkNewUser(prInfo);
+        expect(ok).toBeFalsy();
+        expect(closePRCalls[0][1]).toMatch(/not updated/);
+    }
+
+    const files = ["foo.c", "foo.h", "foo.py", ".github/workflow/foo.yml"];
+
+    for (const fileName of files) {
+        result = 0;
+        queryResponse.repository.pullRequest.files.nodes[0].path = fileName;
+        queryResponse.repository.pullRequest.files.nodes[0].additions = 4;
+        queryResponse.repository.pullRequest.files.nodes[0].deletions = 0;
+        closePRCalls.length = 0;
+        ci.addPRCommentCalls.length = 0;
+        ci.addPRLabelsCalls.length = 0;
+        const ok = await ci.checkNewUser(prInfo);
+        expect(ok).toBeTruthy();
+        expect(ci.addPRCommentCalls[0][1]).toMatch(
+            /more than one change/);
+    }
+
+    const badNames = ["SECURITY.md", "README"];
+
+    for (const fileName of badNames) {
+        result = 0;
+        queryResponse.repository.pullRequest.files.nodes[0].path = fileName;
+        queryResponse.repository.pullRequest.files.nodes[0].additions = 2;
+        queryResponse.repository.pullRequest.files.nodes[0].deletions = 2;
+        closePRCalls.length = 0;
+        ci.addPRCommentCalls.length = 0;
+        ci.addPRLabelsCalls.length = 0;
+        const ok = await ci.checkNewUser(prInfo);
+        expect(ok).toBeTruthy();
+        expect(ci.addPRCommentCalls[0][1]).toMatch(
+            /not expected to be updated/);
+    }
+
+    {
+        result = 0;
+        queryResponse.repository.pullRequest.files.nodes[0].path = "my space";
+        queryResponse.repository.pullRequest.files.nodes[0].additions = 1;
+        queryResponse.repository.pullRequest.files.nodes[0].deletions = 1;
+        closePRCalls.length = 0;
+        const ok = await ci.checkNewUser(prInfo);
+        expect(ok).toBeFalsy();
+        expect(closePRCalls[0][1]).toMatch(/not allowed with space in name/);
+    }
+
+    {
+        result = 0;
+        queryResponse.repository.pullRequest.files.nodes[0].path = "my.dot.dot";
+        queryResponse.repository.pullRequest.files.nodes[0].additions = 1;
+        queryResponse.repository.pullRequest.files.nodes[0].deletions = 1;
+        closePRCalls.length = 0;
+        const ok = await ci.checkNewUser(prInfo);
+        expect(ok).toBeFalsy();
+        expect(closePRCalls[0][1]).toMatch(/multi-part name/);
+    }
+
+    {
+        result = 0;
+        queryResponse.repository.pullRequest.files.totalCount = 0;
+        closePRCalls.length = 0;
+        const ok = await ci.checkNewUser(prInfo);
+        expect(ok).toBeFalsy();
+        expect(closePRCalls[0][1]).toMatch(/No files updated/);
+    }
+
+    {
+        result = 0;
+        queryResponse.repository.pullRequest.commits.nodes[0].commit.committer.
+            user.login = "s";
+        closePRCalls.length = 0;
+        const ok = await ci.checkNewUser(prInfo);
+        expect(ok).toBeFalsy();
+        expect(closePRCalls[0][1]).toMatch(/not commit author/);
+    }
 });
