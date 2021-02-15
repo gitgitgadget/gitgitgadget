@@ -84,6 +84,7 @@
         "Ævar"
     ],
     "cSpell.ignoreRegExpList": [
+        "CIimapHost",
         "CIsmtphost",
         "CIsmtppass",
         "CIsmtpopts",
