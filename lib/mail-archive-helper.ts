@@ -2,10 +2,13 @@ import { createHash } from "crypto";
 import * as libqp from "libqp";
 import { git, revParse } from "./git";
 import { GitNotes } from "./git-notes";
+import { IGitGitGadgetOptions } from "./gitgitgadget";
 import { GitHubGlue } from "./github-glue";
 import { IMailMetadata } from "./mail-metadata";
+import { IPatchSeriesMetadata } from "./patch-series-metadata";
 import { IParsedMBox, parseMBox,
     parseMBoxMessageIDAndReferences } from "./send-mail";
+import { SousChef } from "./sous-chef";
 
 const stateKey = "git@vger.kernel.org <-> GitGitGadget";
 const replyToThisURL =
@@ -89,6 +92,54 @@ export class MailArchiveGitHelper {
             return keys.has(MailArchiveGitHelper.hashKey(messageID));
         };
 
+        const handleWhatsCooking = async (mbox: string): Promise<void> => {
+            const options = await this.gggNotes.get<IGitGitGadgetOptions>("");
+            if (!options || !options.openPRs) {
+                return;
+            }
+            /*
+             * This map points from branch names in `gitster/git` to their
+             * corresponding Pull Request URL.
+             */
+            const branchNameMap = new Map<string, string>();
+            for (const pullRequestURL of Object.keys(options.openPRs)) {
+                if (prFilter && !prFilter(pullRequestURL)) {
+                    continue;
+                }
+                const prMeta = await this.gggNotes
+                    .get<IPatchSeriesMetadata>(pullRequestURL);
+                if (prMeta && prMeta.branchNameInGitsterGit) {
+                    branchNameMap.set(prMeta.branchNameInGitsterGit,
+                                      pullRequestURL);
+                }
+            }
+            const sousChef = new SousChef(mbox);
+            if (!sousChef.messageID) {
+                throw new Error(`Could not parse Message-ID of ${mbox}`);
+            }
+            const whatsCookingBaseURL = "https://lore.kernel.org/git/";
+            for (const branchName of Object.keys(sousChef.branches)) {
+                const pullRequestURL = branchNameMap.get(branchName);
+                if (pullRequestURL) {
+                    const branchBaseURL
+                        = "https://github.com/gitgitgadget/git/commits/";
+                    const pre = sousChef.branches.get(branchName)?.text
+                        .replace(/&/g, "&amp;")
+                        .replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    const comment = `There was a [status update](${
+                        whatsCookingBaseURL}${
+                        sousChef.messageID}) about the branch [\`${
+                        branchName}\`](${
+                        branchBaseURL}${
+                        branchName}) on the Git mailing list:\n\n<pre>\n${
+                        pre}\n</pre>`;
+                    console.log(`\n${pullRequestURL}: ${comment}`);
+                    await this.githubGlue
+                        .addPRComment(pullRequestURL, comment);
+                }
+            }
+        };
+
         const mboxHandler = async (mbox: string): Promise<void> => {
                 const parsedMbox = parseMBox(mbox, true);
                 if (!parsedMbox.headers) {
@@ -96,6 +147,10 @@ export class MailArchiveGitHelper {
                 }
                 const parsed =
                     parseMBoxMessageIDAndReferences(parsedMbox);
+                if (parsedMbox.subject?.match(/^What's cooking in git.git /) &&
+                    parsedMbox.from === "Junio C Hamano <gitster@pobox.com>") {
+                    return handleWhatsCooking(mbox);
+                }
                 if (seen(parsed.messageID)) {
                     console.log(`Already handled: ${parsed.messageID}`);
                     return;
