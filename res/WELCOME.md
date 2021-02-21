@@ -7,7 +7,7 @@ Please make sure that your Pull Request has a good description, as it will be us
 Also, it is a good idea to review the commit messages one last time, as the Git project expects them in a quite specific form:
 
 * the lines should not exceed 76 columns,
-* the first line should be like a header and typically start with a prefix like "tests:" or "commit:", and
+* the first line should be like a header and typically start with a prefix like "tests:" or "revisions:" to state which subsystem the change is about, and
 * the commit messages' body should be describing the "why?" of the change.
 * Finally, the commit messages should end in a [Signed-off-by:](https://git-scm.com/docs/SubmittingPatches#dco) line matching the commits' author.
 
