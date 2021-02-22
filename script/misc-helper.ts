@@ -368,7 +368,7 @@ async function getCIHelper(): Promise<CIHelper> {
             }
 
             const auth = createAppAuth({
-                id: options.appID,
+                appId: options.appID,
                 privateKey: key.replace(/\\n/g, `\n`),
             });
 
