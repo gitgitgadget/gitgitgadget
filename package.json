@@ -59,7 +59,7 @@
   "dependencies": {
     "@octokit/auth-app": "^2.11.0",
     "@octokit/rest": "^18.1.1",
-    "commander": "^7.0.0",
+    "commander": "^7.1.0",
     "dugite": "^1.98.0",
     "html-to-text": "^7.0.0",
     "imap-simple": "^5.0.0",
