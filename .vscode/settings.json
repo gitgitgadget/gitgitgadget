@@ -50,6 +50,7 @@
         "gmane",
         "googlegroups",
         "imaps",
+        "insn",
         "issuecomment",
         "latesttag",
         "latesttags",
@@ -72,6 +73,7 @@
         "smee",
         "smtp",
         "stolee",
+        "stripspace",
         "superset",
         "taggerdate",
         "tbdiff",
@@ -84,6 +86,7 @@
         "Ævar"
     ],
     "cSpell.ignoreRegExpList": [
+        "CIimapHost",
         "CIsmtphost",
         "CIsmtppass",
         "CIsmtpopts",
