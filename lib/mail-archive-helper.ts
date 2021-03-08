@@ -117,6 +117,7 @@ export class MailArchiveGitHelper {
             if (!sousChef.messageID) {
                 throw new Error(`Could not parse Message-ID of ${mbox}`);
             }
+            console.log(`Handling "${sousChef.subject}"`);
             const whatsCookingBaseURL = "https://lore.kernel.org/git/";
             for (const branchName of sousChef.branches.keys()) {
                 const pullRequestURL = branchNameMap.get(branchName);
