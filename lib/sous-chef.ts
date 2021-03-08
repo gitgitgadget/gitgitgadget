@@ -6,6 +6,7 @@
 export class SousChef {
     public readonly mbox: string;
     public readonly messageID: string | undefined;
+    public readonly subject: string | undefined;
     public readonly branches = new Map<string, {
             merged: string | undefined;
             sectionName: string;
@@ -25,7 +26,7 @@ export class SousChef {
                     .match(/([^ ]+).*\n *(\(merged to [^)]+\))?/m);
                 if (!match) {
                     continue
-                };
+                }
 
                 const branchName = match[1];
                 const merged = match[2];
@@ -38,5 +39,8 @@ export class SousChef {
         const messageIDMatch =
             `\n${sections[0]}`.match(/\nMessage-ID: <([^>]+)>/i)
         this.messageID = messageIDMatch?.[1];
+        const subjectMatch =
+            `\n${sections[0]}`.match(/\nSubject: (.*)/i)
+        this.subject = subjectMatch?.[1];
     }
 }
