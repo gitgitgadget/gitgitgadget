@@ -25,7 +25,7 @@ export class SousChef {
                     .match(/([^ ]+).*\n *(\(merged to [^)]+\))?/m);
                 if (!match) {
                     continue
-                };
+                }
 
                 const branchName = match[1];
                 const merged = match[2];
