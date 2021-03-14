@@ -87,10 +87,11 @@ export class LintCommit {
     }
 
     // Verify if the first line starts with a prefix (e.g. tests:), it continues
-    // in lower-case
+    // in lower-case (except for ALLCAPS as that is likely to be a code
+    // identifier)
 
     private lowerCaseAfterPrefix(): void {
-        const match = this.lines[0].match(/^\S+?:\s*?([A-Z])/);
+        const match = this.lines[0].match(/^\S+?:\s*?([A-Z][a-z ])/);
 
         if (match) {
             this.block(`Prefixed commit message must be in lower case: ${

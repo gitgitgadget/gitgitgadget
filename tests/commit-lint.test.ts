@@ -76,7 +76,34 @@ test("basic lint tests", () => {
         }
     }
 
+    commit.message = `tests: A title that should also be lower case\n
+Signed-off-by: x`;
+    {
+        const linter = new LintCommit(commit);
+        const lintError = linter.lint();
+        expect(lintError).not.toBeUndefined();
+        if (lintError) {
+            expect(lintError.checkFailed).toBe(true);
+            expect(lintError.message).toMatch(/lower/);
+        }
+    }
+
+    commit.message = "tests: THIS can be allcaps\n\nSigned-off-by: x";
+    {
+        const linter = new LintCommit(commit);
+        const lintError = linter.lint();
+        expect(lintError).toBeUndefined();
+    }
+
     commit.message = "doc: success as Lower Case\n\nSigned-off-by: x";
+    {
+        const linter = new LintCommit(commit);
+        const lintError = linter.lint();
+        expect(lintError).toBeUndefined();
+    }
+
+    commit.message = `doc: a single-letter Lower Case message also succeeds\n
+Signed-off-by: x`;
     {
         const linter = new LintCommit(commit);
         const lintError = linter.lint();
