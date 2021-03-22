@@ -19,13 +19,13 @@
 # open a PR, create comments, etc.  This can be a private or public
 # repo.
 
-name: pr-test
+name: Build & run tests
 
 on:
   push:
     branches-ignore:
-      - master
-      - main
+      - dependabot/*
+  pull_request:
 
 jobs:
   build-test:
