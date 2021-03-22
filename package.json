@@ -12,7 +12,7 @@
   "scripts": {
     "build": "tsc",
     "cleanbranch": "node ./build/script/delete-test-branches.js",
-    "lint": "eslint -c .eslintrc.js --ext .ts,.js '{lib,script,tests}/**/*.{ts,tsx,js}'",
+    "lint": "eslint -c .eslintrc.js --ext .ts,.js \"{lib,script,tests}/**/*.{ts,tsx,js}\"",
     "start": "node server.js",
     "test": "npm run lint && jest --env=node",
     "test:watch": "jest --watch --notify --notifyMode=change --coverage",
@@ -67,7 +67,6 @@
     "jsonwebtoken": "^8.5.1",
     "libqp": "^1.1.0",
     "marked": "^2.0.1",
-    "marked": "^2.0.0",
     "nodemailer": "^6.5.0",
     "rfc2047": "^3.0.1"
   },
