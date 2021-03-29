@@ -73,7 +73,7 @@ export class GitHubGlue {
         const url = `https://github.com/git/git/commit/${gitGitCommit}`;
 
         await this.ensureAuthenticated(repositoryOwner);
-        const checks = await this.client.checks.create({
+        const checks = await this.client.rest.checks.create({
             completed_at: completedAt,
             conclusion: "success",
             details_url: url,
@@ -165,7 +165,7 @@ export class GitHubGlue {
         const [owner, repo, nr] =
             GitGitGadget.parsePullRequestURL(pullRequestURL);
         await this.ensureAuthenticated(owner);
-        const status = await this.client.issues.createComment({
+        const status = await this.client.rest.issues.createComment({
             body: comment,
             issue_number: nr,
             owner,
@@ -199,7 +199,7 @@ export class GitHubGlue {
                                 {workDir: gitWorkDir});
         const path = files.replace(/\n[^]*/, "");
 
-        const status = await this.client.pulls.createReviewComment({
+        const status = await this.client.rest.pulls.createReviewComment({
             body: comment,
             commit_id: commit,
             owner,
@@ -229,13 +229,14 @@ export class GitHubGlue {
             GitGitGadget.parsePullRequestURL(pullRequestURL);
         await this.ensureAuthenticated(owner);
 
-        const status = await this.client.pulls.createReplyForReviewComment({
-            body: comment,
-            comment_id: id,
-            owner,
-            pull_number: nr,
-            repo,
-        });
+        const status = await this.client.rest.pulls.createReplyForReviewComment(
+            {
+                body: comment,
+                comment_id: id,
+                owner,
+                pull_number: nr,
+                repo,
+            });
         return {
             id: status.data.id,
             url: status.data.html_url,
@@ -255,7 +256,7 @@ export class GitHubGlue {
         Promise<number> {
 
         await this.ensureAuthenticated(owner);
-        const result = await this.client.pulls.update({
+        const result = await this.client.rest.pulls.update({
             "body": body || undefined,
             owner,
             pull_number: prNumber,
@@ -272,7 +273,7 @@ export class GitHubGlue {
             GitGitGadget.parsePullRequestURL(pullRequestURL);
 
         await this.ensureAuthenticated(owner);
-        const result = await this.client.issues.addLabels({
+        const result = await this.client.rest.issues.addLabels({
             issue_number: prNo,
             labels,
             owner,
@@ -287,14 +288,14 @@ export class GitHubGlue {
             GitGitGadget.parsePullRequestURL(pullRequestURL);
 
         await this.ensureAuthenticated(owner);
-        await this.client.pulls.update({
+        await this.client.rest.pulls.update({
             owner,
             pull_number: prNo,
             repo,
             state: "closed",
         });
 
-        const result = await this.client.issues.createComment({
+        const result = await this.client.rest.issues.createComment({
             body: `Closed via ${viaMergeCommit}.`,
             issue_number: prNo,
             owner,
@@ -308,7 +309,7 @@ export class GitHubGlue {
     public async getOpenPRs(repositoryOwner: string):
         Promise<IPullRequestInfo[]> {
         const result: IPullRequestInfo[] = [];
-        const response = await this.client.pulls.list({
+        const response = await this.client.rest.pulls.list({
             owner: repositoryOwner,
             per_page: 1000,
             repo: this.repo,
@@ -349,7 +350,7 @@ export class GitHubGlue {
      */
     public async getPRInfo(repositoryOwner: string, prNumber: number):
         Promise<IPullRequestInfo> {
-        const response = await this.client.pulls.get({
+        const response = await this.client.rest.pulls.get({
             owner: repositoryOwner,
             pull_number: prNumber,
             repo: this.repo,
@@ -387,7 +388,7 @@ export class GitHubGlue {
      */
     public async getPRComment(repositoryOwner: string, commentID: number):
         Promise<IPRComment> {
-        const response = await this.client.issues.getComment({
+        const response = await this.client.rest.issues.getComment({
             comment_id: commentID,
             owner: repositoryOwner,
             repo: this.repo,
@@ -416,7 +417,7 @@ export class GitHubGlue {
      */
     public async getPRCommits(repositoryOwner: string, prNumber: number):
          Promise<IPRCommit[]> {
-        const response = await this.client.pulls.listCommits({
+        const response = await this.client.rest.pulls.listCommits({
             owner: repositoryOwner,
             pull_number: prNumber,
             repo: this.repo,
@@ -460,7 +461,7 @@ export class GitHubGlue {
         // required to get email
         await this.ensureAuthenticated(this.authenticated || "gitgitgadget");
 
-        const response = await this.client.users.getByUsername({
+        const response = await this.client.rest.users.getByUsername({
             username: login,
         });
 

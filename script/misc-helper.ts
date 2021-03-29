@@ -377,14 +377,15 @@ async function getCIHelper(): Promise<CIHelper> {
 
             if (options.installationID === undefined) {
                 options.installationID =
-                    (await client.apps.getRepoInstallation({
+                    (await client.rest.apps.getRepoInstallation({
                         owner: options.name,
                         repo: "git",
                 })).data.id;
             }
-            const result = await client.apps.createInstallationAccessToken({
-                installation_id: options.installationID,
-            });
+            const result = await client.rest.apps.createInstallationAccessToken(
+                {
+                    installation_id: options.installationID,
+                });
             const configKey = options.name === "gitgitgadget" ?
                 "gitgitgadget.githubToken" :
                 `gitgitgadget.${options.name}.githubToken`;
