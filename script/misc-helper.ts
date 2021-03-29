@@ -367,13 +367,13 @@ async function getCIHelper(): Promise<CIHelper> {
                 throw new Error(`Need the ${appName} App's private key`);
             }
 
-            const auth = createAppAuth({
-                appId: options.appID,
-                privateKey: key.replace(/\\n/g, `\n`),
-            });
-
-            const appAuthentication = await auth({ type: "app" });
-            const client = new Octokit({auth: appAuthentication.token});
+            const client = new Octokit({
+                authStrategy: createAppAuth,
+                auth: {
+                    appId: options.appID,
+                    privateKey: key.replace(/\\n/g, `\n`)
+                }
+            })
 
             if (options.installationID === undefined) {
                 options.installationID =
