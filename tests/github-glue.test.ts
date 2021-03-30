@@ -102,7 +102,7 @@ test("pull requests", async () => {
             }
 
             try {                   // delete remote branch
-                await github.octo.git.deleteRef({
+                await github.octo.rest.git.deleteRef({
                     owner,
                     ref: `heads/${branchBase}`,
                     repo,
@@ -129,13 +129,13 @@ test("pull requests", async () => {
         const branchRef = `refs/heads/${branch}`;
         const title = titleBase + suffix;
 
-        const gRef = await github.octo.git.getRef({
+        const gRef = await github.octo.rest.git.getRef({
             owner,
             ref: `heads/master`,
             repo,
         });
 
-        const cRef = await github.octo.git.createRef({
+        const cRef = await github.octo.rest.git.createRef({
             owner,
             ref: branchRef,
             repo,
@@ -144,7 +144,7 @@ test("pull requests", async () => {
 
         expect(cRef.data.object.sha).toMatch(gRef.data.object.sha);
 
-        const cFile = await github.octo.repos.createOrUpdateFileContents({
+        const cFile = await github.octo.rest.repos.createOrUpdateFileContents({
             branch,
             content,
             message: "Commit a new file",
@@ -153,7 +153,7 @@ test("pull requests", async () => {
             repo,
         });
 
-        const newPR = await github.octo.pulls.create({
+        const newPR = await github.octo.rest.pulls.create({
             base: "master",
             body: "Test for a pull request\r\non a test repo.",
             head: branch,
@@ -216,7 +216,7 @@ test("pull requests", async () => {
 
         // delete local and remote branches
         try {
-            await github.octo.git.deleteRef({
+            await github.octo.rest.git.deleteRef({
                 owner,
                 ref: `heads/${branch}`,
                 repo,
