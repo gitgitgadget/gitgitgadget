@@ -124,12 +124,14 @@ export class MailArchiveGitHelper {
                 if (pullRequestURL) {
                     const branchBaseURL
                         = "https://github.com/gitgitgadget/git/commits/";
-                    const pre = sousChef.branches.get(branchName)?.text
+                    const info = sousChef.branches.get(branchName);
+                    const pre = info?.text
                         .replace(/&/g, "&amp;")
                         .replace(/</g, "&lt;").replace(/>/g, "&gt;");
                     const comment = `There was a [status update](${
                         whatsCookingBaseURL}${
-                        sousChef.messageID}) about the branch [\`${
+                        sousChef.messageID}) in the "${
+                        info?.sectionName}" section about the branch [\`${
                         branchName}\`](${
                         branchBaseURL}${
                         branchName}) on the Git mailing list:\n\n<pre>\n${
