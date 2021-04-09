@@ -825,8 +825,24 @@ test("handle push/comment too many commits fails", async () => {
         `refs/heads/master:${pullRequestRef}/merge`,
     ]); // fake merge
 
-    const commits = 40;
-
+    const commits: IPRCommit[] = [];
+    for (let i = 0; i < 40; i++) {
+        commits.push({
+            author: {
+                email: "ggg@example.com",
+                login: "ggg",
+                name: "e. e. cummings",
+            },
+            commit: `${i}abc123`,
+            committer: {
+                email: "ggg@example.com",
+                login: "ggg",
+                name: "e. e. cummings",
+            },
+            message: `commit ${i}`,
+            parentCount: 1,
+        });
+    }
     // GitHubGlue Responses
     const comment = {
         author: "ggg",
@@ -846,7 +862,7 @@ test("handle push/comment too many commits fails", async () => {
         baseOwner: "gitgitgadget",
         baseRepo: "git",
         body: "Never seen - too many commits.",
-        commits,
+        commits: commits.length,
         hasComments: false,
         headCommit: commitB,
         headLabel: "somebody:master",
@@ -860,7 +876,7 @@ test("handle push/comment too many commits fails", async () => {
     ci.setGHGetPRComment(comment);
     ci.setGHGetGitHubUserInfo(user);
 
-    const failMsg = `The pull request has ${commits} commits.`;
+    const failMsg = `The pull request has ${commits.length} commits.`;
     // fail for too many commits on push
     await expect(ci.handlePush("gitgitgadget", 433865360)).
         rejects.toThrow(/Failing check due/);
@@ -888,6 +904,7 @@ test("handle push/comment too many commits fails", async () => {
     ci.setGHGetPRInfo(prInfo);
     ci.setGHGetPRComment(comment);
     ci.setGHGetGitHubUserInfo(user);
+    ci.setGHGetPRCommits(commits);
 
     await expect(ci.handlePush("gitgitgadget", 433865360)).
         rejects.toThrow(/Failing check due/);
