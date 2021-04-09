@@ -128,14 +128,26 @@ export class MailArchiveGitHelper {
                     const pre = info?.text
                         .replace(/&/g, "&amp;")
                         .replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                    const comment = `There was a [status update](${
-                        whatsCookingBaseURL}${
-                        sousChef.messageID}) in the "${
-                        info?.sectionName}" section about the branch [\`${
-                        branchName}\`](${
-                        branchBaseURL}${
-                        branchName}) on the Git mailing list:\n\n<pre>\n${
-                        pre}\n</pre>`;
+                    let comment;
+                    if (!pre || pre.trim() === "") {
+                        comment = `The branch [\`${
+                            branchName}\`](${
+                            branchBaseURL}${
+                            branchName}) was mentioned in the "${
+                            info?.sectionName
+                            }" section of the [status updates](${
+                            whatsCookingBaseURL}${
+                            sousChef.messageID}) on the Git mailing list.`;
+                    } else {
+                        comment = `There was a [status update](${
+                            whatsCookingBaseURL}${
+                            sousChef.messageID}) in the "${
+                            info?.sectionName}" section about the branch [\`${
+                            branchName}\`](${
+                            branchBaseURL}${
+                            branchName}) on the Git mailing list:\n\n<pre>\n${
+                            pre}\n</pre>`;
+                    }
                     console.log(`\n${pullRequestURL}: ${comment}`);
                     await this.githubGlue
                         .addPRComment(pullRequestURL, comment);
