@@ -756,7 +756,7 @@ Release tarballs are available at:
 
  The common code to deal with "chunked file format" that is shared
  by the multi-pack-index and commit-graph files have been factored
- out, to help codepaths for both filetypes to become more rebust.
+ out, to help codepaths for both filetypes to become more robust.
 
  Will merge to 'next' after waiting for a few days.
 
