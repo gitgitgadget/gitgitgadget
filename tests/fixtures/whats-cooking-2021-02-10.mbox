@@ -1148,7 +1148,7 @@ Release tarballs are available at:
  . update-index: use istate->cache_nr over active_nr
  . update-index: use istate->cache over active_cache
  . update-index: drop the_index, the_repository
- . rm: remove compatilibity macros
+ . rm: remove compatibility macros
  . mv: remove index compatibility macros
  (this branch uses ag/merge-strategies-in-c.)
 
