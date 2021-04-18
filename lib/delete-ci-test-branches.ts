@@ -1,7 +1,7 @@
 import { Octokit } from "@octokit/rest";
 
 /*
-Tool for cleaning up old branchs left over from github-helper.test.ts
+Tool for cleaning up old branches left over from github-helper.test.ts
 tests that failed.  The branches are named with a timestamp.  Deleting
 branches will close open PRs.  This is primarily intended to be used by
 a workflow.  The default is to delete branches older than two days.
