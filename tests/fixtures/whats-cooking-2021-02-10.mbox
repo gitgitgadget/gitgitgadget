@@ -405,7 +405,7 @@ Release tarballs are available at:
  Will merge to 'next' after waiting for a few more days for comments.
 
 
-* cw/pack-vs-bigfilethreashold (2021-02-09) 2 commits
+* cw/pack-vs-bigfilethreshold (2021-02-09) 2 commits
  - fixup! doc: mention bigFileThreshold for packing
  - doc: mention bigFileThreshold for packing
 
