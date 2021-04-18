@@ -1,0 +1,13 @@
+# See https://github.com/check-spelling/check-spelling/wiki/Configuration-Examples:-excludes
+(?:^|/)(?i)COPYRIGHT
+(?:^|/)(?i)LICEN[CS]E
+(?:^|/)package(?:-lock)\.json$
+(?:^|/)vendor/
+ignore$
+\.lock$
+\.min\.
+\.mod$
+^images/gitgitgadget\.png$
+^script/lookup-commit\.sh$
+^\.github/
+^\.vscode/settings\.json$
