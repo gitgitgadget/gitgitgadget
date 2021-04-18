@@ -683,7 +683,7 @@ Release tarballs are available at:
  - unix-socket: do not call die in unix_stream_connect()
  - unix-socket: add no-chdir option to unix_stream_listen()
  - unix-socket: add options to unix_stream_listen()
- - unix-socket: elimiate static unix_stream_socket() helper function
+ - unix-socket: eliminate static unix_stream_socket() helper function
  - simple-ipc: add t/helper/test-simple-ipc and t0052
  - simple-ipc: add win32 implementation
  - simple-ipc: design documentation for new IPC mechanism
