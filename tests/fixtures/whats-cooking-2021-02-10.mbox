@@ -405,7 +405,7 @@ Release tarballs are available at:
  Will merge to 'next' after waiting for a few more days for comments.
 
 
-* cw/pack-vs-bigfilethreashold (2021-02-09) 2 commits
+* cw/pack-vs-bigfilethreshold (2021-02-09) 2 commits
  - fixup! doc: mention bigFileThreshold for packing
  - doc: mention bigFileThreshold for packing
 
@@ -683,7 +683,7 @@ Release tarballs are available at:
  - unix-socket: do not call die in unix_stream_connect()
  - unix-socket: add no-chdir option to unix_stream_listen()
  - unix-socket: add options to unix_stream_listen()
- - unix-socket: elimiate static unix_stream_socket() helper function
+ - unix-socket: eliminate static unix_stream_socket() helper function
  - simple-ipc: add t/helper/test-simple-ipc and t0052
  - simple-ipc: add win32 implementation
  - simple-ipc: design documentation for new IPC mechanism
@@ -756,7 +756,7 @@ Release tarballs are available at:
 
  The common code to deal with "chunked file format" that is shared
  by the multi-pack-index and commit-graph files have been factored
- out, to help codepaths for both filetypes to become more rebust.
+ out, to help codepaths for both filetypes to become more robust.
 
  Will merge to 'next' after waiting for a few days.
 
@@ -1148,7 +1148,7 @@ Release tarballs are available at:
  . update-index: use istate->cache_nr over active_nr
  . update-index: use istate->cache over active_cache
  . update-index: drop the_index, the_repository
- . rm: remove compatilibity macros
+ . rm: remove compatibility macros
  . mv: remove index compatibility macros
  (this branch uses ag/merge-strategies-in-c.)
 

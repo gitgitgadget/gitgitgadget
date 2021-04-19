@@ -132,7 +132,7 @@ linking to the corresponding PR/commits on GitHub.
 GitGitGadget stores its metadata in the form of Git notes, in
 `refs/notes/gitgitgadget` in <https://github.com/gitgitgadget/git>.
 
-Note: GitGitGadgetd uses Git notes, not only to keep a record, and to make
+Note: GitGitGadget uses Git notes, not only to keep a record, and to make
 debugging easier, but also to be able to fix bugs manually when necessary.
 
 We follow the original idea as `refs/notes/amlog` in
