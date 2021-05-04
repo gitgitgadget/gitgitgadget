@@ -465,13 +465,16 @@ export class GitHubGlue {
             username: login,
         });
 
-
-        return {
-            email: response.data.email,
-            login: response.data.login,
-            name: response.data.name || "",
-            type: response.data.type,
-        };
+        if (response.status === 200 ) {
+            return {
+                email: response.data.email,
+                login: response.data.login,
+                name: response.data.name || "",
+                type: response.data.type,
+            };
+        } else {
+            throw new Error(`GitHub unresponsive for getByUsername`);
+        }
     }
 
     protected async ensureAuthenticated(repositoryOwner: string):
