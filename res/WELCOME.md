@@ -21,7 +21,7 @@ Before you can contribute the patches, your GitHub username needs to be added to
 
 Both the person who commented `/allow` and the PR author are able to `/allow` you.
 
-An alternative is the channel [`#git-devel`](https://webchat.freenode.net/#git-devel) on the FreeNode IRC network:
+An alternative is the channel [`#git-devel`](https://web.libera.chat/#git-devel) on the Libera Chat IRC network:
 
     <newcontributor> I've just created my first PR, could someone please /allow me? https://github.com/gitgitgadget/git/pull/12345
     <veteran> newcontributor: it is done
@@ -55,4 +55,4 @@ To send a new iteration, just add another PR comment with the contents: `/submit
 
 New contributors who want advice are encouraged to join [git-mentoring@googlegroups.com](https://groups.google.com/forum/#!forum/git-mentoring), where volunteers who regularly contribute to Git are willing to answer newbie questions, give advice, or otherwise provide mentoring to interested contributors. You must join in order to post or view messages, but anyone can join.
 
-You may also be able to find help in real time in the developer IRC channel, [`#git-devel`](https://webchat.freenode.net/#git-devel) on Freenode. Remember that IRC does not support offline messaging, so if you send someone a private message and log out, they cannot respond to you. The scrollback of `#git-devel` is [archived](https://colabti.org/irclogger//irclogger_logs/git-devel), though.
+You may also be able to find help in real time in the developer IRC channel, [`#git-devel`](https://web.libera.chat/#git-devel) on Libera Chat. Remember that IRC does not support offline messaging, so if you send someone a private message and log out, they cannot respond to you. The scrollback of `#git-devel` is [archived](https://colabti.org/irclogger//irclogger_logs/git-devel), though.
