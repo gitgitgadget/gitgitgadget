@@ -34,7 +34,7 @@
     "testRegex": "/tests/(?!test-lib).*\\.(ts|tsx|js)$"
   },
   "devDependencies": {
-    "@types/html-to-text": "^6.0.0",
+    "@types/html-to-text": "^8.0.0",
     "@types/imap-simple": "^4.2.4",
     "@types/jest": "^26.0.23",
     "@types/json-stable-stringify": "^1.0.32",
