@@ -1,0 +1,19 @@
+name: Auto-approve Dependabot Pull Requests
+
+on: [pull_request_target]
+
+jobs:
+  auto-approve:
+    if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/github-script@v4
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          await github.pulls.createReview({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: context.payload.pull_request.number,
+            event: "APPROVE",
+          });
