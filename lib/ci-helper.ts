@@ -32,6 +32,7 @@ export class CIHelper {
     protected testing: boolean;
     private gggNotesUpdated: boolean;
     private mail2CommitMapUpdated: boolean;
+    protected maxCommitsExceptions = new Set();
 
     public constructor(workDir?: string, skipUpdate?: boolean,
                        gggConfigDir = ".") {
@@ -698,7 +699,8 @@ export class CIHelper {
         Promise<boolean> {
         let result = true;
         const maxCommits = 30;
-        if (pr.commits && pr.commits > maxCommits) {
+        if (!this.maxCommitsExceptions.has(pr.pullRequestURL) &&
+            pr.commits && pr.commits > maxCommits) {
             await addComment(`The pull request has ${pr.commits
                              } commits.  The max allowed is ${maxCommits
                              }.  Please split the patch series into ${

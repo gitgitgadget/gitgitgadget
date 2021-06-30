@@ -95,6 +95,14 @@ class TestCIHelper extends CIHelper {
             // eslint-disable-next-line @typescript-eslint/require-await
             Promise<IGitHubUser> => o );
     }
+
+    public addMaxCommitsException(pullRequestURL: string): void {
+        this.maxCommitsExceptions.add(pullRequestURL);
+    }
+
+    public removeMaxCommitsException(pullRequestURL: string): void {
+        this.maxCommitsExceptions.delete(pullRequestURL);
+    }
 }
 
 // Create three repos.
@@ -887,6 +895,14 @@ test("handle push/comment too many commits fails", async () => {
     // fail for too many commits on submit
     await ci.handleComment("gitgitgadget", 433865360);
     expect(ci.addPRCommentCalls[0][1]).toMatch(failMsg);
+    ci.addPRCommentCalls.length = 0;
+
+    ci.addMaxCommitsException(prInfo.pullRequestURL);
+    await ci.handleComment("gitgitgadget", 433865360);
+    // There will still be a comment, but about upper-case after prefix
+    expect(ci.addPRCommentCalls).toHaveLength(1);
+    expect(ci.addPRCommentCalls[0][1]).not.toMatch(failMsg);
+    ci.removeMaxCommitsException(prInfo.pullRequestURL);
     ci.addPRCommentCalls.length = 0;
 
     // fail for too many commits on preview
