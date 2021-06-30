@@ -32,7 +32,9 @@ export class CIHelper {
     protected testing: boolean;
     private gggNotesUpdated: boolean;
     private mail2CommitMapUpdated: boolean;
-    protected maxCommitsExceptions = new Set();
+    protected maxCommitsExceptions = new Set([
+        "https://github.com/gitgitgadget/git/pull/923"
+    ]);
 
     public constructor(workDir?: string, skipUpdate?: boolean,
                        gggConfigDir = ".") {
