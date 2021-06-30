@@ -1,5 +1,5 @@
 import { Octokit } from "@octokit/rest";
-import commander = require("commander");
+import { Command } from "commander";
 import { deleteBranches,
     deletionOptions } from "../lib/delete-ci-test-branches";
 import { GitHubGlue } from "../lib/github-glue";
@@ -27,6 +27,8 @@ class GitHubProxy extends GitHubGlue {
         this.octo = this.client;
     }
 }
+
+const commander = new Command();
 
 commander.version("1.0.0")
     .usage("[options]")

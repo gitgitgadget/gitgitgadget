@@ -1,12 +1,14 @@
 import { createAppAuth } from "@octokit/auth-app";
 import { Octokit } from "@octokit/rest";
-import commander = require("commander");
+import { Command } from "commander";
 import { CIHelper } from "../lib/ci-helper";
 import { isDirectory } from "../lib/fs-util";
 import { git, gitConfig } from "../lib/git";
 import { GitHubGlue } from "../lib/github-glue";
 import { toPrettyJSON } from "../lib/json-util";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata";
+
+const commander = new Command();
 
 commander.version("1.0.0")
     .usage("[options] ( update-open-prs | lookup-upstream-commit | "
