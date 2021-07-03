@@ -200,7 +200,7 @@ test("pull requests", async () => {
 
         const commitComment = "comment about commit";
         const reviewResult = await github
-            .addPRCommitComment(prData.html_url, cFile.data.commit.sha,
+            .addPRCommitComment(prData.html_url, cFile.data.commit.sha || '',
                                 repoDir, commitComment);
 
         const commentReply =
