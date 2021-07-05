@@ -38,7 +38,7 @@
     "@types/imap-simple": "^4.2.4",
     "@types/jest": "^26.0.23",
     "@types/json-stable-stringify": "^1.0.32",
-    "@types/jsonwebtoken": "^8.5.2",
+    "@types/jsonwebtoken": "^8.5.3",
     "@types/libqp": "^1.1.0",
     "@types/marked": "^2.0.3",
     "@types/nodemailer": "^6.4.2",
