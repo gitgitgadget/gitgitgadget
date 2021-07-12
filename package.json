@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@types/html-to-text": "^8.0.1",
-    "@types/imap-simple": "^4.2.4",
+    "@types/imap-simple": "^4.2.5",
     "@types/jest": "^26.0.24",
     "@types/json-stable-stringify": "^1.0.33",
     "@types/jsonwebtoken": "^8.5.4",
