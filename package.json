@@ -36,7 +36,7 @@
   "devDependencies": {
     "@types/html-to-text": "^8.0.0",
     "@types/imap-simple": "^4.2.4",
-    "@types/jest": "^26.0.23",
+    "@types/jest": "^26.0.24",
     "@types/json-stable-stringify": "^1.0.32",
     "@types/jsonwebtoken": "^8.5.3",
     "@types/libqp": "^1.1.0",
