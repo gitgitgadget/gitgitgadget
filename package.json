@@ -39,7 +39,7 @@
     "@types/jest": "^26.0.24",
     "@types/json-stable-stringify": "^1.0.32",
     "@types/jsonwebtoken": "^8.5.3",
-    "@types/libqp": "^1.1.0",
+    "@types/libqp": "^1.1.1",
     "@types/marked": "^2.0.4",
     "@types/nodemailer": "^6.4.4",
     "@types/rfc2047": "^2.0.1",
