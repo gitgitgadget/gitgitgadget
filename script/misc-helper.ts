@@ -169,6 +169,21 @@ async function getCIHelper(): Promise<CIHelper> {
         const gitGitCommit = commander.args[2];
 
         await ci.setUpstreamCommit(originalCommit, gitGitCommit);
+    } else if (command === "set-tip-commit-in-git.git") {
+        if (commander.args.length !== 3) {
+            process.stderr.write(`${command}: needs 2 parameters:${
+                "\n"}PR URL and tip commit in git.git`);
+            process.exit(1);
+        }
+        const pullRequestURL = commander.args[1];
+        const gitGitCommit = commander.args[2];
+
+        const data = await ci.getPRMetadata(pullRequestURL);
+        if (!data) {
+            throw new Error(`No metadata for ${pullRequestURL}`);
+        }
+        data.tipCommitInGitGit = gitGitCommit;
+        await ci.notes.set(pullRequestURL, data, true);
     } else if (command === "set-previous-iteration") {
         if (commander.args.length !== 9) {
             process.stderr.write(`${command}: needs PR URL, iteration, ${
