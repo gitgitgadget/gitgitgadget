@@ -271,7 +271,7 @@ test("identify merge that integrated some commit", async () => {
     const commitD = await repo.merge("d", commitF);
     await repo.git(["update-ref", "refs/remotes/upstream/seen", commitD]);
 
-    const ci = new CIHelper(repo.workDir);
+    const ci = new CIHelper(repo.workDir, true);
     expect(commitB).not.toBeUndefined();
     expect(await ci.identifyMergeCommit("seen", commitG)).toEqual(commitD);
     expect(await ci.identifyMergeCommit("seen", commitE)).toEqual(commitC);

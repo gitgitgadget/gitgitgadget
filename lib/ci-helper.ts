@@ -457,6 +457,8 @@ export class CIHelper {
     public async identifyMergeCommit(upstreamBranch: string,
                                      integratedCommit: string):
         Promise<string | undefined> {
+        await this.maybeUpdateMail2CommitMap();
+
         const revs =
             await git(["rev-list", "--ancestry-path", "--parents",
                        `${integratedCommit}..upstream/${upstreamBranch}`],
