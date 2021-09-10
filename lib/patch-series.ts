@@ -1,5 +1,6 @@
 import addressparser = require("nodemailer/lib/addressparser");
-import { encodeWords } from "nodemailer/lib/mime-funcs";
+import mimeFuncs = require("nodemailer/lib/mime-funcs");
+// import { encodeWords } from "nodemailer/lib/mime-funcs";
 import {
     commitExists, git, gitCommandExists, gitConfig, revListCount, revParse,
 } from "./git";
@@ -419,7 +420,7 @@ export class PatchSeries {
     }
 
     protected static encodeSender(sender: string): string {
-        const encoded = encodeWords(sender);
+        const encoded = mimeFuncs.encodeWords(sender);
 
         /* Don't quote if already quoted */
         if (encoded.startsWith("\"") && encoded.match(/"\s*</)) {
