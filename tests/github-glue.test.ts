@@ -583,6 +583,5 @@ test("test missing values in response using small schema", async () => {
     response = userNameResponse; // reset response value
 
     (sampleUser as IPrivateUser).name = null;
-    // if (!response.data.name) {
-    await expect(github.getGitHubUserInfo(owner)).toBeTruthy();
+    expect(await github.getGitHubUserInfo(owner)).toBeTruthy();
 });
