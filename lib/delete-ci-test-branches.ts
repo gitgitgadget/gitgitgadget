@@ -60,19 +60,22 @@ export type deletionOptions = {
  * @param options deletionOptions to override default of two days
  */
 export async function deleteBranches( octocat: Octokit, owner: string,
-    repo: string, options?: deletionOptions): Promise<void> {
+    repo: string, options: deletionOptions = {}): Promise<void> {
 
     if (!owner || !repo) {
         throw new Error("Missing owner or repo name.");
     }
 
     const expires = new Date();
-    const userOptions = options || { hours: 48 };
 
-    if (userOptions.hours) {
-        expires.setUTCHours(0 - userOptions.hours, 0 ,0);
-    } else if (userOptions.minutes) {
-        expires.setUTCMinutes(expires.getUTCMinutes() - userOptions.minutes);
+    if (!options.hours && !options.minutes) {
+        options.hours = 48;
+    }
+
+    if (options.hours) {
+        expires.setUTCHours(0 - options.hours, 0 ,0);
+    } else if (options.minutes) {
+        expires.setUTCMinutes(expires.getUTCMinutes() - options.minutes);
     } else {
         throw new Error("Invalid options passed.");
     }
@@ -122,7 +125,7 @@ export async function deleteBranches( octocat: Octokit, owner: string,
                 const mutate = `mutation DeleteBranch {
                     deleteRef(input:{refId: "${br.id}"}) {
                     clientMutationId }}`;
-                if (!userOptions.dryRun) {
+                if (!options.dryRun) {
                     return octocat.graphql(mutate);
                 } else {
                     console.log(`Deletion of refId: "${br.id}" skipped`);

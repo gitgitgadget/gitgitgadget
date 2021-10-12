@@ -27,11 +27,17 @@ commander.version("1.0.0")
             "Do not update the local refs (useful for debugging)")
     .parse(process.argv);
 
+interface commanderOptions {
+    gitgitgadgetWorkDir: string | undefined;
+    gitWorkDir: string | undefined;
+    skipUpdate: boolean | undefined;
+}
+
 if (commander.args.length === 0) {
     commander.help();
 }
 
-const commandOptions = commander.opts();
+const commandOptions = commander.opts<commanderOptions>();
 
 async function getGitGitWorkDir(): Promise<string> {
     if (!commandOptions.gitWorkDir) {
@@ -49,7 +55,7 @@ async function getGitGitWorkDir(): Promise<string> {
             commandOptions.gitWorkDir,
         ]);
     }
-    return commandOptions.gitWorkDir as string;
+    return commandOptions.gitWorkDir;
 }
 
 async function getCIHelper(): Promise<CIHelper> {

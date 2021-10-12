@@ -48,21 +48,29 @@ before last midnight`,
             "do not delete the refs (useful for debugging)")
     .parse(process.argv);
 
+interface commanderOptions {
+    dryRun: boolean | undefined;
+    hours: number | undefined;
+    minutes: number | undefined;
+    owner: string;
+    repo: string;
+}
+
 if (commander.args.length > 0) {
     commander.help();
 }
 
 (async (): Promise<void> => {
     const options: deletionOptions = {};
-    const commandOptions = commander.opts();
+    const commandOptions = commander.opts<commanderOptions>();
     if (commandOptions.dryRun) {
         options.dryRun = true;
     }
 
     if (commandOptions.hours) {
-        options.hours = commandOptions.hours as number;
+        options.hours = commandOptions.hours;
     } else if (commandOptions.minutes) {
-        options.minutes = commandOptions.minutes as number;
+        options.minutes = commandOptions.minutes;
     }
 
     const github = new GitHubProxy(/* repoDir */);
