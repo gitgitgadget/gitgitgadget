@@ -67,7 +67,7 @@ export function git(args: string[], options?: IGitOptions | undefined):
                     return true;
                 };
                 let buffer = "";
-                process.stdout.on("data", (chunk: any) => {
+                process.stdout.on("data", (chunk: string) => {
                     buffer += chunk;
                     for (;;) {
                         const eol = buffer.indexOf("\n");

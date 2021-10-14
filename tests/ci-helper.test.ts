@@ -42,7 +42,7 @@ class TestCIHelper extends CIHelper {
     public ghGlue: GitHubGlue;      // not readonly reference
     public addPRCommentCalls: string[][]; // reference mock.calls
     public updatePRCalls: string[][]; // reference mock.calls
-    public addPRLabelsCalls: any[][]; // reference mock.calls
+    public addPRLabelsCalls: Array<[_: string, labels: string[]]>;
 
     public constructor(workDir?: string, debug = false, gggDir = ".") {
         super(workDir, debug, gggDir);
