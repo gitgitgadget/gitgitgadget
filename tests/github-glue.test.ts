@@ -461,7 +461,7 @@ test("test missing values in response using small schema", async () => {
         commits: 1,
     };
 
-    const prListResponse: OctokitResponse<[IPullRequestSimple]> = {
+    const prListResponse: OctokitResponse<IPullRequestSimple[]> = {
         status: 200,
         headers: { status: "200 OK" },
         url: "",
@@ -471,7 +471,13 @@ test("test missing values in response using small schema", async () => {
     // Response for any octokit calls - will be returned by the hook.wrap()
     // being set below.
 
-    let response: any = prListResponse;
+    let response: OctokitResponse<IPullRequestSimple[]> |
+        OctokitResponse<IPullRequestSimple> |
+        OctokitResponse<IIssueComment> |
+        OctokitResponse<[ICommit]> |
+        OctokitResponse<IPrivateUser>;
+
+    response = prListResponse;
 
     // eslint-disable-next-line @typescript-eslint/require-await
     github.octo.hook.wrap("request", async () => {
