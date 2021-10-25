@@ -40,7 +40,7 @@
     "@types/json-stable-stringify": "^1.0.33",
     "@types/jsonwebtoken": "^8.5.5",
     "@types/libqp": "^1.1.1",
-    "@types/marked": "^3.0.1",
+    "@types/marked": "^3.0.2",
     "@types/nodemailer": "^6.4.4",
     "@types/rfc2047": "^2.0.1",
     "@typescript-eslint/eslint-plugin": "^5.1.0",
