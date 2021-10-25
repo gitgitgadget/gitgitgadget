@@ -1,40 +1,30 @@
-import { expect, jest, test } from "@jest/globals";
+import { afterAll, beforeAll, expect, jest, test } from "@jest/globals";
 import { CIHelper } from "../lib/ci-helper";
-import { gitConfig } from "../lib/git";
 import { GitNotes } from "../lib/git-notes";
 import {
      GitHubGlue, IGitHubUser, IPRComment, IPRCommit, IPullRequestInfo,
 } from "../lib/github-glue";
 import { IMailMetadata } from "../lib/mail-metadata";
-import { connect, ImapSimple } from "imap-simple";
+import { testSmtpServer } from "test-smtp-server";
 import { testCreateRepo, TestRepo } from "./test-lib";
-import { promisify } from "util";
-const sleep = promisify(setTimeout);
 
 jest.setTimeout(180000);
 
-// smtp testing support.  NodeMailer suggests using ethereal.email.
-// The config must be set for the submit/preview tests to work.  They
-// are skipped if the config is not set.
-//
-// Sample config settings:
-// [gitgitgadget]
-//  CIimapHost = imap.ethereal.email
-//  CIsmtpUser = first.last@ethereal.email
-//  CIsmtphost = smtp.ethereal.email
-//  CIsmtppass = feedeadbeeffeeddeadbeef
-//  CIsmtpopts = {port: 587, secure: false, tls: {rejectUnauthorized: false}}
+const eMailOptions = {
+    smtpserver: new testSmtpServer(),
+    smtpOpts: ""
+};
 
-async function getEmailInfo():
-    Promise <{ smtpUser: string; smtpHost: string; imapHost: string;
-               smtpPass: string; smtpOpts: string; }> {
-    const smtpUser = await gitConfig("gitgitgadget.CIsmtpUser") || "";
-    const smtpHost = await gitConfig("gitgitgadget.CIsmtpHost") || "";
-    const smtpPass = await gitConfig("gitgitgadget.CIsmtpPass") || "";
-    const smtpOpts = await gitConfig("gitgitgadget.CIsmtpOpts") || "";
-    const imapHost = await gitConfig("gitgitgadget.CIimapHost") || "";
-    return { smtpUser, smtpHost, imapHost, smtpPass, smtpOpts };
-}
+beforeAll((): void => {
+    eMailOptions.smtpserver.startServer(); // start listening
+    eMailOptions.smtpOpts =
+        `{port: ${eMailOptions.smtpserver.getPort()
+        }, secure: true, tls: {rejectUnauthorized: false}}`;
+});
+
+afterAll((): void => {
+    eMailOptions.smtpserver.stopServer(); // terminate server
+});
 
 // Mocking class to replace GithubGlue with mock of GitHubGlue
 
@@ -139,29 +129,21 @@ async function setupRepos(instance: string):
         "https://github.com/gitgitgadget/git",
     ]);
 
-    const { smtpUser, smtpHost, smtpPass, smtpOpts } =
-        await getEmailInfo();
-
     await worktree.git([
-        "config", "--add", "gitgitgadget.smtpUser",
-        smtpUser ? smtpUser : "test",
+        "config", "--add", "gitgitgadget.smtpUser", "joe_user@example.com",
     ]);
 
     await worktree.git([
-        "config", "--add", "gitgitgadget.smtpHost",
-        smtpHost ? smtpHost : "test",
+        "config", "--add", "gitgitgadget.smtpHost", "localhost",
     ]);
 
     await worktree.git([
-        "config", "--add", "gitgitgadget.smtpPass",
-        smtpPass ? smtpPass : "test",
+        "config", "--add", "gitgitgadget.smtpPass", "secret",
     ]);
 
-    if (smtpOpts) {
-        await worktree.git([
-            "config", "--add", "gitgitgadget.smtpOpts", smtpOpts,
-        ]);
-    }
+    await worktree.git([
+        "config", "--add", "gitgitgadget.smtpOpts", eMailOptions.smtpOpts,
+    ]);
 
     const notes = new GitNotes(gggRemote.workDir);
     await notes.set("", {allowedUsers: ["ggg", "user1"]}, true);
@@ -179,72 +161,21 @@ async function setupRepos(instance: string):
 }
 
 /**
- * Connect to imap mail server.  Opens the INBOX as the current folder.
+ * Check the mail server for an email.
+ *
+ * @param messageId string to search for
  */
-async function imapConnect(): Promise <ImapSimple> {
-    const { smtpUser, smtpPass, imapHost } = await getEmailInfo();
+async function checkMsgId(messageId: string): Promise<boolean> {
+    const mails = eMailOptions.smtpserver.getEmails();
 
-    const config = {
-        imap: {
-            user: smtpUser,
-            password: smtpPass,
-            host: imapHost,
-            port: 993,
-            tls: true,
-            authTimeout: 3000
+    for (const mail of mails) {
+        const parsed = await mail.getParsed();
+        if (parsed.messageId?.match(messageId)) {
+            return true;
         }
-    };
+    }
 
-    const connection = await connect(config);
-    await connection.openBox("INBOX");
-
-    return connection;
-}
-
-/**
- * Terminate the imap mail server connection.
- *
- * @param connection
- */
-async function imapDisconnect(connection: ImapSimple): Promise <void> {
-    await connection.closeBox(false);
-    connection.end();
-}
-
-/**
- * Check the inbox to see if an email has arrived after 1 second.
- *
- * @param messageId string to search for in inbox
- */
-async function checkMsgId(messageId: string): Promise <boolean> {
-    await sleep(1000);
-    const connection = await imapConnect();
-
-    const searchCriteria = [
-        "UNSEEN"
-    ];
-
-    const fetchOptions = {
-        bodies: ["HEADER"],
-        markSeen: false
-    };
-
-    const results = await connection.search(searchCriteria, fetchOptions);
-
-    type bodyObject = {
-        "message-id": string;
-    };
-
-    const ids = results.map(res => {
-        const body = res.parts[0].body as bodyObject;
-        const id = body["message-id"][0];
-        const baseId = id.match(/\<(.*)\>/);
-        return (baseId && baseId[1]) ? baseId[1] : null ;
-    });
-
-    await imapDisconnect(connection);
-
-    return ids.includes(messageId);
+    return false;
 }
 
 test("identify merge that integrated some commit", async () => {
@@ -682,23 +613,19 @@ test("handle comment submit email success", async () => {
         title: "Submit a fun fix",
     };
 
-    const { smtpUser, imapHost } = await getEmailInfo();
+    ci.setGHGetPRInfo(prInfo);
+    ci.setGHGetPRComment(comment);
+    ci.setGHGetPRCommits(commits);
+    ci.setGHGetGitHubUserInfo(user);
 
-    if (smtpUser) {                 // if configured for this test
-        ci.setGHGetPRInfo(prInfo);
-        ci.setGHGetPRComment(comment);
-        ci.setGHGetPRCommits(commits);
-        ci.setGHGetGitHubUserInfo(user);
+    await ci.handleComment("gitgitgadget", 433865360);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(/Submitted as/);
 
-        await ci.handleComment("gitgitgadget", 433865360);
-        expect(ci.addPRCommentCalls[0][1]).toMatch(/Submitted as/);
-
-        const msgId = ci.addPRCommentCalls[0][1].match(/\[(.*)\]/);
-        expect(msgId).not.toBeUndefined();
-        if (msgId && msgId[1] && imapHost) {
-            const msgFound = await checkMsgId(msgId[1]);
-            expect(msgFound).toBeTruthy();
-        }
+    const msgId = ci.addPRCommentCalls[0][1].match(/\[(.*)\]/);
+    expect(msgId).not.toBeUndefined();
+    if (msgId && msgId[1]) {
+        const msgFound = await checkMsgId(msgId[1]);
+        expect(msgFound).toBeTruthy();
     }
 });
 
@@ -769,45 +696,41 @@ test("handle comment preview email success", async () => {
         title: "Preview a fun fix",
     };
 
-    const { smtpUser, imapHost } = await getEmailInfo();
+    ci.setGHGetPRInfo(prInfo);
+    ci.setGHGetPRComment(comment);
+    ci.setGHGetPRCommits(commits);
+    ci.setGHGetGitHubUserInfo(user);
 
-    if (smtpUser) {                 // if configured for this test
-        ci.setGHGetPRInfo(prInfo);
-        ci.setGHGetPRComment(comment);
-        ci.setGHGetPRCommits(commits);
-        ci.setGHGetGitHubUserInfo(user);
+    await ci.handleComment("gitgitgadget", 433865360);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(/Submitted as/);
 
-        await ci.handleComment("gitgitgadget", 433865360);
-        expect(ci.addPRCommentCalls[0][1]).toMatch(/Submitted as/);
+    const msgId1 = ci.addPRCommentCalls[0][1].match(/\[(.*)\]/);
+    expect(msgId1).not.toBeUndefined();
+    if (msgId1 && msgId1[1]) {
+        const msgFound1 = await checkMsgId(msgId1[1]);
+        expect(msgFound1).toBeTruthy();
+    }
 
-        const msgId1 = ci.addPRCommentCalls[0][1].match(/\[(.*)\]/);
-        expect(msgId1).not.toBeUndefined();
-        if (msgId1 && msgId1[1] && imapHost) {
-            const msgFound1 = await checkMsgId(msgId1[1]);
-            expect(msgFound1).toBeTruthy();
-        }
+    comment.body = " /preview";
+    ci.setGHGetPRComment(comment);
+    await ci.handleComment("gitgitgadget", 433865360); // do it again
+    expect(ci.addPRCommentCalls[1][1])
+        .toMatch(/Preview email sent as/);
 
-        comment.body = " /preview";
-        ci.setGHGetPRComment(comment);
-        await ci.handleComment("gitgitgadget", 433865360); // do it again
-        expect(ci.addPRCommentCalls[1][1])
-            .toMatch(/Preview email sent as/);
+    const msgId2 = ci.addPRCommentCalls[0][1].match(/\[(.*)\]/);
+    expect(msgId2).not.toBeUndefined();
+    if (msgId2 && msgId2[1]) {
+        const msgFound2 = await checkMsgId(msgId2[1]);
+        expect(msgFound2).toBeTruthy();
+    }
 
-        const msgId2 = ci.addPRCommentCalls[0][1].match(/\[(.*)\]/);
-        expect(msgId2).not.toBeUndefined();
-        if (msgId2 && msgId2[1] && imapHost) {
-            const msgFound2 = await checkMsgId(msgId2[1]);
-            expect(msgFound2).toBeTruthy();
-        }
+    await ci.handleComment("gitgitgadget", 433865360); // should still be v2
 
-        await ci.handleComment("gitgitgadget", 433865360); // should still be v2
-
-        const msgId3 = ci.addPRCommentCalls[0][1].match(/\[(.*)\]/);
-        expect(msgId3).not.toBeUndefined();
-        if (msgId3 && msgId3[1] && imapHost) {
-            const msgFound3 = await checkMsgId(msgId3[1]);
-            expect(msgFound3).toBeTruthy();
-        }
+    const msgId3 = ci.addPRCommentCalls[0][1].match(/\[(.*)\]/);
+    expect(msgId3).not.toBeUndefined();
+    if (msgId3 && msgId3[1]) {
+        const msgFound3 = await checkMsgId(msgId3[1]);
+        expect(msgFound3).toBeTruthy();
     }
 });
 
