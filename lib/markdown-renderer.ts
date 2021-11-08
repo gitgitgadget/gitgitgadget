@@ -1,5 +1,5 @@
 import { htmlToText, HtmlToTextOptions } from "html-to-text";
-import marked from "marked";
+import { marked } from "marked";
 
 // Provide our own renderings of headings and block quotes.
 
@@ -75,5 +75,5 @@ export function md2text(markdown: string, columns = 76): string {
         ],
     };
 
-    return htmlToText(marked(markdown), formatOptions);
+    return htmlToText(marked.parse(markdown), formatOptions);
 }
