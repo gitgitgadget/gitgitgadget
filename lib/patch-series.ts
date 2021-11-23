@@ -450,7 +450,7 @@ export class PatchSeries {
             let header = match[1];
 
             const authorMatch =
-                header.match(/^([^]*\nFrom: )(.*?)(\n(?![ \t])[^]*)$/);
+                header.match(/^([^]*\nFrom: )([^]*?)(\n(?![ \t])[^]*)$/);
             if (!authorMatch) {
                 throw new Error("No From: line found in header:\n\n" + header);
             }

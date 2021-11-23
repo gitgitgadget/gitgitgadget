@@ -8,7 +8,8 @@ jest.setTimeout(60000);
 const mbox1 =
     `From 38d1082511bb02a709f203481c2787adc6e67c02 Mon Sep 17 00:00:00 2001
 Message-Id: <cover.3.git.author@example.com>
-From: A U Thor <author@example.com>
+From: A U Thor
+ <author@example.com>
 Date: Tue, 1 May 2018 09:00:00 -0400
 Subject: [PATCH 0/1] *** SUBJECT HERE ***
 
