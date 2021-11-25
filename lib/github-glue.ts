@@ -111,13 +111,18 @@ export class GitHubGlue {
         const url = GitGitGadget.parsePullRequestURL(pullRequestURL);
         const pr = await this.getPRInfo(url[0], url[2]);
         const trimBody = pr.body.trimRight();
-        const bodyEnd = trimBody.split(/\r?\n\s*?\r?\n/).pop() as string;
+        let footer = trimBody.match(/^[^]+\r?\n\s*?\r?\n([^]+)$/);
+
+        // handle PR descriptions that have no body, just footers
+        if (!footer && !trimBody.match(/\r?\n\r?\n/)) {
+            footer = trimBody.match(/^([a-z][-a-z0-9]+:\s*[^]+)$/i);
+        }
 
         let found = false;
         let footerSeparator = "\r\n";
 
-        if (bodyEnd.match(/:/)) try {
-            bodyEnd.split(/\r?\n/).reverse().forEach(line => {
+        if (footer && footer[1].match(/:/)) try {
+            footer[1].split(/\r?\n/).reverse().forEach(line => {
                 const match = line.match(/^([a-z][-a-z0-9]+):\s*(.*)$/i);
 
                 if (!match) {       // stop if not a footer
@@ -145,7 +150,7 @@ export class GitHubGlue {
             const user = await this.getGitHubUserInfo(pr.author);
 
             if (!user.email || ccLower !== user.email.toLowerCase()) {
-                await this.updatePR(url[0], url[2], `${pr.body}${
+                await this.updatePR(url[0], url[2], `${trimBody}${
                     footerSeparator}\r\ncc: ${cc}`);
                 await this.addPRComment(pullRequestURL, `User \`${
                                         cc}\` has been added to the cc: list.`);

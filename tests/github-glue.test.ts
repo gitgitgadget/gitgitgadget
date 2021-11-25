@@ -309,6 +309,12 @@ test("add PR cc requests", async () => {
     expect(updatePR.mock.calls).toHaveLength(2);
     updatePR.mock.calls.length = 0;
 
+    // Test with 3 linefeeds present
+    prInfo.body = `Test\r\n\r\n\r\ncc: ${prCc}`;
+    await github.addPRCc(prInfo.pullRequestURL, prCc);
+    expect(updatePR.mock.calls).toHaveLength(0);
+    updatePR.mock.calls.length = 0;
+
     // Test with linefeeds and unknown footers
     prInfo.body = `Test\r\n \t\r\nbb: x\r\ncc: ${prCc}`;
     await github.addPRCc(prInfo.pullRequestURL, prCc);
