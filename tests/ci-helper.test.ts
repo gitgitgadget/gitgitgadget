@@ -1264,7 +1264,7 @@ test("Handle comment cc", async () => {
     ci.updatePRCalls.length = 0;
 
     // email will not be re-added to list
-    prInfo.body = "changes\n\ncc: <abody@example.com>";
+    prInfo.body = "changes\r\n\r\ncc: <abody@example.com>";
 
     await ci.handleComment("gitgitgadget", prNumber);
 
