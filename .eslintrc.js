@@ -1,7 +1,7 @@
 module.exports = {
     "env": {
         "es6": true,
-        node: true,
+        "node": true
     },
     "extends": [
         "plugin:@typescript-eslint/recommended",
@@ -30,8 +30,11 @@ module.exports = {
         "@typescript-eslint/naming-convention": [
             "error",
             {
-              "selector": "variable",
-              "format": ["camelCase", "snake_case"]
+                "format": [
+                    "camelCase",
+                    "snake_case"
+                ],
+                "selector": "variable"
             }
         ],
         "@typescript-eslint/no-unused-expressions": "error",
@@ -39,13 +42,12 @@ module.exports = {
         "@typescript-eslint/prefer-function-type": "error",
         "@typescript-eslint/prefer-regexp-exec": "off",
         "@typescript-eslint/restrict-template-expressions": "off",
-        // path is never (not allowed) for default
         "@typescript-eslint/triple-slash-reference": [
             "error",
             {
+                "lib": "always",
                 "path": "always",
-                "types": "prefer-import",
-                "lib": "always"
+                "types": "prefer-import"
             }
         ],
         "@typescript-eslint/unified-signatures": "error",
@@ -68,14 +70,19 @@ module.exports = {
             "undefined"
         ],
         "id-match": "error",
+        "jest/no-disabled-tests": "warn",
+        "jest/no-focused-tests": "error",
+        "jest/no-identical-title": "error",
+        "jest/prefer-to-have-length": "warn",
+        "jest/valid-expect": "error",
         "jsdoc/check-alignment": "error",
         "jsdoc/check-indentation": [
             "error",
             {
-                "excludeTags":[
-                    "param",
-                ],
-            },
+                "excludeTags": [
+                    "param"
+                ]
+            }
         ],
         "jsdoc/newline-after-description": "error",
         "max-classes-per-file": [
@@ -125,11 +132,6 @@ module.exports = {
                 ]
             }
         ],
-        "use-isnan": "error",
-        "jest/no-disabled-tests": "warn",
-        "jest/no-focused-tests": "error",
-        "jest/no-identical-title": "error",
-        "jest/prefer-to-have-length": "warn",
-        "jest/valid-expect": "error"
+        "use-isnan": "error"
     }
 };
