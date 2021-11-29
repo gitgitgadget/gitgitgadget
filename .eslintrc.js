@@ -14,6 +14,7 @@ module.exports = {
         "sourceType": "module"
     },
     "plugins": [
+        "anti-trojan-source",
         "eslint-plugin-jest",
         "eslint-plugin-jsdoc",
         "@typescript-eslint"
@@ -51,6 +52,7 @@ module.exports = {
             }
         ],
         "@typescript-eslint/unified-signatures": "error",
+        "anti-trojan-source/no-bidi": "error",
         "complexity": "off",
         "constructor-super": "error",
         "eqeqeq": [
