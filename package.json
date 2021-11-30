@@ -14,7 +14,7 @@
     "cleanbranch": "node ./build/script/delete-test-branches.js",
     "lint": "eslint -c .eslintrc.js --ext .ts,.js \"{lib,script,tests}/**/*.{ts,tsx,js}\"",
     "start": "node server.js",
-    "test": "npm run lint && jest --env=node",
+    "test": "jest --env=node",
     "test:watch": "jest --watch --notify --notifyMode=change --coverage",
     "ci": "npm run lint && jest --env=node --ci --reporters=default --reporters=jest-junit"
   },
@@ -47,6 +47,7 @@
     "@typescript-eslint/parser": "^5.4.0",
     "eslint": "^8.3.0",
     "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-anti-trojan-source": "^1.0.6",
     "eslint-plugin-jest": "^25.3.0",
     "eslint-plugin-jsdoc": "^37.0.3",
     "jest": "^27.4.0",

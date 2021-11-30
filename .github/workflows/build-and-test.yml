@@ -105,6 +105,10 @@ jobs:
       run: npm ci
       working-directory: gitgitgadget
 
+    - name: Run linter
+      run: npm run lint
+      working-directory: gitgitgadget
+
     - name: Run build
       run: npm run build
       working-directory: gitgitgadget
