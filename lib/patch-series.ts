@@ -850,6 +850,8 @@ export class PatchSeries {
             await this.sendMBox(mails.join("\n"));
         }
 
+        if (this.options.noUpdate) return this.metadata;
+
         logger.log("Updating the mail metadata");
         let isCoverLetter: boolean = mails.length > 1;
         for (const mail of mails) {
@@ -904,7 +906,7 @@ export class PatchSeries {
             await this.notes.set(key, this.metadata, true);
         }
 
-        if (!this.options.noUpdate && publishTagsAndNotesToRemote) {
+        if (publishTagsAndNotesToRemote) {
             await git(["push", publishTagsAndNotesToRemote, this.notes.notesRef,
                        `refs/tags/${tagName}`],
                       { workDir: this.notes.workDir });
