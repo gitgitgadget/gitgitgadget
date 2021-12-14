@@ -106,7 +106,25 @@ async function getCIHelper(): Promise<CIHelper> {
 
                 if (meta.baseCommit && meta.headCommit) {
                     for (const rev of await ci.getOriginalCommitsForPR(meta)) {
-                        const messageID = await ci.notes.getLastCommitNote(rev);
+                        const getMessageID = async (): Promise<string> => {
+                            try {
+                                return await ci.notes.getLastCommitNote(rev);
+                            } catch (e) {
+                                if (!`${e}`.match(/no note found/)) throw e;
+                            }
+                            const match = meta.coverLetterMessageId &&
+                                meta.coverLetterMessageId
+                                .match(/(\d+)\.gitgitgadget@gmail\.com$/);
+                            if (!match) {
+                                throw new Error(`No Message-ID for ${rev}`);
+                            }
+                            const messageID =
+                                `${rev}.${match[1]}.git.gitgitgadget@gmail.com`;
+                            await ci.notes.appendCommitNote(rev, messageID);
+                            optionsChanged = true;
+                            return messageID;
+                        };
+                        const messageID = await getMessageID();
                         handledMessageIDs.add(messageID);
                         if (messageID &&
                             options.activeMessageIDs[messageID] === undefined) {
