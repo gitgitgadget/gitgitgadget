@@ -28,6 +28,31 @@
             "outFiles": [
                 "${workspaceRoot}/build/**/*.js"
             ]
+        },
+        {
+            "name": "Debug update-open-prs",
+            "type": "node",
+            "request": "launch",
+            "runtimeArgs": [
+                "--inspect-brk",
+                // "--nolazy",
+            ],
+            "args": [
+                "${workspaceRoot}/build/script/misc-helper.js",
+                "update-open-prs",
+            ],
+            "stopOnEntry": false,
+            "cwd": "${workspaceRoot}",
+            "preLaunchTask": null,
+            "runtimeExecutable": null,
+            "env": {
+                "NODE_ENV": "development"
+            },
+            "console": "integratedTerminal",
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceRoot}/build/**/*.js"
+            ]
         }
     ]
 }
