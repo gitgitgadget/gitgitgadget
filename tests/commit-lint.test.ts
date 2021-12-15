@@ -65,6 +65,46 @@ test("basic lint tests", () => {
         }
     }
 
+    commit.message = "squash! This needs rebase\n\nSigned-off-by: x";
+    {
+        const linter = new LintCommit(commit);
+        const lintError = linter.lint();
+        expect(lintError).not.toBeUndefined();
+        if (lintError) {
+            expect(lintError.checkFailed).toBe(true);
+            expect(lintError.message).toMatch(/Rebase/);
+        }
+    }
+
+    commit.message = "fixup! This needs rebase\n\nSigned-off-by: x";
+    {
+        const linter = new LintCommit(commit);
+        const lintError = linter.lint();
+        expect(lintError).not.toBeUndefined();
+        if (lintError) {
+            expect(lintError.checkFailed).toBe(true);
+            expect(lintError.message).toMatch(/Rebase/);
+        }
+    }
+
+    commit.message = "amend! This needs rebase\n\nSigned-off-by: x";
+    {
+        const linter = new LintCommit(commit);
+        const lintError = linter.lint();
+        expect(lintError).not.toBeUndefined();
+        if (lintError) {
+            expect(lintError.checkFailed).toBe(true);
+            expect(lintError.message).toMatch(/Rebase/);
+        }
+    }
+
+    commit.message = "amend This is okay\n\nSigned-off-by: x";
+    {
+        const linter = new LintCommit(commit);
+        const lintError = linter.lint();
+        expect(lintError).toBeUndefined();
+    }
+
     commit.message = "tests: This should be lower case\n\nSigned-off-by: x";
     {
         const linter = new LintCommit(commit);
