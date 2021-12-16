@@ -34,6 +34,7 @@ export class LintCommit {
 
         if (this.commitViable()) {
             this.commitMessageLength();
+            this.bangPrefix();
             this.lowerCaseAfterPrefix();
             this.signedOffBy();
             this.moreThanAHyperlink();
@@ -96,6 +97,14 @@ export class LintCommit {
         if (match) {
             this.block(`Prefixed commit message must be in lower case: ${
                        this.lines[0]}`);
+        }
+    }
+
+    // Reject commits that appear to require rebasing
+
+    private bangPrefix(): void {
+        if (this.lines[0].match(/^(squash|fixup|amend)!/)) {
+            this.block(`Rebase needed to squash commit: ${this.lines[0]}`);
         }
     }
 
