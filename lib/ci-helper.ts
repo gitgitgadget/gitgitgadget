@@ -662,7 +662,7 @@ export class CIHelper {
                     }
                 } catch (reason) {
                     throw new Error(`User ${
-                        accountName} is not a valid GitHub username: ` + (reason || ''));
+                        accountName} is not a valid GitHub username: ${reason}`);
                 }
 
                 if (await gitGitGadget.allowUser(comment.author, accountName)) {
