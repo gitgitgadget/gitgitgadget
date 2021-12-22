@@ -72,9 +72,10 @@ export function parseMBox(mbox: string, gentle?: boolean):
             throw new Error(`Failed to parse header line '${line}`);
         }
         const key = line.substr(0, colon);
-        const value = replaceAll(line.substr(colon + 2), "\n ", " ");
+        const value = replaceAll(line.substr(colon + 2), "\n ", " ").trim();
         switch (key.toLowerCase()) {
-            case "cc": cc = (cc || []).concat(value.split(", ")); break;
+            case "cc": cc = (cc || []).concat(value.split(", ")
+                .map(e => e.trim())); break;
             case "date": date = value; break;
             case "fcc": break;
             case "from": from = decode(value.trim()); break;
