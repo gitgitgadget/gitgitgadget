@@ -636,13 +636,13 @@ export class CIHelper {
                                                 pullRequestURL);
                 const userInfo = await this.getUserInfo(comment.author);
 
+                const commitOkay = await this.checkCommits(pr, addComment,
+                                                           userInfo);
+
                 if (!userInfo.email) {
                     throw new Error(`Could not determine public email of ${
                         comment.author}`);
                 }
-
-                const commitOkay = await this.checkCommits(pr, addComment,
-                                                           userInfo);
 
                 if (commitOkay) {
                     const metadata = await gitGitGadget.preview(pr, userInfo);
@@ -662,7 +662,8 @@ export class CIHelper {
                     }
                 } catch (reason) {
                     throw new Error(`User ${
-                        accountName} is not a valid GitHub username.`);
+                        accountName} is not a valid GitHub username: ${
+                        reason}`);
                 }
 
                 if (await gitGitGadget.allowUser(comment.author, accountName)) {
