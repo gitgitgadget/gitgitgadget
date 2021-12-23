@@ -5,3 +5,8 @@
 /node_modules/
 /npm-debug.log
 /junit.xml
+/.vs/**
+/bin/**
+/obj/**
+/*.sln*
+/*.njsproj*
