@@ -63,6 +63,11 @@ export function parseMBox(mbox: string, gentle?: boolean):
     for (const line of header.split(/\n(?![ \t])/)
         .map(e => e.replace("\r\n", " ").replace("\n", " "))) {
         const colon = line.indexOf(": ");
+
+        if (colon < 0 && line.lastIndexOf(":") === line.length - 1) {
+            // Keys without value are valid
+            continue;
+        }
         if (colon < 0) {
             throw new Error(`Failed to parse header line '${line}`);
         }
