@@ -60,7 +60,8 @@ export function parseMBox(mbox: string, gentle?: boolean):
     let subject: string | undefined;
     let to: string | undefined;
 
-    for (const line of header.split(/\n(?![ \t])/)) {
+    for (const line of header.split(/\n(?![ \t])/)
+        .map(e => e.replace("\r\n", " ").replace("\n", " "))) {
         const colon = line.indexOf(": ");
         if (colon < 0) {
             throw new Error(`Failed to parse header line '${line}`);
