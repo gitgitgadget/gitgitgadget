@@ -119,7 +119,8 @@ export class MailArchiveGitHelper {
             }
             console.log(`Handling "${sousChef.subject}"`);
             const whatsCookingBaseURL = "https://lore.kernel.org/git/";
-            for (const branchName of sousChef.branches.keys()) {
+            for (const key of sousChef.branches.keys()) {
+                const branchName: string = key as any as string;
                 const pullRequestURL = branchNameMap.get(branchName);
                 if (pullRequestURL) {
                     const branchBaseURL

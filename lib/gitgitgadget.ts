@@ -88,12 +88,12 @@ export class GitGitGadget {
 
     protected static async readOptions(notes: GitNotes):
         Promise<[IGitGitGadgetOptions, Set<string>]> {
-        let options = await notes.get<IGitGitGadgetOptions>("");
-        if (options === undefined) {
-            options = {
-                allowedUsers: [],
-            };
-        }
+
+        const defaultOptions: IGitGitGadgetOptions = { allowedUsers: [], };
+
+        const options: IGitGitGadgetOptions
+            = await notes.get<IGitGitGadgetOptions>("") ?? defaultOptions;
+
         const allowedUsers = new Set<string>(options.allowedUsers);
 
         return [options, allowedUsers];
