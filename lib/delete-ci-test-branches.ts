@@ -30,9 +30,7 @@ declare type refGraph = {
 declare type repositoryGraph = {
     repository: {
         refs: {
-            edges: [
-                ref: refGraph,
-            ]
+            edges: refGraph[]
         }
     }
 };
@@ -59,7 +57,7 @@ export type deletionOptions = {
  * @param repo name of repository on GitHub
  * @param options deletionOptions to override default of two days
  */
-export async function deleteBranches( octocat: Octokit, owner: string,
+export async function deleteBranches(octocat: Octokit, owner: string,
     repo: string, options: deletionOptions = {}): Promise<void> {
 
     if (!owner || !repo) {
@@ -73,7 +71,7 @@ export async function deleteBranches( octocat: Octokit, owner: string,
     }
 
     if (options.hours) {
-        expires.setUTCHours(0 - options.hours, 0 ,0);
+        expires.setUTCHours(0 - options.hours, 0, 0);
     } else if (options.minutes) {
         expires.setUTCMinutes(expires.getUTCMinutes() - options.minutes);
     } else {
