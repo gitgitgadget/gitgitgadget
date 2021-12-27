@@ -371,7 +371,7 @@ export class PatchSeries {
         });
     }
 
-    protected static stripDuplicateHeaders(headers: string,
+    private static stripDuplicateHeaders(headers: string,
                                            header: ISingletonHeader): string {
         const needle = "\n" + header.key + ":";
         let offset;
