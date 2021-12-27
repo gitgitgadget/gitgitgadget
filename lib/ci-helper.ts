@@ -373,7 +373,7 @@ export class CIHelper {
         }
 
         let closePR: string | undefined;
-        const prLabelsToAdd = [];
+        const prLabelsToAdd: string[] = [];
         for (const branch of ["seen", "next", "master", "maint"]) {
             const mergeCommit =
                 await this.identifyMergeCommit(branch, tipCommitInGitGit);

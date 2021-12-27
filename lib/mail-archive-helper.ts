@@ -128,7 +128,7 @@ export class MailArchiveGitHelper {
                     const pre = info?.text
                         .replace(/&/g, "&amp;")
                         .replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                    let comment;
+                    let comment: string;
                     if (!pre || pre.trim() === "") {
                         comment = `The branch [\`${
                             branchName}\`](${

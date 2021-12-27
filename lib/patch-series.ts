@@ -216,7 +216,7 @@ export class PatchSeries {
             throw new Error(`Cannot find base branch ${basedOn}`);
         }
 
-        const publishToRemote = undefined;
+        const publishToRemote: string | undefined = undefined;
 
         const project = await ProjectOptions.get(workDir, headCommit, cc,
                                                  basedOn, publishToRemote,
@@ -281,7 +281,7 @@ export class PatchSeries {
         basedOn?: string;
         cc: string[];
     } {
-        let basedOn;
+        let basedOn: string | undefined;
         const cc: string[] = [];
         let coverLetterBody = prBody.trim();
 
@@ -374,7 +374,7 @@ export class PatchSeries {
     protected static stripDuplicateHeaders(headers: string,
                                            header: ISingletonHeader): string {
         const needle = "\n" + header.key + ":";
-        let offset;
+        let offset: number;
 
         if (headers.startsWith(`${header.key}:`)) {
             offset = 0;
@@ -591,7 +591,7 @@ export class PatchSeries {
             const mail = mails[i];
 
             /* Look for the date header */
-            let dateOffset;
+            let dateOffset: number;
             if (mail.startsWith("Date: ")) {
                 dateOffset = 6;
             } else {
@@ -747,7 +747,7 @@ export class PatchSeries {
             PatchSeries.generateTagMessage(mails[0], mails.length > 1,
                                            this.project.midUrlPrefix,
                                            this.metadata.referencesMessageIds);
-        let tagName;
+        let tagName: string | undefined;
         if (!this.metadata.pullRequestURL) {
             tagName = `${this.project.branchName}-v${this.metadata.iteration}`;
         } else {
