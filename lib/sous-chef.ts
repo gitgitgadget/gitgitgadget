@@ -25,7 +25,7 @@ export class SousChef {
                 const match = branches[j]
                     .match(/([^ ]+).*\n *(\(merged to [^)]+\))?/m);
                 if (!match) {
-                    continue
+                    continue;
                 }
 
                 const branchName = match[1];
@@ -37,10 +37,10 @@ export class SousChef {
         }
 
         const messageIDMatch =
-            `\n${sections[0]}`.match(/\nMessage-ID: <([^>]+)>/i)
+            `\n${sections[0]}`.match(/\nMessage-ID: <([^>]+)>/i);
         this.messageID = messageIDMatch?.[1];
         const subjectMatch =
-            `\n${sections[0]}`.match(/\nSubject: (.*)/i)
+            `\n${sections[0]}`.match(/\nSubject: (.*)/i);
         this.subject = subjectMatch?.[1];
     }
 }

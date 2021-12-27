@@ -13,7 +13,7 @@ up.
 
 The owner and repository name must be specified.  The cleanup criteria can be
 overridden using the --hours or --minutes options.  These would be used
-primarily for testing.`
+primarily for testing.`;
 
 class GitHubProxy extends GitHubGlue {
     public octo: Octokit;
