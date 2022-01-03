@@ -48,7 +48,7 @@
     "eslint": "^8.5.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-anti-trojan-source": "^1.0.6",
-    "eslint-plugin-jest": "^25.3.0",
+    "eslint-plugin-jest": "^25.3.4",
     "eslint-plugin-jsdoc": "^37.4.0",
     "jest": "^27.4.5",
     "jest-junit": "^13.0.0",
