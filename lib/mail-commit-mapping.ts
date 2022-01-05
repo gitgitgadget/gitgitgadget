@@ -27,7 +27,7 @@ export class MailCommitMapping {
     private async update(includeNotesRef?: boolean,
                          includeUpstreamBranches?: boolean,
                          includeGitsterBranches?: boolean): Promise<void> {
-        const refs = [];
+        const refs: string[] = [];
         if (includeNotesRef) {
             refs.push("refs/notes/mail-to-commit:refs/notes/mail-to-commit");
         }

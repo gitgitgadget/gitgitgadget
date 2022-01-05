@@ -68,8 +68,8 @@ import { PatchSeriesOptions } from "../lib/patch-series-options";
 import { ProjectOptions } from "../lib/project-options";
 
 async function main(argv: string[]) {
-    let i;
-    let match;
+    let i: number;
+    let match: RegExpMatchArray | null;
 
     const logger = console;
     const options = new PatchSeriesOptions();
@@ -158,7 +158,7 @@ async function main(argv: string[]) {
     if (options.dryRun &&
         typeof (process.env.GIT_PAGER_IN_USE) === "undefined") {
         const childProcess = require("child_process");
-        const args = [];
+        const args: string[] = [];
         if (typeof (process.env.LESS) === "undefined") {
             args.push("-FRX");
         }

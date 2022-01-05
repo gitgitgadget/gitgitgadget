@@ -119,11 +119,12 @@ export class CIHelper {
         }
         mailMeta.commitInGitGit = upstreamCommit;
         if (!mailMeta.originalCommit) {
-            mailMeta.originalCommit =
-                await this.getOriginalCommitForMessageId(messageID);
-            if (!mailMeta.originalCommit) {
+            const originalCommit
+                = await this.getOriginalCommitForMessageId(messageID);
+            if (!originalCommit) {
                 throw new Error(`No original commit found for ${messageID}`);
             }
+            mailMeta.originalCommit = originalCommit;
         }
         await this.notes.set(messageID, mailMeta, true);
 
@@ -373,7 +374,7 @@ export class CIHelper {
         }
 
         let closePR: string | undefined;
-        const prLabelsToAdd = [];
+        const prLabelsToAdd: string[] = [];
         for (const branch of ["seen", "next", "master", "maint"]) {
             const mergeCommit =
                 await this.identifyMergeCommit(branch, tipCommitInGitGit);
