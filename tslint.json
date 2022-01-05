@@ -3,8 +3,6 @@
     "rules": {
         "align": [
             true,
-            "parameters",
-            "arguments",
             "members",
             "elements",
             "statements"
