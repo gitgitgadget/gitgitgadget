@@ -48,7 +48,7 @@ before last midnight`,
             "do not delete the refs (useful for debugging)")
     .parse(process.argv);
 
-interface commanderOptions {
+interface ICommanderOptions {
     dryRun: boolean | undefined;
     hours: number | undefined;
     minutes: number | undefined;
@@ -62,7 +62,7 @@ if (commander.args.length > 0) {
 
 (async (): Promise<void> => {
     const options: deletionOptions = {};
-    const commandOptions = commander.opts<commanderOptions>();
+    const commandOptions = commander.opts<ICommanderOptions>();
     if (commandOptions.dryRun) {
         options.dryRun = true;
     }
