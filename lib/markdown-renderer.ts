@@ -33,7 +33,7 @@ export function md2text(markdown: string, columns = 76): string {
                     blockTransform: str => { return str
                         .replace(/^>/mg, ">>") // add to quote
                         .replace(/^(?!>|$)/mg, "> ")   // new quote
-                        .replace(/(^|\n)(\n)(?!$)/g, "$1>$2") // quote empty
+                        .replace(/(^|\n)(\n)(?!$)/g, "$1>$2"); // quote empty
                     }});
             },
         },
