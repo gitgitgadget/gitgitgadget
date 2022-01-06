@@ -84,7 +84,6 @@ async function main(argv: string[]) {
             options.noUpdate = true;
         } else if (arg === "--rfc") {
             options.rfc = true;
-            // tslint:disable-next-line:no-conditional-assignment
         } else if (match = arg.match(/^--publish-to-remote=.*/)) {
             publishToRemote = match[1];
         } else if (arg === "--patience") {
@@ -118,7 +117,6 @@ async function main(argv: string[]) {
                 await git(["config", "--add", key, id]);
             }
             return;
-            // tslint:disable-next-line:no-conditional-assignment
         } else if (match = arg.match(/^--basedon=(.*)/)) {
             const key = "branch." + await ProjectOptions.getBranchName(".")
                 + ".basedon";

@@ -2,7 +2,7 @@
 
 [fork]: https://github.com/gitgitgadget/gitgitgadget/fork
 [pr]: ../../compare
-[style]: https://palantir.github.io/tslint/
+[style]: https://typescript-eslint.io/
 [code-of-conduct]: CODE_OF_CONDUCT.md
 [TODO]: TODO.md
 
