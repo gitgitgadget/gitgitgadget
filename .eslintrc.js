@@ -125,6 +125,7 @@ module.exports = {
             "never"
         ],
         "radix": "error",
+        "semi": "error",
         "spaced-comment": [
             "error",
             "always",

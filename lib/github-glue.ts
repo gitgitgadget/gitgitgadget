@@ -435,7 +435,7 @@ export class GitHubGlue {
             }
 
             const committer = cm.commit.committer;
-            const author = cm.commit.author
+            const author = cm.commit.author;
 
             result.push({
                 author: {

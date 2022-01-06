@@ -19,4 +19,4 @@ test("Parse What's Cooking mail", async () => {
 clean up the commit log message, but we did the usual stripspace
 processing.  This has been corrected.`;
     expect(branchInfo?.text).toEqual(text);
-})
+});

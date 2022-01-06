@@ -396,7 +396,7 @@ async function getCIHelper(): Promise<CIHelper> {
                     appId: options.appID,
                     privateKey: key.replace(/\\n/g, `\n`)
                 }
-            })
+            });
 
             if (options.installationID === undefined) {
                 options.installationID =

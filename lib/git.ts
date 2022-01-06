@@ -86,7 +86,7 @@ export function git(args: string[], options?: IGitOptions | undefined):
                     }
                     if (linePromise) {
                         linePromise.then(() => { resolve(""); })
-                            .catch((reason) => { reject(reason) });
+                            .catch((reason) => { reject(reason); });
                     } else {
                         resolve("");
                     }
