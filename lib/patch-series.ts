@@ -252,7 +252,7 @@ export class PatchSeries {
             // \r\n line endings.
             prTemplate = prTemplate.replace(/\r\n/g, "\n");
             prBody = prBody.replace(prTemplate, "");
-        } catch {
+        } catch (_) {
             // Just ignore it
         }
 

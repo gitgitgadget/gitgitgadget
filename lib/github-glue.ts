@@ -137,11 +137,11 @@ export class GitHubGlue {
                             throw new Error("Found");
                         }
                     });
-                } catch {
+                } catch (_) {
                     // quick exit for cc matched (comment to quiet linter)
                 }
             });
-        } catch {
+        } catch (_) {
             found = false;          // ensure it was not a cc: false positive
             footerSeparator = "\r\n"; // reset
         }
