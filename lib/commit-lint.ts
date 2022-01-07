@@ -5,6 +5,10 @@ export interface ILintError {
     message: string;
 }
 
+export interface ILintOptions {
+    maxColumns?: number | undefined; // max line length
+}
+
 /*
  * Simple single use class to drive lint tests on commit messages.
  */
@@ -15,10 +19,16 @@ export class LintCommit {
     private messages: string[] = [];
     private maxColumns = 76;
 
-    public constructor(patch: IPRCommit) {
+    public constructor(patch: IPRCommit, options?: ILintOptions | undefined) {
         this.blocked = false;
         this.lines =  patch.message.split("\n");
         this.patch = patch;
+
+        if (options !== undefined) {
+            if (options.maxColumns !== undefined) {
+                this.maxColumns = options.maxColumns;
+            }
+        }
     }
 
     /**
