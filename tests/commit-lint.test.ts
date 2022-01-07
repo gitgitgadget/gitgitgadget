@@ -224,4 +224,132 @@ blah http://www.github.com\n\nSigned-off-by: x`;
         expect(lintError).toBeUndefined();
     }
 
+    commit.message = `wrapped but too long\n\n ${
+                ""}1234578901234567890123456789012345678901234567890${
+                ""}123456789012345678901234567890\nmore bad\nSigned-off-by: x`;
+    {
+        const linter = new LintCommit(commit);
+        const lintError = linter.lint();
+        expect(lintError).not.toBeUndefined();
+        if (lintError) {
+            expect(lintError.checkFailed).toBe(true);
+            expect(lintError.message).toMatch(/should be wrapped/);
+        }
+    }
+});
+
+test("combo lint tests", () => {
+    const commit = {
+        author: {
+            email: "ggg@example.com",
+            login: "ggg",
+            name: "e. e. cummings",
+        },
+        commit: "BAD1FEEDBEEF",
+        committer: {
+            email: "ggg@example.com",
+            login: "ggg",
+            name: "e. e. cummings",
+        },
+        message: "Message has no description",
+        parentCount: 1,
+    };
+
+    {
+        const linter = new LintCommit(commit);
+        const lintError = linter.lint();
+        expect(lintError).not.toBeUndefined();
+        if (lintError) {
+            expect(lintError.checkFailed).toBe(true);
+            expect(lintError.message).toMatch(/too short/);
+            expect(lintError.message).toMatch(/not signed/);
+        }
+    }
+
+    commit.message = `x: A 34578901234567890123456789012345678901234567890${
+                ""}123456789012345678901234567890`;
+    {
+        const linter = new LintCommit(commit);
+        const lintError = linter.lint();
+        expect(lintError).not.toBeUndefined();
+        if (lintError) {
+            expect(lintError.checkFailed).toBe(true);
+            expect(lintError.message).toMatch(/too short/);
+            expect(lintError.message).toMatch(/not signed/);
+            expect(lintError.message).toMatch(/is too long/);
+            expect(lintError.message).toMatch(/lower/);
+        }
+    }
+
+    commit.message = `1234578901234567890123456789012345678901234567890${
+                ""}123456789012345678901234567890\nmore bad\nSigned-off-by: x`;
+    {
+        const linter = new LintCommit(commit);
+        const lintError = linter.lint();
+        expect(lintError).not.toBeUndefined();
+        if (lintError) {
+            expect(lintError.checkFailed).toBe(true);
+            expect(lintError.message).toMatch(/is too long/);
+            expect(lintError.message).toMatch(/empty line/);
+        }
+    }
+
+    commit.message = `all good but too long\n ${
+                ""}1234578901234567890123456789012345678901234567890${
+                ""}123456789012345678901234567890\nmore bad\nSigned-off-by: x`;
+    {
+        const linter = new LintCommit(commit);
+        const lintError = linter.lint();
+        expect(lintError).not.toBeUndefined();
+        if (lintError) {
+            expect(lintError.checkFailed).toBe(true);
+            expect(lintError.message).toMatch(/should be wrapped/);
+            expect(lintError.message).toMatch(/empty line/);
+        }
+    }
+});
+
+test("lint options tests", () => {
+    const commit = {
+        author: {
+            email: "ggg@example.com",
+            login: "ggg",
+            name: "e. e. cummings",
+        },
+        commit: "BAD1FEEDBEEF",
+        committer: {
+            email: "ggg@example.com",
+            login: "ggg",
+            name: "e. e. cummings",
+        },
+        message: `all good but too long 1234567890${
+                ""}1234578901234567890123456789012345678901234567890\n\n${
+                ""}1234578901234567890123456789012345678901234567890${
+                ""}123456789012345678901234567890\nmore bad\nSigned-off-by: x`,
+        parentCount: 1,
+    };
+
+    {
+        const linter = new LintCommit(commit, {});
+        const lintError = linter.lint();
+        expect(lintError).not.toBeUndefined();
+        if (lintError) {
+            expect(lintError.checkFailed).toBe(true);
+            expect(lintError.message).toMatch(/is too long/);
+            expect(lintError.message).toMatch(/should be wrapped/);
+            expect(lintError.message).toMatch(/76/);
+        }
+    }
+
+    {
+        const linter = new LintCommit(commit, {maxColumns: 66});
+        const lintError = linter.lint();
+        expect(lintError).not.toBeUndefined();
+        if (lintError) {
+            expect(lintError.checkFailed).toBe(true);
+            expect(lintError.message).toMatch(/is too long/);
+            expect(lintError.message).toMatch(/should be wrapped/);
+            expect(lintError.message).toMatch(/66/);
+        }
+    }
 });
