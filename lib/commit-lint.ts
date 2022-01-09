@@ -110,7 +110,11 @@ export class LintCommit {
         }
 
         for (let i = 1; i < this.lines.length; i++) {
-            if (this.lines[i].length > this.maxColumns) {
+            if (this.lines[i].length > this.maxColumns &&
+                // Allow long lines if they cannot be wrapped at some
+                // white-space character, e.g. URLs. To allow ` [1] <URL>`
+                // lines, we skip the first 10 characters.
+                this.lines[i].slice(10).match(/\s/)) {
                 this.block(`Lines in the body of the commit messages ${""
                     }should be wrapped between 60 and ${
                     this.maxColumns} characters.`);
@@ -120,7 +124,7 @@ export class LintCommit {
     };
 
     // Verify if the first line starts with a prefix (e.g. tests:), it continues
-    // in lower-case (except for ALLCAPS as that is likely to be a code
+    // in lower-case (except for ALL_CAPS as that is likely to be a code
     // identifier)
 
     private lowerCaseAfterPrefix = (): void =>{
