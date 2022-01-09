@@ -120,7 +120,7 @@ export class LintCommit {
     };
 
     // Verify if the first line starts with a prefix (e.g. tests:), it continues
-    // in lower-case (except for ALLCAPS as that is likely to be a code
+    // in lower-case (except for ALL_CAPS as that is likely to be a code
     // identifier)
 
     private lowerCaseAfterPrefix = (): void =>{

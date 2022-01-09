@@ -128,7 +128,7 @@ Signed-off-by: x`;
         }
     }
 
-    commit.message = "tests: THIS can be allcaps\n\nSigned-off-by: x";
+    commit.message = "tests: THIS can be all-caps\n\nSigned-off-by: x";
     {
         const linter = new LintCommit(commit);
         const lintError = linter.lint();
