@@ -159,7 +159,7 @@ blah http://www.github.com\n\nSigned-off-by: x`;
 
     commit.message = `wrapped but too long\n\n ${
                 ""}1234578901234567890123456789012345678901234567890${
-                ""}123456789012345678901234567890\nmore bad\nSigned-off-by: x`;
+                ""} 23456789012345678901234567890\nmore bad\nSigned-off-by: x`;
     lintCheck(commit, (lintError) => {
         expect(lintError.checkFailed).toBe(true);
         expect(lintError.message).toMatch(/should be wrapped/);
@@ -209,7 +209,7 @@ test("combo lint tests", () => {
 
     commit.message = `all good but too long\n ${
                 ""}1234578901234567890123456789012345678901234567890${
-                ""}123456789012345678901234567890\nmore bad\nSigned-off-by: x`;
+                ""} 23456789012345678901234567890\nmore bad\nSigned-off-by: x`;
     lintCheck(commit, (lintError) => {
         expect(lintError.checkFailed).toBe(true);
         expect(lintError.message).toMatch(/should be wrapped/);
@@ -231,9 +231,9 @@ test("lint options tests", () => {
             name: "e. e. cummings",
         },
         message: `all good but too long 1234567890${
-                ""}1234578901234567890123456789012345678901234567890\n\n${
+                ""} 234578901234567890123456789012345678901234567890\n\n${
                 ""}1234578901234567890123456789012345678901234567890${
-                ""}123456789012345678901234567890\nmore bad\nSigned-off-by: x`,
+                ""} 23456789012345678901234567890\nmore bad\nSigned-off-by: x`,
         parentCount: 1,
     };
 
