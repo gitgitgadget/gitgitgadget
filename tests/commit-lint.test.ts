@@ -164,6 +164,12 @@ blah http://www.github.com\n\nSigned-off-by: x`;
         expect(lintError.checkFailed).toBe(true);
         expect(lintError.message).toMatch(/should be wrapped/);
     });
+
+    commit.message = `contains a long URL that cannot be wrapped\n\n ${
+                ""}[2] https://lore.kernel.org/git/CABPp-BH9tju7WVm=${
+                ""}QZDOvaMDdZbpNXrVWQdN-jmfN8wC6YVhmw@mail.gmail.com/\n\n${
+                ""}Signed-off-by: x}`;
+    lintCheck(commit);
 });
 
 test("combo lint tests", () => {
