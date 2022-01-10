@@ -50,7 +50,7 @@
     "eslint-plugin-anti-trojan-source": "^1.1.0",
     "eslint-plugin-jest": "^25.3.4",
     "eslint-plugin-jsdoc": "^37.6.1",
-    "jest": "^27.4.5",
+    "jest": "^27.4.7",
     "jest-junit": "^13.0.0",
     "test-smtp-server": "0.9.2",
     "ts-jest": "^27.1.2",
