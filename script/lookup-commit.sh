@@ -30,7 +30,7 @@ update_mail_archive_dir () {
 	git clone --bare https://dev.azure.com/gitgitgadget/git/_git/lore-git "$LORE_GIT_DIR" ||
 	die "Could not clone lore.kernel/git to $LORE_GIT_DIR"
 
-	git -C "$LORE_GIT_DIR" fetch https://lore.kernel.org/git/0 master:master ||
+	git -C "$LORE_GIT_DIR" fetch https://lore.kernel.org/git/1 master:master ||
 	die "Could not update $LORE_GIT_DIR to remote's master"
 
 	head="$(git -C "$LORE_GIT_DIR" rev-parse --verify master)" ||
