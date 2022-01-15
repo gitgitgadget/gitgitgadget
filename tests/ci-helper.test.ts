@@ -1251,7 +1251,7 @@ test("Handle comment cc", async () => {
 
     await ci.handleComment("gitgitgadget", prNumber);
 
-    expect(ci.updatePRCalls[0][2]).toMatch(/Some Body/);
+    expect(ci.updatePRCalls[0][ci.updatePRCalls[0].length-1]).toMatch(/Some Body/);
     ci.updatePRCalls.length = 0;
 
     comment.body = "/cc \"A Body\" <abody@example.com>, "
@@ -1259,8 +1259,8 @@ test("Handle comment cc", async () => {
 
     await ci.handleComment("gitgitgadget", prNumber);
 
-    expect(ci.updatePRCalls[0][2]).toMatch(/A Body/);
-    expect(ci.updatePRCalls[1][2]).toMatch(/S Body/);
+    expect(ci.updatePRCalls[0][ci.updatePRCalls[0].length-1]).toMatch(/A Body/);
+    expect(ci.updatePRCalls[1][ci.updatePRCalls[0].length-1]).toMatch(/S Body/);
     ci.updatePRCalls.length = 0;
 
     // email will not be re-added to list
@@ -1268,6 +1268,6 @@ test("Handle comment cc", async () => {
 
     await ci.handleComment("gitgitgadget", prNumber);
 
-    expect(ci.updatePRCalls[0][2]).toMatch(/S Body/);
+    expect(ci.updatePRCalls[0][ci.updatePRCalls[0].length-1]).toMatch(/S Body/);
     expect(ci.updatePRCalls).toHaveLength(1);
 });
