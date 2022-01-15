@@ -75,11 +75,11 @@ export class GitNotes {
         return notes.replace(/^[^]*\n\n/, "");
     }
 
-    public async update(): Promise<void> {
+    public async update(url: string): Promise<void> {
         if (this.notesRef === "refs/notes/gitgitgadget" ||
             this.notesRef === "refs/notes/commit-to-mail" ||
             this.notesRef === "refs/notes/mail-to-commit") {
-            await git(["fetch", "https://github.com/gitgitgadget/git",
+            await git(["fetch", url,
                        `+${this.notesRef}:${this.notesRef}`],
                       { workDir: this.workDir });
         } else {

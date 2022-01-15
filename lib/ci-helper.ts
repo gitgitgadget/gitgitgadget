@@ -25,6 +25,8 @@ type CommentFunction = (comment: string) => Promise<void>;
 export class CIHelper {
     public readonly workDir?: string;
     public readonly notes: GitNotes;
+    public readonly urlBase: string;
+    public readonly urlRepo: string;
     protected readonly mail2commit: MailCommitMapping;
     protected readonly github: GitHubGlue;
     protected readonly gggConfigDir: string;
@@ -46,6 +48,8 @@ export class CIHelper {
         this.mail2CommitMapUpdated = !!skipUpdate;
         this.github = new GitHubGlue(workDir);
         this.testing = false;
+        this.urlBase = `https://github.com/gitgitgadget/`;
+        this.urlRepo = `${this.urlBase}git/`;
     }
 
     /*
@@ -81,7 +85,7 @@ export class CIHelper {
         if (!this.commit2mailNotes) {
             this.commit2mailNotes = new GitNotes(this.mail2commit.workDir,
                                                  "refs/notes/commit-to-mail");
-            await this.commit2mailNotes.update();
+            await this.commit2mailNotes.update(this.urlRepo);
         }
         const messageId = await
             this.getMessageIdForOriginalCommit(originalCommit);
@@ -865,7 +869,7 @@ export class CIHelper {
 
     private async maybeUpdateGGGNotes(): Promise<void> {
         if (!this.gggNotesUpdated) {
-            await this.notes.update();
+            await this.notes.update(this.urlRepo);
             this.gggNotesUpdated = true;
         }
     }
