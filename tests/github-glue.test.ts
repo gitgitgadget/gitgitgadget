@@ -3,6 +3,7 @@ import { OctokitResponse } from "@octokit/types";
 import { beforeAll, expect, jest, test } from "@jest/globals";
 import { git, gitConfig } from "../lib/git";
 import { GitHubGlue, IGitHubUser, IPullRequestInfo } from "../lib/github-glue";
+import { pullRequestKey } from "../lib/pullRequestKey";
 
 /*
 This test requires setup.  It will run successfully if setup has
@@ -163,6 +164,11 @@ test("pull requests", async () => {
         });
 
         const prData = newPR.data;
+        const prKey: pullRequestKey = {
+            owner,
+            repo,
+            pull_number: prData.number
+        };
 
         const prs = await github.getOpenPRs(owner);
         expect(prs[0].author).toMatch(owner);
@@ -171,19 +177,19 @@ test("pull requests", async () => {
         expect(commits[0].author.login).toMatch(owner);
         expect(cFile.data.commit.sha).toMatch(commits[0].commit);
 
-        const prInfo = await github.getPRInfo(owner, prData.number);
+        const prInfo = await github.getPRInfo(prKey);
         expect(prInfo.headLabel).toMatch(branch);
 
         // Test update to PR body
         const prBody = `${prInfo.body}\r\nGlue`;
-        await github.updatePR(owner, prData.number, prBody);
-        const prNewInfo = await github.getPRInfo(owner, prData.number);
+        await github.updatePR(prKey, prBody);
+        const prNewInfo = await github.getPRInfo(prKey);
         expect(prNewInfo.body).toMatch(prBody);
 
         // Test update to PR title
         const prTitle = `${prInfo.title} Glue`;
-        await github.updatePR(owner, prData.number, undefined, prTitle);
-        const prNewTitle = await github.getPRInfo(owner, prData.number);
+        await github.updatePR(prKey, undefined, prTitle);
+        const prNewTitle = await github.getPRInfo(prKey);
         expect(prNewTitle.title).toMatch(prTitle);
 
         const newComment = "Adding a comment to the PR";
@@ -253,10 +259,8 @@ test("add PR cc requests", async () => {
         // eslint-disable-next-line @typescript-eslint/require-await
         Promise<{id: number; url: string}> => commentInfo );
 
-    const updatePR = jest.fn( async (_owner: string, _prNumber: number,
-                        body: string):
         // eslint-disable-next-line @typescript-eslint/require-await
-        Promise<number> => {
+    const updatePR = jest.fn( async (_prKey, body: string): Promise<number> => {
         prInfo.body = body;     // set new body for next test
         return 1;
     });
@@ -510,7 +514,7 @@ test("test missing values in response using small schema", async () => {
     pullRequestSimple.user = null;
     pullRequestSimple.base.repo.owner = sampleUser;
     // if (!pullRequest.user) {
-    await expect(github.getPRInfo(owner, 2)).rejects.toThrow(/is missing info/);
+    await expect(github.getPRInfo({owner, repo: testRepo.name, pull_number: 2})).rejects.toThrow(/is missing info/);
 
     interface IIssueComment {
         body?: string;

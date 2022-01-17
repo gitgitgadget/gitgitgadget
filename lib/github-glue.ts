@@ -1,7 +1,7 @@
 import addressparser = require("nodemailer/lib/addressparser");
 import { Octokit } from "@octokit/rest";
 import { git, gitConfig } from "./git";
-import { GitGitGadget } from "./gitgitgadget";
+import { getPullRequestKey, pullRequestKeyInfo, pullRequestKey } from "./pullRequestKey";
 
 export interface IPullRequestInfo {
     pullRequestURL: string;
@@ -99,7 +99,7 @@ export class GitHubGlue {
      * @param {string} cc to add
      * @returns the comment ID and the URL to the comment
      */
-    public async addPRCc(pullRequestURL: string, cc: string):
+    public async addPRCc(pullRequest: pullRequestKeyInfo, cc: string):
         Promise<void> {
         const id = cc.match(/<(.*)>/);
 
@@ -108,8 +108,9 @@ export class GitHubGlue {
         }
 
         const ccLower = id[1].toLowerCase();
-        const url = GitGitGadget.parsePullRequestURL(pullRequestURL);
-        const pr = await this.getPRInfo(url[0], url[2]);
+        const prKey = getPullRequestKey(pullRequest);
+
+        const pr = await this.getPRInfo(prKey);
         const trimBody = pr.body.trimRight();
         let footer = trimBody.match(/^[^]+\r?\n\s*?\r?\n([^]+)$/);
 
@@ -150,10 +151,8 @@ export class GitHubGlue {
             const user = await this.getGitHubUserInfo(pr.author);
 
             if (!user.email || ccLower !== user.email.toLowerCase()) {
-                await this.updatePR(url[0], url[2], `${trimBody}${
-                    footerSeparator}\r\ncc: ${cc}`);
-                await this.addPRComment(pullRequestURL, `User \`${
-                                        cc}\` has been added to the cc: list.`);
+                await this.updatePR(prKey, `${trimBody}${footerSeparator}\r\ncc: ${cc}`);
+                await this.addPRComment(prKey, `User \`${cc}\` has been added to the cc: list.`);
             }
         }
     }
@@ -165,16 +164,16 @@ export class GitHubGlue {
      * @param {string} comment the comment
      * @returns the comment ID and the URL to the comment
      */
-    public async addPRComment(pullRequestURL: string, comment: string):
+    public async addPRComment(pullRequest: pullRequestKeyInfo, comment: string):
         Promise<{id: number; url: string}> {
-        const [owner, repo, nr] =
-            GitGitGadget.parsePullRequestURL(pullRequestURL);
-        await this.ensureAuthenticated(owner);
+        const prKey = getPullRequestKey(pullRequest);
+
+        await this.ensureAuthenticated(prKey.owner);
         const status = await this.client.rest.issues.createComment({
             body: comment,
-            issue_number: nr,
-            owner,
-            repo,
+            issue_number: prKey.pull_number,
+            owner: prKey.owner,
+            repo: prKey.repo,
         });
         return {
             id: status.data.id,
@@ -190,14 +189,14 @@ export class GitHubGlue {
      * @param {string} comment the comment
      * @returns the comment ID and the URL to the comment
      */
-    public async addPRCommitComment(pullRequestURL: string,
+    public async addPRCommitComment(pullRequest: pullRequestKeyInfo,
                                     commit: string,
                                     gitWorkDir: string | undefined,
                                     comment: string):
         Promise<{id: number; url: string}> {
-        const [owner, repo, nr] =
-            GitGitGadget.parsePullRequestURL(pullRequestURL);
-        await this.ensureAuthenticated(owner);
+        const prKey = getPullRequestKey(pullRequest);
+
+        await this.ensureAuthenticated(prKey.owner);
 
         const files = await git(["diff", "--name-only",
                                  `${commit}^..${commit}`, "--"],
@@ -207,11 +206,9 @@ export class GitHubGlue {
         const status = await this.client.rest.pulls.createReviewComment({
             body: comment,
             commit_id: commit,
-            owner,
             path,
             position: 1,
-            pull_number: nr,
-            repo,
+            ...prKey
         });
         return {
             id: status.data.id,
@@ -227,20 +224,18 @@ export class GitHubGlue {
      * @param {string} comment the comment to add
      * @returns the comment ID and the URL to the added comment
      */
-    public async addPRCommentReply(pullRequestURL: string, id: number,
+    public async addPRCommentReply(pullRequest: pullRequestKeyInfo, id: number,
                                    comment: string):
         Promise<{id: number, url: string}> {
-        const [owner, repo, nr] =
-            GitGitGadget.parsePullRequestURL(pullRequestURL);
-        await this.ensureAuthenticated(owner);
+        const prKey = getPullRequestKey(pullRequest);
+
+        await this.ensureAuthenticated(prKey.owner);
 
         const status = await this.client.rest.pulls.createReplyForReviewComment(
             {
                 body: comment,
                 comment_id: id,
-                owner,
-                pull_number: nr,
-                repo,
+                ...prKey
             });
         return {
             id: status.data.id,
@@ -256,55 +251,50 @@ export class GitHubGlue {
      * @param {string} title the updated title
      * @returns the PR number
      */
-    public async updatePR(owner: string, prNumber: number,
+    public async updatePR(pullRequest: pullRequestKeyInfo,
                           body?: string | undefined, title?: string):
         Promise<number> {
+        const prKey = getPullRequestKey(pullRequest);
 
-        await this.ensureAuthenticated(owner);
+        await this.ensureAuthenticated(prKey.owner);
         const result = await this.client.rest.pulls.update({
             "body": body || undefined,
-            owner,
-            pull_number: prNumber,
-            repo: this.repo,
             "title": title || undefined,
+            ...prKey
         });
 
         return result.data.id;
     }
 
-    public async addPRLabels(pullRequestURL: string, labels: string[]):
+    public async addPRLabels(pullRequest: pullRequestKeyInfo, labels: string[]):
         Promise<string[]> {
-        const [owner, repo, prNo] =
-            GitGitGadget.parsePullRequestURL(pullRequestURL);
+        const prKey = getPullRequestKey(pullRequest);
 
-        await this.ensureAuthenticated(owner);
+        await this.ensureAuthenticated(prKey.owner);
         const result = await this.client.rest.issues.addLabels({
-            issue_number: prNo,
+            issue_number: prKey.pull_number,
             labels,
-            owner,
-            repo,
+            owner: prKey.owner,
+            repo: prKey.repo,
         });
         return result.data.map((res: { id: number }) => `${res.id}`);
     }
 
-    public async closePR(pullRequestURL: string, viaMergeCommit: string):
+    public async closePR(pullRequest: pullRequestKeyInfo, viaMergeCommit: string):
         Promise<number> {
-        const [owner, repo, prNo] =
-            GitGitGadget.parsePullRequestURL(pullRequestURL);
+        const prKey = getPullRequestKey(pullRequest);
 
-        await this.ensureAuthenticated(owner);
+        await this.ensureAuthenticated(prKey.owner);
         await this.client.rest.pulls.update({
-            owner,
-            pull_number: prNo,
-            repo,
             state: "closed",
+            ...prKey
         });
 
         const result = await this.client.rest.issues.createComment({
             body: `Closed via ${viaMergeCommit}.`,
-            issue_number: prNo,
-            owner,
-            repo,
+            issue_number: prKey.pull_number,
+            owner: prKey.owner,
+            repo: prKey.repo,
         });
         return result.data.id;
     }
@@ -347,18 +337,15 @@ export class GitHubGlue {
     }
 
     /**
-     * Retrieve a Pull Request's information relevant to GitGitGadget's
-     * operations.
+     * Retrieve a Pull Request's information relevant to GitGitGadget's operations.
      *
-     * @param prNumber the Pull Request's number
+     * @param prKey the Pull Request's basic id (owner, repo, number)
      * @returns information about that Pull Request
      */
-    public async getPRInfo(repositoryOwner: string, prNumber: number):
+    public async getPRInfo(prKey: pullRequestKey):
         Promise<IPullRequestInfo> {
         const response = await this.client.rest.pulls.get({
-            owner: repositoryOwner,
-            pull_number: prNumber,
-            repo: this.repo,
+            ...prKey
         });
 
         const pullRequest = response.data;
