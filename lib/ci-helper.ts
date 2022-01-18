@@ -11,6 +11,7 @@ import { MailArchiveGitHelper } from "./mail-archive-helper";
 import { MailCommitMapping } from "./mail-commit-mapping";
 import { IMailMetadata } from "./mail-metadata";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
+import { getPullRequestKeyFromURL } from "./pullRequestKey";
 
 const readFile = util.promisify(fs.readFile);
 type CommentFunction = (comment: string) => Promise<void>;
@@ -25,6 +26,8 @@ type CommentFunction = (comment: string) => Promise<void>;
 export class CIHelper {
     public readonly workDir?: string;
     public readonly notes: GitNotes;
+    public readonly urlBase: string;
+    public readonly urlRepo: string;
     protected readonly mail2commit: MailCommitMapping;
     protected readonly github: GitHubGlue;
     protected readonly gggConfigDir: string;
@@ -46,6 +49,8 @@ export class CIHelper {
         this.mail2CommitMapUpdated = !!skipUpdate;
         this.github = new GitHubGlue(workDir);
         this.testing = false;
+        this.urlBase = `https://github.com/gitgitgadget/`;
+        this.urlRepo = `${this.urlBase}git/`;
     }
 
     /*
@@ -81,7 +86,7 @@ export class CIHelper {
         if (!this.commit2mailNotes) {
             this.commit2mailNotes = new GitNotes(this.mail2commit.workDir,
                                                  "refs/notes/commit-to-mail");
-            await this.commit2mailNotes.update();
+            await this.commit2mailNotes.update(this.urlRepo);
         }
         const messageId = await
             this.getMessageIdForOriginalCommit(originalCommit);
@@ -563,6 +568,11 @@ export class CIHelper {
         }
         const command = match[1];
         const argument = match[3];
+        const prKey = {
+            owner: repositoryOwner,
+            repo: "git",
+            pull_number: comment.prNumber
+        };
 
         const pullRequestURL = `https://github.com/${
             repositoryOwner}/git/pull/${comment.prNumber}`;
@@ -584,8 +594,7 @@ export class CIHelper {
             }
 
             const getPRAuthor = async (): Promise<string> => {
-                const pr = await this.github.getPRInfo(repositoryOwner,
-                                                       comment.prNumber);
+                const pr = await this.github.getPRInfo(prKey);
                 return pr.author;
             };
 
@@ -595,8 +604,7 @@ export class CIHelper {
                         argument}')`);
                 }
 
-                const pr = await this.getPRInfo(comment.prNumber,
-                                                pullRequestURL);
+                const pr = await this.getPRInfo(pullRequestURL);
                 if (pr.author !== comment.author) {
                     throw new Error("Only the owner of a PR can submit it!");
                 }
@@ -633,8 +641,7 @@ export class CIHelper {
                         argument}')`);
                 }
 
-                const pr = await this.getPRInfo(comment.prNumber,
-                                                pullRequestURL);
+                const pr = await this.getPRInfo(pullRequestURL);
                 const userInfo = await this.getUserInfo(comment.author);
 
                 const commitOkay = await this.checkCommits(pr, addComment,
@@ -788,7 +795,13 @@ export class CIHelper {
 
     public async handlePush(repositoryOwner: string, prNumber: number):
         Promise<void> {
-        const pr = await this.github.getPRInfo(repositoryOwner, prNumber);
+        const prKey = {
+            owner: repositoryOwner,
+            repo: "git",
+            pull_number: prNumber
+        };
+
+        const pr = await this.github.getPRInfo(prKey);
         const pullRequestURL = `https://github.com/${repositoryOwner
                                 }/git/pull/${prNumber}`;
 
@@ -830,11 +843,10 @@ export class CIHelper {
         return await mailArchiveGit.processMails(prFilter);
     }
 
-    private async getPRInfo(prNumber: number, pullRequestURL: string):
+    private async getPRInfo(pullRequestURL: string):
         Promise<IPullRequestInfo> {
-        const [owner] =
-                GitGitGadget.parsePullRequestURL(pullRequestURL);
-        const pr = await this.github.getPRInfo(owner, prNumber);
+        const prKey = getPullRequestKeyFromURL(pullRequestURL);
+        const pr = await this.github.getPRInfo(prKey);
 
         if (!pr.baseLabel || !pr.baseCommit ||
             !pr.headLabel || !pr.headCommit) {
@@ -865,7 +877,7 @@ export class CIHelper {
 
     private async maybeUpdateGGGNotes(): Promise<void> {
         if (!this.gggNotesUpdated) {
-            await this.notes.update();
+            await this.notes.update(this.urlRepo);
             this.gggNotesUpdated = true;
         }
     }
