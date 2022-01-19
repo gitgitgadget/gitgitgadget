@@ -95,7 +95,7 @@ export class GitHubGlue {
     /**
      * Add a cc to a Pull Request
      *
-     * @param {string} pullRequestURL the Pull Request to comment on
+     * @param {pullRequestKeyInfo} pullRequest - the Pull Request to comment on
      * @param {string} cc to add
      * @returns the comment ID and the URL to the comment
      */
@@ -160,7 +160,7 @@ export class GitHubGlue {
     /**
      * Add a Pull Request comment
      *
-     * @param {string} pullRequestURL the Pull Request to comment on
+     * @param {pullRequestKeyInfo} pullRequest - the Pull Request to comment on
      * @param {string} comment the comment
      * @returns the comment ID and the URL to the comment
      */
@@ -184,7 +184,7 @@ export class GitHubGlue {
     /**
      * Add a Pull Request comment on a specific commit
      *
-     * @param {string} pullRequestURL the Pull Request to comment on
+     * @param {pullRequestKeyInfo} pullRequest - the Pull Request to comment on
      * @param {string} commit the hash of the commit to comment on
      * @param {string} comment the comment
      * @returns the comment ID and the URL to the comment
@@ -219,7 +219,7 @@ export class GitHubGlue {
     /**
      * Add a Pull Request comment as reply to a specific comment
      *
-     * @param {string} pullRequestURL the Pull Request to comment on
+     * @param {pullRequestKeyInfo} pullRequest - the Pull Request to comment on
      * @param {number} id the ID of the comment to which to reply
      * @param {string} comment the comment to add
      * @returns the comment ID and the URL to the added comment
@@ -246,7 +246,7 @@ export class GitHubGlue {
     /**
      * Update a Pull Request body or title
      *
-     * @param {string} pullRequestURL the Pull Request to comment on
+     * @param {pullRequestKeyInfo} pullRequest - the Pull Request to update
      * @param {string} body the updated body
      * @param {string} title the updated title
      * @returns the PR number
