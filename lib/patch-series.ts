@@ -5,12 +5,13 @@ import {
     commitExists, git, gitCommandExists, gitConfig, revListCount, revParse,
 } from "./git";
 import { GitNotes } from "./git-notes";
-import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget";
+import { IGitGitGadgetOptions } from "./gitgitgadget";
 import { IMailMetadata } from "./mail-metadata";
 import { md2text } from "./markdown-renderer";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
 import { PatchSeriesOptions } from "./patch-series-options";
 import { ProjectOptions } from "./project-options";
+import { getPullRequestKeyFromURL } from "./pullRequestKey";
 
 export interface ILogger {
     log(message: string): void;
@@ -751,11 +752,10 @@ export class PatchSeries {
         if (!this.metadata.pullRequestURL) {
             tagName = `${this.project.branchName}-v${this.metadata.iteration}`;
         } else {
-            const [owner, , prNumber] =
-                GitGitGadget.parsePullRequestURL(this.metadata.pullRequestURL);
+            const prKey = getPullRequestKeyFromURL(this.metadata.pullRequestURL);
             const branch = this.metadata.headLabel.replace(/:/g, "/");
-            const tagPrefix = owner === "gitgitgadget" ? "pr-" : `pr-${owner}-`;
-            tagName = `${tagPrefix}${prNumber}/${branch}-v${
+            const tagPrefix = prKey.owner === "gitgitgadget" ? "pr-" : `pr-${prKey.owner}-`;
+            tagName = `${tagPrefix}${prKey.pull_number}/${branch}-v${
                 this.metadata.iteration}`;
         }
 
