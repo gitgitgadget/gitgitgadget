@@ -5,13 +5,12 @@ import { ILintError, LintCommit } from "./commit-lint";
 import { commitExists, git, emptyTreeName } from "./git";
 import { GitNotes } from "./git-notes";
 import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget";
-import { GitHubGlue, IGitHubUser, IPRCommit,
-    IPullRequestInfo } from "./github-glue";
+import { GitHubGlue, IGitHubUser, IPRCommit, IPullRequestInfo } from "./github-glue";
 import { MailArchiveGitHelper } from "./mail-archive-helper";
 import { MailCommitMapping } from "./mail-commit-mapping";
 import { IMailMetadata } from "./mail-metadata";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
-import { getPullRequestKeyFromURL } from "./pullRequestKey";
+import { getPullRequestKeyFromURL, pullRequestKey } from "./pullRequestKey";
 
 const readFile = util.promisify(fs.readFile);
 type CommentFunction = (comment: string) => Promise<void>;
@@ -39,8 +38,7 @@ export class CIHelper {
         "https://github.com/gitgitgadget/git/pull/923"
     ]);
 
-    public constructor(workDir?: string, skipUpdate?: boolean,
-                       gggConfigDir = ".") {
+    public constructor(workDir?: string, skipUpdate?: boolean, gggConfigDir = ".") {
         this.gggConfigDir = gggConfigDir;
         this.workDir = workDir;
         this.notes = new GitNotes(workDir);
@@ -134,8 +132,7 @@ export class CIHelper {
         await this.notes.set(messageID, mailMeta, true);
 
         if (!this.testing && mailMeta.pullRequestURL &&
-            mailMeta.pullRequestURL
-            .startsWith("https://github.com/gitgitgadget/") ) {
+            mailMeta.pullRequestURL.startsWith(this.urlBase) ) {
             await this.github.annotateCommit(mailMeta.originalCommit,
                                              upstreamCommit, "gitgitgadget");
         }
@@ -145,7 +142,7 @@ export class CIHelper {
 
     public async updateCommitMappings(): Promise<boolean> {
         if (!this.gggNotesUpdated) {
-            await git(["fetch", "https://github.com/gitgitgadget/git",
+            await git(["fetch", this.urlRepo,
                        "--tags",
                        "+refs/notes/gitgitgadget:refs/notes/gitgitgadget",
                        "+refs/heads/maint:refs/remotes/upstream/maint",
@@ -309,9 +306,7 @@ export class CIHelper {
      * require `refs/notes/gitgitgadget` to be pushed. The second is `true`
      * if the `options` were updated.
      */
-    public async handlePR(pullRequestURL: string,
-                          options?: IGitGitGadgetOptions):
-        Promise<[boolean, boolean]> {
+    public async handlePR(pullRequestURL: string, options?: IGitGitGadgetOptions): Promise<[boolean, boolean]> {
         await this.maybeUpdateGGGNotes();
         await this.maybeUpdateMail2CommitMap();
 
@@ -326,16 +321,13 @@ export class CIHelper {
             updateOptionsInRef = true;
         }
 
-        const prMeta =
-            await this.notes.get<IPatchSeriesMetadata>(pullRequestURL);
+        const prMeta = await this.notes.get<IPatchSeriesMetadata>(pullRequestURL);
         if (!prMeta || !prMeta.coverLetterMessageId) {
             return [false, false];
         }
 
-        const headMessageID =
-            await this.getMessageIdForOriginalCommit(prMeta.headCommit);
-        const headMeta = headMessageID &&
-            await this.getMailMetadata(headMessageID);
+        const headMessageID = await this.getMessageIdForOriginalCommit(prMeta.headCommit);
+        const headMeta = headMessageID && await this.getMailMetadata(headMessageID);
         const tipCommitInGitGit = headMeta && headMeta.commitInGitGit;
         if (!tipCommitInGitGit) {
             return [false, false];
@@ -347,6 +339,8 @@ export class CIHelper {
             notesUpdated = true;
         }
 
+        const prKey = getPullRequestKeyFromURL(pullRequestURL);
+
         // Identify branch in gitster/git
         let gitsterBranch: string | undefined =
             await git(["for-each-ref", `--points-at=${tipCommitInGitGit}`,
@@ -357,14 +351,12 @@ export class CIHelper {
             if (newline > 0) {
                 const comment2 = `Found multiple candidates in gitster/git:\n${
                     gitsterBranch};\n\nUsing the first one.`;
-                const url2 =
-                    await this.github.addPRComment(pullRequestURL, comment2);
+                const url2 = await this.github.addPRComment(prKey, comment2);
                 console.log(`Added comment about ${gitsterBranch}: ${url2}`);
 
                 gitsterBranch = gitsterBranch.substr(0, newline);
             }
-            gitsterBranch =
-                gitsterBranch.replace(/^refs\/remotes\/gitster\//, "");
+            gitsterBranch = gitsterBranch.replace(/^refs\/remotes\/gitster\//, "");
 
             const comment = `This branch is now known as [\`${gitsterBranch
                 }\`](https://github.com/gitster/git/commits/${gitsterBranch}).`;
@@ -372,8 +364,7 @@ export class CIHelper {
                 prMeta.branchNameInGitsterGit = gitsterBranch;
                 notesUpdated = true;
 
-                const url =
-                    await this.github.addPRComment(pullRequestURL, comment);
+                const url = await this.github.addPRComment(prKey, comment);
                 console.log(`Added comment about ${gitsterBranch}: ${url}`);
             }
         }
@@ -404,14 +395,13 @@ export class CIHelper {
                 // Add comment on GitHub
                 const comment = `This patch series was integrated into ${branch
                     } via https://github.com/git/git/commit/${mergeCommit}.`;
-                const url =
-                    await this.github.addPRComment(pullRequestURL, comment);
+                const url = await this.github.addPRComment(prKey, comment);
                 console.log(`Added comment about ${branch}: ${url}`);
             }
         }
 
         if (prLabelsToAdd.length) {
-            await this.github.addPRLabels(pullRequestURL, prLabelsToAdd);
+            await this.github.addPRLabels(prKey, prLabelsToAdd);
         }
 
         let optionsUpdated = false;
@@ -429,7 +419,7 @@ export class CIHelper {
                 optionsUpdated = true;
             }
 
-            await this.github.closePR(pullRequestURL, closePR);
+            await this.github.closePR(prKey, closePR);
         }
 
         if (notesUpdated) {
@@ -538,10 +528,9 @@ export class CIHelper {
             if (!prMeta.latestTag) {
                 throw new Error("Cannot fetch commits without tag");
             }
-            const [owner, repo, nr] =
-                GitGitGadget.parsePullRequestURL(prMeta.pullRequestURL);
-            const fetchURL = `https://github.com/${owner}/${repo}`;
-            const fetchRef = `refs/pull/${nr}/head`;
+            const prKey = getPullRequestKeyFromURL(prMeta.pullRequestURL);
+            const fetchURL = `https://github.com/${prKey.owner}/${prKey.repo}`;
+            const fetchRef = `refs/pull/${prKey.pull_number}/head`;
             await git(["fetch", fetchURL, fetchRef, prMeta.latestTag], {
                 workDir: this.workDir,
             });
@@ -559,8 +548,7 @@ export class CIHelper {
      */
     public async handleComment(repositoryOwner: string, commentID: number):
         Promise<void> {
-        const comment =
-            await this.github.getPRComment(repositoryOwner, commentID);
+        const comment = await this.github.getPRComment(repositoryOwner, commentID);
         const match = comment.body.match(/^\s*(\/[-a-z]+)(\s+(.*?))?\s*$/);
         if (!match) {
             console.log(`Not a command; doing nothing: '${comment.body}'`);
@@ -574,23 +562,20 @@ export class CIHelper {
             pull_number: comment.prNumber
         };
 
-        const pullRequestURL = `https://github.com/${
-            repositoryOwner}/git/pull/${comment.prNumber}`;
+        const pullRequestURL = `https://github.com/${repositoryOwner}/git/pull/${comment.prNumber}`;
         console.log(`Handling command ${command} with argument ${argument} at ${
             pullRequestURL}#issuecomment-${commentID}`);
 
         const addComment = async (body: string): Promise<void> => {
             const redacted = CIHelper.redactGitHubToken(body);
             console.log(`Adding comment to ${pullRequestURL}:\n${redacted}`);
-            await this.github.addPRComment(pullRequestURL, redacted);
+            await this.github.addPRComment(prKey, redacted);
         };
 
         try {
-            const gitGitGadget = await GitGitGadget.get(this.gggConfigDir,
-                                                        this.workDir);
+            const gitGitGadget = await GitGitGadget.get(this.gggConfigDir, this.workDir);
             if (!gitGitGadget.isUserAllowed(comment.author)) {
-                throw new Error(`User ${
-                    comment.author} is not permitted to use GitGitGadget`);
+                throw new Error(`User ${comment.author} is not yet permitted to use GitGitGadget`);
             }
 
             const getPRAuthor = async (): Promise<string> => {
@@ -600,19 +585,17 @@ export class CIHelper {
 
             if (command === "/submit") {
                 if (argument && argument !== "") {
-                    throw new Error(`/submit does not accept arguments ('${
-                        argument}')`);
+                    throw new Error(`/submit does not accept arguments ('${argument}')`);
                 }
 
-                const pr = await this.getPRInfo(pullRequestURL);
+                const pr = await this.getPRInfo(prKey);
                 if (pr.author !== comment.author) {
                     throw new Error("Only the owner of a PR can submit it!");
                 }
 
                 const userInfo = await this.getUserInfo(comment.author);
 
-                const commitOkay = await this.checkCommits(pr, addComment,
-                                                           userInfo);
+                const commitOkay = await this.checkCommits(pr, addComment, userInfo);
 
                 if (commitOkay) {
                     const extraComment = userInfo.email === null ?
@@ -620,85 +603,66 @@ export class CIHelper {
                         } has no public email address set on GitHub` : "";
 
                     const metadata = await gitGitGadget.submit(pr, userInfo);
-                    const uri = "https://github.com/gitgitgadget/git";
                     const code = "\n```";
-                    await addComment(`Submitted as [${
-                            metadata?.coverLetterMessageId
+                    await addComment(`Submitted as [${metadata?.coverLetterMessageId
                             }](https://lore.kernel.org/git/${
-                            metadata?.coverLetterMessageId
-                            })\n\nTo fetch this version into \`FETCH_HEAD\`:${
-                            code}\ngit fetch ${uri} ${metadata?.latestTag}${code
-                            }\n\nTo fetch this version to local tag \`${
-                            metadata?.latestTag}\`:${
-                            code}\ngit fetch --no-tags ${
-                            uri} tag ${metadata?.latestTag}${code}${
+                            metadata?.coverLetterMessageId})\n\nTo fetch this version into \`FETCH_HEAD\`:${
+                            code}\ngit fetch ${this.urlRepo} ${metadata?.latestTag}${code
+                            }\n\nTo fetch this version to local tag \`${metadata?.latestTag}\`:${
+                            code}\ngit fetch --no-tags ${this.urlRepo} tag ${metadata?.latestTag}${code}${
                             extraComment}`);
                 }
 
             } else if (command === "/preview") {
                 if (argument && argument !== "") {
-                    throw new Error(`/preview does not accept arguments ('${
-                        argument}')`);
+                    throw new Error(`/preview does not accept arguments ('${argument}')`);
                 }
 
-                const pr = await this.getPRInfo(pullRequestURL);
+                const pr = await this.getPRInfo(prKey);
                 const userInfo = await this.getUserInfo(comment.author);
 
-                const commitOkay = await this.checkCommits(pr, addComment,
-                                                           userInfo);
+                const commitOkay = await this.checkCommits(pr, addComment, userInfo);
 
                 if (!userInfo.email) {
-                    throw new Error(`Could not determine public email of ${
-                        comment.author}`);
+                    throw new Error(`Could not determine public email of ${comment.author}`);
                 }
 
                 if (commitOkay) {
                     const metadata = await gitGitGadget.preview(pr, userInfo);
-                    await addComment(`Preview email sent as ${
-                        metadata?.coverLetterMessageId}`);
+                    await addComment(`Preview email sent as ${metadata?.coverLetterMessageId}`);
                 }
 
             } else if (command === "/allow") {
                 const accountName = argument || await getPRAuthor();
                 let extraComment = "";
                 try {
-                    const userInfo = await this.github.getGitHubUserInfo(
-                        accountName);
+                    const userInfo = await this.github.getGitHubUserInfo(accountName);
                     if (userInfo.email === null) {
-                        extraComment = `\n\nWARNING: ${accountName
-                            } has no public email address set on GitHub`;
+                        extraComment = `\n\nWARNING: ${accountName} has no public email address set on GitHub`;
                     }
                 } catch (reason) {
-                    throw new Error(`User ${
-                        accountName} is not a valid GitHub username: ${
-                        reason}`);
+                    throw new Error(`User ${accountName} is not a valid GitHub username: ${reason}`);
                 }
 
                 if (await gitGitGadget.allowUser(comment.author, accountName)) {
-                    await addComment(`User ${
-                        accountName} is now allowed to use GitGitGadget.${
-                        extraComment}`);
+                    await addComment(`User ${accountName} is now allowed to use GitGitGadget.${extraComment}`);
                 } else {
-                    await addComment(`User ${
-                        accountName} already allowed to use GitGitGadget.`);
+                    await addComment(`User ${accountName} already allowed to use GitGitGadget.`);
                 }
             } else if (command === "/disallow") {
                 const accountName = argument || await getPRAuthor();
 
                 if (await gitGitGadget.denyUser(comment.author, accountName)) {
-                    await addComment(`User ${accountName
-                        } is no longer allowed to use GitGitGadget.`);
+                    await addComment(`User ${accountName} is no longer allowed to use GitGitGadget.`);
                 } else {
-                    await addComment(`User ${
-                        accountName} already not allowed to use GitGitGadget.`);
+                    await addComment(`User ${accountName} already not allowed to use GitGitGadget.`);
                 }
             } else if (command === "/cc") {
-                await this.handleCC(argument, pullRequestURL);
+                await this.handleCC(argument, prKey);
             } else if (command === "/test") {
                 await addComment(`Received test '${argument}'`);
             } else {
-                console.log(`Ignoring unrecognized command ${command} in ${
-                    pullRequestURL}#issuecomment-${commentID}`);
+                console.log(`Ignoring unrecognized command ${command} in ${pullRequestURL}#issuecomment-${commentID}`);
             }
         } catch (e) {
             const error = e as Error;
@@ -782,14 +746,13 @@ export class CIHelper {
         return text.replace(/(https:\/\/)x-access-token:.*?@/g, "$1");
     }
 
-    public async handleCC(ccSet: string, pullRequestURL: string):
+    public async handleCC(ccSet: string, prKey: pullRequestKey):
         Promise<void> {
         const addresses = addressparser(ccSet, { flatten: true });
 
         for (const address of addresses) {
-            const cc = address.name ? `${address.name} <${address.address}>`
-                : address.address;
-            await this.github.addPRCc(pullRequestURL, cc);
+            const cc = address.name ? `${address.name} <${address.address}>` : address.address;
+            await this.github.addPRCc(prKey, cc);
         }
     }
 
@@ -802,23 +765,20 @@ export class CIHelper {
         };
 
         const pr = await this.github.getPRInfo(prKey);
-        const pullRequestURL = `https://github.com/${repositoryOwner
-                                }/git/pull/${prNumber}`;
 
         const addComment = async (body: string): Promise<void>  => {
             const redacted = CIHelper.redactGitHubToken(body);
-            console.log(`Adding comment to ${pullRequestURL}:\n${redacted}`);
-            await this.github.addPRComment(pullRequestURL, redacted);
+            console.log(`Adding comment to ${pr.pullRequestURL}:\n${redacted}`);
+            await this.github.addPRComment(prKey, redacted);
         };
 
-        const gitGitGadget = await GitGitGadget.get(this.gggConfigDir,
-                                                    this.workDir);
+        const gitGitGadget = await GitGitGadget.get(this.gggConfigDir, this.workDir);
         if (!pr.hasComments && !gitGitGadget.isUserAllowed(pr.author)) {
             const welcome = (await readFile("res/WELCOME.md")).toString()
                     .replace(/\${username}/g, pr.author);
-            await this.github.addPRComment(pullRequestURL, welcome);
+            await this.github.addPRComment(prKey, welcome);
 
-            await this.github.addPRLabels(pullRequestURL, ["new user"]);
+            await this.github.addPRLabels(prKey, ["new user"]);
         }
 
         const commitOkay = await this.checkCommits(pr, addComment);
@@ -843,15 +803,13 @@ export class CIHelper {
         return await mailArchiveGit.processMails(prFilter);
     }
 
-    private async getPRInfo(pullRequestURL: string):
+    private async getPRInfo(prKey: pullRequestKey):
         Promise<IPullRequestInfo> {
-        const prKey = getPullRequestKeyFromURL(pullRequestURL);
         const pr = await this.github.getPRInfo(prKey);
 
         if (!pr.baseLabel || !pr.baseCommit ||
             !pr.headLabel || !pr.headCommit) {
-            throw new Error(`Could not determine PR details for ${
-                pullRequestURL}`);
+            throw new Error(`Could not determine PR details for ${pr.pullRequestURL}`);
         }
 
         if (!pr.title || (!pr.body && pr.commits !== 1)) {

@@ -75,17 +75,6 @@ export class GitGitGadget {
                                 publishTagsAndNotesToRemote);
     }
 
-    public static parsePullRequestURL(pullRequestURL: string):
-        [string, string, number] {
-        const match = pullRequestURL
-            .match(/^https:\/\/github.com\/(.*)\/(.*)\/pull\/(\d+)$/);
-        if (!match) {
-            throw new Error(`Unrecognized PR URL: "${pullRequestURL}`);
-        }
-        const [, owner, repo, prNo] = match;
-        return [owner, repo, parseInt(prNo, 10)];
-    }
-
     protected static async readOptions(notes: GitNotes):
         Promise<[IGitGitGadgetOptions, Set<string>]> {
 
