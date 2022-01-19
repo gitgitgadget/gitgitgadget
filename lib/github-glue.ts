@@ -246,17 +246,14 @@ export class GitHubGlue {
     /**
      * Update a Pull Request body or title
      *
-     * @param {pullRequestKeyInfo} pullRequest - the Pull Request to update
+     * @param {pullRequestKey} prKey - the Pull Request to update
      * @param {string} body the updated body
      * @param {string} title the updated title
      * @returns the PR number
      */
-    public async updatePR(pullRequest: pullRequestKeyInfo,
-                          body?: string | undefined, title?: string):
-        Promise<number> {
-        const prKey = getPullRequestKey(pullRequest);
-
+    public async updatePR(prKey: pullRequestKey, body?: string | undefined, title?: string): Promise<number> {
         await this.ensureAuthenticated(prKey.owner);
+
         const result = await this.client.rest.pulls.update({
             "body": body || undefined,
             "title": title || undefined,
