@@ -56,11 +56,9 @@ export class CIHelper {
      * a commit with a Message-ID recorded in `refs/notes/gitgitgadget`),
      * identify the commit (if any) in `git.git`.
      */
-    public async identifyUpstreamCommit(originalCommit: string):
-        Promise<string | undefined> {
+    public async identifyUpstreamCommit(originalCommit: string): Promise<string | undefined> {
         await this.maybeUpdateMail2CommitMap();
-        const messageId = await
-            this.getMessageIdForOriginalCommit(originalCommit);
+        const messageId = await this.getMessageIdForOriginalCommit(originalCommit);
         if (!messageId) {
             return undefined;
         }
@@ -78,21 +76,17 @@ export class CIHelper {
      * @param originalCommit the original, contributed commit
      * @param gitGitCommit the corresponding commit in git.git
      */
-    public async setUpstreamCommit(originalCommit: string,
-                                   gitGitCommit: string): Promise<void> {
+    public async setUpstreamCommit(originalCommit: string, gitGitCommit: string): Promise<void> {
         await this.maybeUpdateMail2CommitMap();
         if (!this.commit2mailNotes) {
-            this.commit2mailNotes = new GitNotes(this.mail2commit.workDir,
-                                                 "refs/notes/commit-to-mail");
+            this.commit2mailNotes = new GitNotes(this.mail2commit.workDir, "refs/notes/commit-to-mail");
             await this.commit2mailNotes.update(this.urlRepo);
         }
-        const messageId = await
-            this.getMessageIdForOriginalCommit(originalCommit);
+        const messageId = await this.getMessageIdForOriginalCommit(originalCommit);
         if (!messageId) {
             return undefined;
         }
-        await this.mail2commit.mail2CommitNotes.setString(messageId,
-                                                          gitGitCommit, true);
+        await this.mail2commit.mail2CommitNotes.setString(messageId, gitGitCommit, true);
         await this.commit2mailNotes.appendCommitNote(gitGitCommit, messageId);
     }
 
@@ -103,27 +97,22 @@ export class CIHelper {
      *
      * @returns `true` iff the metadata had to be updated
      */
-    public async updateCommitMapping(messageID: string,
-                                     upstreamCommit?: string):
-        Promise<boolean> {
+    public async updateCommitMapping(messageID: string, upstreamCommit?: string): Promise<boolean> {
         await this.maybeUpdateGGGNotes();
-        const mailMeta: IMailMetadata | undefined =
-            await this.notes.get<IMailMetadata>(messageID);
+        const mailMeta: IMailMetadata | undefined = await this.notes.get<IMailMetadata>(messageID);
         if (!mailMeta) {
             throw new Error(`No metadata found for ${messageID}`);
         }
         if (upstreamCommit === undefined) {
             await this.maybeUpdateMail2CommitMap();
-            upstreamCommit =
-                await this.mail2commit.getGitGitCommitForMessageId(messageID);
+            upstreamCommit = await this.mail2commit.getGitGitCommitForMessageId(messageID);
         }
         if (!upstreamCommit || upstreamCommit === mailMeta.commitInGitGit) {
             return false;
         }
         mailMeta.commitInGitGit = upstreamCommit;
         if (!mailMeta.originalCommit) {
-            const originalCommit
-                = await this.getOriginalCommitForMessageId(messageID);
+            const originalCommit = await this.getOriginalCommitForMessageId(messageID);
             if (!originalCommit) {
                 throw new Error(`No original commit found for ${messageID}`);
             }
@@ -131,10 +120,8 @@ export class CIHelper {
         }
         await this.notes.set(messageID, mailMeta, true);
 
-        if (!this.testing && mailMeta.pullRequestURL &&
-            mailMeta.pullRequestURL.startsWith(this.urlBase) ) {
-            await this.github.annotateCommit(mailMeta.originalCommit,
-                                             upstreamCommit, "gitgitgadget");
+        if (!this.testing && mailMeta.pullRequestURL && mailMeta.pullRequestURL.startsWith(this.urlBase) ) {
+            await this.github.annotateCommit(mailMeta.originalCommit, upstreamCommit, "gitgitgadget");
         }
 
         return true;
@@ -182,8 +169,7 @@ export class CIHelper {
                 info.baseLabel.match(/^gitgitgadget:git-gui\//)) {
                 continue;
             }
-            const messageID =
-                await this.getMessageIdForOriginalCommit(info.headCommit);
+            const messageID = await this.getMessageIdForOriginalCommit(info.headCommit);
             if (!messageID) {
                 continue;
             }
@@ -195,8 +181,7 @@ export class CIHelper {
                 if (commitsInSeen.has(meta.commitInGitGit)) {
                     continue;
                 }
-                console.log(`Upstream commit ${meta.commitInGitGit} for ${
-                    info.headCommit} of ${
+                console.log(`Upstream commit ${meta.commitInGitGit} for ${info.headCommit} of ${
                     info.pullRequestURL} no longer found in 'seen'`);
                 meta.commitInGitGit = undefined;
                 result = true;
@@ -215,31 +200,24 @@ export class CIHelper {
                 if (array.length === 1) {
                     return array[0];
                 }
-                return await
-                    git(["commit-tree", ...array, emptyTreeName, "-m", "()"],
-                        { workDir: this.workDir });
+                return await git(["commit-tree", ...array, emptyTreeName, "-m", "()"], { workDir: this.workDir });
             };
 
             const range1 = `${await octopus(bases)}..${await octopus(heads)}`;
-            const range2 =
-                "refs/remotes/upstream/maint~100..refs/remotes/upstream/seen";
+            const range2 = "refs/remotes/upstream/maint~100..refs/remotes/upstream/seen";
             const start = Date.now();
             const out = await git(["-c", "core.abbrev=40", "range-diff", "-s",
                                    range1, range2],
                                   { workDir: this.workDir });
             const duration = Date.now() - start;
             if (duration > 2000)
-                console.log(`warning: \`git range-diff ${
-                    range1} ${range2}\` took ${
-                    duration / 1000} seconds`);
+                console.log(`warning: \`git range-diff ${range1} ${range2}\` took ${duration / 1000} seconds`);
             for (const line of out.split("\n")) {
-                const match =
-                    line.match(/^[^:]*: *([^ ]*) [!=][^:]*: *([^ ]*)/);
+                const match = line.match(/^[^:]*: *([^ ]*) [!=][^:]*: *([^ ]*)/);
                 if (!match) {
                     continue;
                 }
-                const messageID2 =
-                    await this.getMessageIdForOriginalCommit(match[1]);
+                const messageID2 = await this.getMessageIdForOriginalCommit(match[1]);
                 if (messageID2 === undefined) {
                     continue;
                 }
@@ -272,8 +250,7 @@ export class CIHelper {
                 continue;
             }
             console.log(`Handling ${pullRequestURL}`);
-            const [notesUpdated, optionsUpdated2] =
-                await this.handlePR(pullRequestURL, options);
+            const [notesUpdated, optionsUpdated2] = await this.handlePR(pullRequestURL, options);
             if (notesUpdated) {
                 result = true;
             }
@@ -349,8 +326,7 @@ export class CIHelper {
         if (gitsterBranch) {
             const newline = gitsterBranch.indexOf("\n");
             if (newline > 0) {
-                const comment2 = `Found multiple candidates in gitster/git:\n${
-                    gitsterBranch};\n\nUsing the first one.`;
+                const comment2 = `Found multiple candidates in gitster/git:\n${gitsterBranch};\n\nUsing the first one.`;
                 const url2 = await this.github.addPRComment(prKey, comment2);
                 console.log(`Added comment about ${gitsterBranch}: ${url2}`);
 
@@ -372,8 +348,7 @@ export class CIHelper {
         let closePR: string | undefined;
         const prLabelsToAdd: string[] = [];
         for (const branch of ["seen", "next", "master", "maint"]) {
-            const mergeCommit =
-                await this.identifyMergeCommit(branch, tipCommitInGitGit);
+            const mergeCommit = await this.identifyMergeCommit(branch, tipCommitInGitGit);
             if (!mergeCommit) {
                 continue;
             }
@@ -433,14 +408,12 @@ export class CIHelper {
         return [notesUpdated, optionsUpdated];
     }
 
-    public async getMessageIdForOriginalCommit(commit: string):
-        Promise<string | undefined> {
+    public async getMessageIdForOriginalCommit(commit: string): Promise<string | undefined> {
         await this.maybeUpdateGGGNotes();
         return await this.notes.getLastCommitNote(commit);
     }
 
-    public async getOriginalCommitForMessageId(messageID: string):
-        Promise<string | undefined> {
+    public async getOriginalCommitForMessageId(messageID: string): Promise<string | undefined> {
         await this.maybeUpdateGGGNotes();
         const note = await this.notes.get<IMailMetadata>(messageID);
         return note ? note.originalCommit : undefined;
@@ -450,15 +423,12 @@ export class CIHelper {
      * Given a branch and a commit, identify the merge that integrated that
      * commit into that branch.
      */
-    public async identifyMergeCommit(upstreamBranch: string,
-                                     integratedCommit: string):
-        Promise<string | undefined> {
+    public async identifyMergeCommit(upstreamBranch: string, integratedCommit: string): Promise<string | undefined> {
         await this.maybeUpdateMail2CommitMap();
 
-        const revs =
-            await git(["rev-list", "--ancestry-path", "--parents",
-                       `${integratedCommit}..upstream/${upstreamBranch}`],
-                      { workDir: this.workDir });
+        const revs =  await git(["rev-list", "--ancestry-path", "--parents",
+                                `${integratedCommit}..upstream/${upstreamBranch}`],
+                                { workDir: this.workDir });
         if (revs === "") {
             return undefined;
         }
@@ -503,27 +473,23 @@ export class CIHelper {
         return options;
     }
 
-    public async getPRMetadata(pullRequestURL: string):
-        Promise<IPatchSeriesMetadata | undefined> {
+    public async getPRMetadata(pullRequestURL: string): Promise<IPatchSeriesMetadata | undefined> {
         await this.maybeUpdateGGGNotes();
         return this.notes.get<IPatchSeriesMetadata>(pullRequestURL);
     }
 
-    public async getMailMetadata(messageID: string):
-        Promise<IMailMetadata | undefined> {
+    public async getMailMetadata(messageID: string): Promise<IMailMetadata | undefined> {
         await this.maybeUpdateGGGNotes();
         return this.notes.get<IMailMetadata>(messageID);
     }
 
-    public async getOriginalCommitsForPR(prMeta: IPatchSeriesMetadata):
-        Promise<string[]> {
+    public async getOriginalCommitsForPR(prMeta: IPatchSeriesMetadata): Promise<string[]> {
         if (!this.workDir) {
             throw new Error("Need a workDir");
         }
         if (!await commitExists(prMeta.headCommit, this.workDir)) {
             if (!prMeta.pullRequestURL) {
-                throw new Error(`Require URL in ${
-                    JSON.stringify(prMeta, null, 4)}`);
+                throw new Error(`Require URL in ${JSON.stringify(prMeta, null, 4)}`);
             }
             if (!prMeta.latestTag) {
                 throw new Error("Cannot fetch commits without tag");
@@ -546,8 +512,7 @@ export class CIHelper {
      *
      * @param commentID the ID of the PR comment to handle
      */
-    public async handleComment(repositoryOwner: string, commentID: number):
-        Promise<void> {
+    public async handleComment(repositoryOwner: string, commentID: number): Promise<void> {
         const comment = await this.github.getPRComment(repositoryOwner, commentID);
         const match = comment.body.match(/^\s*(\/[-a-z]+)(\s+(.*?))?\s*$/);
         if (!match) {
@@ -599,8 +564,7 @@ export class CIHelper {
 
                 if (commitOkay) {
                     const extraComment = userInfo.email === null ?
-                        `\n\nWARNING: ${comment.author
-                        } has no public email address set on GitHub` : "";
+                        `\n\nWARNING: ${comment.author} has no public email address set on GitHub` : "";
 
                     const metadata = await gitGitGadget.submit(pr, userInfo);
                     const code = "\n```";
@@ -670,18 +634,14 @@ export class CIHelper {
         }
     }
 
-    public async checkCommits(pr: IPullRequestInfo,
-                              addComment: CommentFunction,
-                              userInfo?: IGitHubUser):
+    public async checkCommits(pr: IPullRequestInfo, addComment: CommentFunction, userInfo?: IGitHubUser):
         Promise<boolean> {
         let result = true;
         const maxCommits = 30;
         if (!this.maxCommitsExceptions.has(pr.pullRequestURL) &&
             pr.commits && pr.commits > maxCommits) {
-            await addComment(`The pull request has ${pr.commits
-                             } commits.  The max allowed is ${maxCommits
-                             }.  Please split the patch series into ${
-                             ""}multiple pull requests. Also consider ${
+            await addComment(`The pull request has ${pr.commits} commits.  The max allowed is ${maxCommits
+                             }.  Please split the patch series into multiple pull requests. Also consider ${
                              ""}squashing related commits.`);
             result = false;
         }
@@ -695,8 +655,7 @@ export class CIHelper {
             }
 
             if (cm.author.email.endsWith("@users.noreply.github.com")) {
-                await addComment(`Invalid author email in ${cm.commit}: "${
-                                 cm.author.email}"`);
+                await addComment(`Invalid author email in ${cm.commit}: "${cm.author.email}"`);
                 result = false;
                 continue;
             }
@@ -712,11 +671,8 @@ export class CIHelper {
         }
 
         if (merges.length) {
-            await addComment(`There ${
-                             merges.length > 1 ?
-                             "are merge commits" : "is a merge commit"
-                             } in this Pull Request:\n\n    ${
-                             merges.join("\n    ")
+            await addComment(`There ${merges.length > 1 ? "are merge commits" : "is a merge commit"
+                             } in this Pull Request:\n\n    ${merges.join("\n    ")
                              }\n\nPlease rebase the branch and force-push.`);
             result = false;
         }
@@ -746,8 +702,7 @@ export class CIHelper {
         return text.replace(/(https:\/\/)x-access-token:.*?@/g, "$1");
     }
 
-    public async handleCC(ccSet: string, prKey: pullRequestKey):
-        Promise<void> {
+    public async handleCC(ccSet: string, prKey: pullRequestKey): Promise<void> {
         const addresses = addressparser(ccSet, { flatten: true });
 
         for (const address of addresses) {
@@ -756,8 +711,7 @@ export class CIHelper {
         }
     }
 
-    public async handlePush(repositoryOwner: string, prNumber: number):
-        Promise<void> {
+    public async handlePush(repositoryOwner: string, prNumber: number): Promise<void> {
         const prKey = {
             owner: repositoryOwner,
             repo: "git",
@@ -788,8 +742,7 @@ export class CIHelper {
         }
     }
 
-    public async handleNewMails(mailArchiveGitDir: string,
-                                onlyPRs?: Set<number>): Promise<boolean> {
+    public async handleNewMails(mailArchiveGitDir: string, onlyPRs?: Set<number>): Promise<boolean> {
         await git(["fetch"], { workDir: mailArchiveGitDir });
         const prFilter = !onlyPRs ? undefined :
             (pullRequestURL: string): boolean => {
@@ -797,18 +750,14 @@ export class CIHelper {
                 return !match ? false : onlyPRs.has(parseInt(match[1], 10));
             };
         await this.maybeUpdateGGGNotes();
-        const mailArchiveGit =
-            await MailArchiveGitHelper.get(this.notes, mailArchiveGitDir,
-                                           this.github);
+        const mailArchiveGit = await MailArchiveGitHelper.get(this.notes, mailArchiveGitDir, this.github);
         return await mailArchiveGit.processMails(prFilter);
     }
 
-    private async getPRInfo(prKey: pullRequestKey):
-        Promise<IPullRequestInfo> {
+    private async getPRInfo(prKey: pullRequestKey): Promise<IPullRequestInfo> {
         const pr = await this.github.getPRInfo(prKey);
 
-        if (!pr.baseLabel || !pr.baseCommit ||
-            !pr.headLabel || !pr.headCommit) {
+        if (!pr.baseLabel || !pr.baseCommit || !pr.headLabel || !pr.headCommit) {
             throw new Error(`Could not determine PR details for ${pr.pullRequestURL}`);
         }
 
@@ -817,8 +766,7 @@ export class CIHelper {
         }
 
         if (!pr.mergeable) {
-            throw new Error("Refusing to submit a patch series "
-                + "that does not merge cleanly.");
+            throw new Error("Refusing to submit a patch series that does not merge cleanly.");
         }
 
         return pr;
