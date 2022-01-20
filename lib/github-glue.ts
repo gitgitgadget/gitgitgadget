@@ -61,7 +61,7 @@ export class GitHubGlue {
     }
 
     public async annotateCommit(originalCommit: string, gitGitCommit: string,
-                                repositoryOwner: string): Promise<number> {
+                                repositoryOwner: string, baseOwner: string): Promise<number> {
         const output =
             await git(["show", "-s", "--format=%h %cI", gitGitCommit],
                       { workDir: this.workDir });
@@ -70,7 +70,7 @@ export class GitHubGlue {
             throw new Error(`Could not find ${gitGitCommit}: '${output}'`);
         }
         const [, short, completedAt] = match;
-        const url = `https://github.com/git/git/commit/${gitGitCommit}`;
+        const url = `https://github.com/${baseOwner}/${this.repo}/commit/${gitGitCommit}`;
 
         await this.ensureAuthenticated(repositoryOwner);
         const checks = await this.client.rest.checks.create({
@@ -80,9 +80,8 @@ export class GitHubGlue {
             head_sha: originalCommit,
             name: "upstream commit",
             output: {
-                summary: `Integrated into git.git as [${
-                    short}](${url}).`,
-                title: `In git.git: ${short}`,
+                summary: `Integrated into ${baseOwner}.${this.repo} as [${short}](${url}).`,
+                title: `In ${baseOwner}.${this.repo}: ${short}`,
             },
             owner: repositoryOwner,
             repo: this.repo,

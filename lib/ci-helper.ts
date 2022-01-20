@@ -121,7 +121,7 @@ export class CIHelper {
         await this.notes.set(messageID, mailMeta, true);
 
         if (!this.testing && mailMeta.pullRequestURL && mailMeta.pullRequestURL.startsWith(this.urlBase) ) {
-            await this.github.annotateCommit(mailMeta.originalCommit, upstreamCommit, "gitgitgadget");
+            await this.github.annotateCommit(mailMeta.originalCommit, upstreamCommit, "gitgitgadget", "git");
         }
 
         return true;
