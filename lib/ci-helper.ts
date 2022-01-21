@@ -757,6 +757,11 @@ export class CIHelper {
     private async getPRInfo(prKey: pullRequestKey): Promise<IPullRequestInfo> {
         const pr = await this.github.getPRInfo(prKey);
 
+        if (!new Set(["gitgitgadget", "dscho", "git"]).has(pr.baseOwner) ||
+            pr.baseRepo !== "git") {
+            throw new Error(`Unsupported repository: ${pr.pullRequestURL}`);
+        }
+
         if (!pr.baseLabel || !pr.baseCommit || !pr.headLabel || !pr.headCommit) {
             throw new Error(`Could not determine PR details for ${pr.pullRequestURL}`);
         }
