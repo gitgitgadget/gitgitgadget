@@ -45,7 +45,7 @@ export class CIHelper {
         this.gggNotesUpdated = !!skipUpdate;
         this.mail2commit = new MailCommitMapping(this.notes.workDir);
         this.mail2CommitMapUpdated = !!skipUpdate;
-        this.github = new GitHubGlue(workDir);
+        this.github = new GitHubGlue(workDir, "git");
         this.testing = false;
         this.urlBase = `https://github.com/gitgitgadget/`;
         this.urlRepo = `${this.urlBase}git/`;
