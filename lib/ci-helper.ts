@@ -139,9 +139,6 @@ export class CIHelper {
         }
 
         const options = await this.getGitGitGadgetOptions();
-        if (!options) {
-            throw new Error("There were no GitGitGadget options to be found?");
-        }
         if (!options.openPRs) {
             return false;
         }
@@ -237,9 +234,6 @@ export class CIHelper {
      */
     public async handleOpenPRs(): Promise<boolean> {
         const options = await this.getGitGitGadgetOptions();
-        if (!options) {
-            throw new Error("There were no GitGitGadget options to be found?");
-        }
         if (!options.openPRs) {
             return false;
         }
@@ -292,9 +286,6 @@ export class CIHelper {
             updateOptionsInRef = false;
         } else {
             options = await this.getGitGitGadgetOptions();
-            if (!options) {
-                throw new Error("GitGitGadgetOptions not set?!?!?");
-            }
             updateOptionsInRef = true;
         }
 
