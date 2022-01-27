@@ -252,11 +252,6 @@ export class GitGitGadget {
                                send: SendFunction):
         Promise<IPatchSeriesMetadata | undefined> {
 
-        if (!new Set(["gitgitgadget", "dscho", "git"]).has(pr.baseOwner) ||
-            pr.baseRepo !== "git") {
-            throw new Error(`Unsupported repository: ${pr.pullRequestURL}`);
-        }
-
         // get metadata in work repo
         const metadata =
             await this.notes.get<IPatchSeriesMetadata>(pr.pullRequestURL);

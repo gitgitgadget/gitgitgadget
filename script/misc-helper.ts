@@ -72,7 +72,7 @@ async function getCIHelper(): Promise<CIHelper> {
             process.exit(1);
         }
 
-        const gitHub = new GitHubGlue(ci.workDir);
+        const gitHub = new GitHubGlue(ci.workDir, "git");
 
         const options = await ci.getGitGitGadgetOptions();
         let optionsChanged = false;
@@ -244,9 +244,8 @@ async function getCIHelper(): Promise<CIHelper> {
         const originalCommit = commander.args[1];
         const gitGitCommit = commander.args[2];
 
-        const glue = new GitHubGlue(ci.workDir);
-        const id = await glue.annotateCommit(originalCommit, gitGitCommit,
-                                             "gitgitgadget");
+        const glue = new GitHubGlue(ci.workDir, "git");
+        const id = await glue.annotateCommit(originalCommit, gitGitCommit, "gitgitgadget", "git");
         console.log(`Created check with id ${id}`);
     } else if (command === "identify-merge-commit") {
         if (commander.args.length !== 3) {
