@@ -13,11 +13,11 @@
                 // "--nolazy",
             ],
             "args": [
-                "${workspaceRoot}/node_modules/jest/bin/jest.js",
+                "${workspaceFolder}/node_modules/jest/bin/jest.js",
                 "--runInBand",
             ],
             "stopOnEntry": false,
-            "cwd": "${workspaceRoot}",
+            "cwd": "${workspaceFolder}",
             "preLaunchTask": null,
             "runtimeExecutable": null,
             "env": {
@@ -26,8 +26,32 @@
             "console": "integratedTerminal",
             "sourceMaps": true,
             "outFiles": [
-                "${workspaceRoot}/build/**/*.js"
+                "${workspaceFolder}/build/**/*.js",
+                "${workspaceFolder}/tests/*.js"
             ]
+        },
+        {
+            "name": "Jest Debug Current File",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
+            "args": [
+                "--runInBand",
+                "--cache",
+                "${fileBasename}",
+            ],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "NODE_ENV": "development"
+            },
+            "console": "integratedTerminal",
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceFolder}/build/**/*.js",
+                "${workspaceFolder}/lib/**/*.js",
+                "${workspaceFolder}/tests/*.js"
+            ],
         }
+
     ]
 }
