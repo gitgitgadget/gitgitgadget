@@ -2,7 +2,9 @@
 
 Hi @${username}, and welcome to GitGitGadget, the GitHub App to send patch series to the Git mailing list from GitHub Pull Requests.
 
-Please make sure that your Pull Request has a good description, as it will be used as cover letter.
+Please make sure that your Pull Request has a good description, as it will be used as cover letter. You can CC potential reviewers by adding a footer to the PR description with the following syntax:
+
+    CC: Revi Ewer <revi.ewer@example.com>, Ill Takalook <ill.takalook@example.net>
 
 Also, it is a good idea to review the commit messages one last time, as the Git project expects them in a quite specific form:
 
@@ -29,7 +31,7 @@ An alternative is the channel [`#git-devel`](https://web.libera.chat/#git-devel)
 
 Once on the list of permitted usernames, you can contribute the patches to the Git mailing list by adding a PR comment `/submit`.
 
-If you want to see what email(s) would be sent for a `/submit` request, add a PR comment `/preview` to have the email(s) sent to you.  You must have a public GitHub email address for this.
+If you want to see what email(s) would be sent for a `/submit` request, add a PR comment `/preview` to have the email(s) sent to you.  You must have a public GitHub email address for this. Note that any reviewers CC'd via the list in the PR description will *not* actually be sent emails.
 
 After you submit, GitGitGadget will respond with another comment that contains the link to the cover letter mail in the Git mailing list archive. Please make sure to monitor the discussion in that thread and to address comments and suggestions (while the comments and suggestions will be mirrored into the PR by GitGitGadget, you will still want to [reply via mail](https://github.com/gitgitgadget/gitgitgadget/wiki/ReplyToThis)).
 
