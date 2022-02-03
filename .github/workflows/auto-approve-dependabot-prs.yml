@@ -2,6 +2,9 @@ name: Auto-approve Dependabot Pull Requests
 
 on: [pull_request_target]
 
+permissions:
+  pull-requests: write
+
 jobs:
   auto-approve:
     if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]'
