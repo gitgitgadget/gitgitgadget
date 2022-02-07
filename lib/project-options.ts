@@ -1,4 +1,5 @@
 import { commitExists, git, gitConfig, gitConfigForEach, revParse } from "./git";
+import { IConfig, getConfig, projectInfo } from "./project-config";
 
 // For now, only the Git, Cygwin and BusyBox projects are supported
 export class ProjectOptions {
@@ -23,11 +24,20 @@ export class ProjectOptions {
 
     public static async get(workDir: string, branchName: string, cc: string[], basedOn?: string,
                             publishToRemote?: string, baseCommit?: string): Promise<ProjectOptions> {
+        const config: IConfig = getConfig();
         let upstreamBranch: string;
         let to: string;
         let midUrlPrefix = " Message-ID: ";
 
-        if (await commitExists("cb07fc2a29c86d1bc11", workDir) &&
+        if (config.hasOwnProperty("project")) {
+            const project = config.project as projectInfo;
+            to = `--to=${project.to}`;
+            upstreamBranch = project.branch;
+            midUrlPrefix = project.urlPrefix;
+            for (const user of project.cc) {
+                cc.push(user);
+            }
+        } else if (await commitExists("cb07fc2a29c86d1bc11", workDir) &&
             await revParse(`${baseCommit}:git-gui.sh`, workDir) !== undefined) {
             // Git GUI
             to = "--to=git@vger.kernel.org";

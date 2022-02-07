@@ -1,26 +1,80 @@
 import { afterAll, beforeAll, expect, jest, test } from "@jest/globals";
 import { CIHelper } from "../lib/ci-helper";
 import { GitNotes } from "../lib/git-notes";
-import { getConfig } from "../lib/gitgitgadget-config";
+// import { getConfig } from "../lib/gitgitgadget-config";
 import { GitHubGlue, IGitHubUser, IPRComment, IPRCommit, IPullRequestInfo, } from "../lib/github-glue";
 import { IMailMetadata } from "../lib/mail-metadata";
+import { IConfig, loadConfig, setConfig } from "../lib/project-config";
 import { testSmtpServer } from "test-smtp-server";
-import { testCreateRepo, TestRepo } from "./test-lib";
+import { testCreateRepo, TestRepo } from "../tests/test-lib";
+import path from "path";
 
 jest.setTimeout(180000);
 
-getConfig();
+const testConfig: IConfig = {
+    repo: {
+        name: "telescope",
+        owner: "webb",
+        baseOwner: "galileo",
+        owners: ["webb", "galileo"],
+        branches: ["maint"],
+        closingBranches: ["maint", "main"],
+        trackingBranches: ["maint", "main", "hubble"],
+        maintainerBranch: "lippershey",
+        host: "github.com",
+    },
+    mailrepo: {
+        name: "git",
+        owner: "gitgitgadget",
+        host: "lore.kernel.org",
+    },
+    mail: {
+        author: "GitGadget",
+        sender: "GitGadget"
+    },
+    app: {
+        appID: 12836,
+        installationID: 195971,
+        name: "gitgitgadget",
+        displayName: "BigScopes",
+        altname: "gitgitgadget-git"
+    },
+    lint: {
+        maxCommitsIgnore: [],
+        maxCommits: 30,
+    },
+    user: {
+        allowUserAsLogin: false,
+    },
+    project: {
+        to: "david@groundcontrol.com",
+        branch: "upstream/master",
+        cc: [],
+        urlPrefix: "https://mailarchive.com/egit/"
+    }
+};
+
+let config = setConfig(testConfig);
 
 const eMailOptions = {
     smtpserver: new testSmtpServer(),
     smtpOpts: ""
 };
 
-beforeAll((): void => {
+// async in case new config is loaded
+beforeAll(async (): Promise<void> => {
     eMailOptions.smtpserver.startServer(); // start listening
     eMailOptions.smtpOpts =
         `{port: ${eMailOptions.smtpserver.getPort()
         }, secure: true, tls: {rejectUnauthorized: false}}`;
+
+    if (process.env.GITGITGADGET_CONFIG) {
+        const configSource = await loadConfig(path.resolve(process.env.GITGITGADGET_CONFIG));
+        config = setConfig(configSource);
+    }
+
+    process.env.GIT_AUTHOR_NAME = config.mail.author;
+    process.env.GIT_AUTHOR_EMAIL = `${config.mail.author}@fakehost.com`;
 });
 
 afterAll((): void => {
@@ -41,21 +95,18 @@ class TestCIHelper extends CIHelper {
         this.ghGlue = this.github;
 
         const commentInfo = { id: 1, url: "ok" };
-        const addPRComment = jest.fn( async ():
-            // eslint-disable-next-line @typescript-eslint/require-await
-            Promise<{id: number; url: string}> => commentInfo );
+        // eslint-disable-next-line @typescript-eslint/require-await
+        const addPRComment = jest.fn( async (): Promise<{id: number; url: string}> => commentInfo );
         this.ghGlue.addPRComment = addPRComment;
         this.addPRCommentCalls = addPRComment.mock.calls;
 
-        const updatePR = jest.fn( async ():
-            // eslint-disable-next-line @typescript-eslint/require-await
-            Promise<number> => 1 );
+        // eslint-disable-next-line @typescript-eslint/require-await
+        const updatePR = jest.fn( async (): Promise<number> => 1 );
         this.ghGlue.updatePR = updatePR;
         this.updatePRCalls = updatePR.mock.calls;
 
-        const addPRLabels = jest.fn( async (_: string, labels: string[]):
-            // eslint-disable-next-line @typescript-eslint/require-await
-            Promise<string[]> => labels );
+        // eslint-disable-next-line @typescript-eslint/require-await
+        const addPRLabels = jest.fn( async (_: string, labels: string[]): Promise<string[]> => labels );
         this.ghGlue.addPRLabels = addPRLabels;
         this.addPRLabelsCalls = addPRLabels.mock.calls;
 
@@ -64,27 +115,23 @@ class TestCIHelper extends CIHelper {
     }
 
     public setGHGetPRInfo(o: IPullRequestInfo): void {
-        this.ghGlue.getPRInfo = jest.fn( async ():
-            // eslint-disable-next-line @typescript-eslint/require-await
-            Promise<IPullRequestInfo> => o );
+        // eslint-disable-next-line @typescript-eslint/require-await
+        this.ghGlue.getPRInfo = jest.fn( async (): Promise<IPullRequestInfo> => o );
     }
 
     public setGHGetPRComment(o: IPRComment): void {
-        this.ghGlue.getPRComment = jest.fn( async ():
-            // eslint-disable-next-line @typescript-eslint/require-await
-            Promise<IPRComment> => o );
+        // eslint-disable-next-line @typescript-eslint/require-await
+        this.ghGlue.getPRComment = jest.fn( async (): Promise<IPRComment> => o );
     }
 
     public setGHGetPRCommits(o: IPRCommit[]): void {
-        this.ghGlue.getPRCommits = jest.fn( async ():
-            // eslint-disable-next-line @typescript-eslint/require-await
-            Promise<IPRCommit[]> => o );
+        // eslint-disable-next-line @typescript-eslint/require-await
+        this.ghGlue.getPRCommits = jest.fn( async (): Promise<IPRCommit[]> => o );
     }
 
     public setGHGetGitHubUserInfo(o: IGitHubUser): void {
-        this.ghGlue.getGitHubUserInfo = jest.fn( async ():
-            // eslint-disable-next-line @typescript-eslint/require-await
-            Promise<IGitHubUser> => o );
+        // eslint-disable-next-line @typescript-eslint/require-await
+        this.ghGlue.getGitHubUserInfo = jest.fn( async (): Promise<IGitHubUser> => o );
     }
 
     public addMaxCommitsException(pullRequestURL: string): void {
@@ -116,35 +163,19 @@ async function setupRepos(instance: string):
 
     // re-route the URLs
     await worktree.git(["config", `url.${gggRemote.workDir}.insteadOf`,
-                        "https://github.com/gitgitgadget/git"]);
+                        `https://github.com/${config.repo.baseOwner}/${config.repo.name}`]);
 
     await gggLocal.git(["config", `url.${gggRemote.workDir}.insteadOf`,
-                        "https://github.com/gitgitgadget/git"]);
+                        `https://github.com/${config.repo.baseOwner}/${config.repo.name}`]);
 
     // set needed config
-    await worktree.git([
-        "config", "--add", "gitgitgadget.workDir", gggLocal.workDir,
-    ]);
-    await worktree.git([
-        "config", "--add", "gitgitgadget.publishRemote",
-        "https://github.com/gitgitgadget/git",
-    ]);
-
-    await worktree.git([
-        "config", "--add", "gitgitgadget.smtpUser", "joe_user@example.com",
-    ]);
-
-    await worktree.git([
-        "config", "--add", "gitgitgadget.smtpHost", "localhost",
-    ]);
-
-    await worktree.git([
-        "config", "--add", "gitgitgadget.smtpPass", "secret",
-    ]);
-
-    await worktree.git([
-        "config", "--add", "gitgitgadget.smtpOpts", eMailOptions.smtpOpts,
-    ]);
+    await worktree.git([ "config", "--add", "gitgitgadget.workDir", gggLocal.workDir, ]);
+    await worktree.git([ "config", "--add", "gitgitgadget.publishRemote",
+        `https://github.com/${config.repo.baseOwner}/${config.repo.name}`, ]);
+    await worktree.git([ "config", "--add", "gitgitgadget.smtpUser", "joe_user@example.com", ]);
+    await worktree.git([ "config", "--add", "gitgitgadget.smtpHost", "localhost", ]);
+    await worktree.git([ "config", "--add", "gitgitgadget.smtpPass", "secret", ]);
+    await worktree.git([ "config", "--add", "gitgitgadget.smtpOpts", eMailOptions.smtpOpts, ]);
 
     const notes = new GitNotes(gggRemote.workDir);
     await notes.set("", {allowedUsers: ["ggg", "user1"]}, true);
@@ -154,9 +185,9 @@ async function setupRepos(instance: string):
     expect(commitA).not.toBeUndefined();
 
     // Set up fake upstream branches
-    await gggRemote.git(["branch", "maint"]);
-    await gggRemote.git(["branch", "next"]);
-    await gggRemote.git(["branch", "seen"]);
+    for (const branch of config.repo.trackingBranches) {
+        await gggRemote.git(["branch", branch]);
+    }
 
     return { worktree, gggLocal, gggRemote };
 }
@@ -201,13 +232,13 @@ test("identify merge that integrated some commit", async () => {
     const commitB = await repo.commit("b");
     const commitC = await repo.merge("c", commitE);
     const commitD = await repo.merge("d", commitF);
-    await repo.git(["update-ref", "refs/remotes/upstream/seen", commitD]);
+    await repo.git(["update-ref", `refs/remotes/upstream/${config.repo.trackingBranches[2]}`, commitD]);
 
     const ci = new CIHelper(repo.workDir, true);
     expect(commitB).not.toBeUndefined();
-    expect(await ci.identifyMergeCommit("seen", commitG)).toEqual(commitD);
-    expect(await ci.identifyMergeCommit("seen", commitE)).toEqual(commitC);
-    expect(await ci.identifyMergeCommit("seen", commitH)).toEqual(commitD);
+    expect(await ci.identifyMergeCommit(config.repo.trackingBranches[2], commitG)).toEqual(commitD);
+    expect(await ci.identifyMergeCommit(config.repo.trackingBranches[2], commitE)).toEqual(commitC);
+    expect(await ci.identifyMergeCommit(config.repo.trackingBranches[2], commitH)).toEqual(commitD);
 });
 
 test("identify upstream commit", async () => {
@@ -217,14 +248,14 @@ test("identify upstream commit", async () => {
 
     // re-route the URLs
     await worktree.git(["config", `url.${gggRemote.workDir}.insteadOf`,
-                        "https://github.com/gitgitgadget/git"]);
+                        `https://github.com/${config.repo.owner}/${config.repo.name}`]);
 
     // Set up fake upstream branches
     const commitA = await gggRemote.commit("A");
     expect(commitA).not.toBeUndefined();
-    await gggRemote.git(["branch", "maint"]);
-    await gggRemote.git(["branch", "next"]);
-    await gggRemote.git(["branch", "seen"]);
+    for (const branch of config.repo.trackingBranches) {
+        await gggRemote.git(["branch", branch]);
+    }
 
     // Now come up with a local change
     await worktree.git(["pull", gggRemote.workDir, "master"]);
@@ -245,7 +276,7 @@ test("identify upstream commit", async () => {
     // "Apply" the patch, and merge it
     await gggRemote.newBranch("gg/via-pull-request");
     const commitBNew = await gggRemote.commit("B");
-    await gggRemote.git(["checkout", "seen"]);
+    await gggRemote.git(["checkout", config.repo.trackingBranches[2]]);
     await gggRemote.git(["merge", "--no-ff", "gg/via-pull-request"]);
 
     // Update the `mail-to-commit` notes ref, at least the part we care about
@@ -289,9 +320,8 @@ test("handle comment allow basic test", async () => {
     ci.setGHGetPRComment(comment);
     ci.setGHGetGitHubUserInfo(user);
 
-    await ci.handleComment("gitgitgadget", 433865360);
-    expect(ci.addPRCommentCalls[0][1])
-        .toMatch(/is now allowed to use GitGitGadget/);
+    await ci.handleComment(config.repo.owner, 433865360);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(`is now allowed to use ${config.app.displayName}`);
 });
 
 test("handle comment allow fail invalid user", async () => {
@@ -308,9 +338,8 @@ test("handle comment allow fail invalid user", async () => {
 
     ci.setGHGetPRComment(comment);
 
-    await ci.handleComment("gitgitgadget", 433865360);
-    expect(ci.addPRCommentCalls[0][1])
-        .toMatch(/is not a valid GitHub username/);
+    await ci.handleComment(config.repo.owner, 433865360);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(/is not a valid GitHub username/);
 });
 
 test("handle comment allow no public email", async () => {
@@ -334,11 +363,9 @@ test("handle comment allow no public email", async () => {
     ci.setGHGetPRComment(comment);
     ci.setGHGetGitHubUserInfo(user);
 
-    await ci.handleComment("gitgitgadget", 433865360);
-    expect(ci.addPRCommentCalls[0][1])
-        .toMatch(/is now allowed to use GitGitGadget/);
-    expect(ci.addPRCommentCalls[0][1])
-        .toMatch(/no public email address set/);
+    await ci.handleComment(config.repo.owner, 433865360);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(`is now allowed to use ${config.app.displayName}`);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(/no public email address set/);
 });
 
 test("handle comment allow already allowed", async () => {
@@ -363,9 +390,8 @@ test("handle comment allow already allowed", async () => {
     ci.setGHGetPRComment(comment);
     ci.setGHGetGitHubUserInfo(user);
 
-    await ci.handleComment("gitgitgadget", 433865360);
-    expect(ci.addPRCommentCalls[0][1])
-        .toMatch(/already allowed to use GitGitGadget/);
+    await ci.handleComment(config.repo.owner, 433865360);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(`already allowed to use ${config.app.displayName}`);
 });
 
 test("handle comment allow no name specified (with trailing white space)",
@@ -391,15 +417,15 @@ test("handle comment allow no name specified (with trailing white space)",
         author: "ggg",
         baseCommit: "A",
         baseLabel: "gitgitgadget:next",
-        baseOwner: "gitgitgadget",
-        baseRepo: "git",
+        baseOwner: config.repo.baseOwner,
+        baseRepo: config.repo.name,
         body: "Super body",
         hasComments: true,
         headCommit: "B",
         headLabel: "somebody:master",
         mergeable: true,
         number: prNumber,
-        pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
+        pullRequestURL: `https://github.com/${config.repo.owner}/${config.repo.name}/pull/59`,
         title: "Submit a fun fix",
     };
 
@@ -407,9 +433,8 @@ test("handle comment allow no name specified (with trailing white space)",
     ci.setGHGetPRComment(comment);
     ci.setGHGetGitHubUserInfo(user);
 
-    await ci.handleComment("gitgitgadget", 433865360);
-    expect(ci.addPRCommentCalls[0][1])
-        .toMatch(/already allowed to use GitGitGadget/);
+    await ci.handleComment(config.repo.owner, 433865360);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(`already allowed to use ${config.app.displayName}`);
 });
 
 test("handle comment disallow basic test", async () => {
@@ -434,9 +459,8 @@ test("handle comment disallow basic test", async () => {
     ci.setGHGetPRComment(comment);
     ci.setGHGetGitHubUserInfo(user);
 
-    await ci.handleComment("gitgitgadget", 433865360);
-    expect(ci.addPRCommentCalls[0][1])
-        .toMatch(/is no longer allowed to use GitGitGadget/);
+    await ci.handleComment(config.repo.owner, 433865360);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(`is no longer allowed to use ${config.app.displayName}`);
 });
 
 test("handle comment disallow was not allowed", async () => {
@@ -454,9 +478,8 @@ test("handle comment disallow was not allowed", async () => {
 
     ci.setGHGetPRComment(comment);
 
-    await ci.handleComment("gitgitgadget", 433865360);
-    expect(ci.addPRCommentCalls[0][1])
-        .toMatch(/already not allowed to use GitGitGadget/);
+    await ci.handleComment(config.repo.owner, 433865360);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(`already not allowed to use ${config.app.displayName}`);
 });
 
 test("handle comment submit not author", async () => {
@@ -481,15 +504,15 @@ test("handle comment submit not author", async () => {
         author: "ggNOTg",
         baseCommit: "A",
         baseLabel: "gitgitgadget:next",
-        baseOwner: "gitgitgadget",
-        baseRepo: "git",
+        baseOwner: config.repo.baseOwner,
+        baseRepo: config.repo.name,
         body: "Super body",
         hasComments: true,
         headCommit: "B",
         headLabel: "somebody:master",
         mergeable: true,
         number: prNumber,
-        pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
+        pullRequestURL: `https://github.com/${config.repo.owner}/${config.repo.name}/pull/59`,
         title: "Submit a fun fix",
     };
 
@@ -497,9 +520,8 @@ test("handle comment submit not author", async () => {
     ci.setGHGetPRComment(comment);
     ci.setGHGetGitHubUserInfo(user);
 
-    await ci.handleComment("gitgitgadget", 433865360);
-    expect(ci.addPRCommentCalls[0][1])
-        .toMatch(/Only the owner of a PR can submit/);
+    await ci.handleComment(config.repo.owner, 433865360);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(/Only the owner of a PR can submit/);
 });
 
 test("handle comment submit not mergeable", async () => {
@@ -524,15 +546,15 @@ test("handle comment submit not mergeable", async () => {
         author: "ggg",
         baseCommit: "A",
         baseLabel: "gitgitgadget:next",
-        baseOwner: "gitgitgadget",
-        baseRepo: "git",
+        baseOwner: config.repo.baseOwner,
+        baseRepo: config.repo.name,
         body: "Super body",
         hasComments: true,
         headCommit: "B",
         headLabel: "somebody:master",
         mergeable: false,
         number: prNumber,
-        pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
+        pullRequestURL: `https://github.com/${config.repo.owner}/${config.repo.name}/pull/59`,
         title: "Do Not Submit a fun fix",
     };
 
@@ -540,9 +562,8 @@ test("handle comment submit not mergeable", async () => {
     ci.setGHGetPRComment(comment);
     ci.setGHGetGitHubUserInfo(user);
 
-    await ci.handleComment("gitgitgadget", 433865360);
-    expect(ci.addPRCommentCalls[0][1])
-        .toMatch(/does not merge cleanly/);
+    await ci.handleComment(config.repo.owner, 433865360);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(/does not merge cleanly/);
 });
 
 test("handle comment submit email success", async () => {
@@ -553,8 +574,7 @@ test("handle comment submit email success", async () => {
 
     const template = "fine template\r\nnew line";
     // add template to master repo
-    await gggRemote.commit("temple", ".github//PULL_REQUEST_TEMPLATE.md",
-                           template);
+    await gggRemote.commit("temple", ".github//PULL_REQUEST_TEMPLATE.md", template);
     const commitA = await gggRemote.revParse("HEAD");
     expect(commitA).not.toBeUndefined();
 
@@ -601,8 +621,8 @@ test("handle comment submit email success", async () => {
         author: "ggg",
         baseCommit: commitA,
         baseLabel: "gitgitgadget:next",
-        baseOwner: "gitgitgadget",
-        baseRepo: "git",
+        baseOwner: config.repo.baseOwner,
+        baseRepo: config.repo.name,
         body: `Super body\r\n${template}\r\nCc: Copy One <copy@cat.com>\r\n`
             + "Cc: Copy Two <copycat@cat.com>",
         hasComments: true,
@@ -610,7 +630,7 @@ test("handle comment submit email success", async () => {
         headLabel: "somebody:master",
         mergeable: true,
         number: prNumber,
-        pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
+        pullRequestURL: `https://github.com/${config.repo.owner}/${config.repo.name}/pull/59`,
         title: "Submit a fun fix",
     };
 
@@ -619,7 +639,7 @@ test("handle comment submit email success", async () => {
     ci.setGHGetPRCommits(commits);
     ci.setGHGetGitHubUserInfo(user);
 
-    await ci.handleComment("gitgitgadget", 433865360);
+    await ci.handleComment(config.repo.owner, 433865360);
     expect(ci.addPRCommentCalls[0][1]).toMatch(/Submitted as/);
 
     const msgId = ci.addPRCommentCalls[0][1].match(/\[(.*)\]/);
@@ -685,15 +705,15 @@ test("handle comment preview email success", async () => {
         author: "ggg",
         baseCommit: commitA,
         baseLabel: "gitgitgadget:next",
-        baseOwner: "gitgitgadget",
-        baseRepo: "git",
+        baseOwner: config.repo.baseOwner,
+        baseRepo: config.repo.name,
         body: "There will be a submit email and a preview email.",
         hasComments: true,
         headCommit: commitB,
         headLabel: "somebody:master",
         mergeable: true,
         number: prNumber,
-        pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
+        pullRequestURL: `https://github.com/${config.repo.owner}/${config.repo.name}/pull/59`,
         title: "Preview a fun fix",
     };
 
@@ -702,7 +722,7 @@ test("handle comment preview email success", async () => {
     ci.setGHGetPRCommits(commits);
     ci.setGHGetGitHubUserInfo(user);
 
-    await ci.handleComment("gitgitgadget", 433865360);
+    await ci.handleComment(config.repo.owner, 433865360);
     expect(ci.addPRCommentCalls[0][1]).toMatch(/Submitted as/);
 
     const msgId1 = ci.addPRCommentCalls[0][1].match(/\[(.*)\]/);
@@ -714,9 +734,8 @@ test("handle comment preview email success", async () => {
 
     comment.body = " /preview";
     ci.setGHGetPRComment(comment);
-    await ci.handleComment("gitgitgadget", 433865360); // do it again
-    expect(ci.addPRCommentCalls[1][1])
-        .toMatch(/Preview email sent as/);
+    await ci.handleComment(config.repo.owner, 433865360); // do it again
+    expect(ci.addPRCommentCalls[1][1]).toMatch(/Preview email sent as/);
 
     const msgId2 = ci.addPRCommentCalls[0][1].match(/\[(.*)\]/);
     expect(msgId2).not.toBeUndefined();
@@ -725,7 +744,7 @@ test("handle comment preview email success", async () => {
         expect(msgFound2).toBeTruthy();
     }
 
-    await ci.handleComment("gitgitgadget", 433865360); // should still be v2
+    await ci.handleComment(config.repo.owner, 433865360); // should still be v2
 
     const msgId3 = ci.addPRCommentCalls[0][1].match(/\[(.*)\]/);
     expect(msgId3).not.toBeUndefined();
@@ -771,7 +790,7 @@ test("handle push/comment too many commits fails", async () => {
                 login: "ggg",
                 name: "e. e. cummings",
             },
-            message: `commit ${i}`,
+            message: `commit ${i}\n\nfoo\n\nSigned-off-by: Bob <bob@example.com>`,
             parentCount: 1,
         });
     }
@@ -791,8 +810,8 @@ test("handle push/comment too many commits fails", async () => {
         author: "ggg",
         baseCommit: commitA,
         baseLabel: "gitgitgadget:next",
-        baseOwner: "gitgitgadget",
-        baseRepo: "git",
+        baseOwner: config.repo.baseOwner,
+        baseRepo: config.repo.name,
         body: "Never seen - too many commits.",
         commits: commits.length,
         hasComments: false,
@@ -800,29 +819,32 @@ test("handle push/comment too many commits fails", async () => {
         headLabel: "somebody:master",
         mergeable: true,
         number: prNumber,
-        pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
+        pullRequestURL: `https://github.com/${config.repo.owner}/${config.repo.name}/pull/59`,
         title: "Preview a fun fix",
     };
 
     ci.setGHGetPRInfo(prInfo);
     ci.setGHGetPRComment(comment);
     ci.setGHGetGitHubUserInfo(user);
+    ci.setGHGetPRCommits(commits);
 
     const failMsg = `The pull request has ${commits.length} commits.`;
     // fail for too many commits on push
-    await expect(ci.handlePush("gitgitgadget", 433865360)).
-        rejects.toThrow(/Failing check due/);
+    await expect(ci.handlePush(config.repo.owner, 433865360)).rejects.toThrow(/Failing check due/);
 
     expect(ci.addPRCommentCalls[0][1]).toMatch(failMsg);
     ci.addPRCommentCalls.length = 0;
 
     // fail for too many commits on submit
-    await ci.handleComment("gitgitgadget", 433865360);
+    await ci.handleComment(config.repo.owner, 433865360);
     expect(ci.addPRCommentCalls[0][1]).toMatch(failMsg);
     ci.addPRCommentCalls.length = 0;
 
     ci.addMaxCommitsException(prInfo.pullRequestURL);
-    await ci.handleComment("gitgitgadget", 433865360);
+    const commitsFail = commits;
+    commitsFail[0].message = `x: A${commitsFail[0].message}`;
+    ci.setGHGetPRCommits(commitsFail);
+    await ci.handleComment(config.repo.owner, 433865360);
     // There will still be a comment, but about upper-case after prefix
     expect(ci.addPRCommentCalls).toHaveLength(1);
     expect(ci.addPRCommentCalls[0][1]).not.toMatch(failMsg);
@@ -833,7 +855,7 @@ test("handle push/comment too many commits fails", async () => {
     comment.body = " /preview";
     ci.setGHGetPRComment(comment);
 
-    await ci.handleComment("gitgitgadget", 433865360);
+    await ci.handleComment(config.repo.owner, 433865360);
     expect(ci.addPRCommentCalls[0][1]).toMatch(failMsg);
     ci.addPRCommentCalls.length = 0;
 
@@ -846,8 +868,7 @@ test("handle push/comment too many commits fails", async () => {
     ci.setGHGetGitHubUserInfo(user);
     ci.setGHGetPRCommits(commits);
 
-    await expect(ci.handlePush("gitgitgadget", 433865360)).
-        rejects.toThrow(/Failing check due/);
+    await expect(ci.handlePush(config.repo.owner, 433865360)).rejects.toThrow(/Failing check due/);
 
     expect(ci.addPRCommentCalls[0][1]).toMatch(/Welcome/);
     expect(ci.addPRCommentCalls[1][1]).toMatch(failMsg);
@@ -907,8 +928,8 @@ test("handle push/comment merge commits fails", async () => {
         author: "ggg",
         baseCommit: commitA,
         baseLabel: "gitgitgadget:next",
-        baseOwner: "gitgitgadget",
-        baseRepo: "git",
+        baseOwner: config.repo.baseOwner,
+        baseRepo: config.repo.name,
         body: "Never seen - merge commits.",
         commits: commits.length,
         hasComments: false,
@@ -916,7 +937,7 @@ test("handle push/comment merge commits fails", async () => {
         headLabel: "somebody:master",
         mergeable: true,
         number: prNumber,
-        pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
+        pullRequestURL: `https://github.com/${config.repo.owner}/${config.repo.name}/pull/59`,
         title: "Preview a fun fix",
     };
 
@@ -926,14 +947,13 @@ test("handle push/comment merge commits fails", async () => {
     ci.setGHGetGitHubUserInfo(user);
 
     // fail for merge commits on push
-    await expect(ci.handlePush("gitgitgadget", 433865360)).
-        rejects.toThrow(/Failing check due/);
+    await expect(ci.handlePush(config.repo.owner, 433865360)).rejects.toThrow(/Failing check due/);
 
     expect(ci.addPRCommentCalls[0][1]).toMatch(commits[0].commit);
     ci.addPRCommentCalls.length = 0;
 
     // fail for merge commits on submit
-    await ci.handleComment("gitgitgadget", 433865360);
+    await ci.handleComment(config.repo.owner, 433865360);
     expect(ci.addPRCommentCalls[0][1]).toMatch(commits[0].commit);
     ci.addPRCommentCalls.length = 0;
 
@@ -941,7 +961,7 @@ test("handle push/comment merge commits fails", async () => {
     comment.body = " /preview";
     ci.setGHGetPRComment(comment);
 
-    await ci.handleComment("gitgitgadget", 433865360);
+    await ci.handleComment(config.repo.owner, 433865360);
     expect(ci.addPRCommentCalls[0][1]).toMatch(commits[0].commit);
     ci.addPRCommentCalls.length = 0;
 
@@ -950,8 +970,7 @@ test("handle push/comment merge commits fails", async () => {
     comment.author = "starfish";
     user.login = "starfish";
 
-    await expect(ci.handlePush("gitgitgadget", 433865360)).
-        rejects.toThrow(/Failing check due/);
+    await expect(ci.handlePush(config.repo.owner, 433865360)).rejects.toThrow(/Failing check due/);
 
     expect(ci.addPRCommentCalls[0][1]).toMatch(/Welcome/);
     expect(ci.addPRCommentCalls[1][1]).toMatch(commits[0].commit);
@@ -990,8 +1009,7 @@ test("handle push/comment merge commits fails", async () => {
         parentCount: 2,
     });
 
-    await expect(ci.handlePush("gitgitgadget", 433865360)).
-        rejects.toThrow(/Failing check due/);
+    await expect(ci.handlePush(config.repo.owner, 433865360)).rejects.toThrow(/Failing check due/);
 
     expect(ci.addPRCommentCalls[0][1]).toMatch(/Welcome/);
     expect(ci.addPRCommentCalls[1][1]).toMatch(commits[0].commit);
@@ -1054,8 +1072,8 @@ test("disallow no-reply emails", async () => {
         author: "ggg",
         baseCommit: commitA,
         baseLabel: "gitgitgadget:next",
-        baseOwner: "gitgitgadget",
-        baseRepo: "git",
+        baseOwner: config.repo.baseOwner,
+        baseRepo: config.repo.name,
         body: "Never seen - merge commits.",
         commits: commits.length,
         hasComments: false,
@@ -1063,7 +1081,7 @@ test("disallow no-reply emails", async () => {
         headLabel: "somebody:master",
         mergeable: true,
         number: prNumber,
-        pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
+        pullRequestURL: `https://github.com/${config.repo.owner}/${config.repo.name}/pull/59`,
         title: "Preview a fun fix",
     };
 
@@ -1073,8 +1091,7 @@ test("disallow no-reply emails", async () => {
     ci.setGHGetGitHubUserInfo(user);
 
     // fail for commits with fake email on push
-    await expect(ci.handlePush("gitgitgadget", 433865360)).
-        rejects.toThrow(/Failing check due/);
+    await expect(ci.handlePush(config.repo.owner, 433865360)).rejects.toThrow(/Failing check due/);
 
 });
 
@@ -1180,8 +1197,8 @@ test("basic lint tests", async () => {
         author: "ggg",
         baseCommit: commitA,
         baseLabel: "gitgitgadget:next",
-        baseOwner: "gitgitgadget",
-        baseRepo: "git",
+        baseOwner: config.repo.baseOwner,
+        baseRepo: config.repo.name,
         body: "Never seen - merge commits.",
         commits: commits.length,
         hasComments: false,
@@ -1189,7 +1206,7 @@ test("basic lint tests", async () => {
         headLabel: "somebody:master",
         mergeable: true,
         number: prNumber,
-        pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
+        pullRequestURL: `https://github.com/${config.repo.owner}/${config.repo.name}/pull/59`,
         title: "Preview a fun fix",
     };
 
@@ -1199,8 +1216,7 @@ test("basic lint tests", async () => {
     ci.setGHGetGitHubUserInfo(user);
 
     // fail for commits with lint errors
-    await expect(ci.handlePush("gitgitgadget", 433865360)).
-        rejects.toThrow(/Failing check due/);
+    await expect(ci.handlePush(config.repo.owner, 433865360)).rejects.toThrow(/Failing check due/);
     expect(ci.addPRCommentCalls[0][1]).toMatch(commits[0].commit);
     expect(ci.addPRCommentCalls[0][1]).toMatch(/too short/);
     expect(ci.addPRCommentCalls[1][1]).toMatch(commits[1].commit);
@@ -1233,8 +1249,8 @@ test("Handle comment cc", async () => {
         author: "ggg",
         baseCommit: "foo",
         baseLabel: "gitgitgadget:next",
-        baseOwner: "gitgitgadget",
-        baseRepo: "git",
+        baseOwner: config.repo.baseOwner,
+        baseRepo: config.repo.name,
         body: "Never seen - no cc.",
         commits: 1,
         hasComments: false,
@@ -1242,7 +1258,7 @@ test("Handle comment cc", async () => {
         headLabel: "somebody:master",
         mergeable: true,
         number: prNumber,
-        pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
+        pullRequestURL: `https://github.com/${config.repo.owner}/${config.repo.name}/pull/59`,
         title: "Preview a fun fix",
     };
 
@@ -1250,7 +1266,7 @@ test("Handle comment cc", async () => {
     ci.setGHGetPRComment(comment);
     ci.setGHGetGitHubUserInfo(user);
 
-    await ci.handleComment("gitgitgadget", prNumber);
+    await ci.handleComment(config.repo.owner, prNumber);
 
     expect(ci.updatePRCalls[0][ci.updatePRCalls[0].length-1]).toMatch(/Some Body/);
     ci.updatePRCalls.length = 0;
@@ -1258,7 +1274,7 @@ test("Handle comment cc", async () => {
     comment.body = "/cc \"A Body\" <abody@example.com>, "
         + "\"S Body\" <sbody@example.com>";
 
-    await ci.handleComment("gitgitgadget", prNumber);
+    await ci.handleComment(config.repo.owner, prNumber);
 
     expect(ci.updatePRCalls[0][ci.updatePRCalls[0].length-1]).toMatch(/A Body/);
     expect(ci.updatePRCalls[1][ci.updatePRCalls[0].length-1]).toMatch(/S Body/);
@@ -1267,7 +1283,7 @@ test("Handle comment cc", async () => {
     // email will not be re-added to list
     prInfo.body = "changes\r\n\r\ncc: <abody@example.com>";
 
-    await ci.handleComment("gitgitgadget", prNumber);
+    await ci.handleComment(config.repo.owner, prNumber);
 
     expect(ci.updatePRCalls[0][ci.updatePRCalls[0].length-1]).toMatch(/S Body/);
     expect(ci.updatePRCalls).toHaveLength(1);

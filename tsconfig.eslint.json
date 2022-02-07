@@ -4,6 +4,7 @@
     "lib/**/*.ts",
     "script/**/*.ts",
     "tests/**/*.ts",
+    "tests-config/**/*.ts",
     "./.eslintrc.js",
   ]
 }

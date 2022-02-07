@@ -1,9 +1,15 @@
+/* eslint-disable max-classes-per-file */
 import { expect, jest, test } from "@jest/globals";
+import { getConfig } from "../lib/gitgitgadget-config";
 import { git } from "../lib/git";
+import { GitNotes } from "../lib/git-notes";
 import { PatchSeries } from "../lib/patch-series";
+import { ProjectOptions } from "../lib/project-options";
 import { testCreateRepo } from "./test-lib";
 
 jest.setTimeout(60000);
+
+getConfig();
 
 const mbox1 =
     `From 38d1082511bb02a709f203481c2787adc6e67c02 Mon Sep 17 00:00:00 2001
@@ -86,7 +92,23 @@ class PatchSeriesTest extends PatchSeries {
 
         const thisAuthor = "GitGitGadget <gitgitgadget@gmail.com>";
         const senderName = "Nguyễn Thái Ngọc Duy";
-        PatchSeries.insertCcAndFromLines(mails, thisAuthor, senderName);
+        const prMeta = {
+            baseCommit: "",
+            baseLabel: "",
+            headCommit: "",
+            headLabel: "",
+            iteration: 1,
+        };
+        class ProjectOptionsTest extends ProjectOptions {
+            public constructor() {
+                super("", "","","","",[],"","");
+            }
+        }
+
+        const x = new PatchSeriesTest(new GitNotes(), {},
+                new ProjectOptionsTest(), prMeta, "", 1);
+
+        x.insertCcAndFromLines(mails, thisAuthor, senderName);
 
         test("non-ASCII characters are encoded correctly", () => {
             const needle = "\"=?UTF-8?Q?Nguy=E1=BB=85n_Th=C3=A1i_Ng=E1=BB=8Dc?="

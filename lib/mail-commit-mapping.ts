@@ -1,7 +1,9 @@
 import { git } from "./git";
 import { GitNotes } from "./git-notes";
+import { IConfig, getConfig } from "./project-config";
 
 export class MailCommitMapping {
+    public readonly config: IConfig = getConfig();
     public readonly workDir?: string;
     public readonly mail2CommitNotes: GitNotes;
 
@@ -32,16 +34,16 @@ export class MailCommitMapping {
             refs.push("refs/notes/mail-to-commit:refs/notes/mail-to-commit");
         }
         if (includeUpstreamBranches) {
-            for (const ref of ["seen", "next", "master", "maint"]) {
+            for (const ref of this.config.repo.trackingBranches) {
                 refs.push(`+refs/heads/${ref}:refs/remotes/upstream/${ref}`);
             }
         }
-        if (includeGitsterBranches) {
-            refs.push("+refs/heads/*:refs/remotes/gitster/*");
+        if (includeGitsterBranches && this.config.repo.maintainerBranch) {
+            refs.push(`+refs/heads/*:refs/remotes/${this.config.repo.maintainerBranch}/*`);
         }
         if (refs.length) {
-            await git(["fetch", "https://github.com/gitgitgadget/git", ...refs],
-                      { workDir: this.workDir });
+            await git(["fetch", `https://github.com/${this.config.repo.owner}/${this.config.repo.name}`, ...refs],
+                { workDir: this.workDir });
         }
     }
 }
