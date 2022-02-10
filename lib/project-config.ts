@@ -23,6 +23,7 @@ export interface IConfig {
     mailrepo: {
         name: string;
         owner: string;
+        branch: string;
         host: string;
     },
     mail: {

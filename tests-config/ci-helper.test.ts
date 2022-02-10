@@ -26,6 +26,7 @@ const testConfig: IConfig = {
     mailrepo: {
         name: "git",
         owner: "gitgitgadget",
+        branch: "main",
         host: "lore.kernel.org",
     },
     mail: {

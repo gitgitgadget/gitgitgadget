@@ -15,6 +15,7 @@ const defaultConfig: IConfig = {
     mailrepo: {
         name: "git",
         owner: "gitgitgadget",
+        branch: "master",
         host: "lore.kernel.org",
     },
     mail: {

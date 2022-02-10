@@ -754,7 +754,8 @@ export class CIHelper {
                 return !match ? false : onlyPRs.has(parseInt(match[1], 10));
             };
         await this.maybeUpdateGGGNotes();
-        const mailArchiveGit = await MailArchiveGitHelper.get(this.notes, mailArchiveGitDir, this.github);
+        const mailArchiveGit = await MailArchiveGitHelper.get(this.notes, mailArchiveGitDir, this.github,
+            this.config.mailrepo.branch);
         return await mailArchiveGit.processMails(prFilter);
     }
 
