@@ -4,6 +4,7 @@ import { Command } from "commander";
 import { CIHelper } from "../lib/ci-helper";
 import { isDirectory } from "../lib/fs-util";
 import { git, gitConfig } from "../lib/git";
+import { IGitGitGadgetOptions } from "../lib/gitgitgadget";
 import { getConfig } from "../lib/gitgitgadget-config";
 import { GitHubGlue } from "../lib/github-glue";
 import { toPrettyJSON } from "../lib/json-util";
@@ -277,6 +278,30 @@ async function getCIHelper(): Promise<CIHelper> {
         }
 
         console.log(toPrettyJSON(await ci.getGitGitGadgetOptions()));
+    } else if (command === "init-gitgitgadget-options") {
+        if (commander.args.length !== 2) {
+            process.stderr.write(`${command}: needs 1 parameter: initial user\n`);
+            process.exit(1);
+        }
+
+        try {
+            await ci.getGitGitGadgetOptions();
+            process.stderr.write(`${command}: ${config.repo.baseOwner}/${config.repo.name} already initialized\n`);
+            process.exit(1);
+        } catch (error) {
+            const options: IGitGitGadgetOptions = { allowedUsers: [ commander.args[1] ] };
+            await ci.notes.set("", options, true);
+
+            const publishTagsAndNotesToRemote = await gitConfig("gitgitgadget.publishRemote",
+                commandOptions.gitgitgadgetWorkDir);
+            if (!publishTagsAndNotesToRemote) {
+                throw new Error("No remote to which to push configured");
+            }
+            await git(["push", publishTagsAndNotesToRemote, "--", `${ci.notes.notesRef}`],
+                    { workDir: commandOptions.gitWorkDir });
+        }
+
+        console.log(toPrettyJSON(await ci.getGitGitGadgetOptions()));
     } else if (command === "get-mail-meta") {
         if (commander.args.length !== 2) {
             process.stderr.write(`${command}: need a Message-ID\n`);
@@ -439,7 +464,7 @@ async function getCIHelper(): Promise<CIHelper> {
 
         await ci.handlePush(repositoryOwner, prNumber);
     } else if (command === "handle-new-mails") {
-        const mailArchiveGitDir = await gitConfig("gitgitgadget.loreGitDir");
+        const mailArchiveGitDir = await gitConfig("gitgitgadget.loreGitDir", commandOptions.gitgitgadgetWorkDir);
         if (!mailArchiveGitDir) {
             process.stderr.write("Need a lore.kernel/git worktree");
             process.exit(1);
