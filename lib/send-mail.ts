@@ -1,3 +1,4 @@
+import { simpleParser, SimpleParserOptions } from "mailparser";
 import { createTransport, SendMailOptions } from "nodemailer";
 import SMTPTransport = require("nodemailer/lib/smtp-transport");
 import { decode } from "rfc2047";
@@ -24,12 +25,7 @@ export interface ISMTPOptions {
 export async function parseHeadersAndSendMail(mbox: string,
                                               smtpOptions: ISMTPOptions):
     Promise<string> {
-    return await sendMail(parseMBox(mbox), smtpOptions);
-}
-
-function replaceAll(input: string, pattern: string, replacement: string):
-    string {
-    return input.split(pattern).join(replacement);
+    return await sendMail( await parseMBox(mbox), smtpOptions);
 }
 
 /**
@@ -41,17 +37,7 @@ function replaceAll(input: string, pattern: string, replacement: string):
  * @param {string} mbox The mail, in mbox format
  * @returns {IParsedMBox} the parsed headers/body
  */
-export function parseMBox(mbox: string, gentle?: boolean):
-    IParsedMBox {
-    const headerEnd = mbox.indexOf("\n\n");
-    if (headerEnd < 0) {
-        throw new Error("Could not parse mail");
-    }
-    const headerStart = mbox.startsWith("From ") ? mbox.indexOf("\n") + 1 : 0;
-
-    const header = mbox.substr(headerStart, headerEnd - headerStart);
-    const body = mbox.substr(headerEnd + 2);
-
+export async function parseMBox(mbox: string, gentle?: boolean): Promise<IParsedMBox> {
     let cc: string[] | undefined;
     let date: string | undefined;
     let from: string | undefined;
@@ -60,15 +46,29 @@ export function parseMBox(mbox: string, gentle?: boolean):
     let subject: string | undefined;
     let to: string | undefined;
 
-    for (const line of header.split(/\n(?![ \t])/)) {
-        const colon = line.indexOf(": ");
-        if (colon < 0) {
-            throw new Error(`Failed to parse header line '${line}`);
+    const options: SimpleParserOptions = {
+        skipHtmlToText: true,
+        skipTextLinks : true,
+        skipTextToHtml: true
+    };
+
+    const parsed = await simpleParser(mbox, options);
+
+    for (const entry of parsed.headerLines) {
+        const valueSet = entry.line.match(/(.*): *([^]*)$/);
+        if (!valueSet) {
+            if (entry.line[entry.line.length - 1] === ":") {
+                continue;
+            }
+            throw new Error(`Failed to parse header line '${entry.line}'`);
         }
-        const key = line.substr(0, colon);
-        const value = replaceAll(line.substr(colon + 2), "\n ", " ");
-        switch (key.toLowerCase()) {
-            case "cc": cc = (cc || []).concat(value.split(", ")); break;
+        const key = valueSet[1];
+        const value = valueSet[2];
+
+        switch (entry.key) {
+            case "cc": cc = (cc || []).concat(value.replace(/\r?\n/g, " ").split(", ").map(item =>
+                    item.trim()
+                )); break;
             case "date": date = value; break;
             case "fcc": break;
             case "from": from = decode(value.trim()); break;
@@ -81,11 +81,11 @@ export function parseMBox(mbox: string, gentle?: boolean):
     }
 
     if (!gentle && (!to || !subject || !from)) {
-        throw new Error(`Missing To, Subject and/or From header:\n${header}`);
+        throw new Error(`Missing To, Subject and/or From header:\n${mbox}`);
     }
 
     return {
-        body,
+        body: parsed.text || "",
         cc,
         date,
         from,

@@ -1,5 +1,4 @@
 import { createHash } from "crypto";
-import * as libqp from "libqp";
 import { git, revParse } from "./git";
 import { GitNotes } from "./git-notes";
 import { IGitGitGadgetOptions } from "./gitgitgadget";
@@ -43,20 +42,7 @@ export class MailArchiveGitHelper {
     }
 
     public static mbox2markdown(mbox: IParsedMBox): string {
-        let body = mbox.body;
-
-        const headers = mbox.headers || [];
-        for (const header of headers) {
-            if (header.key === "Content-Transfer-Encoding") {
-                const value = header.value.toLowerCase();
-                if (value === "base64") {
-                    body = Buffer.from(body, "base64").toString();
-                } else if (value === "quoted-printable") {
-                    const buffer = libqp.decode(body);
-                    body = buffer.toString("utf-8");
-                }
-            }
-        }
+        const body = mbox.body;
 
         if (!body.length) {
             return "";
@@ -156,7 +142,7 @@ export class MailArchiveGitHelper {
         };
 
         const mboxHandler = async (mbox: string): Promise<void> => {
-                const parsedMbox = parseMBox(mbox, true);
+                const parsedMbox = await parseMBox(mbox, true);
                 if (!parsedMbox.headers) {
                     throw new Error(`Could not parse ${mbox}`);
                 }
