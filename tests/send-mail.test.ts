@@ -12,9 +12,14 @@ Fcc: Sent
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 MIME-Version: 1.0
-To: reviewer@example.com
-Cc: Some Body <somebody@example.com>,
- And Somebody Else <somebody@else.org>
+Header-with-no-value:
+Multiline-header:
+ new line value
+To: reviewer@example.com,
+ Re View <somebody@else.org>, And Nobody Else <nobody@else.org>
+Cc:
+ Some Body <somebody@example.com>,
+ And Somebody Else <somebody@else.org>, And Nobody Else <nobody@else.org>
 
 This Pull Request contains some really important changes that I would love to
 have included in git.git.
@@ -42,23 +47,27 @@ base-commit: 0ae4d8d45ce43d7ad56faff2feeacf8ed5293518
 2.17.0.windows.1
 `;
 
-test("parse mbox", () => {
-    const parsed = parseMBox(mbox0);
+const to = `reviewer@example.com,\r\n Re View <somebody@else.org>, And Nobody Else <nobody@else.org>`;
+
+test("parse mbox", async () => {
+    const parsed = await parseMBox(mbox0);
     expect(parsed.from).toEqual("Ævar Arnfjörð Bjarmason <avarab@gmail.com>");
     expect(parsed.cc).toEqual([
         "Some Body <somebody@example.com>",
-        "And Somebody Else <somebody@else.org>",
+        "And Somebody Else <somebody@else.org>", "And Nobody Else <nobody@else.org>",
     ]);
     expect(parsed.subject).toEqual("[PATCH 0/3] My first Pull Request!");
     expect(parsed.headers).toEqual([
         { key: "Content-Type", value: "text/plain; charset=UTF-8" },
         { key: "Content-Transfer-Encoding", value: "8bit" },
         { key: "MIME-Version", value: "1.0" },
+        { key: "Header-with-no-value", value: "" },
+        { key: "Multiline-header", value: "\r\n new line value" },
     ]);
-    expect(parsed.to).toEqual("reviewer@example.com");
+    expect(parsed.to).toEqual(to);
 });
 
-test("test quoted printable", () => {
+test("test quoted printable", async () => {
     const mbox =
     `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
 Message-Id: <pull.12345.v17.git.gitgitgadget@example.com>
@@ -80,15 +89,15 @@ three byte /=[Ee][0-9A-Fa-f]/=e1=99=ad
 four byte /=[Ff][0-7]/=f0=90=8d=88
 `;
 
-    const parsed = parseMBox(mbox);
-    const body = MailArchiveGitHelper.mbox2markdown(parsed);
+    const parsed = await parseMBox(mbox);
+    const body = parsed.body;
     expect(body).toMatch(/1234/);
     expect(body).toMatch(/©/);
     expect(body).toMatch(/᙭/);
     expect(body).toMatch(/𐍈/);
 });
 
-test("test quoted printable ascii", () => {
+test("test quoted printable ascii", async () => {
     const mbox =
     `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
 Message-Id: <pull.12345.v17.git.gitgitgadget@example.com>
@@ -109,12 +118,12 @@ have included in git.git.
 2.17.0.windows.1
 `;
 
-    const parsed = parseMBox(mbox);
-    const body = MailArchiveGitHelper.mbox2markdown(parsed);
+    const parsed = await parseMBox(mbox);
+    const body = parsed.body;
     expect(body).toMatch(/1234/);
 });
 
-test("test base64", () => {
+test("test base64", async () => {
     const mailBody = "Base 64 Data";
     const mbox =
     `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
@@ -132,12 +141,12 @@ Cc: Some Body <somebody@example.com>,
 
 ${Buffer.from(mailBody).toString("base64")}`;
 
-    const parsed = parseMBox(mbox);
-    const body = MailArchiveGitHelper.mbox2markdown(parsed);
+    const parsed = await parseMBox(mbox);
+    const body = parsed.body;
     expect(body).toMatch(mailBody);
 });
 
-test("test empty body", () => {
+test("test empty body", async () => {
     const mbox =
     `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
 Message-Id: <pull.12345.v17.git.gitgitgadget@example.com>
@@ -154,7 +163,7 @@ Cc: Some Body <somebody@example.com>,
 
 `;
 
-    const parsed = parseMBox(mbox);
+    const parsed = await parseMBox(mbox);
     const body = MailArchiveGitHelper.mbox2markdown(parsed);
     expect(body).toMatch(/^$/);
 });
