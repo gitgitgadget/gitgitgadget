@@ -1,15 +1,14 @@
 import addressparser = require("nodemailer/lib/addressparser");
 import mimeFuncs = require("nodemailer/lib/mime-funcs");
 // import { encodeWords } from "nodemailer/lib/mime-funcs";
-import {
-    commitExists, git, gitCommandExists, gitConfig, revListCount, revParse,
-} from "./git";
+import { commitExists, git, gitCommandExists, gitConfig, revListCount, revParse, } from "./git";
 import { GitNotes } from "./git-notes";
 import { IGitGitGadgetOptions } from "./gitgitgadget";
 import { IMailMetadata } from "./mail-metadata";
 import { md2text } from "./markdown-renderer";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
 import { PatchSeriesOptions } from "./patch-series-options";
+import { IConfig, getConfig } from "./project-config";
 import { ProjectOptions } from "./project-options";
 import { getPullRequestKeyFromURL } from "./pullRequestKey";
 
@@ -438,10 +437,8 @@ export class PatchSeries {
             .replace(/["\\\\]/g, "\\$&")}"${match[2]}${match[3]}`;
     }
 
-    protected static insertCcAndFromLines(mails: string[], thisAuthor: string,
-                                          senderName?: string):
-        void {
-        const isGitGitGadget = thisAuthor.match(/^GitGitGadget </);
+    protected insertCcAndFromLines(mails: string[], thisAuthor: string, senderName?: string): void {
+        const isGitGitGadget = thisAuthor.match(`^${this.config.mail.author} (<.*)$`);
 
         mails.map((mail, i) => {
             const match = mail.match(/^([^]*?)(\n\n[^]*)$/);
@@ -450,8 +447,7 @@ export class PatchSeries {
             }
             let header = match[1];
 
-            const authorMatch =
-                header.match(/^([^]*\nFrom: )([^]*?)(\n(?![ \t])[^]*)$/);
+            const authorMatch = header.match(/^([^]*\nFrom: )([^]*?)(\n(?![ \t])[^]*)$/);
             if (!authorMatch) {
                 throw new Error("No From: line found in header:\n\n" + header);
             }
@@ -461,13 +457,9 @@ export class PatchSeries {
                 const onBehalfOf = i === 0 && senderName ?
                     PatchSeries.encodeSender(senderName) :
                     authorMatch[2].replace(/ <.*>$/, "");
-                // Special-case GitGitGadget to send from
-                // "<author> via GitGitGadget"
-                replaceSender = "\""
-                    + onBehalfOf.replace(/^"(.*)"$/, "$1")
-                                .replace(/"/g, "\\\"")
-                    + " via GitGitGadget\" "
-                    + thisAuthor.replace(/^GitGitGadget /, "");
+                // Special-case GitGitGadget to send from  "<author> via GitGitGadget"
+                replaceSender = `\"${onBehalfOf.replace(/^"(.*)"$/, "$1").replace(/"/g, "\\\"")
+                    } via ${this.config.mail.sender}" ${isGitGitGadget[1]}`;
             } else if (authorMatch[2] === thisAuthor) {
                 return;
             }
@@ -479,8 +471,7 @@ export class PatchSeries {
                 return;
             }
 
-            const ccMatch =
-                header.match(/^([^]*\nCc: [^]*?)(|\n(?![ \t])[^]*)$/);
+            const ccMatch = header.match(/^([^]*\nCc: [^]*?)(|\n(?![ \t])[^]*)$/);
             if (ccMatch) {
                 header = ccMatch[1] + ",\n    " + authorMatch[2] + ccMatch[2];
             } else {
@@ -629,6 +620,7 @@ export class PatchSeries {
         return results;
     }
 
+    public readonly config: IConfig = getConfig();
     public readonly notes: GitNotes;
     public readonly options: PatchSeriesOptions;
     public readonly project: ProjectOptions;
@@ -690,9 +682,8 @@ export class PatchSeries {
             throw new Error("Could not determine author ident from " + ident);
         }
 
-        logger.log("Adding Cc: and explicit From: lines for other authors, "
-            + "if needed");
-        PatchSeries.insertCcAndFromLines(mails, thisAuthor, this.senderName);
+        logger.log("Adding Cc: and explicit From: lines for other authors, if needed");
+        this.insertCcAndFromLines(mails, thisAuthor, this.senderName);
         if (mails.length > 1) {
             if (this.coverLetter) {
                 const match2 = mails[0].match(
@@ -724,16 +715,12 @@ export class PatchSeries {
             }
             const email = emailMatch[1];
 
-            const prMatch = this.metadata.pullRequestURL
-                .match(/\/([^/]+)\/([^/]+)\/pull\/(\d+)$/);
+            const prMatch = this.metadata.pullRequestURL.match(/\/([^/]+)\/([^/]+)\/pull\/(\d+)$/);
             if (prMatch) {
-                const infix = this.metadata.iteration > 1 ?
-                    `.v${this.metadata.iteration}` : "";
-                const repoInfix = prMatch[1] === "gitgitgadget" ?
+                const infix = this.metadata.iteration > 1 ? `.v${this.metadata.iteration}` : "";
+                const repoInfix = prMatch[1] === this.config.repo.owner ?
                     prMatch[2] : `${prMatch[1]}.${prMatch[2]}`;
-                const newCoverMid =
-                    `pull.${prMatch[3]}${infix}.${repoInfix}.${
-                    timeStamp}.${email}`;
+                const newCoverMid = `pull.${prMatch[3]}${infix}.${repoInfix}.${timeStamp}.${email}`;
                 mails.map((value: string, index: number): void => {
                     // cheap replace-all
                     mails[index] = value.split(mid).join(newCoverMid);
@@ -754,9 +741,8 @@ export class PatchSeries {
         } else {
             const prKey = getPullRequestKeyFromURL(this.metadata.pullRequestURL);
             const branch = this.metadata.headLabel.replace(/:/g, "/");
-            const tagPrefix = prKey.owner === "gitgitgadget" ? "pr-" : `pr-${prKey.owner}-`;
-            tagName = `${tagPrefix}${prKey.pull_number}/${branch}-v${
-                this.metadata.iteration}`;
+            const tagPrefix = prKey.owner === this.config.repo.owner ? "pr-" : `pr-${prKey.owner}-`;
+            tagName = `${tagPrefix}${prKey.pull_number}/${branch}-v${this.metadata.iteration}`;
         }
 
         this.metadata.latestTag = tagName;
@@ -788,7 +774,7 @@ export class PatchSeries {
         const footers: string[] = [];
 
         if (pullRequestURL) {
-            const prefix = "https://github.com/gitgitgadget/git";
+            const prefix = `https://github.com/${this.config.repo.owner}/${this.config.repo.name}`;
             const tagName2 = encodeURIComponent(tagName);
             footers.push(`Published-As: ${prefix}/releases/tag/${tagName2}`);
             footers.push(`Fetch-It-Via: git fetch ${prefix} ${tagName}`);
@@ -920,7 +906,7 @@ export class PatchSeries {
                                      this.project.branchName],
                                     { workDir: this.project.workDir });
         const args = [
-            "format-patch", "--thread", "--stdout", "--signature=gitgitgadget",
+            "format-patch", "--thread", "--stdout", `--signature=${this.config.repo.owner}`,
             "--add-header=Fcc: Sent",
             "--base", mergeBase, this.project.to,
         ].concat(PatchSeries.generateSingletonHeaders());

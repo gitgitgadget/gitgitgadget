@@ -10,6 +10,7 @@ import { MailArchiveGitHelper } from "./mail-archive-helper";
 import { MailCommitMapping } from "./mail-commit-mapping";
 import { IMailMetadata } from "./mail-metadata";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
+import { IConfig, getConfig } from "./project-config";
 import { getPullRequestKeyFromURL, pullRequestKey } from "./pullRequestKey";
 
 const readFile = util.promisify(fs.readFile);
@@ -23,6 +24,7 @@ type CommentFunction = (comment: string) => Promise<void>;
  * commit.
  */
 export class CIHelper {
+    public readonly config: IConfig = getConfig();
     public readonly workDir?: string;
     public readonly notes: GitNotes;
     public readonly urlBase: string;
@@ -34,9 +36,7 @@ export class CIHelper {
     protected testing: boolean;
     private gggNotesUpdated: boolean;
     private mail2CommitMapUpdated: boolean;
-    protected maxCommitsExceptions = new Set([
-        "https://github.com/gitgitgadget/git/pull/923"
-    ]);
+    protected maxCommitsExceptions: string[];
 
     public constructor(workDir?: string, skipUpdate?: boolean, gggConfigDir = ".") {
         this.gggConfigDir = gggConfigDir;
@@ -47,8 +47,9 @@ export class CIHelper {
         this.mail2CommitMapUpdated = !!skipUpdate;
         this.github = new GitHubGlue(workDir, "git");
         this.testing = false;
-        this.urlBase = `https://github.com/gitgitgadget/`;
-        this.urlRepo = `${this.urlBase}git/`;
+        this.maxCommitsExceptions = this.config.lint?.maxCommitsIgnore || [];
+        this.urlBase = `https://github.com/${this.config.repo.owner}/`;
+        this.urlRepo = `${this.urlBase}${this.config.repo.name}/`;
     }
 
     /*
@@ -95,7 +96,7 @@ export class CIHelper {
      * is one, and if it was not yet recorded in GitGitGadget's metadata, record
      * it and create a GitHub Commit Status.
      *
-     * @returns `true` iff the metadata had to be updated
+     * @returns `true` if the metadata had to be updated
      */
     public async updateCommitMapping(messageID: string, upstreamCommit?: string): Promise<boolean> {
         await this.maybeUpdateGGGNotes();
@@ -121,7 +122,8 @@ export class CIHelper {
         await this.notes.set(messageID, mailMeta, true);
 
         if (!this.testing && mailMeta.pullRequestURL && mailMeta.pullRequestURL.startsWith(this.urlBase) ) {
-            await this.github.annotateCommit(mailMeta.originalCommit, upstreamCommit, "gitgitgadget", "git");
+            await this.github.annotateCommit(mailMeta.originalCommit, upstreamCommit,
+                this.config.repo.owner, this.config.repo.baseOwner);
         }
 
         return true;
@@ -129,11 +131,15 @@ export class CIHelper {
 
     public async updateCommitMappings(): Promise<boolean> {
         if (!this.gggNotesUpdated) {
-            await git(["fetch", this.urlRepo,
-                       "--tags",
+            const args = [];
+
+            for (const branch of this.config.repo.branches) {
+                args.push(`refs/heads/${branch}:refs/remotes/upstream/${branch}`);
+            }
+
+            await git(["fetch", this.urlRepo, "--tags",
                        "+refs/notes/gitgitgadget:refs/notes/gitgitgadget",
-                       "+refs/heads/maint:refs/remotes/upstream/maint",
-                       "+refs/heads/seen:refs/remotes/upstream/seen"],
+                       ...args],
                       { workDir: this.workDir });
             this.gggNotesUpdated = true;
         }
@@ -309,24 +315,28 @@ export class CIHelper {
 
         const prKey = getPullRequestKeyFromURL(pullRequestURL);
 
-        // Identify branch in gitster/git
+        // Identify branch in maintainer repo
+        const maintainerBranch = `refs/remotes/${this.config.repo.maintainerBranch}/`;
+        const maintainerRepo = `${this.config.repo.maintainerBranch}.${this.config.repo.name}`;
+
         let gitsterBranch: string | undefined =
             await git(["for-each-ref", `--points-at=${tipCommitInGitGit}`,
-                       "--format=%(refname)", "refs/remotes/gitster/"],
+                       "--format=%(refname)", maintainerBranch],
                       { workDir: this.workDir });
         if (gitsterBranch) {
             const newline = gitsterBranch.indexOf("\n");
             if (newline > 0) {
-                const comment2 = `Found multiple candidates in gitster/git:\n${gitsterBranch};\n\nUsing the first one.`;
+                const comment2 = `Found multiple candidates in ${maintainerRepo}:\n${
+                    gitsterBranch};\n\nUsing the first one.`;
                 const url2 = await this.github.addPRComment(prKey, comment2);
                 console.log(`Added comment about ${gitsterBranch}: ${url2}`);
 
-                gitsterBranch = gitsterBranch.substr(0, newline);
+                gitsterBranch = gitsterBranch.substring(0, newline);
             }
-            gitsterBranch = gitsterBranch.replace(/^refs\/remotes\/gitster\//, "");
+            gitsterBranch = gitsterBranch.substring(maintainerBranch.length);
 
             const comment = `This branch is now known as [\`${gitsterBranch
-                }\`](https://github.com/gitster/git/commits/${gitsterBranch}).`;
+                }\`](https://github.com/${maintainerRepo}/commits/${gitsterBranch}).`;
             if (prMeta.branchNameInGitsterGit !== gitsterBranch) {
                 prMeta.branchNameInGitsterGit = gitsterBranch;
                 notesUpdated = true;
@@ -338,13 +348,13 @@ export class CIHelper {
 
         let closePR: string | undefined;
         const prLabelsToAdd: string[] = [];
-        for (const branch of ["seen", "next", "master", "maint"]) {
+        for (const branch of this.config.repo.trackingBranches) {
             const mergeCommit = await this.identifyMergeCommit(branch, tipCommitInGitGit);
             if (!mergeCommit) {
                 continue;
             }
 
-            if (branch === "master" || branch === "maint") {
+            if (this.config.repo.closingBranches.includes(branch)) {
                 closePR = mergeCommit;
             }
 
@@ -359,8 +369,8 @@ export class CIHelper {
                 prLabelsToAdd.push(branch);
 
                 // Add comment on GitHub
-                const comment = `This patch series was integrated into ${branch
-                    } via https://github.com/git/git/commit/${mergeCommit}.`;
+                const comment = `This patch series was integrated into ${branch} via https://github.com/${
+                    this.config.repo.baseOwner}/${this.config.repo.name}/commit/${mergeCommit}.`;
                 const url = await this.github.addPRComment(prKey, comment);
                 console.log(`Added comment about ${branch}: ${url}`);
             }
@@ -514,11 +524,12 @@ export class CIHelper {
         const argument = match[3];
         const prKey = {
             owner: repositoryOwner,
-            repo: "git",
+            repo: this.config.repo.name,
             pull_number: comment.prNumber
         };
 
-        const pullRequestURL = `https://github.com/${repositoryOwner}/git/pull/${comment.prNumber}`;
+        const pullRequestURL = `https://github.com/${repositoryOwner}/${this.config.repo.name
+            }/pull/${comment.prNumber}`;
         console.log(`Handling command ${command} with argument ${argument} at ${
             pullRequestURL}#issuecomment-${commentID}`);
 
@@ -531,7 +542,7 @@ export class CIHelper {
         try {
             const gitGitGadget = await GitGitGadget.get(this.gggConfigDir, this.workDir);
             if (!gitGitGadget.isUserAllowed(comment.author)) {
-                throw new Error(`User ${comment.author} is not yet permitted to use GitGitGadget`);
+                throw new Error(`User ${comment.author} is not yet permitted to use ${this.config.app.displayName}`);
             }
 
             const getPRAuthor = async (): Promise<string> => {
@@ -560,7 +571,7 @@ export class CIHelper {
                     const metadata = await gitGitGadget.submit(pr, userInfo);
                     const code = "\n```";
                     await addComment(`Submitted as [${metadata?.coverLetterMessageId
-                            }](https://lore.kernel.org/git/${
+                            }](https://${this.config.mailrepo.host}/${this.config.mailrepo.name}/${
                             metadata?.coverLetterMessageId})\n\nTo fetch this version into \`FETCH_HEAD\`:${
                             code}\ngit fetch ${this.urlRepo} ${metadata?.latestTag}${code
                             }\n\nTo fetch this version to local tag \`${metadata?.latestTag}\`:${
@@ -600,17 +611,18 @@ export class CIHelper {
                 }
 
                 if (await gitGitGadget.allowUser(comment.author, accountName)) {
-                    await addComment(`User ${accountName} is now allowed to use GitGitGadget.${extraComment}`);
+                    await addComment(`User ${accountName} is now allowed to use ${this.config.app.displayName}.${
+                        extraComment}`);
                 } else {
-                    await addComment(`User ${accountName} already allowed to use GitGitGadget.`);
+                    await addComment(`User ${accountName} already allowed to use ${this.config.app.displayName}.`);
                 }
             } else if (command === "/disallow") {
                 const accountName = argument || await getPRAuthor();
 
                 if (await gitGitGadget.denyUser(comment.author, accountName)) {
-                    await addComment(`User ${accountName} is no longer allowed to use GitGitGadget.`);
+                    await addComment(`User ${accountName} is no longer allowed to use ${this.config.app.displayName}.`);
                 } else {
-                    await addComment(`User ${accountName} already not allowed to use GitGitGadget.`);
+                    await addComment(`User ${accountName} already not allowed to use ${this.config.app.displayName}.`);
                 }
             } else if (command === "/cc") {
                 await this.handleCC(argument, prKey);
@@ -628,8 +640,9 @@ export class CIHelper {
     public async checkCommits(pr: IPullRequestInfo, addComment: CommentFunction, userInfo?: IGitHubUser):
         Promise<boolean> {
         let result = true;
-        const maxCommits = 30;
-        if (!this.maxCommitsExceptions.has(pr.pullRequestURL) &&
+        const maxCommits = this.config.lint.maxCommits;
+
+        if (!this.maxCommitsExceptions.includes(pr.pullRequestURL) &&
             pr.commits && pr.commits > maxCommits) {
             await addComment(`The pull request has ${pr.commits} commits.  The max allowed is ${maxCommits
                              }.  Please split the patch series into multiple pull requests. Also consider ${
@@ -741,15 +754,16 @@ export class CIHelper {
                 return !match ? false : onlyPRs.has(parseInt(match[1], 10));
             };
         await this.maybeUpdateGGGNotes();
-        const mailArchiveGit = await MailArchiveGitHelper.get(this.notes, mailArchiveGitDir, this.github);
+        const mailArchiveGit = await MailArchiveGitHelper.get(this.notes, mailArchiveGitDir, this.github,
+            this.config.mailrepo.branch);
         return await mailArchiveGit.processMails(prFilter);
     }
 
     private async getPRInfo(prKey: pullRequestKey): Promise<IPullRequestInfo> {
         const pr = await this.github.getPRInfo(prKey);
 
-        if (!new Set(["gitgitgadget", "dscho", "git"]).has(pr.baseOwner) ||
-            pr.baseRepo !== "git") {
+        if (!this.config.repo.owners.includes(pr.baseOwner) ||
+            pr.baseRepo !== this.config.repo.name) {
             throw new Error(`Unsupported repository: ${pr.pullRequestURL}`);
         }
 
@@ -771,6 +785,11 @@ export class CIHelper {
     private async getUserInfo(author: string): Promise<IGitHubUser> {
         const userInfo = await this.github.getGitHubUserInfo(author);
         if (!userInfo.name) {
+            if (this.config.user.allowUserAsLogin) {
+                userInfo.name = userInfo.login;
+            } else {
+                throw new Error(`Could not determine full name of ${author}`);
+            }
             throw new Error(`Could not determine full name of ${author}`);
         }
 

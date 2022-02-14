@@ -19,12 +19,12 @@ export interface IGitMailingListMirrorState {
 
 export class MailArchiveGitHelper {
     public static async get(gggNotes: GitNotes, mailArchiveGitDir: string,
-                            githubGlue: GitHubGlue):
+                            githubGlue: GitHubGlue, branch: string):
         Promise<MailArchiveGitHelper> {
         const state: IGitMailingListMirrorState =
             await gggNotes.get<IGitMailingListMirrorState>(stateKey) || {};
         return new MailArchiveGitHelper(gggNotes, mailArchiveGitDir, githubGlue,
-                                        state);
+                                        state, branch);
     }
 
     /**
@@ -52,6 +52,7 @@ export class MailArchiveGitHelper {
         return `${wrap}${body}${body.endsWith("\n") ? "" : "\n"}${wrap}`;
     }
 
+    protected readonly branch: string;
     protected readonly state: IGitMailingListMirrorState;
     protected readonly gggNotes: GitNotes;
     protected readonly mailArchiveGitDir: string;
@@ -59,7 +60,9 @@ export class MailArchiveGitHelper {
 
     protected constructor(gggNotes: GitNotes, mailArchiveGitDir: string,
                           githubGlue: GitHubGlue,
-                          state: IGitMailingListMirrorState) {
+                          state: IGitMailingListMirrorState,
+                          branch: string) {
+        this.branch = branch;
         this.gggNotes = gggNotes;
         this.mailArchiveGitDir = mailArchiveGitDir;
         this.githubGlue = githubGlue;
@@ -143,19 +146,22 @@ export class MailArchiveGitHelper {
 
         const mboxHandler = async (mbox: string): Promise<void> => {
                 const parsedMbox = await parseMBox(mbox, true);
+
                 if (!parsedMbox.headers) {
                     throw new Error(`Could not parse ${mbox}`);
                 }
-                const parsed =
-                    parseMBoxMessageIDAndReferences(parsedMbox);
+                const parsed = parseMBoxMessageIDAndReferences(parsedMbox);
+
                 if (parsedMbox.subject?.match(/^What's cooking in git.git /) &&
                     parsedMbox.from === "Junio C Hamano <gitster@pobox.com>") {
                     return handleWhatsCooking(mbox);
                 }
+
                 if (seen(parsed.messageID)) {
                     console.log(`Already handled: ${parsed.messageID}`);
                     return;
                 }
+
                 let pullRequestURL: string | undefined;
                 let originalCommit: string | undefined;
                 let issueCommentId: number | undefined;
@@ -231,6 +237,7 @@ export class MailArchiveGitHelper {
         let buffer = "";
         let counter = 0;
         const lineHandler = async (line: string): Promise<void> => {
+
             if (line.startsWith("@@ ")) {
                 const match = line.match(/^@@ -(\d+,)?\d+ \+(\d+,)?(\d+)?/);
                 if (match) {
@@ -255,33 +262,31 @@ export class MailArchiveGitHelper {
 
         if (!this.state.latestRevision) {
             /*
+             * No longer - this is the ref of an empty repo
              * This is the commit in lore.kernel/git that is *just* before the
              * first ever GitGitGadget mail sent to the Git mailing list.
              */
-            this.state.latestRevision =
-                "3b38d8d206c64bf3dc873ba8ae9dbd48ed43f612";
-        } else if (this.state.latestRevision ===
-            "205655703b0501ef14e0f0dddf8e57bb726fae97") {
-            this.state.latestRevision =
-                "26674e9a36ae1871f69197798d30f6d3d2af7a56";
-        } else if (await revParse(this.state.latestRevision,
-                                  this.mailArchiveGitDir) === undefined) {
+            this.state.latestRevision = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
+        } else if (this.state.latestRevision === "205655703b0501ef14e0f0dddf8e57bb726fae97") {
+            this.state.latestRevision = "26674e9a36ae1871f69197798d30f6d3d2af7a56";
+        } else if (await revParse(this.state.latestRevision,  this.mailArchiveGitDir) === undefined) {
             const publicInboxGitDir = process.env.PUBLIC_INBOX_DIR;
             if (publicInboxGitDir === undefined) {
-                throw new Error(`Commit ${this.state.latestRevision
-                                } not found; need PUBLIC_INBOX_DIR`);
+                throw new Error(`Commit ${this.state.latestRevision} not found; need PUBLIC_INBOX_DIR`);
             }
-            let commitDiff =
-                await git(["show", this.state.latestRevision, "--"],
-                          { workDir: publicInboxGitDir });
+
+            let commitDiff = await git(["show", this.state.latestRevision, "--"], { workDir: publicInboxGitDir });
+
             if (!commitDiff) {
-                throw new Error(`Could not find ${this.state.latestRevision
-                                } in ${publicInboxGitDir}`);
+                throw new Error(`Could not find ${this.state.latestRevision} in ${publicInboxGitDir}`);
             }
+
             const match = commitDiff.match(/\n\+(Message-ID: [^\n]*)/);
+
             if (!match) {
                 throw new Error(`Could not find Message-ID in ${commitDiff}`);
             }
+
             let commit = "HEAD";
             for (;;) {
                 commit = await git(["log", "-1", "--format=%H", `-S${match[1]}`,
@@ -301,7 +306,7 @@ export class MailArchiveGitHelper {
             this.state.latestRevision = commit;
         }
 
-        const head = await revParse("master", this.mailArchiveGitDir);
+        const head = await revParse(this.branch, this.mailArchiveGitDir);
         if (this.state.latestRevision === head) {
             return false;
         }

@@ -4,9 +4,13 @@ import { Command } from "commander";
 import { CIHelper } from "../lib/ci-helper";
 import { isDirectory } from "../lib/fs-util";
 import { git, gitConfig } from "../lib/git";
+import { IGitGitGadgetOptions } from "../lib/gitgitgadget";
+import { getConfig } from "../lib/gitgitgadget-config";
 import { GitHubGlue } from "../lib/github-glue";
 import { toPrettyJSON } from "../lib/json-util";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata";
+import { IConfig, loadConfig, setConfig } from "../lib/project-config";
+import path from "path";
 
 const commander = new Command();
 
@@ -23,11 +27,14 @@ commander.version("1.0.0")
             + "current working directory to access the Git config e.g. for "
             + "`gitgitgadget.workDir`",
             ".")
+    .option("-c, --config <string>",
+            "Use this configuration when using gitgitgadget with a project other than git", "")
     .option("-s, --skip-update",
             "Do not update the local refs (useful for debugging)")
     .parse(process.argv);
 
 interface ICommanderOptions {
+    config: string | undefined;
     gitgitgadgetWorkDir: string | undefined;
     gitWorkDir: string | undefined;
     skipUpdate: boolean | undefined;
@@ -38,6 +45,7 @@ if (commander.args.length === 0) {
 }
 
 const commandOptions = commander.opts<ICommanderOptions>();
+let config: IConfig = getConfig();
 
 async function getGitGitWorkDir(): Promise<string> {
     if (!commandOptions.gitWorkDir) {
@@ -51,7 +59,7 @@ async function getGitGitWorkDir(): Promise<string> {
         console.log(`Cloning git into ${commandOptions.gitWorkDir}`);
         await git([
             "clone",
-            "https://github.com/gitgitgadget/git",
+            `https://github.com/${config.repo.owner}/${config.repo.name}`,
             commandOptions.gitWorkDir,
         ]);
     }
@@ -64,6 +72,11 @@ async function getCIHelper(): Promise<CIHelper> {
 }
 
 (async (): Promise<void> => {
+    if (commandOptions.config) {
+        const newConfig = await loadConfig(path.resolve(commandOptions.config));
+        config = setConfig(newConfig);
+    }
+
     const ci = await getCIHelper();
     const command = commander.args[0];
     if (command === "update-open-prs") {
@@ -87,7 +100,7 @@ async function getCIHelper(): Promise<CIHelper> {
 
         const handledPRs = new Set<string>();
         const handledMessageIDs = new Set<string>();
-        for (const repositoryOwner of ["gitgitgadget", "git", "dscho"]) {
+        for (const repositoryOwner of config.repo.owners) {
             const pullRequests = await gitHub.getOpenPRs(repositoryOwner);
             for (const pr of pullRequests) {
                 const meta = await ci.getPRMetadata(pr.pullRequestURL);
@@ -178,7 +191,7 @@ async function getCIHelper(): Promise<CIHelper> {
     } else if (command === "set-tip-commit-in-git.git") {
         if (commander.args.length !== 3) {
             process.stderr.write(`${command}: needs 2 parameters:${
-                "\n"}PR URL and tip commit in git.git`);
+                "\n"}PR URL and tip commit in ${config.repo.baseOwner}.${config.repo.name}`);
             process.exit(1);
         }
         const pullRequestURL = commander.args[1];
@@ -236,8 +249,8 @@ async function getCIHelper(): Promise<CIHelper> {
         console.log(`Result: ${result}`);
     } else if (command === "annotate-commit") {
         if (commander.args.length !== 3) {
-            process.stderr.write(`${command}: needs 2 parameters: ${
-                ""}original and git.git commit\n`);
+            process.stderr.write(`${command}: needs 2 parameters: original and ${
+                config.repo.baseOwner}.${config.repo.name} commit\n`);
             process.exit(1);
         }
 
@@ -245,7 +258,7 @@ async function getCIHelper(): Promise<CIHelper> {
         const gitGitCommit = commander.args[2];
 
         const glue = new GitHubGlue(ci.workDir, "git");
-        const id = await glue.annotateCommit(originalCommit, gitGitCommit, "gitgitgadget", "git");
+        const id = await glue.annotateCommit(originalCommit, gitGitCommit, config.repo.owner, config.repo.baseOwner);
         console.log(`Created check with id ${id}`);
     } else if (command === "identify-merge-commit") {
         if (commander.args.length !== 3) {
@@ -265,6 +278,30 @@ async function getCIHelper(): Promise<CIHelper> {
         }
 
         console.log(toPrettyJSON(await ci.getGitGitGadgetOptions()));
+    } else if (command === "init-gitgitgadget-options") {
+        if (commander.args.length !== 2) {
+            process.stderr.write(`${command}: needs 1 parameter: initial user\n`);
+            process.exit(1);
+        }
+
+        try {
+            await ci.getGitGitGadgetOptions();
+            process.stderr.write(`${command}: ${config.repo.baseOwner}/${config.repo.name} already initialized\n`);
+            process.exit(1);
+        } catch (error) {
+            const options: IGitGitGadgetOptions = { allowedUsers: [ commander.args[1] ] };
+            await ci.notes.set("", options, true);
+
+            const publishTagsAndNotesToRemote = await gitConfig("gitgitgadget.publishRemote",
+                commandOptions.gitgitgadgetWorkDir);
+            if (!publishTagsAndNotesToRemote) {
+                throw new Error("No remote to which to push configured");
+            }
+            await git(["push", publishTagsAndNotesToRemote, "--", `${ci.notes.notesRef}`],
+                    { workDir: commandOptions.gitWorkDir });
+        }
+
+        console.log(toPrettyJSON(await ci.getGitGitGadgetOptions()));
     } else if (command === "get-mail-meta") {
         if (commander.args.length !== 2) {
             process.stderr.write(`${command}: need a Message-ID\n`);
@@ -275,29 +312,24 @@ async function getCIHelper(): Promise<CIHelper> {
         console.log(toPrettyJSON(await ci.getMailMetadata(messageID)));
     } else if (command === "get-pr-meta") {
         if (commander.args.length !== 2 && commander.args.length !== 3) {
-            process.stderr.write(`${command}: need a repository owner and ${
-                                 ""}a Pull Request number\n`);
+            process.stderr.write(`${command}: need a repository owner and a Pull Request number\n`);
             process.exit(1);
         }
-        const repositoryOwner = commander.args.length === 3 ?
-            commander.args[1] : "gitgitgadget";
+        const repositoryOwner = commander.args.length === 3 ? commander.args[1] : config.repo.owner;
         const prNumber = commander.args[commander.args.length === 3 ? 2 : 1];
 
         const pullRequestURL = prNumber.match(/^http/) ? prNumber :
-            `https://github.com/${repositoryOwner}/git/pull/${prNumber}`;
+            `https://github.com/${repositoryOwner}/${config.repo.name}/pull/${prNumber}`;
         console.log(toPrettyJSON(await ci.getPRMetadata(pullRequestURL)));
     } else if (command === "get-pr-commits") {
         if (commander.args.length !== 2 && commander.args.length !== 3) {
-            process.stderr.write(`${command}: need a repository owner and ${
-                                 ""}a Pull Request number\n`);
+            process.stderr.write(`${command}: need a repository owner and a Pull Request number\n`);
             process.exit(1);
         }
-        const repositoryOwner = commander.args.length === 3 ?
-            commander.args[1] : "gitgitgadget";
+        const repositoryOwner = commander.args.length === 3 ? commander.args[1] : config.repo.owner;
         const prNumber = commander.args[commander.args.length === 3 ? 2 : 1];
 
-        const pullRequestURL =
-            `https://github.com/${repositoryOwner}/git/pull/${prNumber}`;
+        const pullRequestURL = `https://github.com/${repositoryOwner}/${config.repo.name}/pull/${prNumber}`;
         const prMeta = await ci.getPRMetadata(pullRequestURL);
         if (!prMeta) {
             throw new Error(`No metadata found for ${pullRequestURL}`);
@@ -305,16 +337,13 @@ async function getCIHelper(): Promise<CIHelper> {
         console.log(toPrettyJSON(await ci.getOriginalCommitsForPR(prMeta)));
     } else if (command === "handle-pr") {
         if (commander.args.length !== 2 && commander.args.length !== 3) {
-            process.stderr.write(`${command}: need a repository owner and ${
-                                 ""}a Pull Request number\n`);
+            process.stderr.write(`${command}: need a repository owner and a Pull Request number\n`);
             process.exit(1);
         }
-        const repositoryOwner = commander.args.length === 3 ?
-            commander.args[1] : "gitgitgadget";
+        const repositoryOwner = commander.args.length === 3 ? commander.args[1] : config.repo.owner;
         const prNumber = commander.args[commander.args.length === 3 ? 2 : 1];
 
-        const pullRequestURL =
-            `https://github.com/${repositoryOwner}/git/pull/${prNumber}`;
+        const pullRequestURL = `https://github.com/${repositoryOwner}/${config.repo.name}/pull/${prNumber}`;
 
         const meta = await ci.getPRMetadata(pullRequestURL);
         if (!meta) {
@@ -370,7 +399,7 @@ async function getCIHelper(): Promise<CIHelper> {
             process.exit(1);
         }
         const pullRequestURL = commander.args[1].match(/^[0-9]+$/) ?
-            `https://github.com/gitgitgadget/git/pull/${commander.args[1]}` :
+            `https://github.com/gitgitgadget/${config.repo.name}/pull/${commander.args[1]}` :
             commander.args[1];
         const comment = commander.args[2];
 
@@ -382,8 +411,7 @@ async function getCIHelper(): Promise<CIHelper> {
              installationID?: number;
              name: string;
         }): Promise<void> => {
-            const appName = options.name === "gitgitgadget" ?
-                "gitgitgadget" : "gitgitgadget-git";
+            const appName = options.name === config.app.name ? config.app.name : config.app.altname;
             const key = await gitConfig(`${appName}.privateKey`);
             if (!key) {
                 throw new Error(`Need the ${appName} App's private key`);
@@ -401,50 +429,42 @@ async function getCIHelper(): Promise<CIHelper> {
                 options.installationID =
                     (await client.rest.apps.getRepoInstallation({
                         owner: options.name,
-                        repo: "git",
+                        repo: config.repo.name,
                 })).data.id;
             }
             const result = await client.rest.apps.createInstallationAccessToken(
                 {
                     installation_id: options.installationID,
                 });
-            const configKey = options.name === "gitgitgadget" ?
-                "gitgitgadget.githubToken" :
-                `gitgitgadget.${options.name}.githubToken`;
+            const configKey = options.name === config.app.name ?
+                `${config.app.name}.githubToken` : `gitgitgadget.${options.name}.githubToken`;
             await git(["config", configKey, result.data.token]);
         };
 
-        await set({appID: 12836, installationID: 195971, name: "gitgitgadget"});
+        await set(config.app);
         for (const org of commander.args.slice(1)) {
             await set({ appID: 46807, name: org});
         }
     } else if (command === "handle-pr-comment") {
         if (commander.args.length !== 2 && commander.args.length !== 3) {
-            process.stderr.write(`${command}: optionally takes  a ${
-                                 ""}repository owner and one comment ID\n`);
+            process.stderr.write(`${command}: optionally takes a repository owner and one comment ID\n`);
             process.exit(1);
         }
-        const repositoryOwner = commander.args.length === 3 ?
-            commander.args[1] : "gitgitgadget";
-        const commentID =
-            parseInt(commander.args[commander.args.length === 3 ? 2 : 1], 10);
+        const repositoryOwner = commander.args.length === 3 ? commander.args[1] : config.repo.owner;
+        const commentID = parseInt(commander.args[commander.args.length === 3 ? 2 : 1], 10);
 
         await ci.handleComment(repositoryOwner, commentID);
     } else if (command === "handle-pr-push") {
         if (commander.args.length !== 2 && commander.args.length !== 3) {
-            process.stderr.write(`${command}: optionally takes a repository ${
-                                 ""}owner and a Pull Request number\n`);
+            process.stderr.write(`${command}: optionally takes a repository owner and a Pull Request number\n`);
             process.exit(1);
         }
-        const repositoryOwner = commander.args.length === 3 ?
-            commander.args[1] : "gitgitgadget";
-        const prNumber =
-            parseInt(commander.args[commander.args.length === 3 ? 2 : 1], 10);
+        const repositoryOwner = commander.args.length === 3 ? commander.args[1] : config.repo.owner;
+        const prNumber = parseInt(commander.args[commander.args.length === 3 ? 2 : 1], 10);
 
         await ci.handlePush(repositoryOwner, prNumber);
     } else if (command === "handle-new-mails") {
-        const mailArchiveGitDir =
-            await gitConfig("gitgitgadget.loreGitDir");
+        const mailArchiveGitDir = await gitConfig("gitgitgadget.loreGitDir", commandOptions.gitgitgadgetWorkDir);
         if (!mailArchiveGitDir) {
             process.stderr.write("Need a lore.kernel/git worktree");
             process.exit(1);
@@ -453,8 +473,7 @@ async function getCIHelper(): Promise<CIHelper> {
         for (const arg of commander.args.slice(1)) {
             onlyPRs.add(parseInt(arg, 10));
         }
-        await ci.handleNewMails(mailArchiveGitDir,
-                                onlyPRs.size ? onlyPRs : undefined);
+        await ci.handleNewMails(mailArchiveGitDir, onlyPRs.size ? onlyPRs : undefined);
     } else {
         process.stderr.write(`${command}: unhandled sub-command\n`);
         process.exit(1);

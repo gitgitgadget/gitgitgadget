@@ -5,9 +5,8 @@ import { IGitHubUser, IPullRequestInfo } from "./github-glue";
 import { PatchSeries, SendFunction } from "./patch-series";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
 import { PatchSeriesOptions } from "./patch-series-options";
-import {
-    ISMTPOptions, parseHeadersAndSendMail, parseMBox,
-    sendMail } from "./send-mail";
+import { IConfig, getConfig } from "./project-config";
+import { ISMTPOptions, parseHeadersAndSendMail, parseMBox, sendMail } from "./send-mail";
 
 export interface IGitGitGadgetOptions {
     allowedUsers: string[];
@@ -88,6 +87,7 @@ export class GitGitGadget {
         return [options, allowedUsers];
     }
 
+    public readonly config: IConfig = getConfig();
     public readonly workDir: string;
     public readonly notes: GitNotes;
     protected options: IGitGitGadgetOptions;
@@ -199,12 +199,11 @@ export class GitGitGadget {
             "fetch",
             this.publishTagsAndNotesToRemote,
             "--",
-            `+${this.notes.notesRef}:${this.notes.notesRef}`,
-            "+refs/heads/maint:refs/remotes/upstream/maint",
-            "+refs/heads/master:refs/remotes/upstream/master",
-            "+refs/heads/next:refs/remotes/upstream/next",
-            "+refs/heads/seen:refs/remotes/upstream/seen",
+            `+${this.notes.notesRef}:${this.notes.notesRef}`
         ];
+        for (const branch of this.config.repo.trackingBranches) {
+            args.push(`refs/heads/${branch}:refs/remotes/upstream/${branch}`);
+        }
         const prArgs = [
             `+${pullRequestRef}:${pullRequestRef}`,
             `+${pullRequestMerge}:${pullRequestMerge}`,
@@ -212,18 +211,16 @@ export class GitGitGadget {
         if (additionalRef) {
             args.push(`+${additionalRef}:${additionalRef}`);
         }
-        if (repositoryOwner === "gitgitgadget") {
+        if (repositoryOwner === this.config.repo.owner) {
             args.push(...prArgs);
         } else {
-            prArgs.unshift("fetch", `https://github.com/${repositoryOwner}/git`,
-                           "--");
-            await git(prArgs, { workDir: this.workDir });
+            await git(["fetch", `https://github.com/${repositoryOwner}/${this.config.repo.name}`, ...prArgs],
+                { workDir: this.workDir });
         }
         await git(args, { workDir: this.workDir });
 
         // re-read options
-        [this.options, this.allowedUsers] =
-            await GitGitGadget.readOptions(this.notes);
+        [this.options, this.allowedUsers] = await GitGitGadget.readOptions(this.notes);
 
         return pullRequestRef;
     }

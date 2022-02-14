@@ -2,12 +2,15 @@ import { expect, jest, test } from "@jest/globals";
 import { git, gitCommandExists } from "../lib/git";
 import { GitNotes } from "../lib/git-notes";
 import { GitGitGadget, IGitGitGadgetOptions } from "../lib/gitgitgadget";
+import { getConfig } from "../lib/gitgitgadget-config";
 import { PatchSeries } from "../lib/patch-series";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata";
 import { testCreateRepo } from "./test-lib";
 
 // This test script might take quite a while to run
 jest.setTimeout(60000);
+
+getConfig();
 
 const expectedMails = [
     `From 91fba7811291c1064b2603765a2297c34fc843c0 Mon Sep 17 00:00:00 2001
