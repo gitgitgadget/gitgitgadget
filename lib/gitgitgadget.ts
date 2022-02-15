@@ -202,7 +202,7 @@ export class GitGitGadget {
             `+${this.notes.notesRef}:${this.notes.notesRef}`
         ];
         for (const branch of this.config.repo.trackingBranches) {
-            args.push(`refs/heads/${branch}:refs/remotes/upstream/${branch}`);
+            args.push(`+refs/heads/${branch}:refs/remotes/upstream/${branch}`);
         }
         const prArgs = [
             `+${pullRequestRef}:${pullRequestRef}`,
