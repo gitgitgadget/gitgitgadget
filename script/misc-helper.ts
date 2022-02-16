@@ -8,6 +8,7 @@ import { IGitGitGadgetOptions } from "../lib/gitgitgadget";
 import { getConfig } from "../lib/gitgitgadget-config";
 import { GitHubGlue } from "../lib/github-glue";
 import { toPrettyJSON } from "../lib/json-util";
+import { IGitMailingListMirrorState, stateKey } from "../lib/mail-archive-helper";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata";
 import { IConfig, loadConfig, setConfig } from "../lib/project-config";
 import path from "path";
@@ -302,6 +303,31 @@ async function getCIHelper(): Promise<CIHelper> {
         }
 
         console.log(toPrettyJSON(await ci.getGitGitGadgetOptions()));
+    } else if (command === "init-email-commit-tip") {
+        if (commander.args.length !== 2) {
+            process.stderr.write(`${command}: needs 1 parameter: email commit\n`);
+            process.exit(1);
+        }
+
+        try {
+            await ci.getGitGitGadgetOptions(); // get the notes updated
+        } catch (_error) {
+            console.log(`Options not set.  Please run \`misc-helper init-gitgitgadget-options\` ${
+                ""}to set the allowedUsers.`);
+        }
+
+        const state: IGitMailingListMirrorState = await ci.notes.get<IGitMailingListMirrorState>(stateKey) || {};
+        state.latestRevision = commander.args[1];
+        await ci.notes.set(stateKey, state, true);
+        const publishTagsAndNotesToRemote = await gitConfig("gitgitgadget.publishRemote",
+            commandOptions.gitgitgadgetWorkDir);
+        if (!publishTagsAndNotesToRemote) {
+            throw new Error("No remote to which to push configured");
+        }
+        await git(["push", publishTagsAndNotesToRemote, "--", `${ci.notes.notesRef}`],
+                { workDir: commandOptions.gitWorkDir });
+
+        console.log(toPrettyJSON(state));
     } else if (command === "get-mail-meta") {
         if (commander.args.length !== 2) {
             process.stderr.write(`${command}: need a Message-ID\n`);
