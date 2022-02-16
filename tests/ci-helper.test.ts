@@ -115,36 +115,19 @@ async function setupRepos(instance: string):
     const gggRemote = await testCreateRepo(__filename, `-git-rmt${instance}`);
 
     // re-route the URLs
-    await worktree.git(["config", `url.${gggRemote.workDir}.insteadOf`,
-                        "https://github.com/gitgitgadget/git"]);
+    const url = `https://github.com/gitgitgadget/git`;
 
-    await gggLocal.git(["config", `url.${gggRemote.workDir}.insteadOf`,
-                        "https://github.com/gitgitgadget/git"]);
+    await worktree.git([ "config", `url.${gggRemote.workDir}.insteadOf`, url ]);
+    await gggLocal.git([ "config", `url.${gggRemote.workDir}.insteadOf`, url ]);
 
     // set needed config
-    await worktree.git([
-        "config", "--add", "gitgitgadget.workDir", gggLocal.workDir,
-    ]);
-    await worktree.git([
-        "config", "--add", "gitgitgadget.publishRemote",
-        "https://github.com/gitgitgadget/git",
-    ]);
-
-    await worktree.git([
-        "config", "--add", "gitgitgadget.smtpUser", "joe_user@example.com",
-    ]);
-
-    await worktree.git([
-        "config", "--add", "gitgitgadget.smtpHost", "localhost",
-    ]);
-
-    await worktree.git([
-        "config", "--add", "gitgitgadget.smtpPass", "secret",
-    ]);
-
-    await worktree.git([
-        "config", "--add", "gitgitgadget.smtpOpts", eMailOptions.smtpOpts,
-    ]);
+    await worktree.git([ "config", "--add", "gitgitgadget.workDir", gggLocal.workDir, ]);
+    // misc-helper and gitgitgadget use this and ci-helper relies on insteadOf above
+    await worktree.git(["config", "--add", "gitgitgadget.publishRemote", gggRemote.workDir]);
+    await worktree.git([ "config", "--add", "gitgitgadget.smtpUser", "joe_user@example.com", ]);
+    await worktree.git([ "config", "--add", "gitgitgadget.smtpHost", "localhost", ]);
+    await worktree.git([ "config", "--add", "gitgitgadget.smtpPass", "secret", ]);
+    await worktree.git([ "config", "--add", "gitgitgadget.smtpOpts", eMailOptions.smtpOpts, ]);
 
     const notes = new GitNotes(gggRemote.workDir);
     await notes.set("", {allowedUsers: ["ggg", "user1"]}, true);

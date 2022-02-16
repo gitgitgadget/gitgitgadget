@@ -9,7 +9,7 @@ import { IParsedMBox, parseMBox,
     parseMBoxMessageIDAndReferences } from "./send-mail";
 import { SousChef } from "./sous-chef";
 
-const stateKey = "git@vger.kernel.org <-> GitGitGadget";
+export const stateKey = "git@vger.kernel.org <-> GitGitGadget";
 const replyToThisURL =
     "https://github.com/gitgitgadget/gitgitgadget/wiki/ReplyToThis";
 
@@ -261,49 +261,8 @@ export class MailArchiveGitHelper {
         };
 
         if (!this.state.latestRevision) {
-            /*
-             * No longer - this is the ref of an empty repo
-             * This is the commit in lore.kernel/git that is *just* before the
-             * first ever GitGitGadget mail sent to the Git mailing list.
-             */
-            this.state.latestRevision = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
-        } else if (this.state.latestRevision === "205655703b0501ef14e0f0dddf8e57bb726fae97") {
-            this.state.latestRevision = "26674e9a36ae1871f69197798d30f6d3d2af7a56";
-        } else if (await revParse(this.state.latestRevision,  this.mailArchiveGitDir) === undefined) {
-            const publicInboxGitDir = process.env.PUBLIC_INBOX_DIR;
-            if (publicInboxGitDir === undefined) {
-                throw new Error(`Commit ${this.state.latestRevision} not found; need PUBLIC_INBOX_DIR`);
-            }
-
-            let commitDiff = await git(["show", this.state.latestRevision, "--"], { workDir: publicInboxGitDir });
-
-            if (!commitDiff) {
-                throw new Error(`Could not find ${this.state.latestRevision} in ${publicInboxGitDir}`);
-            }
-
-            const match = commitDiff.match(/\n\+(Message-ID: [^\n]*)/);
-
-            if (!match) {
-                throw new Error(`Could not find Message-ID in ${commitDiff}`);
-            }
-
-            let commit = "HEAD";
-            for (;;) {
-                commit = await git(["log", "-1", "--format=%H", `-S${match[1]}`,
-                                    commit, "--"],
-                                   { workDir: this.mailArchiveGitDir});
-                if (!commit) {
-                    throw new Error(`Could not find ${this.state.latestRevision
-                                }'s equivalent in ${this.mailArchiveGitDir}`);
-                }
-                commitDiff = await git(["show", commit, "--"],
-                                       {workDir: this.mailArchiveGitDir});
-                if (commitDiff.indexOf(`\n+${match[1]}\n`) >= 0) {
-                    break;
-                }
-                commit += "^"; /* continue search with the parent commit */
-            }
-            this.state.latestRevision = commit;
+            throw new Error(`Mail archive email commit tip not set.  Please run \`misc-helper init-email-commit-tip\` ${
+                ""}to set the value.`);
         }
 
         const head = await revParse(this.branch, this.mailArchiveGitDir);
