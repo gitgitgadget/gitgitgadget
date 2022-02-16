@@ -286,7 +286,7 @@ async function getCIHelper(): Promise<CIHelper> {
 
         try {
             await ci.getGitGitGadgetOptions();
-            process.stderr.write(`${command}: ${config.repo.baseOwner}/${config.repo.name} already initialized\n`);
+            process.stderr.write(`${command}: ${config.repo.owner}/${config.repo.name} already initialized\n`);
             process.exit(1);
         } catch (error) {
             const options: IGitGitGadgetOptions = { allowedUsers: [ commander.args[1] ] };

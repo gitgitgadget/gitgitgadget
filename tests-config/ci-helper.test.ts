@@ -163,16 +163,18 @@ async function setupRepos(instance: string):
     const gggRemote = await testCreateRepo(__filename, `-git-rmt${instance}`);
 
     // re-route the URLs
-    await worktree.git(["config", `url.${gggRemote.workDir}.insteadOf`,
-                        `https://github.com/${config.repo.baseOwner}/${config.repo.name}`]);
+    const url = `https://github.com/${config.repo.owner}/${config.repo.name}`;
 
-    await gggLocal.git(["config", `url.${gggRemote.workDir}.insteadOf`,
-                        `https://github.com/${config.repo.baseOwner}/${config.repo.name}`]);
+    await worktree.git([ "config", `url.${gggRemote.workDir}.insteadOf`, url ]);
+    await gggLocal.git([ "config", `url.${gggRemote.workDir}.insteadOf`, url ]);
+    // pretend there are two remotes
+    await gggLocal.git([ "config", `url.${gggRemote.workDir}.insteadOf`,
+        `https://github.com/${config.repo.baseOwner}/${config.repo.name}` ]);
 
     // set needed config
     await worktree.git([ "config", "--add", "gitgitgadget.workDir", gggLocal.workDir, ]);
-    await worktree.git([ "config", "--add", "gitgitgadget.publishRemote",
-        `https://github.com/${config.repo.baseOwner}/${config.repo.name}`, ]);
+    // misc-helper and gitgitgadget use this and ci-helper relies on insteadOf above
+    await worktree.git(["config", "--add", "gitgitgadget.publishRemote", gggRemote.workDir]);
     await worktree.git([ "config", "--add", "gitgitgadget.smtpUser", "joe_user@example.com", ]);
     await worktree.git([ "config", "--add", "gitgitgadget.smtpHost", "localhost", ]);
     await worktree.git([ "config", "--add", "gitgitgadget.smtpPass", "secret", ]);
@@ -418,7 +420,7 @@ test("handle comment allow no name specified (with trailing white space)",
         author: "ggg",
         baseCommit: "A",
         baseLabel: "gitgitgadget:next",
-        baseOwner: config.repo.baseOwner,
+        baseOwner: config.repo.owner,
         baseRepo: config.repo.name,
         body: "Super body",
         hasComments: true,
@@ -505,7 +507,7 @@ test("handle comment submit not author", async () => {
         author: "ggNOTg",
         baseCommit: "A",
         baseLabel: "gitgitgadget:next",
-        baseOwner: config.repo.baseOwner,
+        baseOwner: config.repo.owner,
         baseRepo: config.repo.name,
         body: "Super body",
         hasComments: true,
@@ -547,7 +549,7 @@ test("handle comment submit not mergeable", async () => {
         author: "ggg",
         baseCommit: "A",
         baseLabel: "gitgitgadget:next",
-        baseOwner: config.repo.baseOwner,
+        baseOwner: config.repo.owner,
         baseRepo: config.repo.name,
         body: "Super body",
         hasComments: true,
@@ -622,7 +624,7 @@ test("handle comment submit email success", async () => {
         author: "ggg",
         baseCommit: commitA,
         baseLabel: "gitgitgadget:next",
-        baseOwner: config.repo.baseOwner,
+        baseOwner: config.repo.owner,
         baseRepo: config.repo.name,
         body: `Super body\r\n${template}\r\nCc: Copy One <copy@cat.com>\r\n`
             + "Cc: Copy Two <copycat@cat.com>",
@@ -706,7 +708,7 @@ test("handle comment preview email success", async () => {
         author: "ggg",
         baseCommit: commitA,
         baseLabel: "gitgitgadget:next",
-        baseOwner: config.repo.baseOwner,
+        baseOwner: config.repo.owner,
         baseRepo: config.repo.name,
         body: "There will be a submit email and a preview email.",
         hasComments: true,
@@ -811,7 +813,7 @@ test("handle push/comment too many commits fails", async () => {
         author: "ggg",
         baseCommit: commitA,
         baseLabel: "gitgitgadget:next",
-        baseOwner: config.repo.baseOwner,
+        baseOwner: config.repo.owner,
         baseRepo: config.repo.name,
         body: "Never seen - too many commits.",
         commits: commits.length,
@@ -929,7 +931,7 @@ test("handle push/comment merge commits fails", async () => {
         author: "ggg",
         baseCommit: commitA,
         baseLabel: "gitgitgadget:next",
-        baseOwner: config.repo.baseOwner,
+        baseOwner: config.repo.owner,
         baseRepo: config.repo.name,
         body: "Never seen - merge commits.",
         commits: commits.length,
@@ -1073,7 +1075,7 @@ test("disallow no-reply emails", async () => {
         author: "ggg",
         baseCommit: commitA,
         baseLabel: "gitgitgadget:next",
-        baseOwner: config.repo.baseOwner,
+        baseOwner: config.repo.owner,
         baseRepo: config.repo.name,
         body: "Never seen - merge commits.",
         commits: commits.length,
@@ -1198,7 +1200,7 @@ test("basic lint tests", async () => {
         author: "ggg",
         baseCommit: commitA,
         baseLabel: "gitgitgadget:next",
-        baseOwner: config.repo.baseOwner,
+        baseOwner: config.repo.owner,
         baseRepo: config.repo.name,
         body: "Never seen - merge commits.",
         commits: commits.length,
@@ -1250,7 +1252,7 @@ test("Handle comment cc", async () => {
         author: "ggg",
         baseCommit: "foo",
         baseLabel: "gitgitgadget:next",
-        baseOwner: config.repo.baseOwner,
+        baseOwner: config.repo.owner,
         baseRepo: config.repo.name,
         body: "Never seen - no cc.",
         commits: 1,
