@@ -133,9 +133,8 @@ export class CIHelper {
         if (!this.gggNotesUpdated) {
             const args = [];
 
-            for (const branch of this.config.repo.branches) {
-                args.push(`refs/heads/${branch}:refs/remotes/upstream/${branch}`);
-            }
+            args.push(...this.config.repo.branches.map(branch =>
+                `+refs/heads/${branch}:refs/remotes/upstream/${branch}`));
 
             await git(["fetch", this.urlRepo, "--tags",
                        "+refs/notes/gitgitgadget:refs/notes/gitgitgadget",
