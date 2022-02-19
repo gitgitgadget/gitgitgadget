@@ -46,39 +46,33 @@ if (commander.args.length === 0) {
 }
 
 const commandOptions = commander.opts<ICommanderOptions>();
-let config: IConfig = getConfig();
-
-async function getGitGitWorkDir(): Promise<string> {
-    if (!commandOptions.gitWorkDir) {
-        commandOptions.gitWorkDir = await gitConfig("gitgitgadget.workDir",
-            commandOptions.gitgitgadgetWorkDir);
-        if (!commandOptions.gitWorkDir) {
-            throw new Error("Could not determine gitgitgadget.workDir");
-        }
-    }
-    if (!await isDirectory(commandOptions.gitWorkDir)) {
-        console.log(`Cloning git into ${commandOptions.gitWorkDir}`);
-        await git([
-            "clone",
-            `https://github.com/${config.repo.owner}/${config.repo.name}`,
-            commandOptions.gitWorkDir,
-        ]);
-    }
-    return commandOptions.gitWorkDir;
-}
-
-async function getCIHelper(): Promise<CIHelper> {
-    return new CIHelper(await getGitGitWorkDir(), commandOptions.skipUpdate,
-                        commandOptions.gitgitgadgetWorkDir);
-}
 
 (async (): Promise<void> => {
-    if (commandOptions.config) {
-        const newConfig = await loadConfig(path.resolve(commandOptions.config));
-        config = setConfig(newConfig);
-    }
+    const config: IConfig = commandOptions.config ? setConfig(await getExternalConfig(commandOptions.config))
+        : getConfig();
 
-    const ci = await getCIHelper();
+    const getGitGitWorkDir = async (): Promise<string> => {
+        if (!commandOptions.gitWorkDir) {
+            commandOptions.gitWorkDir = await gitConfig("gitgitgadget.workDir",
+                commandOptions.gitgitgadgetWorkDir);
+            if (!commandOptions.gitWorkDir) {
+                throw new Error("Could not determine gitgitgadget.workDir");
+            }
+        }
+        if (!await isDirectory(commandOptions.gitWorkDir)) {
+            console.log(`Cloning git into ${commandOptions.gitWorkDir}`);
+            await git([
+                "clone",
+                `https://github.com/${config.repo.owner}/${config.repo.name}`,
+                commandOptions.gitWorkDir,
+            ]);
+        }
+        return commandOptions.gitWorkDir;
+    };
+
+    const ci = new CIHelper(await getGitGitWorkDir(), commandOptions.skipUpdate,
+        commandOptions.gitgitgadgetWorkDir);
+
     const command = commander.args[0];
     if (command === "update-open-prs") {
         if (commander.args.length !== 1) {
@@ -509,3 +503,21 @@ async function getCIHelper(): Promise<CIHelper> {
     process.stderr.write(`Caught error ${reason}:\n${reason.stack}\n`);
     process.exit(1);
 });
+
+async function getExternalConfig(file: string): Promise<IConfig> {
+    const newConfig = await loadConfig(path.resolve(file));
+
+    if (!newConfig.hasOwnProperty("project")) {
+        throw new Error(`User configurations must have a 'project:'.  Not found in ${path}`);
+    }
+
+    if (!newConfig.repo.owner.match(/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i)) {
+        throw new Error(`Invalid 'owner' ${newConfig.repo.owner} in ${path}`);
+    }
+
+    if (!newConfig.repo.baseOwner.match(/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i)) {
+        throw new Error(`Invalid 'baseOwner' ${newConfig.repo.baseOwner} in ${path}`);
+    }
+
+    return newConfig;
+}
