@@ -115,7 +115,7 @@ export function parseMBoxMessageIDAndReferences(parsed: IParsedMBox):
         /^\s*<([^>]+)>(\s*|,)(\([^")]*("[^"]*")?\)\s*|\([^)]*\)$)?(<.*)?$/;
     for (const header of parsed.headers ?? []) {
         if (header.key === "In-Reply-To" || header.key === "References") {
-            let value: string = header.value;
+            let value: string = header.value.replace(/[\r\n]/g, " ");
             while (value) {
                 const match = value.match(msgIdRegex);
                 if (!match) {

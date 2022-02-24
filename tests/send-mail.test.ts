@@ -1,6 +1,6 @@
 import { expect, test } from "@jest/globals";
 import { MailArchiveGitHelper } from "../lib/mail-archive-helper";
-import { parseMBox } from "../lib/send-mail";
+import { parseMBox, parseMBoxMessageIDAndReferences } from "../lib/send-mail";
 
 const mbox0 =
     `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
@@ -166,4 +166,30 @@ Cc: Some Body <somebody@example.com>,
     const parsed = await parseMBox(mbox);
     const body = MailArchiveGitHelper.mbox2markdown(parsed);
     expect(body).toMatch(/^$/);
+});
+
+test("In-Reply-To/References is parsed correctly", async () => {
+    const mbox =
+`From junio Mon Sep 17 00:00:00 2001
+From:   Junio C Hamano <gitster@pobox.com>
+To:     Tao Klerks <tao@klerks.biz>
+Cc:     Tao Klerks via GitGitGadget <gitgitgadget@gmail.com>,
+        git@vger.kernel.org
+Subject: Re: [PATCH 3/3] Write index when populating empty untracked cache
+References: <pull.986.git.1624559401.gitgitgadget@gmail.com>
+        <627f1952fd8d4864b6b87f5539a9d9b802c5796b.1624559402.git.gitgitgadget@gmail.com>
+        <xmqq35t11dtu.fsf@gitster.g>
+        <CAPMMpogerttWdjGBNxJaqHT4bd3_igDx4_Fxev2eNHqexZ=aLQ@mail.gmail.com>
+Date:   Thu, 24 Feb 2022 12:35:13 -0800
+In-Reply-To: <CAPMMpogerttWdjGBNxJaqHT4bd3_igDx4_Fxev2eNHqexZ=aLQ@mail.gmail.com>
+        (Tao Klerks's message of "Thu, 24 Feb 2022 18:52:27 +0100")
+Message-ID: <xmqq5yp4knpa.fsf@gitster.g>
+
+I can be pursuaded either way.
+`;
+    const parsed = await parseMBox(mbox);
+    const { messageID, references } = parseMBoxMessageIDAndReferences(parsed);
+    expect(messageID).toEqual("xmqq5yp4knpa.fsf@gitster.g");
+    expect(references).toHaveLength(4);
+    expect(references[0]).toEqual("pull.986.git.1624559401.gitgitgadget@gmail.com");
 });
