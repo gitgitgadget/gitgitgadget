@@ -80,7 +80,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
             process.exit(1);
         }
 
-        const gitHub = new GitHubGlue(ci.workDir, "git");
+        const gitHub = new GitHubGlue(ci.workDir, config.repo.owner, config.repo.name);
 
         const options = await ci.getGitGitGadgetOptions();
         let optionsChanged = false;
@@ -252,7 +252,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
         const originalCommit = commander.args[1];
         const gitGitCommit = commander.args[2];
 
-        const glue = new GitHubGlue(ci.workDir, "git");
+        const glue = new GitHubGlue(ci.workDir, config.repo.owner, config.repo.name);
         const id = await glue.annotateCommit(originalCommit, gitGitCommit, config.repo.owner, config.repo.baseOwner);
         console.log(`Created check with id ${id}`);
     } else if (command === "identify-merge-commit") {
@@ -423,7 +423,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
             commander.args[1];
         const comment = commander.args[2];
 
-        const glue = new GitHubGlue();
+        const glue = new GitHubGlue(ci.workDir, config.repo.owner, config.repo.name);
         await glue.addPRComment(pullRequestURL, comment);
     } else if (command === "set-app-token") {
         const set = async (options: {

@@ -25,7 +25,7 @@ type CommentFunction = (comment: string) => Promise<void>;
  */
 export class CIHelper {
     public readonly config: IConfig = getConfig();
-    public readonly workDir?: string;
+    public readonly workDir: string;
     public readonly notes: GitNotes;
     public readonly urlBase: string;
     public readonly urlRepo: string;
@@ -38,14 +38,14 @@ export class CIHelper {
     private mail2CommitMapUpdated: boolean;
     protected maxCommitsExceptions: string[];
 
-    public constructor(workDir?: string, skipUpdate?: boolean, gggConfigDir = ".") {
+    public constructor(workDir: string, skipUpdate?: boolean, gggConfigDir = ".") {
         this.gggConfigDir = gggConfigDir;
         this.workDir = workDir;
         this.notes = new GitNotes(workDir);
         this.gggNotesUpdated = !!skipUpdate;
         this.mail2commit = new MailCommitMapping(this.notes.workDir);
         this.mail2CommitMapUpdated = !!skipUpdate;
-        this.github = new GitHubGlue(workDir, "git");
+        this.github = new GitHubGlue(workDir, this.config.repo.owner, this.config.repo.name);
         this.testing = false;
         this.maxCommitsExceptions = this.config.lint?.maxCommitsIgnore || [];
         this.urlBase = `https://github.com/${this.config.repo.owner}/`;
@@ -724,7 +724,7 @@ GitGitGadget needs an email address to Cc: you on your contribution, so that you
     public async handlePush(repositoryOwner: string, prNumber: number): Promise<void> {
         const prKey = {
             owner: repositoryOwner,
-            repo: "git",
+            repo: this.config.repo.name,
             pull_number: prNumber
         };
 

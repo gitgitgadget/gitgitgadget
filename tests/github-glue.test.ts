@@ -32,8 +32,8 @@ located at the same directory level as this project (ie ../).
 
 class GitHubProxy extends GitHubGlue {
     public octo: Octokit;
-    public constructor(workDir?: string, repo = "git") {
-        super(workDir, repo);
+    public constructor(workDir = "./" , owner = "gitgitfadget", repo = "git") {
+        super(workDir, owner, repo);
         this.octo = this.client;
     }
 
@@ -61,7 +61,7 @@ test("identify user", async () => {
     if (owner && repo) {
         const userName = await gitConfig(`user.name`, `../${repo}`) || "";
 
-        const github = new GitHubProxy(`../${repo}`, repo);
+        const github = new GitHubProxy(`../${repo}`, owner, repo);
         await github.authenticate(owner);
 
         const ghUser = await github.getGitHubUserInfo(owner);
@@ -74,7 +74,7 @@ test("pull requests", async () => {
     if (owner && repo) {
         const repoDir = `../${repo}`;
 
-        const github = new GitHubProxy(repoDir, repo);
+        const github = new GitHubProxy(repoDir, owner, repo);
         await github.authenticate(owner);
         const content = Buffer.from("test data").toString("base64");
 
@@ -236,7 +236,7 @@ test("pull requests", async () => {
 });
 
 test("add PR cc requests", async () => {
-    const github = new GitHubGlue();
+    const github = new GitHubProxy();
 
     const prInfo = {
         author: "ggg",
