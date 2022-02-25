@@ -507,6 +507,13 @@ export class CIHelper {
         return revs.split(/\s+/);
     }
 
+    protected warnOnMissingPublicEmail(username: string): string {
+        return `WARNING: ${username} has no public email address set on GitHub;
+GitGitGadget needs an email address to Cc: you on your contribution, so that you receive any feedback
+on the Git mailing list. Go to https://github.com/settings/profile to make your preferred email public
+to let GitGitGadget know which email address to use.`;
+    }
+
     /**
      * Retrieves comments on PRs and handles `/submit` and friends.
      *
@@ -565,7 +572,7 @@ export class CIHelper {
 
                 if (commitOkay) {
                     const extraComment = userInfo.email === null ?
-                        `\n\nWARNING: ${comment.author} has no public email address set on GitHub` : "";
+                        `\n\n${this.warnOnMissingPublicEmail(comment.author)}` : "";
 
                     const metadata = await gitGitGadget.submit(pr, userInfo);
                     const code = "\n```";
@@ -603,7 +610,7 @@ export class CIHelper {
                 try {
                     const userInfo = await this.github.getGitHubUserInfo(accountName);
                     if (userInfo.email === null) {
-                        extraComment = `\n\nWARNING: ${accountName} has no public email address set on GitHub`;
+                        extraComment = `\n\n${this.warnOnMissingPublicEmail(accountName)}}`;
                     }
                 } catch (reason) {
                     throw new Error(`User ${accountName} is not a valid GitHub username: ${reason}`);
