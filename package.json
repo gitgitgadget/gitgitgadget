@@ -38,7 +38,7 @@
     "@types/html-to-text": "^8.0.1",
     "@types/imap-simple": "^4.2.5",
     "@types/jest": "^27.4.1",
-    "@types/json-stable-stringify": "^1.0.33",
+    "@types/json-stable-stringify": "^1.0.34",
     "@types/jsonwebtoken": "^8.5.8",
     "@types/marked": "^4.0.2",
     "@types/nodemailer": "^6.4.4",
