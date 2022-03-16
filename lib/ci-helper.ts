@@ -610,7 +610,7 @@ to let GitGitGadget know which email address to use.`;
                 try {
                     const userInfo = await this.github.getGitHubUserInfo(accountName);
                     if (userInfo.email === null) {
-                        extraComment = `\n\n${this.warnOnMissingPublicEmail(accountName)}}`;
+                        extraComment = `\n\n${this.warnOnMissingPublicEmail(accountName)}`;
                     }
                 } catch (reason) {
                     throw new Error(`User ${accountName} is not a valid GitHub username: ${reason}`);
