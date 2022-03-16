@@ -509,9 +509,9 @@ export class CIHelper {
 
     protected warnOnMissingPublicEmail(username: string): string {
         return `WARNING: ${username} has no public email address set on GitHub;
-GitGitGadget needs an email address to Cc: you on your contribution, so that you receive any feedback
-on the Git mailing list. Go to https://github.com/settings/profile to make your preferred email public
-to let GitGitGadget know which email address to use.`;
+GitGitGadget needs an email address to Cc: you on your contribution, so that you receive any feedback ${ ""
+}on the Git mailing list. Go to https://github.com/settings/profile to make your preferred email public ${ ""
+}to let GitGitGadget know which email address to use.`;
     }
 
     /**
