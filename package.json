@@ -67,7 +67,7 @@
     "jsonwebtoken": "^8.5.1",
     "marked": "^4.0.14",
     "nodemailer": "^6.7.3",
-    "rfc2047": "^4.0.0"
+    "rfc2047": "^4.0.1"
   },
   "engines": {
     "node": ">= 16.13.0"
