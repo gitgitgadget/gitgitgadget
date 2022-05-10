@@ -48,8 +48,10 @@ export class MailArchiveGitHelper {
             return "";
         }
 
-        const wrap = "``````````\n";
-        return `${wrap}${body}${body.endsWith("\n") ? "" : "\n"}${wrap}`;
+        const backTicks = "``````````";
+        const wrapTop = `${backTicks}email\n`;
+        const wrapBottom = `${backTicks}\n`;
+        return `${wrapTop}${body}${body.endsWith("\n") ? "" : "\n"}${wrapBottom}`;
     }
 
     protected readonly branch: string;
