@@ -111,6 +111,8 @@ export class LintCommit {
 
         for (let i = 1; i < this.lines.length; i++) {
             if (this.lines[i].length > this.maxColumns &&
+                // Allow long lines if prefixed with whitespace (ex. quoted error messages)
+                (! this.lines[i].match(/^\s+/)) &&
                 // Allow long lines if they cannot be wrapped at some
                 // white-space character, e.g. URLs. To allow ` [1] <URL>`
                 // lines, we skip the first 10 characters.

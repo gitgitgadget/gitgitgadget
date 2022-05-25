@@ -157,7 +157,7 @@ http://www.github.com blah\n\nSigned-off-by: x`;
 blah http://www.github.com\n\nSigned-off-by: x`;
     lintCheck(commit);
 
-    commit.message = `wrapped but too long\n\n ${
+    commit.message = `wrapped but too long\n\n${
                 ""}1234578901234567890123456789012345678901234567890${
                 ""} 23456789012345678901234567890\nmore bad\nSigned-off-by: x`;
     lintCheck(commit, (lintError) => {
@@ -168,6 +168,12 @@ blah http://www.github.com\n\nSigned-off-by: x`;
     commit.message = `contains a long URL that cannot be wrapped\n\n ${
                 ""}[2] https://lore.kernel.org/git/CABPp-BH9tju7WVm=${
                 ""}QZDOvaMDdZbpNXrVWQdN-jmfN8wC6YVhmw@mail.gmail.com/\n\n${
+                ""}Signed-off-by: x}`;
+    lintCheck(commit);
+
+    commit.message = `contains a long, whitespace-prefixed error message\n\n${
+                ""}    ld-elf.so.1: /usr/local/lib/perl5/5.32/mach/CORE/libperl.so.5.32:${
+                ""} Undefined symbol "strerror_l@FBSD_1.6"\n\n${
                 ""}Signed-off-by: x}`;
     lintCheck(commit);
 });
@@ -213,7 +219,7 @@ test("combo lint tests", () => {
         expect(lintError.message).toMatch(/empty line/);
     });
 
-    commit.message = `all good but too long\n ${
+    commit.message = `all good but too long\n${
                 ""}1234578901234567890123456789012345678901234567890${
                 ""} 23456789012345678901234567890\nmore bad\nSigned-off-by: x`;
     lintCheck(commit, (lintError) => {
