@@ -1,4 +1,4 @@
-import addressparser = require("nodemailer/lib/addressparser");
+import addressparser from "nodemailer/lib/addressparser";
 import { Octokit } from "@octokit/rest";
 import { git, gitConfig } from "./git";
 import { getPullRequestKey, pullRequestKeyInfo, pullRequestKey } from "./pullRequestKey";

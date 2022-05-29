@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as util from "util";
-import addressparser = require("nodemailer/lib/addressparser");
+import addressparser from "nodemailer/lib/addressparser";
 import { ILintError, LintCommit } from "./commit-lint";
 import { commitExists, git, emptyTreeName } from "./git";
 import { GitNotes } from "./git-notes";
@@ -131,7 +131,7 @@ export class CIHelper {
 
     public async updateCommitMappings(): Promise<boolean> {
         if (!this.gggNotesUpdated) {
-            const args = [];
+            const args: string[] = [];
 
             args.push(...this.config.repo.branches.map(branch =>
                 `+refs/heads/${branch}:refs/remotes/upstream/${branch}`));
