@@ -17,8 +17,8 @@ primarily for testing.`;
 
 class GitHubProxy extends GitHubGlue {
     public octo: Octokit;
-    public constructor(workDir?: string, repo = "gitty") {
-        super(workDir, repo);
+    public constructor(workDir: string, owner: string, repo: string) {
+        super(workDir, owner, repo);
         this.octo = this.client;
     }
 
@@ -73,11 +73,10 @@ if (commander.args.length > 0) {
         options.minutes = commandOptions.minutes;
     }
 
-    const github = new GitHubProxy(/* repoDir */);
+    const github = new GitHubProxy("", commandOptions.owner, commandOptions.repo);
     await github.authenticate(commandOptions.owner);
 
-    await deleteBranches(github.octo, commandOptions.owner,
-        commandOptions.repo, options );
+    await deleteBranches(github.octo, commandOptions.owner, commandOptions.repo, options );
 
 })().catch((reason: Error) => {
     console.log(`Caught error ${reason}:\n${reason.stack}\n`);

@@ -1,4 +1,4 @@
-import addressparser = require("nodemailer/lib/addressparser");
+import addressparser from "nodemailer/lib/addressparser";
 import { Octokit } from "@octokit/rest";
 import { git, gitConfig } from "./git";
 import { getPullRequestKey, pullRequestKeyInfo, pullRequestKey } from "./pullRequestKey";
@@ -50,12 +50,14 @@ export interface IGitHubUser {
 }
 
 export class GitHubGlue {
-    public workDir?: string;
-    protected client = new Octokit();
+    public workDir: string;
+    protected client = new Octokit(); // add { log: console } to debug
     protected authenticated?: string;
+    protected owner: string;
     protected repo: string;
 
-    public constructor(workDir?: string, repo = "git") {
+    public constructor(workDir: string, owner: string, repo: string) {
+        this.owner = owner;
         this.repo = repo;
         this.workDir = workDir;
     }
@@ -110,6 +112,7 @@ export class GitHubGlue {
         const prKey = getPullRequestKey(pullRequest);
 
         const pr = await this.getPRInfo(prKey);
+
         const trimBody = pr.body.trimRight();
         let footer = trimBody.match(/^[^]+\r?\n\s*?\r?\n([^]+)$/);
 
@@ -447,7 +450,7 @@ export class GitHubGlue {
      */
     public async getGitHubUserInfo(login: string): Promise<IGitHubUser> {
         // required to get email
-        await this.ensureAuthenticated(this.authenticated || "gitgitgadget");
+        await this.ensureAuthenticated(this.authenticated || this.owner);
 
         const response = await this.client.rest.users.getByUsername({
             username: login,
@@ -474,7 +477,7 @@ export class GitHubGlue {
             if (!token) {
                 throw new Error(`Need a GitHub token for ${repositoryOwner}`);
             }
-            this.client = new Octokit({ auth: token });
+            this.client = new Octokit({ auth: token }); // add log: console to debug
             this.authenticated = repositoryOwner;
         }
     }

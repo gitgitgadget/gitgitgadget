@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as util from "util";
-import addressparser = require("nodemailer/lib/addressparser");
+import addressparser from "nodemailer/lib/addressparser";
 import { ILintError, LintCommit } from "./commit-lint";
 import { commitExists, git, emptyTreeName } from "./git";
 import { GitNotes } from "./git-notes";
@@ -25,7 +25,7 @@ type CommentFunction = (comment: string) => Promise<void>;
  */
 export class CIHelper {
     public readonly config: IConfig = getConfig();
-    public readonly workDir?: string;
+    public readonly workDir: string;
     public readonly notes: GitNotes;
     public readonly urlBase: string;
     public readonly urlRepo: string;
@@ -38,14 +38,14 @@ export class CIHelper {
     private mail2CommitMapUpdated: boolean;
     protected maxCommitsExceptions: string[];
 
-    public constructor(workDir?: string, skipUpdate?: boolean, gggConfigDir = ".") {
+    public constructor(workDir: string, skipUpdate?: boolean, gggConfigDir = ".") {
         this.gggConfigDir = gggConfigDir;
         this.workDir = workDir;
         this.notes = new GitNotes(workDir);
         this.gggNotesUpdated = !!skipUpdate;
         this.mail2commit = new MailCommitMapping(this.notes.workDir);
         this.mail2CommitMapUpdated = !!skipUpdate;
-        this.github = new GitHubGlue(workDir, "git");
+        this.github = new GitHubGlue(workDir, this.config.repo.owner, this.config.repo.name);
         this.testing = false;
         this.maxCommitsExceptions = this.config.lint?.maxCommitsIgnore || [];
         this.urlBase = `https://github.com/${this.config.repo.owner}/`;
@@ -131,7 +131,7 @@ export class CIHelper {
 
     public async updateCommitMappings(): Promise<boolean> {
         if (!this.gggNotesUpdated) {
-            const args = [];
+            const args: string[] = [];
 
             args.push(...this.config.repo.branches.map(branch =>
                 `+refs/heads/${branch}:refs/remotes/upstream/${branch}`));
@@ -724,7 +724,7 @@ GitGitGadget needs an email address to Cc: you on your contribution, so that you
     public async handlePush(repositoryOwner: string, prNumber: number): Promise<void> {
         const prKey = {
             owner: repositoryOwner,
-            repo: "git",
+            repo: this.config.repo.name,
             pull_number: prNumber
         };
 

@@ -1,5 +1,5 @@
-import addressparser = require("nodemailer/lib/addressparser");
-import mimeFuncs = require("nodemailer/lib/mime-funcs");
+import addressparser from "nodemailer/lib/addressparser";
+import mimeFuncs from "nodemailer/lib/mime-funcs";
 // import { encodeWords } from "nodemailer/lib/mime-funcs";
 import { commitExists, git, gitCommandExists, gitConfig, revListCount, revParse, } from "./git";
 import { GitNotes } from "./git-notes";

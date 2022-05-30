@@ -1,6 +1,6 @@
 import { simpleParser, SimpleParserOptions } from "mailparser";
 import { createTransport, SendMailOptions } from "nodemailer";
-import SMTPTransport = require("nodemailer/lib/smtp-transport");
+import SMTPTransport from "nodemailer/lib/smtp-transport";
 import { decode } from "rfc2047";
 
 export interface IParsedMBox {

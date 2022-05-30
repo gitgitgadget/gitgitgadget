@@ -35,7 +35,7 @@ class TestCIHelper extends CIHelper {
     public updatePRCalls: string[][]; // reference mock.calls
     public addPRLabelsCalls: Array<[_: string, labels: string[]]>;
 
-    public constructor(workDir?: string, debug = false, gggDir = ".") {
+    public constructor(workDir: string, debug = false, gggDir = ".") {
         super(workDir, debug, gggDir);
         this.testing = true;
         this.ghGlue = this.github;
