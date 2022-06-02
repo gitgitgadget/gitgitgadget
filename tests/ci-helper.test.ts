@@ -291,7 +291,8 @@ test("handle comment allow fail invalid user", async () => {
 
     ci.setGHGetPRComment(comment);
 
-    await ci.handleComment("gitgitgadget", 433865360);
+    await expect(ci.handleComment("gitgitgadget", 433865360)).
+        rejects.toThrow(/is not a valid GitHub username/);
     expect(ci.addPRCommentCalls[0][1])
         .toMatch(/is not a valid GitHub username/);
 });
@@ -480,7 +481,8 @@ test("handle comment submit not author", async () => {
     ci.setGHGetPRComment(comment);
     ci.setGHGetGitHubUserInfo(user);
 
-    await ci.handleComment("gitgitgadget", 433865360);
+    await expect(ci.handleComment("gitgitgadget", 433865360)).
+        rejects.toThrow(/Only the owner of a PR can submit/);
     expect(ci.addPRCommentCalls[0][1])
         .toMatch(/Only the owner of a PR can submit/);
 });
@@ -523,7 +525,8 @@ test("handle comment submit not mergeable", async () => {
     ci.setGHGetPRComment(comment);
     ci.setGHGetGitHubUserInfo(user);
 
-    await ci.handleComment("gitgitgadget", 433865360);
+    await expect(ci.handleComment("gitgitgadget", 433865360)).
+        rejects.toThrow(/does not merge cleanly/);
     expect(ci.addPRCommentCalls[0][1])
         .toMatch(/does not merge cleanly/);
 });
