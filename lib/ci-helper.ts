@@ -640,6 +640,8 @@ GitGitGadget needs an email address to Cc: you on your contribution, so that you
         } catch (e) {
             const error = e as Error;
             await addComment(error.toString());
+            // re-throw exception to avoid "succeeding" on error
+            throw e;
         }
     }
 
