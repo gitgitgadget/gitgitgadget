@@ -18,13 +18,18 @@ export interface IGitGitGadgetOptions {
     activeMessageIDs?: { [messageID: string]: string };
 }
 
+export async function getVar(key: string, configDir: string | undefined): Promise<string | undefined> {
+    const keyPrefix = "gitgitgadget";
+    const envVar = `${keyPrefix}_${key}`.toUpperCase();
+    return process.env[envVar] ? process.env[envVar] : await gitConfig(`${keyPrefix}.${key}`, configDir);
+}
+
 /**
  * The central class of the GitHub App.
  */
 export class GitGitGadget {
     public static async getWorkDir(gitGitGadgetDir: string): Promise<string> {
-        const workDir =
-            await gitConfig("gitgitgadget.workDir", gitGitGadgetDir);
+        const workDir = await getVar("workDir", gitGitGadgetDir);
         if (!workDir) {
             throw new Error("Could not find GitGitGadget's work tree");
         }
@@ -37,8 +42,7 @@ export class GitGitGadget {
             workDir = await this.getWorkDir(gitGitGadgetDir);
         }
 
-        const publishTagsAndNotesToRemote =
-            await gitConfig("gitgitgadget.publishRemote", gitGitGadgetDir);
+        const publishTagsAndNotesToRemote = await getVar("publishRemote", gitGitGadgetDir);
         if (!publishTagsAndNotesToRemote) {
             throw new Error("No remote to which to push configured");
         }
@@ -55,14 +59,11 @@ export class GitGitGadget {
 
         const notes = new GitNotes(workDir);
 
-        const smtpUser = await gitConfig("gitgitgadget.smtpUser",
-                                         gitGitGadgetDir);
-        const smtpHost = await gitConfig("gitgitgadget.smtpHost",
-                                         gitGitGadgetDir);
-        const smtpPass = await gitConfig("gitgitgadget.smtpPass",
-                                         gitGitGadgetDir);
-        const smtpOpts = await gitConfig("gitgitgadget.smtpOpts",
-                                         gitGitGadgetDir);
+        const smtpUser = await getVar("smtpUser", gitGitGadgetDir);
+        const smtpHost = await getVar("smtpHost", gitGitGadgetDir);
+        const smtpPass = await getVar("smtpPass", gitGitGadgetDir);
+        const smtpOpts = await getVar("smtpOpts", gitGitGadgetDir);
+
         if (!smtpUser || !smtpHost || !smtpPass) {
             throw new Error("No SMTP settings configured");
         }

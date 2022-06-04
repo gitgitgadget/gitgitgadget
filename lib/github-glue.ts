@@ -471,9 +471,10 @@ export class GitHubGlue {
     protected async ensureAuthenticated(repositoryOwner: string):
         Promise<void> {
         if (repositoryOwner !== this.authenticated) {
-            const infix = repositoryOwner === "gitgitgadget" ?
-                "" : `.${repositoryOwner}`;
-            const token = await gitConfig(`gitgitgadget${infix}.githubToken`);
+            const infix = repositoryOwner === "gitgitgadget" ? "" : `.${repositoryOwner}`;
+            const tokenKey = `gitgitgadget${infix}.githubToken`;
+            const tokenVar = tokenKey.toUpperCase().replace(/\./, "_");
+            const token = process.env[tokenVar] ? process.env[tokenVar] : await gitConfig(tokenKey);
             if (!token) {
                 throw new Error(`Need a GitHub token for ${repositoryOwner}`);
             }
