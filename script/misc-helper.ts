@@ -4,7 +4,7 @@ import { Command } from "commander";
 import { CIHelper } from "../lib/ci-helper";
 import { isDirectory } from "../lib/fs-util";
 import { git, gitConfig } from "../lib/git";
-import { IGitGitGadgetOptions } from "../lib/gitgitgadget";
+import { IGitGitGadgetOptions, getVar } from "../lib/gitgitgadget";
 import { getConfig } from "../lib/gitgitgadget-config";
 import { GitHubGlue } from "../lib/github-glue";
 import { toPrettyJSON } from "../lib/json-util";
@@ -14,6 +14,7 @@ import { IConfig, loadConfig, setConfig } from "../lib/project-config";
 import path from "path";
 
 const commander = new Command();
+const publishRemoteKey = "publishRemote";
 
 commander.version("1.0.0")
     .usage("[options] ( update-open-prs | lookup-upstream-commit | "
@@ -53,8 +54,8 @@ const commandOptions = commander.opts<ICommanderOptions>();
 
     const getGitGitWorkDir = async (): Promise<string> => {
         if (!commandOptions.gitWorkDir) {
-            commandOptions.gitWorkDir = await gitConfig("gitgitgadget.workDir",
-                commandOptions.gitgitgadgetWorkDir);
+            commandOptions.gitWorkDir = await getVar("workDir", commandOptions.gitgitgadgetWorkDir);
+
             if (!commandOptions.gitWorkDir) {
                 throw new Error("Could not determine gitgitgadget.workDir");
             }
@@ -287,8 +288,8 @@ const commandOptions = commander.opts<ICommanderOptions>();
             const options: IGitGitGadgetOptions = { allowedUsers: [ commander.args[1] ] };
             await ci.notes.set("", options, true);
 
-            const publishTagsAndNotesToRemote = await gitConfig("gitgitgadget.publishRemote",
-                commandOptions.gitgitgadgetWorkDir);
+            const publishTagsAndNotesToRemote = await getVar(publishRemoteKey, commandOptions.gitgitgadgetWorkDir);
+
             if (!publishTagsAndNotesToRemote) {
                 throw new Error("No remote to which to push configured");
             }
@@ -313,8 +314,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
         const state: IGitMailingListMirrorState = await ci.notes.get<IGitMailingListMirrorState>(stateKey) || {};
         state.latestRevision = commander.args[1];
         await ci.notes.set(stateKey, state, true);
-        const publishTagsAndNotesToRemote = await gitConfig("gitgitgadget.publishRemote",
-            commandOptions.gitgitgadgetWorkDir);
+        const publishTagsAndNotesToRemote = await getVar(publishRemoteKey, commandOptions.gitgitgadgetWorkDir);
         if (!publishTagsAndNotesToRemote) {
             throw new Error("No remote to which to push configured");
         }
@@ -432,7 +432,10 @@ const commandOptions = commander.opts<ICommanderOptions>();
              name: string;
         }): Promise<void> => {
             const appName = options.name === config.app.name ? config.app.name : config.app.altname;
-            const key = await gitConfig(`${appName}.privateKey`);
+            const appNameKey = `${appName}.privateKey`;
+            const appNameVar = appNameKey.toUpperCase().replace(/\./, "_");
+            const key = process.env[appNameVar] ? process.env[appNameVar] : await gitConfig(appNameKey);
+
             if (!key) {
                 throw new Error(`Need the ${appName} App's private key`);
             }
@@ -484,7 +487,8 @@ const commandOptions = commander.opts<ICommanderOptions>();
 
         await ci.handlePush(repositoryOwner, prNumber);
     } else if (command === "handle-new-mails") {
-        const mailArchiveGitDir = await gitConfig("gitgitgadget.loreGitDir", commandOptions.gitgitgadgetWorkDir);
+        const mailArchiveGitDir = await getVar("loreGitDir", commandOptions.gitgitgadgetWorkDir);
+
         if (!mailArchiveGitDir) {
             process.stderr.write("Need a lore.kernel/git worktree");
             process.exit(1);

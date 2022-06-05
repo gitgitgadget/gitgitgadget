@@ -356,3 +356,27 @@ test("allow/disallow", async () => {
         .toBeFalsy();
     expect(gitGitGadget.isUserAllowed("second-one")).toBeFalsy();
 });
+
+test("allow/disallow with env vars", async () => {
+    const repo = await testCreateRepo(__filename);
+    const workDir = repo.workDir;
+    const remote = await testCreateRepo(__filename, "-remote");
+
+    process.env.GITGITGADGET_WORKDIR = workDir;
+    process.env.GITGITGADGET_PUBLISHREMOTE = remote.workDir;
+    process.env.GITGITGADGET_SMTPUSER = "test";
+    process.env.GITGITGADGET_SMTPHOST = "test";
+    process.env.GITGITGADGET_SMTPPASS = "test";
+
+    const notes = new GitNotes(remote.workDir);
+    await notes.set("", {} as IGitGitGadgetOptions);
+
+    const gitGitGadget = await GitGitGadget.get(workDir);
+
+    // pretend that the notes ref had been changed in the meantime
+    await notes.set("", { allowedUsers: ["first-one"] } as IGitGitGadgetOptions, true);
+
+    expect(gitGitGadget.isUserAllowed("second-one")).toBeFalsy();
+    expect(await gitGitGadget.allowUser("first-one", "second-one"))
+        .toBeTruthy();
+});
