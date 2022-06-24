@@ -25,6 +25,8 @@ export interface IConfig {
         owner: string;
         branch: string;
         host: string;
+        url: string;
+        descriptiveName: string;
     },
     mail: {
         author: string;
