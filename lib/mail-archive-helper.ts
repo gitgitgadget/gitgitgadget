@@ -5,6 +5,7 @@ import { IGitGitGadgetOptions } from "./gitgitgadget";
 import { GitHubGlue } from "./github-glue";
 import { IMailMetadata } from "./mail-metadata";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
+import { IConfig, getConfig } from "./project-config";
 import { IParsedMBox, parseMBox,
     parseMBoxMessageIDAndReferences } from "./send-mail";
 import { SousChef } from "./sous-chef";
@@ -55,6 +56,7 @@ export class MailArchiveGitHelper {
     }
 
     protected readonly branch: string;
+    protected readonly config: IConfig = getConfig();
     protected readonly state: IGitMailingListMirrorState;
     protected readonly gggNotes: GitNotes;
     protected readonly mailArchiveGitDir: string;
@@ -109,7 +111,7 @@ export class MailArchiveGitHelper {
                 throw new Error(`Could not parse Message-ID of ${mbox}`);
             }
             console.log(`Handling "${sousChef.subject}"`);
-            const whatsCookingBaseURL = "https://lore.kernel.org/git/";
+            const whatsCookingBaseURL = this.config.mailrepo.url;
             for (const branchName of sousChef.branches.keys()) {
                 const pullRequestURL = branchNameMap.get(branchName);
                 if (pullRequestURL) {
@@ -195,8 +197,7 @@ export class MailArchiveGitHelper {
                             }, commit ${originalCommit
                             }, comment ID: ${issueCommentId}`);
 
-                const archiveURL = `https://lore.kernel.org/git/${
-                    parsed.messageID}`;
+                const archiveURL = `${this.config.mailrepo.url}/${parsed.messageID}`;
                 const header = `[On the Git mailing list](${archiveURL}), ` +
                     (parsedMbox.from ?
                      parsedMbox.from.replace(/ *<.*>/, "") : "Somebody") +

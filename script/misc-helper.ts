@@ -490,7 +490,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
         const mailArchiveGitDir = await getVar("loreGitDir", commandOptions.gitgitgadgetWorkDir);
 
         if (!mailArchiveGitDir) {
-            process.stderr.write("Need a lore.kernel/git worktree");
+            process.stderr.write(`Need a ${config.mailrepo.descriptiveName} worktree`);
             process.exit(1);
         }
         const onlyPRs = new Set<number>();

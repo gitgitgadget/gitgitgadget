@@ -17,6 +17,8 @@ const defaultConfig: IConfig = {
         owner: "gitgitgadget",
         branch: "master",
         host: "lore.kernel.org",
+        url: "https://lore.kernel.org/git",
+        descriptiveName: "lore.kernel/git"
     },
     mail: {
         author: "GitGitGadget",
