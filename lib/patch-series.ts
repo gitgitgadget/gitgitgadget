@@ -1,7 +1,7 @@
 import addressparser from "nodemailer/lib/addressparser";
 import mimeFuncs from "nodemailer/lib/mime-funcs";
 // import { encodeWords } from "nodemailer/lib/mime-funcs";
-import { commitExists, git, gitCommandExists, gitConfig, revListCount, revParse, } from "./git";
+import { commitExists, git, gitConfig, revListCount, revParse, } from "./git";
 import { GitNotes } from "./git-notes";
 import { IGitGitGadgetOptions } from "./gitgitgadget";
 import { IMailMetadata } from "./mail-metadata";
@@ -111,10 +111,7 @@ export class PatchSeries {
                 }
             });
 
-            if (await gitCommandExists("range-diff", project.workDir)) {
-                rangeDiff = await git(["range-diff", "--creation-factor=95",
-                                       "--no-color", range]);
-            }
+            rangeDiff = await git(["range-diff", "--creation-factor=95", "--no-color", range]);
         }
 
         const patchCount = await revListCount(["--no-merges",
@@ -172,12 +169,8 @@ export class PatchSeries {
 
             const previousRange =
                 `${metadata.baseCommit}..${metadata.headCommit}`;
-            if (await gitCommandExists("range-diff", workDir)) {
-                rangeDiff = await git(["range-diff", "--no-color",
-                                       "--creation-factor=95",
-                                       previousRange, currentRange],
-                                      { workDir });
-            }
+            rangeDiff = await git(["range-diff", "--no-color", "--creation-factor=95",
+                                    previousRange, currentRange], { workDir });
 
             metadata.iteration++;
             metadata.baseCommit = baseCommit;
