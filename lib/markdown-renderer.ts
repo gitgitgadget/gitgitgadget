@@ -16,7 +16,7 @@ export function md2text(markdown: string, columns = 76): string {
                 builder.closeBlock({
                     trailingLineBreaks: options.trailingLineBreaks || 2,
                     blockTransform: str => {
-                        const underline = str.substr(str.lastIndexOf("\n") + 1)
+                        const underline = str.substring(str.lastIndexOf("\n") + 1)
                             .replace(/./g, "=");
                         return `${str}\n${underline}`;
                     }});

@@ -1,7 +1,7 @@
 import addressparser from "nodemailer/lib/addressparser";
 import mimeFuncs from "nodemailer/lib/mime-funcs";
 // import { encodeWords } from "nodemailer/lib/mime-funcs";
-import { commitExists, git, gitCommandExists, gitConfig, revListCount, revParse, } from "./git";
+import { commitExists, git, gitConfig, revListCount, revParse, } from "./git";
 import { GitNotes } from "./git-notes";
 import { IGitGitGadgetOptions } from "./gitgitgadget";
 import { IMailMetadata } from "./mail-metadata";
@@ -50,11 +50,8 @@ const singletonHeaders: ISingletonHeader[] = [
 ];
 
 export class PatchSeries {
-    public static async getFromTag(options: PatchSeriesOptions,
-                                   project: ProjectOptions):
-        Promise<PatchSeries> {
-        const latestTag: string = await this.getLatestTag(project.branchName,
-                                                          options.redo);
+    public static async getFromTag(options: PatchSeriesOptions, project: ProjectOptions): Promise<PatchSeries> {
+        const latestTag: string = await this.getLatestTag(project.branchName, options.redo);
 
         const baseCommit = await revParse(project.upstreamBranch);
         if (!baseCommit) {
@@ -76,8 +73,7 @@ export class PatchSeries {
         if (latestTag) {
             const range = latestTag + "..." + project.branchName;
             if (! await git(["rev-list", range])) {
-                throw new Error(`Branch ${project.branchName
-                    } was already submitted: ${latestTag}`);
+                throw new Error(`Branch ${project.branchName} was already submitted: ${latestTag}`);
             }
 
             let match = latestTag.match(/-v([1-9][0-9]*)$/);
@@ -86,8 +82,7 @@ export class PatchSeries {
             const tagMessage = await git(["cat-file", "tag", latestTag]);
             match = tagMessage.match(/^[\s\S]*?\n\n([\s\S]*)/);
             (match ? match[1] : tagMessage).split("\n").map((line) => {
-                match = line
-                    .match(/https:\/\/lore\.kernel\.org\/.*\/([^/]+)/);
+                match = line.match(/https:\/\/lore\.kernel\.org\/.*\/([^/]+)/);
                 if (!match) {
                     const re = /https:\/\/public-inbox\.org\/.*\/([^/]+)/;
                     match = line.match(re);
@@ -111,20 +106,13 @@ export class PatchSeries {
                 }
             });
 
-            if (await gitCommandExists("range-diff", project.workDir)) {
-                rangeDiff = await git(["range-diff", "--creation-factor=95",
-                                       "--no-color", range]);
-            }
+            rangeDiff = await git(["range-diff", "--creation-factor=95", "--no-color", range]);
         }
 
-        const patchCount = await revListCount(["--no-merges",
-                                               `${baseCommit}..${headCommit}`],
-                                              project.workDir);
+        const patchCount = await revListCount(["--no-merges", `${baseCommit}..${headCommit}`], project.workDir);
 
-        const notes =
-            new GitNotes(project.workDir, "refs/notes/mail-patch-series");
-        return new PatchSeries(notes, options, project, metadata, rangeDiff,
-                               patchCount);
+        const notes = new GitNotes(project.workDir, "refs/notes/mail-patch-series");
+        return new PatchSeries(notes, options, project, metadata, rangeDiff, patchCount);
     }
 
     public static async getFromNotes(notes: GitNotes,
@@ -145,8 +133,7 @@ export class PatchSeries {
             await notes.get<IPatchSeriesMetadata>(pullRequestURL);
 
         const currentRange = `${baseCommit}..${headCommit}`;
-        const patchCount = await revListCount(["--no-merges", currentRange],
-                                              workDir);
+        const patchCount = await revListCount(["--no-merges", currentRange], workDir);
         if (!patchCount) {
             throw new Error(`Invalid commit range: ${currentRange}`);
         }
@@ -164,20 +151,13 @@ export class PatchSeries {
             };
         } else {
             if (!options.noUpdate &&   // allow reprint of submitted PRs
-                !await git(["rev-list",
-                            `${metadata.headCommit}...${headCommit}`],
-                           { workDir })) {
+                !await git(["rev-list", `${metadata.headCommit}...${headCommit}`], { workDir })) {
                 throw new Error(`${headCommit} was already submitted`);
             }
 
-            const previousRange =
-                `${metadata.baseCommit}..${metadata.headCommit}`;
-            if (await gitCommandExists("range-diff", workDir)) {
-                rangeDiff = await git(["range-diff", "--no-color",
-                                       "--creation-factor=95",
-                                       previousRange, currentRange],
-                                      { workDir });
-            }
+            const previousRange = `${metadata.baseCommit}..${metadata.headCommit}`;
+            rangeDiff = await git(["range-diff", "--no-color", "--creation-factor=95",
+                                    previousRange, currentRange], { workDir });
 
             metadata.iteration++;
             metadata.baseCommit = baseCommit;
@@ -188,8 +168,7 @@ export class PatchSeries {
                 if (!metadata.referencesMessageIds) {
                     metadata.referencesMessageIds = [];
                 }
-                metadata.referencesMessageIds
-                    .push(metadata.coverLetterMessageId);
+                metadata.referencesMessageIds.push(metadata.coverLetterMessageId);
             }
             metadata.coverLetterMessageId = "not yet sent";
         }
@@ -218,14 +197,9 @@ export class PatchSeries {
 
         const publishToRemote: string | undefined = undefined;
 
-        const project = await ProjectOptions.get(workDir, headCommit, cc,
-                                                 basedOn, publishToRemote,
-                                                 baseCommit);
+        const project = await ProjectOptions.get(workDir, headCommit, cc, basedOn, publishToRemote, baseCommit);
 
-        return new PatchSeries(notes, options, project, metadata,
-                               rangeDiff, patchCount,
-                               coverLetter,
-                               senderName);
+        return new PatchSeries(notes, options, project, metadata, rangeDiff, patchCount, coverLetter, senderName);
     }
 
     protected static async parsePullRequest(workDir: string,
@@ -244,10 +218,7 @@ export class PatchSeries {
 
         // Remove template from description (if template exists)
         try {
-            let prTemplate =
-                await git(["show",
-                           "upstream/master:.github/PULL_REQUEST_TEMPLATE.md"],
-                          { workDir });
+            let prTemplate = await git(["show", "upstream/master:.github/PULL_REQUEST_TEMPLATE.md"], { workDir });
             // Depending on the core.autocrlf setting, the template may contain
             // \r\n line endings.
             prTemplate = prTemplate.replace(/\r\n/g, "\n");
@@ -262,8 +233,7 @@ export class PatchSeries {
             coverLetterBody,
         } = PatchSeries.parsePullRequestBody(prBody);
 
-        const coverLetter = `${prTitle}\n${coverLetterBody.length ?
-            `\n${coverLetterBody}` : ""}`;
+        const coverLetter = `${prTitle}\n${coverLetterBody.length ? `\n${coverLetterBody}` : ""}`;
         let wrappedLetter = md2text(coverLetter, wrapCoverLetterAtColumn);
         if (indentCoverLetter) {
             wrappedLetter = wrappedLetter.replace(/^/mg, indentCoverLetter);
@@ -304,8 +274,7 @@ export class PatchSeries {
                     switch (match2[1].toLowerCase()) {
                         case "based-on:":
                             if (basedOn) {
-                                throw new Error(`Duplicate Based-On footer: ${
-                                    basedOn} vs ${match2[2]}`);
+                                throw new Error(`Duplicate Based-On footer: ${basedOn} vs ${match2[2]}`);
                             }
                             basedOn = match2[2];
                             break;
@@ -336,12 +305,9 @@ export class PatchSeries {
         };
     }
 
-    protected static async getLatestTag(branchName: string, redo?: boolean):
-        Promise<string> {
+    protected static async getLatestTag(branchName: string, redo?: boolean): Promise<string> {
         const args: string[] = [
-            "for-each-ref", "--format=%(refname)", "--sort=-taggerdate",
-            "refs/tags/" + branchName + "-v*[0-9]",
-        ];
+            "for-each-ref", "--format=%(refname)", "--sort=-taggerdate", `refs/tags/${branchName}-v*[0-9]`];
         const latesttags: string[] = (await git(args)).split("\n");
 
         if (redo) {
@@ -362,17 +328,16 @@ export class PatchSeries {
                 return;
             }
 
-            let headers = mail.substr(0, endOfHeader + 1);
+            let headers = mail.substring(0, endOfHeader + 1);
             singletonHeaders.forEach((header: ISingletonHeader) => {
                 headers = PatchSeries.stripDuplicateHeaders(headers, header);
             });
 
-            mails[i] = headers + mail.substr(endOfHeader + 1);
+            mails[i] = headers + mail.substring(endOfHeader + 1);
         });
     }
 
-    private static stripDuplicateHeaders(headers: string,
-                                           header: ISingletonHeader): string {
+    private static stripDuplicateHeaders(headers: string, header: ISingletonHeader): string {
         const needle = "\n" + header.key + ":";
         let offset: number;
 
@@ -394,25 +359,22 @@ export class PatchSeries {
 
         // extract values to determine if they match.
         let endOfHdr = headers.indexOf("\n", endOfKey);
-        const value1 = headers.substr(endOfKey, endOfHdr - endOfKey).trim();
+        const value1 = headers.substring(endOfKey, endOfHdr).trim();
 
         do {
             endOfKey = offset + needle.length;
             endOfHdr = headers.indexOf("\n", endOfKey);
-            const value2 = headers.substr(endOfKey,
-                                          endOfHdr - endOfKey).trim();
+            const value2 = headers.substring(endOfKey, endOfHdr).trim();
 
             if (value1 !== value2) {
                 if (0 >= header.values.indexOf(value2)) {
-                    console.log("Found multiple headers where only one allowed"
-                        + `\n    ${header.key}: ${value1}\n    `
-                        + `${header.key}: ${value2}\nProcessing headers:\n`
-                        + headers);
+                    console.log(`Found multiple headers where only one allowed\n    ${header.key}: ${value1
+                        }\n    ${header.key}: ${value2}\nProcessing headers:\n${headers}`);
                 }
             }
 
             // substr up to \n and concat from next \n
-            headers = headers.substr(0, offset) + headers.substr(endOfHdr);
+            headers = headers.substring(0, offset) + headers.substring(endOfHdr);
             offset = headers.indexOf(needle, offset);
         } while (offset >= 0);
 
@@ -427,14 +389,12 @@ export class PatchSeries {
             return encoded;
         }
 
-        const match =
-            encoded.match(/^([^<]*[()<>[\]:;@\\,."][^<]*?)(\s*)(<.*)/);
+        const match = encoded.match(/^([^<]*[()<>[\]:;@\\,."][^<]*?)(\s*)(<.*)/);
         if (!match) {
             return encoded;
         }
 
-        return `"${match[1]
-            .replace(/["\\\\]/g, "\\$&")}"${match[2]}${match[3]}`;
+        return `"${match[1].replace(/["\\\\]/g, "\\$&")}"${match[2]}${match[3]}`;
     }
 
     protected insertCcAndFromLines(mails: string[], thisAuthor: string, senderName?: string): void {
@@ -454,8 +414,7 @@ export class PatchSeries {
 
             let replaceSender = PatchSeries.encodeSender(thisAuthor);
             if (isGitGitGadget) {
-                const onBehalfOf = i === 0 && senderName ?
-                    PatchSeries.encodeSender(senderName) :
+                const onBehalfOf = i === 0 && senderName ? PatchSeries.encodeSender(senderName) :
                     authorMatch[2].replace(/ <.*>$/, "");
                 // Special-case GitGitGadget to send from  "<author> via GitGitGadget"
                 replaceSender = `\"${onBehalfOf.replace(/^"(.*)"$/, "$1").replace(/"/g, "\\\"")
@@ -497,22 +456,18 @@ export class PatchSeries {
         return match[1] + subject + match[2] + match[4];
     }
 
-    protected static generateTagMessage(mail: string, isCoverLetter: boolean,
-                                        midUrlPrefix: string,
-                                        inReplyTo: string[] | undefined):
-        string {
+    protected static generateTagMessage(mail: string, isCoverLetter: boolean, midUrlPrefix: string,
+                                        inReplyTo: string[] | undefined): string {
         const regex = isCoverLetter ?
             /\nSubject: (\[.*?\] )?([^]*?(?=\n[^ ]))[^]*?\n\n([^]*?)\n*-- \n/ :
             /\nSubject: (\[.*?\] )?([^]*?(?=\n[^ ]))[^]*?\n\n([^]*?)\n*---\n/;
         const match = mail.match(regex);
         if (!match) {
-            throw new Error("Could not generate tag message from mail:\n\n"
-                + mail);
+            throw new Error(`Could not generate tag message from mail:\n\n${mail}`);
         }
 
         const messageID = mail.match(/\nMessage-ID: <(.*?)>\n/i);
-        let footer: string = messageID ? `Submitted-As: ${midUrlPrefix
-            }${messageID[1]}` : "";
+        let footer: string = messageID ? `Submitted-As: ${midUrlPrefix}${messageID[1]}` : "";
         if (inReplyTo) {
             inReplyTo.map((id: string) => {
                 footer += "\nIn-Reply-To: " + midUrlPrefix + id;
@@ -521,12 +476,10 @@ export class PatchSeries {
 
         // Subjects can contain continuation lines; simply strip out the new
         // line and keep only the space
-        return match[2].replace(/\n */g, " ") + `\n\n${match[3]
-            }${footer ? `\n\n${footer}` : ""}`;
+        return match[2].replace(/\n */g, " ") + `\n\n${match[3]}${footer ? `\n\n${footer}` : ""}`;
     }
 
-    protected static insertLinks(tagMessage: string, url: string,
-                                 tagName: string, basedOn?: string): string {
+    protected static insertLinks(tagMessage: string, url: string, tagName: string, basedOn?: string): string {
         if (!url) {
             return tagMessage;
         }
@@ -543,14 +496,10 @@ export class PatchSeries {
             }
         }
 
-        let insert =
-            `Published-As: ${url}/releases/tag/${tagName
-            }\nFetch-It-Via: git fetch ${url} ${tagName}\n`;
+        let insert =`Published-As: ${url}/releases/tag/${tagName}\nFetch-It-Via: git fetch ${url} ${tagName}\n`;
 
         if (basedOn) {
-            insert =
-                `Based-On: ${basedOn} at ${url
-                }\nFetch-Base-Via: git fetch ${url} ${basedOn}\n${insert}`;
+            insert =`Based-On: ${basedOn} at ${url}\nFetch-Base-Via: git fetch ${url} ${basedOn}\n${insert}`;
         }
 
         if (!tagMessage.match(/\n[-A-Za-z]+: [^\n]*\n$/)) {
@@ -561,21 +510,17 @@ export class PatchSeries {
 
     protected static insertFooters(mail: string, isCoverLetter: boolean,
                                    footers: string[]): string {
-        const regex = isCoverLetter ?
-            /^([^]*?\n)(-- \n[^]*)$/ :
-            /^([^]*?\n---\n(?:\n[A-Za-z:]+ [^]*?\n\n)?)([^]*)$/;
+        const regex = isCoverLetter ? /^([^]*?\n)(-- \n[^]*)$/ : /^([^]*?\n---\n(?:\n[A-Za-z:]+ [^]*?\n\n)?)([^]*)$/;
         const match = mail.match(regex);
         if (!match) {
-            throw new Error("Failed to find range-diff insertion "
-                + "point for\n\n" + mail);
+            throw new Error("Failed to find range-diff insertion point for\n\n" + mail);
         }
 
         const n = isCoverLetter ? "" : "\n";
         return `${match[1]}${n}${footers.join("\n")}\n${n}${match[2]}`;
     }
 
-    protected static adjustDateHeaders(mails: string[], forceDate: Date):
-        number {
+    protected static adjustDateHeaders(mails: string[], forceDate: Date): number {
         let count = 0;
 
         const time = forceDate.getTime();
@@ -599,9 +544,8 @@ export class PatchSeries {
             }
 
             const endOfLine = mail.indexOf("\n", dateOffset);
-            mails[i] = mail.substr(0, dateOffset) +
-                new Date(time - j * 1000).toUTCString().replace(/GMT$/, "+0000")
-                + mail.substr(endOfLine);
+            mails[i] = mail.substring(0, dateOffset) +
+                new Date(time - j * 1000).toUTCString().replace(/GMT$/, "+0000") + mail.substring(endOfLine);
             count++;
         }
 
@@ -646,10 +590,8 @@ export class PatchSeries {
     }
 
     public subjectPrefix(): string {
-        return `${this.options.noUpdate ? "PREVIEW" : "PATCH"
-            }${this.options.rfc ?
-            "/RFC" : ""}${this.metadata.iteration > 1 ?
-            ` v${this.metadata.iteration}` : ""}`;
+        return `${this.options.noUpdate ? "PREVIEW" : "PATCH"}${this.options.rfc ? "/RFC" : ""
+            }${this.metadata.iteration > 1 ? ` v${this.metadata.iteration}` : ""}`;
     }
 
     public async generateAndSend(logger: ILogger,
@@ -660,11 +602,9 @@ export class PatchSeries {
         Promise<IPatchSeriesMetadata | undefined> {
         let globalOptions: IGitGitGadgetOptions | undefined;
         if (this.options.dryRun) {
-            logger.log(`Dry-run ${this.project.branchName
-                 } v${this.metadata.iteration}`);
+            logger.log(`Dry-run ${this.project.branchName} v${this.metadata.iteration}`);
         } else {
-            logger.log(`Submitting ${this.project.branchName
-                 } v${this.metadata.iteration}`);
+            logger.log(`Submitting ${this.project.branchName} v${this.metadata.iteration}`);
             globalOptions = await this.notes.get<IGitGitGadgetOptions>("");
         }
 
@@ -718,8 +658,7 @@ export class PatchSeries {
             const prMatch = this.metadata.pullRequestURL.match(/\/([^/]+)\/([^/]+)\/pull\/(\d+)$/);
             if (prMatch) {
                 const infix = this.metadata.iteration > 1 ? `.v${this.metadata.iteration}` : "";
-                const repoInfix = prMatch[1] === this.config.repo.owner ?
-                    prMatch[2] : `${prMatch[1]}.${prMatch[2]}`;
+                const repoInfix = prMatch[1] === this.config.repo.owner ? prMatch[2] : `${prMatch[1]}.${prMatch[2]}`;
                 const newCoverMid = `pull.${prMatch[3]}${infix}.${repoInfix}.${timeStamp}.${email}`;
                 mails.map((value: string, index: number): void => {
                     // cheap replace-all
@@ -731,10 +670,8 @@ export class PatchSeries {
         this.metadata.coverLetterMessageId = coverMid;
 
         logger.log("Generating tag message");
-        let tagMessage =
-            PatchSeries.generateTagMessage(mails[0], mails.length > 1,
-                                           this.project.midUrlPrefix,
-                                           this.metadata.referencesMessageIds);
+        let tagMessage = PatchSeries.generateTagMessage(mails[0], mails.length > 1, this.project.midUrlPrefix,
+                                                        this.metadata.referencesMessageIds);
         let tagName: string | undefined;
         if (!this.metadata.pullRequestURL) {
             tagName = `${this.project.branchName}-v${this.metadata.iteration}`;
@@ -748,17 +685,13 @@ export class PatchSeries {
         this.metadata.latestTag = tagName;
 
         if (this.project.publishToRemote) {
-            const url =
-                await gitConfig(`remote.${this.project.publishToRemote}.url`,
-                                this.project.workDir);
+            const url = await gitConfig(`remote.${this.project.publishToRemote}.url`, this.project.workDir);
             if (!url) {
-                throw new Error(`remote ${this.project.publishToRemote
-                    } lacks URL`);
+                throw new Error(`remote ${this.project.publishToRemote} lacks URL`);
             }
 
             logger.log("Inserting links");
-            tagMessage = PatchSeries.insertLinks(tagMessage, url, tagName,
-                                                 this.project.basedOn);
+            tagMessage = PatchSeries.insertLinks(tagMessage, url, tagName, this.project.basedOn);
         }
 
         if (this.options.noUpdate) {
@@ -792,8 +725,7 @@ export class PatchSeries {
 
         logger.log("Inserting footers");
         if (footers.length > 0) {
-            mails[0] = PatchSeries.insertFooters(mails[0],
-                                                 mails.length > 1, footers);
+            mails[0] = PatchSeries.insertFooters(mails[0], mails.length > 1, footers);
         }
 
         /*
@@ -802,8 +734,7 @@ export class PatchSeries {
          */
         if (mails.length === 1 && this.coverLetter) {
             if (this.patchCount !== 1) {
-                throw new Error(`Patch count mismatch: ${mails.length} vs ${
-                    this.patchCount}`);
+                throw new Error(`Patch count mismatch: ${mails.length} vs ${this.patchCount}`);
             }
             // Need to insert it into the first mail
             const splitAtTripleDash = mails[0].match(/([^]*?\n---\n)([^]*)$/);
@@ -812,8 +743,7 @@ export class PatchSeries {
             }
             console.log(`Insert cover letter into\n${mails[0]}\nwith match:`);
             console.log(splitAtTripleDash);
-            mails[0] = splitAtTripleDash[1] +
-                this.coverLetter + "\n" + splitAtTripleDash[2];
+            mails[0] = splitAtTripleDash[1] + this.coverLetter + "\n" + splitAtTripleDash[2];
             console.log(mails[0]);
         }
 
@@ -868,8 +798,7 @@ export class PatchSeries {
                     globalOptions.activeMessageIDs[mid] = originalCommit;
                 }
 
-                if (originalCommit &&
-                    await commitExists(originalCommit, this.project.workDir)) {
+                if (originalCommit && await commitExists(originalCommit, this.project.workDir)) {
                     await this.notes.appendCommitNote(originalCommit, mid);
                 }
             }
@@ -879,8 +808,7 @@ export class PatchSeries {
             if (!globalOptions.openPRs) {
                 globalOptions.openPRs = {};
             }
-            globalOptions.openPRs[this.metadata.pullRequestURL] =
-                coverMid || "";
+            globalOptions.openPRs[this.metadata.pullRequestURL] = coverMid || "";
             await this.notes.set("", globalOptions, true);
         }
 
@@ -893,8 +821,7 @@ export class PatchSeries {
         }
 
         if (publishTagsAndNotesToRemote) {
-            await git(["push", publishTagsAndNotesToRemote, this.notes.notesRef,
-                       `refs/tags/${tagName}`],
+            await git(["push", publishTagsAndNotesToRemote, this.notes.notesRef, `refs/tags/${tagName}`],
                       { workDir: this.notes.workDir });
         }
 
@@ -902,13 +829,11 @@ export class PatchSeries {
     }
 
     protected async generateMBox(): Promise<string> {
-        const mergeBase = await git(["merge-base", this.project.baseCommit,
-                                     this.project.branchName],
+        const mergeBase = await git(["merge-base", this.project.baseCommit, this.project.branchName],
                                     { workDir: this.project.workDir });
         const args = [
             "format-patch", "--thread", "--stdout", `--signature=${this.config.repo.owner}`,
-            "--add-header=Fcc: Sent",
-            "--base", mergeBase, this.project.to,
+            "--add-header=Fcc: Sent", "--base", mergeBase, this.project.to,
         ].concat(PatchSeries.generateSingletonHeaders());
         this.project.cc.map((email) => {
             args.push("--cc=" + PatchSeries.encodeSender(email));
@@ -924,8 +849,7 @@ export class PatchSeries {
         }
         if (this.patchCount > 1 ) {
             if (!this.coverLetter) {
-                    throw new Error(`Branch ${this.project.branchName
-                        } needs a description`);
+                    throw new Error(`Branch ${this.project.branchName} needs a description`);
             }
             args.push("--cover-letter");
         }
@@ -938,8 +862,7 @@ export class PatchSeries {
         return await git(args, { workDir: this.project.workDir });
     }
 
-    protected async generateTagObject(tagName: string, tagMessage: string):
-        Promise<void> {
+    protected async generateTagObject(tagName: string, tagMessage: string): Promise<void> {
         const args = ["tag", "-F", "-", "-a"];
         if (this.options.redo) {
             args.push("-f");
@@ -950,10 +873,7 @@ export class PatchSeries {
     }
 
     protected async sendMBox(mbox: string): Promise<void> {
-        await git(["send-mbox"], {
-            stdin: mbox,
-            workDir: this.project.workDir,
-        });
+        await git(["send-mbox"], { stdin: mbox, workDir: this.project.workDir });
     }
 
     protected async publishBranch(tagName: string): Promise<void> {
@@ -964,8 +884,7 @@ export class PatchSeries {
         if (this.options.redo) {
             tagName = "+" + tagName;
         }
-        await git(["push", this.project.publishToRemote,
-                   `+${this.project.branchName}`, tagName],
+        await git(["push", this.project.publishToRemote,`+${this.project.branchName}`, tagName],
                   { workDir: this.project.workDir },
         );
     }

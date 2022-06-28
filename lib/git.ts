@@ -74,10 +74,10 @@ export function git(args: string[], options?: IGitOptions | undefined):
                         if (eol < 0) {
                             break;
                         }
-                        if (!handleLine(buffer.substr(0, eol))) {
+                        if (!handleLine(buffer.substring(0, eol))) {
                             return;
                         }
-                        buffer = buffer.substr(eol + 1);
+                        buffer = buffer.substring(eol + 1);
                     }
                 });
                 process.stdout.on("end", () => {
