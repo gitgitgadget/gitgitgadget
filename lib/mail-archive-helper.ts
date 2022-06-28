@@ -79,7 +79,7 @@ export class MailArchiveGitHelper {
         (await git(["ls-tree", "-r", `${this.gggNotes.notesRef}:`],
                    { workDir: this.gggNotes.workDir })).split("\n")
                 .map((line: string) => {
-                    keys.add(line.substr(53).replace(/\//g, ""));
+                    keys.add(line.substring(53).replace(/\//g, ""));
                 });
         const seen = (messageID: string): boolean => {
             return keys.has(MailArchiveGitHelper.hashKey(messageID));
@@ -251,7 +251,7 @@ export class MailArchiveGitHelper {
                     buffer = "";
                 }
             } else if (counter && line.match(/^[ +]/)) {
-                buffer += line.substr(1) + "\n";
+                buffer += line.substring(1) + "\n";
                 if (--counter) {
                     return;
                 }

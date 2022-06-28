@@ -328,12 +328,12 @@ export class PatchSeries {
                 return;
             }
 
-            let headers = mail.substr(0, endOfHeader + 1);
+            let headers = mail.substring(0, endOfHeader + 1);
             singletonHeaders.forEach((header: ISingletonHeader) => {
                 headers = PatchSeries.stripDuplicateHeaders(headers, header);
             });
 
-            mails[i] = headers + mail.substr(endOfHeader + 1);
+            mails[i] = headers + mail.substring(endOfHeader + 1);
         });
     }
 
@@ -359,12 +359,12 @@ export class PatchSeries {
 
         // extract values to determine if they match.
         let endOfHdr = headers.indexOf("\n", endOfKey);
-        const value1 = headers.substr(endOfKey, endOfHdr - endOfKey).trim();
+        const value1 = headers.substring(endOfKey, endOfHdr).trim();
 
         do {
             endOfKey = offset + needle.length;
             endOfHdr = headers.indexOf("\n", endOfKey);
-            const value2 = headers.substr(endOfKey, endOfHdr - endOfKey).trim();
+            const value2 = headers.substring(endOfKey, endOfHdr).trim();
 
             if (value1 !== value2) {
                 if (0 >= header.values.indexOf(value2)) {
@@ -374,7 +374,7 @@ export class PatchSeries {
             }
 
             // substr up to \n and concat from next \n
-            headers = headers.substr(0, offset) + headers.substr(endOfHdr);
+            headers = headers.substring(0, offset) + headers.substring(endOfHdr);
             offset = headers.indexOf(needle, offset);
         } while (offset >= 0);
 
@@ -544,8 +544,8 @@ export class PatchSeries {
             }
 
             const endOfLine = mail.indexOf("\n", dateOffset);
-            mails[i] = mail.substr(0, dateOffset) +
-                new Date(time - j * 1000).toUTCString().replace(/GMT$/, "+0000") + mail.substr(endOfLine);
+            mails[i] = mail.substring(0, dateOffset) +
+                new Date(time - j * 1000).toUTCString().replace(/GMT$/, "+0000") + mail.substring(endOfLine);
             count++;
         }
 
