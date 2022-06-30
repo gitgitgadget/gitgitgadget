@@ -195,3 +195,8 @@ export async function gitCommandExists(command: string, workDir?: string):
     const result = await GitProcess.exec([command, "-h"], workDir || ".");
     return result.exitCode === 129;
 }
+
+// rev-parse does not have enough info in shallow repos to determine a safe short name
+export function gitShortHash(longHash: string): string {
+    return longHash.substring(0, 8);
+}
