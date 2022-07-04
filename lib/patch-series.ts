@@ -1,7 +1,7 @@
 import addressparser from "nodemailer/lib/addressparser";
 import mimeFuncs from "nodemailer/lib/mime-funcs";
 // import { encodeWords } from "nodemailer/lib/mime-funcs";
-import { commitExists, git, gitConfig, revListCount, revParse, } from "./git";
+import { commitExists, git, gitConfig, gitShortHash, revListCount, revParse, } from "./git";
 import { GitNotes } from "./git-notes";
 import { IGitGitGadgetOptions } from "./gitgitgadget";
 import { IMailMetadata } from "./mail-metadata";
@@ -49,6 +49,13 @@ const singletonHeaders: ISingletonHeader[] = [
     },
 ];
 
+interface IRangeDiff {
+    previousRange: string;
+    currentRange: string;
+    baseCommit: string;
+    headCommit: string;
+}
+
 export class PatchSeries {
     public static async getFromTag(options: PatchSeriesOptions, project: ProjectOptions): Promise<PatchSeries> {
         const latestTag: string = await this.getLatestTag(project.branchName, options.redo);
@@ -68,7 +75,8 @@ export class PatchSeries {
             headLabel: project.branchName,
             iteration: 1,
         };
-        let rangeDiff = "";
+        let rangeDiffRanges: IRangeDiff | undefined;
+        const currentRange = `${baseCommit}..${headCommit}`;
 
         if (latestTag) {
             const range = latestTag + "..." + project.branchName;
@@ -106,13 +114,19 @@ export class PatchSeries {
                 }
             });
 
-            rangeDiff = await git(["range-diff", "--creation-factor=95", "--no-color", range]);
+            const tagCommit = await revParse(latestTag);
+            if (!tagCommit) {
+                throw new Error(`Cannot determine commit for tag: ${latestTag}`);
+            }
+
+            const previousRange = `${baseCommit}..${tagCommit}`;
+            rangeDiffRanges = { previousRange, currentRange, baseCommit, headCommit };
         }
 
-        const patchCount = await revListCount(["--no-merges", `${baseCommit}..${headCommit}`], project.workDir);
+        const patchCount = await revListCount(["--no-merges", currentRange], project.workDir);
 
         const notes = new GitNotes(project.workDir, "refs/notes/mail-patch-series");
-        return new PatchSeries(notes, options, project, metadata, rangeDiff, patchCount);
+        return new PatchSeries(notes, options, project, metadata, rangeDiffRanges, patchCount);
     }
 
     public static async getFromNotes(notes: GitNotes,
@@ -138,7 +152,7 @@ export class PatchSeries {
             throw new Error(`Invalid commit range: ${currentRange}`);
         }
 
-        let rangeDiff = "";
+        let rangeDiffRanges: IRangeDiff | undefined;
         if (metadata === undefined) {
             metadata = {
                 baseCommit,
@@ -156,8 +170,7 @@ export class PatchSeries {
             }
 
             const previousRange = `${metadata.baseCommit}..${metadata.headCommit}`;
-            rangeDiff = await git(["range-diff", "--no-color", "--creation-factor=95",
-                                    previousRange, currentRange], { workDir });
+            rangeDiffRanges = { previousRange, currentRange, baseCommit: metadata.baseCommit, headCommit };
 
             metadata.iteration++;
             metadata.baseCommit = baseCommit;
@@ -180,6 +193,7 @@ export class PatchSeries {
             basedOn,
             cc,
             coverLetter,
+            rangeDiff
         } = await PatchSeries.parsePullRequest(workDir,
                                                pullRequestTitle,
                                                pullRequestBody,
@@ -198,8 +212,11 @@ export class PatchSeries {
         const publishToRemote: string | undefined = undefined;
 
         const project = await ProjectOptions.get(workDir, headCommit, cc, basedOn, publishToRemote, baseCommit);
+        if (rangeDiff) {
+            options.rangeDiff = rangeDiff;
+        }
 
-        return new PatchSeries(notes, options, project, metadata, rangeDiff, patchCount, coverLetter, senderName);
+        return new PatchSeries(notes, options, project, metadata, rangeDiffRanges, patchCount, coverLetter, senderName);
     }
 
     protected static async parsePullRequest(workDir: string,
@@ -211,6 +228,7 @@ export class PatchSeries {
         coverLetter: string;
         basedOn?: string;
         cc: string[];
+        rangeDiff?: string;
     }> {
         // Replace \r\n with \n to simplify remaining parsing.
         // Note that md2text() in the end will do the replacement anyway.
@@ -231,6 +249,7 @@ export class PatchSeries {
             basedOn,
             cc,
             coverLetterBody,
+            rangeDiff,
         } = PatchSeries.parsePullRequestBody(prBody);
 
         const coverLetter = `${prTitle}\n${coverLetterBody.length ? `\n${coverLetterBody}` : ""}`;
@@ -243,6 +262,7 @@ export class PatchSeries {
             basedOn,
             cc,
             coverLetter: wrappedLetter,
+            rangeDiff,
         };
     }
 
@@ -250,10 +270,12 @@ export class PatchSeries {
         coverLetterBody: string;
         basedOn?: string;
         cc: string[];
+        rangeDiff?: string;
     } {
         let basedOn: string | undefined;
         const cc: string[] = [];
         let coverLetterBody = prBody.trim();
+        let rangeDiff: string | undefined;
 
         // parse the footers of the pullRequestDescription
         let match = prBody.match(/^([^]+)\n\n([^]+)$/);
@@ -288,6 +310,12 @@ export class PatchSeries {
                                 }
                             });
                             break;
+                        case "range-diff:":
+                            if (rangeDiff) {
+                                throw new Error(`Duplicate Range-Diff`);
+                            }
+                            rangeDiff = match2[2];
+                            break;
                         default:
                             footer.push(line);
                     }
@@ -302,6 +330,7 @@ export class PatchSeries {
             basedOn,
             cc,
             coverLetterBody,
+            rangeDiff
         };
     }
 
@@ -569,14 +598,14 @@ export class PatchSeries {
     public readonly options: PatchSeriesOptions;
     public readonly project: ProjectOptions;
     public readonly metadata: IPatchSeriesMetadata;
-    public readonly rangeDiff: string;
+    public readonly rangeDiff: IRangeDiff | undefined;
     public readonly coverLetter?: string;
     public readonly senderName?: string;
     public readonly patchCount: number;
 
     protected constructor(notes: GitNotes, options: PatchSeriesOptions,
                           project: ProjectOptions,
-                          metadata: IPatchSeriesMetadata, rangeDiff: string,
+                          metadata: IPatchSeriesMetadata, rangeDiff: IRangeDiff | undefined,
                           patchCount: number,
                           coverLetter?: string, senderName?: string) {
         this.notes = notes;
@@ -718,9 +747,29 @@ export class PatchSeries {
             if (footers.length > 0) {
                 footers.push(""); // empty line
             }
-            // split the range-diff and prefix with a space
-            footers.push(`Range-diff vs v${this.metadata.iteration - 1}:\n\n${
-                         this.rangeDiff.replace(/(^|\n(?!$))/g, "$1 ")}\n`);
+
+            if (this.options.rangeDiff && this.options.rangeDiff.toLowerCase() === "false") {
+                const getRange = (range: string): string => {
+                    const hashes = range.match(/([a-z,0-9]+?)(\.+)([a-z,0-9]+)/);
+                    if (hashes) {
+                        return `${gitShortHash(hashes[1])}${hashes[2]}${gitShortHash(hashes[3])}`;
+                    } else {
+                        throw Error(`Range parse failed for ${range}`);
+                    }
+                };
+
+                footers.push(`Contributor requested no range-diff. You can review it using these commands:
+   git fetch https://github.com/gitgitgadget/git ${gitShortHash(this.rangeDiff.baseCommit)} ${
+                    gitShortHash(this.rangeDiff.headCommit)}
+   git range-diff <options> ${getRange(this.rangeDiff.previousRange)} ${getRange(this.rangeDiff.currentRange)}`);
+            } else {
+                const rangeDiff = await git(["range-diff", "--no-color", "--creation-factor=95",
+                    this.rangeDiff.previousRange, this.rangeDiff.currentRange],
+                    { workDir: this.project.workDir });
+                // split the range-diff and prefix with a space
+                footers.push(`Range-diff vs v${this.metadata.iteration - 1}:\n\n${
+                            rangeDiff.replace(/(^|\n(?!$))/g, "$1 ")}\n`);
+            }
         }
 
         logger.log("Inserting footers");

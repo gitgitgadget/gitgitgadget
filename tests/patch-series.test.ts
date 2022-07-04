@@ -106,7 +106,7 @@ class PatchSeriesTest extends PatchSeries {
         }
 
         const x = new PatchSeriesTest(new GitNotes(), {},
-                new ProjectOptionsTest(), prMeta, "", 1);
+                new ProjectOptionsTest(), prMeta, undefined, 1);
 
         x.insertCcAndFromLines(mails, thisAuthor, senderName);
 

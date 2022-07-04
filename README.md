@@ -26,8 +26,11 @@ their behalf, and people mentioned in the Cc: footer of the Pull Request
 description.
 
 Furthermore, for all iterations of a patch series but the first one,
-GitGitGadget will insert a machine-generated representation of what changed,
-and reply to the cover letter of the previous iteration.
+GitGitGadget will insert a machine-generated representation of what changed
+between revisions,
+and reply to the cover letter of the previous iteration.  This patch revision
+diff can be supressed if the change may be too large or irrelevant by adding
+a `Range-Diff: false` footer in the Pull Request description.
 
 For convenience of reviewers, GitGitGadget will generate tags for each
 iteration it sent, and push those to [https://github.com/gitgitgadget/git](https://github.com/gitgitgadget/git). Links
