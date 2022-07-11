@@ -114,8 +114,9 @@ export class LintCommit {
                 // Allow long lines if prefixed with whitespace (ex. quoted error messages)
                 (! this.lines[i].match(/^\s+/)) &&
                 // Allow long lines if they cannot be wrapped at some
-                // white-space character, e.g. URLs. To allow ` [1] <URL>`
-                // lines, we skip the first 10 characters.
+                // white-space character, e.g. URLs. To allow a short
+                // preamble such as `ref [1] <URL>` lines, we skip the
+                // first 10 (arbitrary) characters.
                 this.lines[i].slice(10).match(/\s/)) {
                 this.block(`Lines in the body of the commit messages ${""
                     }should be wrapped between 60 and ${
