@@ -81,70 +81,8 @@ const commandOptions = commander.opts<ICommanderOptions>();
             process.exit(1);
         }
 
-        const gitHub = new GitHubGlue(ci.workDir, config.repo.owner, config.repo.name);
-
-        const options = await ci.getGitGitGadgetOptions();
-        let optionsChanged = false;
-        if (!options.openPRs) {
-            options.openPRs = {};
-            optionsChanged = true;
-        }
-        if (!options.activeMessageIDs) {
-            options.activeMessageIDs = {};
-            optionsChanged = true;
-        }
-
-        const handledPRs = new Set<string>();
-        const handledMessageIDs = new Set<string>();
-        for (const repositoryOwner of config.repo.owners) {
-            const pullRequests = await gitHub.getOpenPRs(repositoryOwner);
-            for (const pr of pullRequests) {
-                const meta = await ci.getPRMetadata(pr.pullRequestURL);
-                if (!meta) {
-                    console.log(`No meta found for ${pr.pullRequestURL}`);
-                    continue;
-                }
-
-                const url: string = pr.pullRequestURL;
-                handledPRs.add(url);
-                if (meta.coverLetterMessageId &&
-                    options.openPRs[url] === undefined) {
-                    options.openPRs[url] = meta.coverLetterMessageId;
-                    optionsChanged = true;
-                }
-
-                if (meta.baseCommit && meta.headCommit) {
-                    for (const rev of await ci.getOriginalCommitsForPR(meta)) {
-                        const messageID = await ci.notes.getLastCommitNote(rev);
-                        handledMessageIDs.add(messageID);
-                        if (messageID &&
-                            options.activeMessageIDs[messageID] === undefined) {
-                            options.activeMessageIDs[messageID] = rev;
-                            optionsChanged = true;
-                        }
-                    }
-                }
-            }
-        }
-
-        for (const url in options.openPRs) {
-            if (!handledPRs.has(url)) {
-                delete options.openPRs[url];
-                optionsChanged = true;
-            }
-        }
-
-        for (const messageID in options.activeMessageIDs) {
-            if (!handledMessageIDs.has(messageID)) {
-                delete options.activeMessageIDs[messageID];
-                optionsChanged = true;
-            }
-        }
-
-        if (optionsChanged) {
-            console.log(`Changed options:\n${toPrettyJSON(options)}`);
-            await ci.notes.set("", options, true);
-        }
+        const result = await ci.updateOpenPrs();
+        console.log(`Updated notes: ${result}`);
     } else if (command === "update-commit-mappings") {
         if (commander.args.length !== 1) {
             process.stderr.write(`${command}: does not accept arguments\n`);
