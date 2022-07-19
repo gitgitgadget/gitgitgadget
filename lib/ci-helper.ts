@@ -6,6 +6,7 @@ import { commitExists, git, emptyTreeName } from "./git";
 import { GitNotes } from "./git-notes";
 import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget";
 import { GitHubGlue, IGitHubUser, IPRCommit, IPullRequestInfo } from "./github-glue";
+import { toPrettyJSON } from "./json-util";
 import { MailArchiveGitHelper } from "./mail-archive-helper";
 import { MailCommitMapping } from "./mail-commit-mapping";
 import { IMailMetadata } from "./mail-metadata";
@@ -765,6 +766,77 @@ GitGitGadget needs an email address to Cc: you on your contribution, so that you
         const mailArchiveGit = await MailArchiveGitHelper.get(this.notes, mailArchiveGitDir, this.github,
             this.config.mailrepo.branch);
         return await mailArchiveGit.processMails(prFilter);
+    }
+
+    public async updateOpenPrs(): Promise<boolean> {
+        const options = await this.getGitGitGadgetOptions();
+        let optionsChanged = false;
+
+        if (!options.openPRs) {
+            options.openPRs = {};
+            optionsChanged = true;
+        }
+
+        if (!options.activeMessageIDs) {
+            options.activeMessageIDs = {};
+            optionsChanged = true;
+        }
+
+        const handledPRs = new Set<string>();
+        const handledMessageIDs = new Set<string>();
+
+        for (const repositoryOwner of this.config.repo.owners) {
+            const pullRequests = await this.github.getOpenPRs(repositoryOwner);
+
+            for (const pr of pullRequests) {
+                const meta = await this.getPRMetadata(pr.pullRequestURL);
+
+                if (!meta) {
+                    console.log(`No meta found for ${pr.pullRequestURL}`);
+                    continue;
+                }
+
+                const url: string = pr.pullRequestURL;
+                handledPRs.add(url);
+
+                if (meta.coverLetterMessageId && options.openPRs[url] === undefined) {
+                    options.openPRs[url] = meta.coverLetterMessageId;
+                    optionsChanged = true;
+                }
+
+                if (meta.baseCommit && meta.headCommit) {
+                    for (const rev of await this.getOriginalCommitsForPR(meta)) {
+                        const messageID = await this.notes.getLastCommitNote(rev);
+                        handledMessageIDs.add(messageID);
+                        if (messageID && options.activeMessageIDs[messageID] === undefined) {
+                            options.activeMessageIDs[messageID] = rev;
+                            optionsChanged = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        for (const url in options.openPRs) {
+            if (!handledPRs.has(url)) {
+                delete options.openPRs[url];
+                optionsChanged = true;
+            }
+        }
+
+        for (const messageID in options.activeMessageIDs) {
+            if (!handledMessageIDs.has(messageID)) {
+                delete options.activeMessageIDs[messageID];
+                optionsChanged = true;
+            }
+        }
+
+        if (optionsChanged) {
+            console.log(`Changed options:\n${toPrettyJSON(options)}`);
+            await this.notes.set("", options, true);
+        }
+
+        return optionsChanged;
     }
 
     private async getPRInfo(prKey: pullRequestKey): Promise<IPullRequestInfo> {
