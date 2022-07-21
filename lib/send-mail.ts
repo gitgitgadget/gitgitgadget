@@ -55,7 +55,7 @@ export async function parseMBox(mbox: string, gentle?: boolean): Promise<IParsed
     const parsed = await simpleParser(mbox, options);
 
     for (const entry of parsed.headerLines) {
-        const valueSet = entry.line.match(/(.*): *([^]*)$/);
+        const valueSet = entry.line.match(/(.*?): *([^]*)$/);
         if (!valueSet) {
             if (entry.line[entry.line.length - 1] === ":") {
                 continue;
