@@ -66,7 +66,7 @@
     "@octokit/rest": "^19.0.3",
     "commander": "^9.4.0",
     "dugite": "^1.110.0",
-    "html-to-text": "^8.2.0",
+    "html-to-text": "^8.2.1",
     "json-stable-stringify": "^1.0.1",
     "jsonwebtoken": "^8.5.1",
     "mailparser": "^3.5.0",
