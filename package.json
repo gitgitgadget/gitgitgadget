@@ -45,7 +45,7 @@
     "@types/jsonwebtoken": "^8.5.8",
     "@types/mailparser": "^3.4.0",
     "@types/marked": "^4.0.3",
-    "@types/nodemailer": "^6.4.4",
+    "@types/nodemailer": "^6.4.5",
     "@types/rfc2047": "^2.0.1",
     "@typescript-eslint/eslint-plugin": "^5.31.0",
     "@typescript-eslint/parser": "^5.31.0",
