@@ -71,7 +71,7 @@
     "jsonwebtoken": "^8.5.1",
     "mailparser": "^3.5.0",
     "marked": "^4.0.18",
-    "nodemailer": "^6.7.7",
+    "nodemailer": "^6.7.8",
     "rfc2047": "^4.0.1"
   },
   "engines": {
