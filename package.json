@@ -62,7 +62,7 @@
     "typescript": "^4.7.4"
   },
   "dependencies": {
-    "@octokit/auth-app": "^4.0.4",
+    "@octokit/auth-app": "^4.0.5",
     "@octokit/rest": "^19.0.3",
     "commander": "^9.4.0",
     "dugite": "^1.110.0",
