@@ -197,7 +197,7 @@ export class MailArchiveGitHelper {
                             }, commit ${originalCommit
                             }, comment ID: ${issueCommentId}`);
 
-                const archiveURL = `${this.config.mailrepo.url}/${parsed.messageID}`;
+                const archiveURL = `${this.config.mailrepo.url}${parsed.messageID}`;
                 const header = `[On the Git mailing list](${archiveURL}), ` +
                     (parsedMbox.from ?
                      parsedMbox.from.replace(/ *<.*>/, "") : "Somebody") +
