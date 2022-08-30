@@ -42,7 +42,7 @@
     "@types/imap-simple": "^4.2.5",
     "@types/jest": "^28.1.7",
     "@types/json-stable-stringify": "^1.0.34",
-    "@types/jsonwebtoken": "^8.5.8",
+    "@types/jsonwebtoken": "^8.5.9",
     "@types/mailparser": "^3.4.0",
     "@types/marked": "^4.0.6",
     "@types/nodemailer": "^6.4.5",
