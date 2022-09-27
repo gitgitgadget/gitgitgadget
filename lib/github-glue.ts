@@ -209,7 +209,7 @@ export class GitHubGlue {
             body: comment,
             commit_id: commit,
             path,
-            position: 1,
+            line: 1,
             ...prKey
         });
         return {
