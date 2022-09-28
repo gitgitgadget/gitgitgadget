@@ -5,7 +5,7 @@ import { ILintError, LintCommit } from "./commit-lint";
 import { commitExists, git, emptyTreeName } from "./git";
 import { GitNotes } from "./git-notes";
 import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget";
-import { GitHubGlue, IGitHubUser, IPRCommit, IPullRequestInfo } from "./github-glue";
+import { GitHubGlue, IGitHubUser, IPRComment, IPRCommit, IPullRequestInfo, RequestError } from "./github-glue";
 import { toPrettyJSON } from "./json-util";
 import { MailArchiveGitHelper } from "./mail-archive-helper";
 import { MailCommitMapping } from "./mail-commit-mapping";
@@ -521,7 +521,19 @@ GitGitGadget needs an email address to Cc: you on your contribution, so that you
      * @param commentID the ID of the PR comment to handle
      */
     public async handleComment(repositoryOwner: string, commentID: number): Promise<void> {
-        const comment = await this.github.getPRComment(repositoryOwner, commentID);
+        let comment: IPRComment;
+
+        try {
+            comment = await this.github.getPRComment(repositoryOwner, commentID);
+        } catch (e) {
+            if (e instanceof RequestError && e.status === 404 ) {
+                console.log(`Comment ${commentID} not found; doing nothing: '${e.toString()}'`);
+                return;
+            } else {
+                throw e;
+            }
+        }
+
         const match = comment.body.match(/^\s*(\/[-a-z]+)(\s+(.*?))?\s*$/);
         if (!match) {
             console.log(`Not a command; doing nothing: '${comment.body}'`);
