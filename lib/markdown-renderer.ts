@@ -36,6 +36,9 @@ export function md2text(markdown: string, columns = 76): string {
                         .replace(/(^|\n)(\n)(?!$)/g, "$1>$2"); // quote empty
                     }});
             },
+            checkBoxFormatter: (elem, walk, builder, options) => {
+                builder.addInline(elem.attribs.checked === undefined ? "[ ]" : "[x]");
+            },
         },
         selectors: [
             {
@@ -71,6 +74,10 @@ export function md2text(markdown: string, columns = 76): string {
                     trimEmptyLines: false
                 },
                 format: "blockFormatter"
+            },
+            {
+                selector: "input[type=checkbox]",
+                format: "checkBoxFormatter"
             },
         ],
     };
