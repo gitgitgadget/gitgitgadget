@@ -36,10 +36,10 @@ export function md2text(markdown: string, columns = 76): string {
                         .replace(/(^|\n)(\n)(?!$)/g, "$1>$2"); // quote empty
                     }});
             },
-            checkBoxFormatter: (elem, walk, builder, _) => {
-                if (typeof elem.attribs == "object") {
-                    builder.addInline(elem.attribs.checked === undefined ? "[ ]" : "[x]");
-                }
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            checkBoxFormatter: (elem, walk, builder, options) => {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                builder.addInline(elem.attribs.checked === undefined ? "[ ]" : "[x]");
             },
         },
         selectors: [
