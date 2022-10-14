@@ -37,7 +37,7 @@ export function md2text(markdown: string, columns = 76): string {
                     }});
             },
             checkBoxFormatter: (elem, walk, builder, _) => {
-                if (elem.attribs) {
+                if (typeof elem.attribs == "object") {
                     builder.addInline(elem.attribs.checked === undefined ? "[ ]" : "[x]");
                 }
             },
