@@ -36,8 +36,10 @@ export function md2text(markdown: string, columns = 76): string {
                         .replace(/(^|\n)(\n)(?!$)/g, "$1>$2"); // quote empty
                     }});
             },
-            checkBoxFormatter: (elem, walk, builder, options) => {
-                builder.addInline(elem.attribs.checked === undefined ? "[ ]" : "[x]");
+            checkBoxFormatter: (elem, walk, builder, _options) => {
+                if (elem.attribs) {
+                    builder.addInline(elem.attribs.checked === undefined ? "[ ]" : "[x]");
+                }
             },
         },
         selectors: [
