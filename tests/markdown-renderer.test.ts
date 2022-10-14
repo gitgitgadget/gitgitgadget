@@ -109,3 +109,13 @@ const bq7 = `Over 56 levels still has 20 char (exact):
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 3 5 7 9 1 3 5 7 9 1
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 3 5 7`);
 });
+
+test("task lists are rendered correctly", () => {
+    const taskList = `This is a task list:
+* [x] done item
+* [ ] item still to do`;
+    expect(md2text(taskList)).toEqual(`This is a task list:
+
+ * [x] done item
+ * [ ] item still to do`);
+});
