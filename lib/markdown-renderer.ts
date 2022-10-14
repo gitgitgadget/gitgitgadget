@@ -37,7 +37,7 @@ export function md2text(markdown: string, columns = 76): string {
                     }});
             },
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            checkBoxFormatter: (elem, walk, builder, options) => {
+            checkBoxFormatter: (elem, _walk, builder, _options) => {
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 builder.addInline(elem.attribs.checked === undefined ? "[ ]" : "[x]");
             },
