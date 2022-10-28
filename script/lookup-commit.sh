@@ -70,10 +70,12 @@ update_gitgit_dir () {
 
 	if git -C "$GITGIT_DIR" rev-parse --verify refs/remotes/gitster/seen >/dev/null 2>&1
 	then
+		# Let's take 'seen' from the official source at git.git.
+		git -C "$GITGIT_DIR" remote set-url gitster https://github.com/git/git
 		git -C "$GITGIT_DIR" fetch gitster ||
 		die "Could not update the 'gitster' remote to $GITGIT_DIR"
 	else
-		git -C "$GITGIT_DIR" remote add -f gitster https://github.com/gitster/git ||
+		git -C "$GITGIT_DIR" remote add -f gitster https://github.com/git/git ||
 		die "Could not add the 'gitster' remote to $GITGIT_DIR"
 	fi
 }
