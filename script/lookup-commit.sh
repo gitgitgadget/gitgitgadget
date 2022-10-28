@@ -239,7 +239,7 @@ test notes != "$mode" || {
 
 		# gitk,git-gui patches are often taken via Pull Requests, let's look only at patches from known git.git (interim) maintainers
 		case "$(git -C "$GITGIT_DIR" show -s --format=%cn "$commit")" in
-		"Linus Torvalds"|"Junio C Hamano"|"Shawn O. Pearce"|"Jeff King"|"Jonathan Nieder") ;; # these should be mostly on the mailing list
+		"Linus Torvalds"|"Junio C Hamano"|"Shawn O. Pearce"|"Jeff King"|"Jonathan Nieder"|"Taylor Blau") ;; # these should be mostly on the mailing list
 		*) continue;; # these are not expected to have been discussed on the mailing list
 		esac
 
