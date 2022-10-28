@@ -237,15 +237,6 @@ test notes != "$mode" || {
 			continue
 		fi
 
-		amlog="$(git -C "$GITGIT_DIR" notes --ref=refs/notes/gitster-amlog show "$commit" 2>/dev/null | head -n 1)"
-		if test -n "$amlog"
-		then
-			amlog=${amlog%>}
-			amlog=${amlog#Message-Id: <}
-			printf 'M 100644 inline %s\ndata <<EOF\n%s\nEOF\n' "$commitpath" "$amlog"
-			continue
-		fi
-
 		# gitk,git-gui patches are often taken via Pull Requests, let's look only at patches from known git.git (interim) maintainers
 		case "$(git -C "$GITGIT_DIR" show -s --format=%cn "$commit")" in
 		"Linus Torvalds"|"Junio C Hamano"|"Shawn O. Pearce"|"Jeff King"|"Jonathan Nieder") ;; # these should be mostly on the mailing list
