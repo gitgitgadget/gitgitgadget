@@ -317,7 +317,7 @@ export class CIHelper {
 
         // Identify branch in maintainer repo
         const maintainerBranch = `refs/remotes/${this.config.repo.maintainerBranch}/`;
-        const maintainerRepo = `${this.config.repo.maintainerBranch}.${this.config.repo.name}`;
+        const maintainerRepo = `${this.config.repo.owner}/${this.config.repo.name}`;
 
         let gitsterBranch: string | undefined =
             await git(["for-each-ref", `--points-at=${tipCommitInGitGit}`,
