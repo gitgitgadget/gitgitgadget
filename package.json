@@ -68,7 +68,7 @@
     "commander": "^9.4.1",
     "dugite": "^2.1.0",
     "html-to-text": "^8.2.1",
-    "json-stable-stringify": "^1.0.1",
+    "json-stable-stringify": "^1.0.2",
     "jsonwebtoken": "^8.5.1",
     "mailparser": "^3.5.0",
     "marked": "^4.2.2",
