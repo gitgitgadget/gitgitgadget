@@ -47,19 +47,19 @@
     "@types/marked": "^4.0.7",
     "@types/nodemailer": "^6.4.6",
     "@types/rfc2047": "^2.0.1",
-    "@typescript-eslint/eslint-plugin": "^5.42.1",
-    "@typescript-eslint/parser": "^5.42.1",
+    "@typescript-eslint/eslint-plugin": "^5.44.0",
+    "@typescript-eslint/parser": "^5.43.0",
     "eslint": "^8.28.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-anti-trojan-source": "^1.1.0",
     "eslint-plugin-jest": "^27.1.5",
     "eslint-plugin-jsdoc": "^39.6.2",
     "jest": "^28.1.3",
-    "jest-junit": "^14.0.1",
+    "jest-junit": "^15.0.0",
     "test-smtp-server": "0.9.4",
     "ts-jest": "^28.0.8",
     "ts-node": "^10.9.1",
-    "typescript": "^4.8.4"
+    "typescript": "^4.9.3"
   },
   "dependencies": {
     "@octokit/auth-app": "^4.0.7",
@@ -71,7 +71,7 @@
     "json-stable-stringify": "^1.0.2",
     "jsonwebtoken": "^8.5.1",
     "mailparser": "^3.5.0",
-    "marked": "^4.2.2",
+    "marked": "^4.2.3",
     "nodemailer": "^6.8.0",
     "rfc2047": "^4.0.1"
   },
