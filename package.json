@@ -48,7 +48,7 @@
     "@types/nodemailer": "^6.4.6",
     "@types/rfc2047": "^2.0.1",
     "@typescript-eslint/eslint-plugin": "^5.44.0",
-    "@typescript-eslint/parser": "^5.44.0",
+    "@typescript-eslint/parser": "^5.45.0",
     "eslint": "^8.28.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-anti-trojan-source": "^1.1.0",
