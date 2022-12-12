@@ -44,7 +44,7 @@
     "@types/json-stable-stringify": "^1.0.34",
     "@types/jsonwebtoken": "^8.5.9",
     "@types/mailparser": "^3.4.0",
-    "@types/marked": "^4.0.7",
+    "@types/marked": "^4.0.8",
     "@types/nodemailer": "^6.4.6",
     "@types/rfc2047": "^2.0.1",
     "@typescript-eslint/eslint-plugin": "^5.45.1",
@@ -71,7 +71,7 @@
     "json-stable-stringify": "^1.0.2",
     "jsonwebtoken": "^8.5.1",
     "mailparser": "^3.5.0",
-    "marked": "^4.2.3",
+    "marked": "^4.2.4",
     "nodemailer": "^6.8.0",
     "rfc2047": "^4.0.1"
   },
