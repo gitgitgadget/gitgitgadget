@@ -202,25 +202,31 @@ export class MailArchiveGitHelper {
                     (parsedMbox.from ?
                      parsedMbox.from.replace(/ *<.*>/, "") : "Somebody") +
                      ` wrote ([reply to this](${replyToThisURL})):\n\n`;
-                const comment = header +
-                    MailArchiveGitHelper.mbox2markdown(parsedMbox);
+                const comment = MailArchiveGitHelper.mbox2markdown(parsedMbox);
+                const fullComment = header + comment;
 
                 if (issueCommentId) {
                     await this.githubGlue.addPRCommentReply(pullRequestURL,
                                                             issueCommentId,
-                                                            comment);
+                                                            fullComment);
                 } else if (originalCommit) {
-                    const result = await this.githubGlue
-                        .addPRCommitComment(pullRequestURL, originalCommit,
-                                            this.gggNotes.workDir, comment);
-                    issueCommentId = result.id;
+                    try {
+                        const result = await this.githubGlue
+                            .addPRCommitComment(pullRequestURL, originalCommit,
+                                                this.gggNotes.workDir, fullComment);
+                        issueCommentId = result.id;
+                    } catch (error) {
+                        const regarding = `${header.slice(0,-3)}, regarding ${originalCommit}:\n\n`;
+                        await this.githubGlue.addPRComment(pullRequestURL, regarding + comment);
+                        originalCommit = undefined;
+                    }
                 } else {
                     /*
                      * We will not use the ID of this comment, as it is an
                      * issue comment, really, not a Pull Request comment.
                      */
                     await this.githubGlue
-                        .addPRComment(pullRequestURL, comment);
+                        .addPRComment(pullRequestURL, fullComment);
                 }
 
                 await this.githubGlue.addPRCc(pullRequestURL,
