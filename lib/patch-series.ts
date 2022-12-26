@@ -823,12 +823,17 @@ export class PatchSeries {
             const messageID = mail.match(/\nMessage-ID: <(.*?)>\n/i);
             if (messageID) {
                 let originalCommit: string | undefined;
+                let firstPatchLine: number | undefined;
                 if (isCoverLetter) {
                     isCoverLetter = false;
                 } else {
                     const commitMatch = mail.match(/^From ([0-9a-f]{40}) /);
                     if (commitMatch) {
                         originalCommit = commitMatch[1];
+                    }
+                    const revLine = mail.match(/\n@@ -(\d+),/);
+                    if (revLine) {
+                        firstPatchLine = parseInt(revLine[1], 10);
                     }
                 }
 
@@ -837,6 +842,7 @@ export class PatchSeries {
                     messageID: mid,
                     originalCommit,
                     pullRequestURL: this.metadata.pullRequestURL,
+                    firstPatchLine
                 } as IMailMetadata;
                 await this.notes.set(mid, mailMeta, true);
                 if (globalOptions && originalCommit &&

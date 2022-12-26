@@ -145,6 +145,7 @@ export class MailArchiveGitHelper {
                 let pullRequestURL: string | undefined;
                 let originalCommit: string | undefined;
                 let issueCommentId: number | undefined;
+                let firstPatchLine: number | undefined;
                 for (const reference of parsed.references.filter(seen)) {
                     const data = await this.gggNotes.get<IMailMetadata>(reference);
                     if (data && data.pullRequestURL) {
@@ -157,6 +158,7 @@ export class MailArchiveGitHelper {
                             (!issueCommentId && data.issueCommentId)) {
                             pullRequestURL = data.pullRequestURL;
                             issueCommentId = data.issueCommentId;
+                            firstPatchLine = data.firstPatchLine;
                             originalCommit = commit;
                         }
                     }
@@ -182,7 +184,7 @@ export class MailArchiveGitHelper {
                 } else if (originalCommit) {
                     try {
                         const result = await this.githubGlue.addPRCommitComment(pullRequestURL, originalCommit,
-                                                this.gggNotes.workDir, fullComment);
+                                                this.gggNotes.workDir, fullComment, firstPatchLine);
                         issueCommentId = result.id;
                     } catch (error) {
                         const regarding = `${header.slice(0,-3)}, regarding ${originalCommit}:\n\n`;

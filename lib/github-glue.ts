@@ -190,12 +190,13 @@ export class GitHubGlue {
      * @param {pullRequestKeyInfo} pullRequest - the Pull Request to comment on
      * @param {string} commit the hash of the commit to comment on
      * @param {string} comment the comment
+     * @param {number} line the comment is referencing
      * @returns the comment ID and the URL to the comment
      */
     public async addPRCommitComment(pullRequest: pullRequestKeyInfo,
                                     commit: string,
                                     gitWorkDir: string | undefined,
-                                    comment: string):
+                                    comment: string, line?: number | undefined):
         Promise<{id: number; url: string}> {
         const prKey = getPullRequestKey(pullRequest);
 
@@ -210,7 +211,7 @@ export class GitHubGlue {
             body: comment,
             commit_id: commit,
             path,
-            line: 1,
+            line: line || 1,
             ...prKey
         });
         return {
