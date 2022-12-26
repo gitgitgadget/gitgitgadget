@@ -56,7 +56,7 @@
     "eslint-plugin-jsdoc": "^39.6.4",
     "jest": "^28.1.3",
     "jest-junit": "^15.0.0",
-    "test-smtp-server": "0.9.4",
+    "test-smtp-server": "0.9.6",
     "ts-jest": "^28.0.8",
     "ts-node": "^10.9.1",
     "typescript": "^4.9.4"
