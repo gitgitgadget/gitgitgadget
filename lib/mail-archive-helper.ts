@@ -6,6 +6,7 @@ import { GitHubGlue } from "./github-glue";
 import { IMailMetadata } from "./mail-metadata";
 import { IPatchSeriesMetadata } from "./patch-series-metadata";
 import { IConfig, getConfig } from "./project-config";
+import { getPullRequestKey } from "./pullRequestKey";
 import { IParsedMBox, parseMBox, parseMBoxMessageIDAndReferences } from "./send-mail";
 import { SousChef } from "./sous-chef";
 
@@ -178,6 +179,7 @@ export class MailArchiveGitHelper {
                      } wrote ([reply to this](${replyToThisURL})):\n\n`;
                 const comment = MailArchiveGitHelper.mbox2markdown(parsedMbox);
                 const fullComment = header + comment;
+                const prKey = getPullRequestKey(pullRequestURL);
 
                 if (issueCommentId) {
                     await this.githubGlue.addPRCommentReply(pullRequestURL, issueCommentId, fullComment);
@@ -187,7 +189,9 @@ export class MailArchiveGitHelper {
                                                 this.gggNotes.workDir, fullComment, firstPatchLine);
                         issueCommentId = result.id;
                     } catch (error) {
-                        const regarding = `${header.slice(0,-3)}, regarding ${originalCommit}:\n\n`;
+                        const commits = await this.githubGlue.getPRCommits(prKey.owner, prKey.pull_number);
+                        const regarding = `${header.slice(0,-3)}, regarding ${originalCommit}${
+                            commits.find(e => e.commit === originalCommit) ? "" : " (outdated)"}:\n\n`;
                         await this.githubGlue.addPRComment(pullRequestURL, regarding + comment);
                         originalCommit = undefined;
                     }
