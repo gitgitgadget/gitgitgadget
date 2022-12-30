@@ -107,8 +107,10 @@ export function git(args: string[], options?: IGitOptions | undefined):
                                     }':\nstderr: ${result.stderr
                                     }\nstdout: ${result.stdout}\n`);
             }
-            resolve(!options || options.trimTrailingNewline === false ?
-                    result.stdout : trimTrailingNewline(result.stdout));
+            if (!options?.lineHandler) { // let callback resolve the promise
+                resolve(!options || options.trimTrailingNewline === false ?
+                        result.stdout : trimTrailingNewline(result.stdout));
+            }
         }).catch((reason) => {
             reject(reason);
         });
