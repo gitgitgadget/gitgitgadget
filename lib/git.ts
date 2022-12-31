@@ -45,20 +45,10 @@ export function git(args: string[], options?: IGitOptions | undefined):
                 if (!process.stdout) {
                     throw new Error(`No stdout for "git ${args.join(" ")}`);
                 }
-                let linePromise: Promise<void> | undefined;
+                const promises: Array<Promise<void>> = [];
                 const handleLine = (line: string): boolean => {
                     try {
-                        if (!linePromise) {
-                            linePromise = lineHandler(line);
-                        } else {
-                            linePromise = linePromise.then(() => {
-                                return lineHandler(line);
-                            });
-                        }
-                        linePromise.catch((reason) => {
-                            reject(reason);
-                            process.kill();
-                        });
+                        promises.push(lineHandler(line));
                     } catch (reason) {
                         reject(reason);
                         process.kill();
@@ -84,12 +74,7 @@ export function git(args: string[], options?: IGitOptions | undefined):
                     if (buffer.length > 0) {
                         handleLine(buffer);
                     }
-                    if (linePromise) {
-                        linePromise.then(() => { resolve(""); })
-                            .catch((reason) => { reject(reason); });
-                    } else {
-                        resolve("");
-                    }
+                    Promise.all(promises).then(() => resolve("")).catch(reject);
                 });
             };
         }
@@ -107,8 +92,10 @@ export function git(args: string[], options?: IGitOptions | undefined):
                                     }':\nstderr: ${result.stderr
                                     }\nstdout: ${result.stdout}\n`);
             }
-            resolve(!options || options.trimTrailingNewline === false ?
-                    result.stdout : trimTrailingNewline(result.stdout));
+            if (!options?.lineHandler) { // let callback resolve the promise
+                resolve(!options || options.trimTrailingNewline === false ?
+                        result.stdout : trimTrailingNewline(result.stdout));
+            }
         }).catch((reason) => {
             reject(reason);
         });
