@@ -757,7 +757,7 @@ test("handle push/comment too many commits fails", async () => {
                 login: "ggg",
                 name: "e. e. cummings",
             },
-            message: `commit ${i}`,
+            message: `commit ${i}\n\nSome text\n\nSigned-off-by: x`,
             parentCount: 1,
         });
     }
@@ -793,6 +793,7 @@ test("handle push/comment too many commits fails", async () => {
     ci.setGHGetPRInfo(prInfo);
     ci.setGHGetPRComment(comment);
     ci.setGHGetGitHubUserInfo(user);
+    ci.setGHGetPRCommits(commits);
 
     const failMsg = `The pull request has ${commits.length} commits.`;
     // fail for too many commits on push
