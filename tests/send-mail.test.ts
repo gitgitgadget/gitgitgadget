@@ -183,6 +183,8 @@ References: <pull.986.git.1624559401.gitgitgadget@gmail.com>
 Date:   Thu, 24 Feb 2022 12:35:13 -0800
 In-Reply-To: <CAPMMpogerttWdjGBNxJaqHT4bd3_igDx4_Fxev2eNHqexZ=aLQ@mail.gmail.com>
         (Tao Klerks's message of "Thu, 24 Feb 2022 18:52:27 +0100")
+In-reply-to: <lowerReply@mail.gmail.com>
+        (Tao Klerks's message of "Thu, 24 Feb 2022 18:52:27 +0100")
 Message-ID: <xmqq5yp4knpa.fsf@gitster.g>
 
 I can be pursuaded either way.
@@ -190,6 +192,7 @@ I can be pursuaded either way.
     const parsed = await parseMBox(mbox);
     const { messageID, references } = parseMBoxMessageIDAndReferences(parsed);
     expect(messageID).toEqual("xmqq5yp4knpa.fsf@gitster.g");
-    expect(references).toHaveLength(4);
+    expect(references).toHaveLength(5);
     expect(references[0]).toEqual("pull.986.git.1624559401.gitgitgadget@gmail.com");
+    expect(references[4]).toEqual("lowerReply@mail.gmail.com");
 });
