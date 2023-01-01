@@ -4,4 +4,5 @@ export interface IMailMetadata {
     issueCommentId?: number;
     originalCommit?: string;
     commitInGitGit?: string;
+    firstPatchLine?: number;
 }
