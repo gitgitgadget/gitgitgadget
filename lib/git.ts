@@ -45,10 +45,20 @@ export function git(args: string[], options?: IGitOptions | undefined):
                 if (!process.stdout) {
                     throw new Error(`No stdout for "git ${args.join(" ")}`);
                 }
-                const promises: Array<Promise<void>> = [];
+                let linePromise: Promise<void> | undefined;
                 const handleLine = (line: string): boolean => {
                     try {
-                        promises.push(lineHandler(line));
+                        if (!linePromise) {
+                            linePromise = lineHandler(line);
+                        } else {
+                            linePromise = linePromise.then(() => {
+                                return lineHandler(line);
+                            });
+                        }
+                        linePromise.catch((reason) => {
+                            reject(reason);
+                            process.kill();
+                        });
                     } catch (reason) {
                         reject(reason);
                         process.kill();
@@ -74,7 +84,12 @@ export function git(args: string[], options?: IGitOptions | undefined):
                     if (buffer.length > 0) {
                         handleLine(buffer);
                     }
-                    Promise.all(promises).then(() => resolve("")).catch(reject);
+                    if (linePromise) {
+                        linePromise.then(() => { resolve(""); })
+                            .catch((reason) => { reject(reason); });
+                    } else {
+                        resolve("");
+                    }
                 });
             };
         }
