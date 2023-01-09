@@ -35,7 +35,7 @@
     "transform": {
       "\\.(ts|tsx)$": "ts-jest"
     },
-    "testRegex": "/tests/(?!test-lib).*\\.(ts|tsx|js)$"
+    "testRegex": "/tests/.*\\.test\\.(ts|tsx|js)$"
   },
   "devDependencies": {
     "@types/html-to-text": "^8.1.1",
