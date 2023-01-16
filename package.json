@@ -65,7 +65,7 @@
     "@octokit/auth-app": "^4.0.8",
     "@octokit/request-error": "^3.0.2",
     "@octokit/rest": "^19.0.5",
-    "commander": "^9.5.0",
+    "commander": "^10.0.0",
     "dugite": "^2.1.0",
     "html-to-text": "^9.0.3",
     "json-stable-stringify": "^1.0.2",
