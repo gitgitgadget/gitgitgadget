@@ -9,6 +9,26 @@ import { testCreateRepo, TestRepo } from "./test-lib";
 
 jest.setTimeout(180000);
 
+// Only show the `console.log()` output when a test failed
+declare type AsyncFn = () => Promise<void>;
+function testQ(label: string, fn: AsyncFn) {
+    test(label, async () => {
+        const originalConsoleLog = console.log;
+        const mockLog = jest.fn();
+        try {
+            console.log = mockLog;
+            await fn();
+        } catch (e) {
+            mockLog.mock.calls.forEach(call => {
+                originalConsoleLog(call[0]);
+            });
+            throw e;
+        } finally {
+            console.log = originalConsoleLog;
+        }
+    });
+}
+
 getConfig();
 
 const eMailOptions = {
@@ -162,7 +182,7 @@ async function checkMsgId(messageId: string): Promise<boolean> {
     return false;
 }
 
-test("identify merge that integrated some commit", async () => {
+testQ("identify merge that integrated some commit", async () => {
     const repo = await testCreateRepo(__filename);
 
     /*
@@ -193,7 +213,7 @@ test("identify merge that integrated some commit", async () => {
     expect(await ci.identifyMergeCommit("seen", commitH)).toEqual(commitD);
 });
 
-test("identify upstream commit", async () => {
+testQ("identify upstream commit", async () => {
     // initialize test worktree and gitgitgadget remote
     const worktree = await testCreateRepo(__filename, "-worktree");
     const gggRemote = await testCreateRepo(__filename, "-gitgitgadget");
@@ -249,7 +269,7 @@ test("identify upstream commit", async () => {
     expect(bMetaNew?.commitInGitGit).toEqual(commitBNew);
 });
 
-test("handle comment allow basic test", async () => {
+testQ("handle comment allow basic test", async () => {
     const { worktree, gggLocal } = await setupRepos("a1");
 
     // Ready to start testing
@@ -277,7 +297,7 @@ test("handle comment allow basic test", async () => {
         .toMatch(/is now allowed to use GitGitGadget/);
 });
 
-test("handle comment allow fail invalid user", async () => {
+testQ("handle comment allow fail invalid user", async () => {
     const { worktree, gggLocal } = await setupRepos("a2");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
@@ -297,7 +317,7 @@ test("handle comment allow fail invalid user", async () => {
         .toMatch(/is not a valid GitHub username/);
 });
 
-test("handle comment allow no public email", async () => {
+testQ("handle comment allow no public email", async () => {
     const { worktree, gggLocal } = await setupRepos("a3");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
@@ -325,7 +345,7 @@ test("handle comment allow no public email", async () => {
         .toMatch(/no public email address set/);
 });
 
-test("handle comment allow already allowed", async () => {
+testQ("handle comment allow already allowed", async () => {
     const { worktree, gggLocal } = await setupRepos("a4");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
@@ -352,7 +372,7 @@ test("handle comment allow already allowed", async () => {
         .toMatch(/already allowed to use GitGitGadget/);
 });
 
-test("handle comment allow no name specified (with trailing white space)",
+testQ("handle comment allow no name specified (with trailing white space)",
      async () => {
     const { worktree, gggLocal } = await setupRepos("a5");
 
@@ -396,7 +416,7 @@ test("handle comment allow no name specified (with trailing white space)",
         .toMatch(/already allowed to use GitGitGadget/);
 });
 
-test("handle comment disallow basic test", async () => {
+testQ("handle comment disallow basic test", async () => {
     const { worktree, gggLocal } = await setupRepos("d1");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
@@ -423,7 +443,7 @@ test("handle comment disallow basic test", async () => {
         .toMatch(/is no longer allowed to use GitGitGadget/);
 });
 
-test("handle comment disallow was not allowed", async () => {
+testQ("handle comment disallow was not allowed", async () => {
     const { worktree, gggLocal } = await setupRepos("d2");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
@@ -443,7 +463,7 @@ test("handle comment disallow was not allowed", async () => {
         .toMatch(/already not allowed to use GitGitGadget/);
 });
 
-test("handle comment submit not author", async () => {
+testQ("handle comment submit not author", async () => {
     const { worktree, gggLocal } = await setupRepos("s1");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
@@ -487,7 +507,7 @@ test("handle comment submit not author", async () => {
         .toMatch(/Only the owner of a PR can submit/);
 });
 
-test("handle comment submit not mergeable", async () => {
+testQ("handle comment submit not mergeable", async () => {
     const { worktree, gggLocal } = await setupRepos("s2");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
@@ -531,7 +551,7 @@ test("handle comment submit not mergeable", async () => {
         .toMatch(/does not merge cleanly/);
 });
 
-test("handle comment submit email success", async () => {
+testQ("handle comment submit email success", async () => {
     const { worktree, gggLocal, gggRemote } = await setupRepos("s3");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
@@ -616,7 +636,7 @@ test("handle comment submit email success", async () => {
     }
 });
 
-test("handle comment preview email success", async () => {
+testQ("handle comment preview email success", async () => {
     const { worktree, gggLocal, gggRemote } = await setupRepos("p1");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
@@ -721,7 +741,7 @@ test("handle comment preview email success", async () => {
     }
 });
 
-test("handle push/comment too many commits fails", async () => {
+testQ("handle push/comment too many commits fails", async () => {
     const { worktree, gggLocal, gggRemote } = await setupRepos("pu1");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
@@ -841,7 +861,7 @@ test("handle push/comment too many commits fails", async () => {
     expect(ci.addPRLabelsCalls[0][1]).toEqual(["new user"]);
 });
 
-test("handle push/comment merge commits fails", async () => {
+testQ("handle push/comment merge commits fails", async () => {
     const { worktree, gggLocal, gggRemote} = await setupRepos("pu2");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
@@ -988,7 +1008,7 @@ test("handle push/comment merge commits fails", async () => {
 
 });
 
-test("disallow no-reply emails", async () => {
+testQ("disallow no-reply emails", async () => {
     const { worktree, gggLocal, gggRemote} = await setupRepos("pu2");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
@@ -1067,7 +1087,7 @@ test("disallow no-reply emails", async () => {
 
 // Basic tests for ci-helper - lint tests are in commit-lint.tests.ts
 
-test("basic lint tests", async () => {
+testQ("basic lint tests", async () => {
     const { worktree, gggLocal, gggRemote} = await setupRepos("pu4");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
@@ -1197,7 +1217,7 @@ test("basic lint tests", async () => {
 
 });
 
-test("Handle comment cc", async () => {
+testQ("Handle comment cc", async () => {
     const {worktree, gggLocal} = await setupRepos("cc");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
