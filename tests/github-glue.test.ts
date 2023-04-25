@@ -395,7 +395,6 @@ test("test missing values in response using small schema", async () => {
      * url: "",
      * data: [pullRequestSimple],
      * };
-     *
      */
 
     interface IBasicUser {
