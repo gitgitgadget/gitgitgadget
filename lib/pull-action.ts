@@ -61,14 +61,15 @@ async function getExternalConfig(file: string): Promise<IConfig> {
 
 function lintConfig(config: IConfig): void {
     if (!config.hasOwnProperty("project")) {
-        throw new Error(`User configurations must have a 'project:'.  Not found in ${path}`);
+        throw new Error(`User configurations must have a 'project:'.  Not found in\n${
+            JSON.stringify(config, null, 2)}`);
     }
 
     if (!config.repo.owner.match(/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i)) {
-        throw new Error(`Invalid 'owner' ${config.repo.owner} in ${path}`);
+        throw new Error(`Invalid 'owner' ${config.repo.owner} in\n${JSON.stringify(config, null, 2)}`);
     }
 
     if (!config.repo.baseOwner.match(/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i)) {
-        throw new Error(`Invalid 'baseOwner' ${config.repo.baseOwner} in ${path}`);
+        throw new Error(`Invalid 'baseOwner' ${config.repo.baseOwner} in\n${JSON.stringify(config, null, 2)}`);
     }
 }

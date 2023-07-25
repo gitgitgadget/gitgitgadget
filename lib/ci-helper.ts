@@ -329,7 +329,7 @@ export class CIHelper {
                 const comment2 = `Found multiple candidates in ${maintainerRepo}:\n${
                     gitsterBranch};\n\nUsing the first one.`;
                 const url2 = await this.github.addPRComment(prKey, comment2);
-                console.log(`Added comment about ${gitsterBranch}: ${url2}`);
+                console.log(`Added comment ${url2.id} about ${gitsterBranch}: ${url2.url}`);
 
                 gitsterBranch = gitsterBranch.substring(0, newline);
             }
@@ -342,7 +342,7 @@ export class CIHelper {
                 notesUpdated = true;
 
                 const url = await this.github.addPRComment(prKey, comment);
-                console.log(`Added comment about ${gitsterBranch}: ${url}`);
+                console.log(`Added comment ${url.id} about ${gitsterBranch}: ${url.url}`);
             }
         }
 
@@ -372,7 +372,7 @@ export class CIHelper {
                 const comment = `This patch series was integrated into ${branch} via https://github.com/${
                     this.config.repo.baseOwner}/${this.config.repo.name}/commit/${mergeCommit}.`;
                 const url = await this.github.addPRComment(prKey, comment);
-                console.log(`Added comment about ${branch}: ${url}`);
+                console.log(`Added comment ${url.id} about ${branch}: ${url.url}`);
             }
         }
 
@@ -527,7 +527,7 @@ GitGitGadget needs an email address to Cc: you on your contribution, so that you
             comment = await this.github.getPRComment(repositoryOwner, commentID);
         } catch (e) {
             if (e instanceof RequestError && e.status === 404 ) {
-                console.log(`Comment ${commentID} not found; doing nothing: '${e.toString()}'`);
+                console.log(`Comment ${commentID} not found; doing nothing:\n'${JSON.stringify(e, null, 2)}'`);
                 return;
             } else {
                 throw e;

@@ -447,18 +447,19 @@ const commandOptions = commander.opts<ICommanderOptions>();
 });
 
 async function getExternalConfig(file: string): Promise<IConfig> {
-    const newConfig = await loadConfig(path.resolve(file));
+    const filePath = path.resolve(file);
+    const newConfig = await loadConfig(filePath);
 
     if (!newConfig.hasOwnProperty("project")) {
-        throw new Error(`User configurations must have a 'project:'.  Not found in ${path}`);
+        throw new Error(`User configurations must have a 'project:'.  Not found in ${filePath}`);
     }
 
     if (!newConfig.repo.owner.match(/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i)) {
-        throw new Error(`Invalid 'owner' ${newConfig.repo.owner} in ${path}`);
+        throw new Error(`Invalid 'owner' ${newConfig.repo.owner} in ${filePath}`);
     }
 
     if (!newConfig.repo.baseOwner.match(/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i)) {
-        throw new Error(`Invalid 'baseOwner' ${newConfig.repo.baseOwner} in ${path}`);
+        throw new Error(`Invalid 'baseOwner' ${newConfig.repo.baseOwner} in ${filePath}`);
     }
 
     return newConfig;

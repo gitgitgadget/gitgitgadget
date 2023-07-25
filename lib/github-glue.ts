@@ -314,8 +314,7 @@ export class GitHubGlue {
 
         response.data.map((pr) => {
             if (!pr.user || !pr.base.repo.owner) {
-                throw new Error(`PR ${pr.number} is missing information. ${
-                    pr.toString()}`);
+                throw new Error(`PR ${pr.number} is missing information.\n${JSON.stringify(pr, null, 2)}`);
             }
 
             result.push({
@@ -351,8 +350,8 @@ export class GitHubGlue {
 
         const pullRequest = response.data;
         if (!pullRequest.user) {
-            throw new Error(`PR ${pullRequest.number} is missing information. ${
-                pullRequest.toString()}`);
+            throw new Error(`PR ${pullRequest.number} is missing information.\n${
+                JSON.stringify(pullRequest, null, 2)}`);
         }
 
         return {
@@ -390,8 +389,8 @@ export class GitHubGlue {
         const prNumber = match ? parseInt(match[1], 10) : -1;
 
         if (!response.data.user) {
-            throw new Error(`PR ${prNumber} comment is missing information. ${
-                response.data.toString()}`);
+            throw new Error(`PR ${prNumber} comment is missing information.\n${
+                JSON.stringify(response.data, null, 2)}`);
         }
 
         return {
@@ -418,8 +417,7 @@ export class GitHubGlue {
         const result: IPRCommit[] = [];
         response.data.map((cm) => {
             if (!cm.commit.committer || !cm.commit.author || !cm.sha) {
-                throw new Error(`Commit information missing for PR ${
-                    prNumber} - ${cm.toString()}`);
+                throw new Error(`Commit information missing for PR ${prNumber}:\n${JSON.stringify(cm, null, 2)}`);
             }
 
             const committer = cm.commit.committer;
