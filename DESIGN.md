@@ -79,7 +79,8 @@ GitHub App and triggers an Azure Pipeline when given specific commands.
 ### Typescript
 
 A convenient way to implement a UI based on GitHub Pull Requests is to create
-a GitHub App that triggers an Azure Function that is implemented in Javascript.
+a GitHub App that triggers [an Azure Function that is implemented in
+Javascript](https://github.com/gitgitgadget/gitgitgadget-github-app).
 
 The backend is implemented as an Azure Pipeline, using Typescript to allow for
 type-safe and convenient development, and [Visual Studio
