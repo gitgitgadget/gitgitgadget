@@ -21,6 +21,8 @@ The most important part of the source code lives in `lib/`, and is written in Ty
 
 The exception to that rule are scripts, such as `ci-helper.ts` which backs the Azure Pipeline that is implicitly triggered via the GitHub App, which live in `scripts/`.
 
+Speaking of the GitHub App: It is implemented in a serverless fashion, as an Azure Function that gets called via webhook events, and the code backing that Azure Function lives in https://github.com/gitgitgadget/gitgitgadget-github-app. Its job is to perform very light validation of the payload and to trigger the appropriate Azure Pipeline upon receiving valid slash commands.
+
 The tests to verify that everything works as expected live in `tests/`, and use the [Jest](https://facebook.github.io/jest/) framework. Please make sure to add tests for whatever functionality you add when developing a new feature, to gain confidence that your feature or bug fix will work also in the future.
 
 If you never developed any node.js or Typescript project: you will need to get the dependencies via `npm install`, and you will want to run the tests via `npm run test`.
