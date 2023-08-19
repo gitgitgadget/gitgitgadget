@@ -38,7 +38,7 @@ export async function handlePRUpdate(parms: PRUpdateInterface): Promise<void> {
         throw new Error(`git WorkDir '${parms.repositoryDir}' not found.`);
     }
 
-    const ci = new CIHelper(parms.repositoryDir, parms.skipUpdate ? true : false, parms.configRepositoryDir);
+    const ci = new CIHelper(parms.repositoryDir, config, parms.skipUpdate ? true : false, parms.configRepositoryDir);
 
     if (parms.action === "comment") {
         if (parms.commentId) {
