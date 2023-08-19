@@ -1,0 +1,39 @@
+name: Test the GitHub Action
+
+on:
+  push:
+
+jobs:
+  test-action:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/create-github-app-token@v1
+      id: gitgitgadget-git-token
+      with:
+        app-id: ${{ secrets.GITGITGADGET_GITHUB_APP_ID }}
+        private-key: ${{ secrets.GITGITGADGET_GITHUB_APP_PRIVATE_KEY }}
+        owner: gitgitgadget
+        repositories: git
+    - uses: actions/create-github-app-token@v1
+      id: git-git-token
+      with:
+        app-id: ${{ secrets.GITGITGADGET_GIT_GITHUB_APP_ID }}
+        private-key: ${{ secrets.GITGITGADGET_GIT_GITHUB_APP_PRIVATE_KEY }}
+        owner: git
+        repositories: git
+    - uses: actions/create-github-app-token@v1
+      id: dscho-git-token
+      with:
+        app-id: ${{ secrets.GITGITGADGET_GIT_GITHUB_APP_ID }}
+        private-key: ${{ secrets.GITGITGADGET_GIT_GITHUB_APP_PRIVATE_KEY }}
+        owner: dscho
+        repositories: git
+    - uses: actions/checkout@v5
+    - uses: ./handle-pr-comment
+      with:
+        gitgitgadget-git-access-token: ${{ steps.gitgitgadget-git-token.outputs.token }}
+        git-git-access-token: ${{ steps.git-git-token.outputs.token }}
+        dscho-git-access-token: ${{ steps.dscho-git-token.outputs.token }}
+        smtp-options: '{"user": "gitgitgadget@gmail.com", "host": "smtp.gmail.com", "pass": ${{ toJSON(secrets.GITGITGADGET_SMTP_PASS) }}}'
+        pr-comment-url: https://github.com/gitgitgadget/git/pull/1947#issuecomment-3193794374
