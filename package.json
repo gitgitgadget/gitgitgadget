@@ -26,7 +26,7 @@
   },
   "homepage": "https://gitgitgadget.github.io/",
   "files": [
-      "lib/*.ts"
+    "lib/*.ts"
   ],
   "jest": {
     "extensionsToTreatAsEsm": [".ts"],
