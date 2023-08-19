@@ -920,7 +920,7 @@ export class CIHelper {
              installationID?: number;
              name: string;
              privateKey?: string;
-        }): Promise<void> {
+        }, storeInGitConfig: boolean = true): Promise<string> {
         if (!options.privateKey) {
             const appName = options.name === this.config.app.name ? this.config.app.name : this.config.app.altname;
             const appNameKey = `${appName}.privateKey`;
@@ -953,9 +953,12 @@ export class CIHelper {
             {
                 installation_id: options.installationID,
             });
-        const configKey = options.name === this.config.app.name ?
-            `${this.config.app.name}.githubToken` : `gitgitgadget.${options.name}.githubToken`;
-        await git(["config", configKey, result.data.token]);
+        if (storeInGitConfig) {
+            const configKey = options.name === this.config.app.name ?
+                `${this.config.app.name}.githubToken` : `gitgitgadget.${options.name}.githubToken`;
+            await git(["config", configKey, result.data.token]);
+        }
+        return result.data.token;
     };
 
     private async getPRInfo(prKey: pullRequestKey): Promise<IPullRequestInfo> {
