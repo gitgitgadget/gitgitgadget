@@ -1,9 +1,7 @@
-import { createAppAuth } from "@octokit/auth-app";
-import { Octokit } from "@octokit/rest";
 import { Command } from "commander";
 import { CIHelper } from "../lib/ci-helper.js";
 import { isDirectory } from "../lib/fs-util.js";
-import { git, gitConfig } from "../lib/git.js";
+import { git } from "../lib/git.js";
 import { IGitGitGadgetOptions, getVar } from "../lib/gitgitgadget.js";
 import { GitHubGlue } from "../lib/github-glue.js";
 import { toPrettyJSON } from "../lib/json-util.js";
@@ -395,54 +393,9 @@ const commandOptions = commander.opts<ICommanderOptions>();
         .argument("[args...]")
         .description("Set the GitHub App token in the Git config")
         .action(async (args: string[]) => {
-            const set = async (options: {
-                appID: number;
-                installationID?: number;
-                name: string;
-                privateKey?: string;
-            }): Promise<void> => {
-                if (!options.privateKey) {
-                    const appName = options.name === config.app.name ? config.app.name : config.app.altname;
-                    const appNameKey = `${appName}.privateKey`;
-                    const appNameVar = appNameKey.toUpperCase().replace(/\./, "_");
-                    const key = process.env[appNameVar] ? process.env[appNameVar] : await gitConfig(appNameKey);
-
-                    if (!key) {
-                        throw new Error(`Need the ${appName} App's private key`);
-                    }
-
-                    options.privateKey = key.replace(/\\n/g, `\n`);
-                }
-
-                const client = new Octokit({
-                    authStrategy: createAppAuth,
-                    auth: {
-                        appId: options.appID,
-                        privateKey: options.privateKey,
-                    },
-                });
-
-                if (options.installationID === undefined) {
-                    options.installationID = (
-                        await client.rest.apps.getRepoInstallation({
-                            owner: options.name,
-                            repo: config.repo.name,
-                        })
-                    ).data.id;
-                }
-                const result = await client.rest.apps.createInstallationAccessToken({
-                    installation_id: options.installationID,
-                });
-                const configKey =
-                    options.name === config.app.name
-                        ? `${config.app.name}.githubToken`
-                        : `gitgitgadget.${options.name}.githubToken`;
-                await git(["config", configKey, result.data.token]);
-            };
-
-            await set(config.app);
+            await ci.configureGitHubAppToken(config.app);
             for (const org of args) {
-                await set({ appID: 46807, name: org });
+                await ci.configureGitHubAppToken({ appID: 46807, name: org});
             }
         });
     commander.addCommand(

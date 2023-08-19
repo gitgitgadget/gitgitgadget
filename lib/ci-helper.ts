@@ -1,8 +1,10 @@
 import * as fs from "fs";
 import * as util from "util";
 import addressparser from "nodemailer/lib/addressparser/index.js";
+import { createAppAuth } from "@octokit/auth-app";
+import { Octokit } from "@octokit/rest";
 import { ILintError, LintCommit } from "./commit-lint.js";
-import { commitExists, git, emptyTreeName } from "./git.js";
+import { commitExists, git, emptyTreeName, gitConfig } from "./git.js";
 import { GitNotes } from "./git-notes.js";
 import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget.js";
 import { getConfig } from "./gitgitgadget-config.js";
@@ -912,6 +914,49 @@ export class CIHelper {
 
         return optionsChanged;
     }
+
+    public async configureGitHubAppToken(options: {
+             appID: number;
+             installationID?: number;
+             name: string;
+             privateKey?: string;
+        }): Promise<void> {
+        if (!options.privateKey) {
+            const appName = options.name === this.config.app.name ? this.config.app.name : this.config.app.altname;
+            const appNameKey = `${appName}.privateKey`;
+            const appNameVar = appNameKey.toUpperCase().replace(/\./, "_");
+            const key = process.env[appNameVar] ? process.env[appNameVar] : await gitConfig(appNameKey);
+
+            if (!key) {
+                throw new Error(`Need the ${appName} App's private key`);
+            }
+
+            options.privateKey = key.replace(/\\n/g, `\n`);
+        }
+
+        const client = new Octokit({
+            authStrategy: createAppAuth,
+            auth: {
+                appId: options.appID,
+                privateKey: options.privateKey
+            }
+        });
+
+        if (options.installationID === undefined) {
+            options.installationID =
+                (await client.rest.apps.getRepoInstallation({
+                    owner: options.name,
+                    repo: this.config.repo.name,
+            })).data.id;
+        }
+        const result = await client.rest.apps.createInstallationAccessToken(
+            {
+                installation_id: options.installationID,
+            });
+        const configKey = options.name === this.config.app.name ?
+            `${this.config.app.name}.githubToken` : `gitgitgadget.${options.name}.githubToken`;
+        await git(["config", configKey, result.data.token]);
+    };
 
     private async getPRInfo(prKey: pullRequestKey): Promise<IPullRequestInfo> {
         const pr = await this.github.getPRInfo(prKey);
