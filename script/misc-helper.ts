@@ -5,12 +5,11 @@ import { CIHelper } from "../lib/ci-helper.js";
 import { isDirectory } from "../lib/fs-util.js";
 import { git, gitConfig } from "../lib/git.js";
 import { IGitGitGadgetOptions, getVar } from "../lib/gitgitgadget.js";
-import { getConfig } from "../lib/gitgitgadget-config.js";
 import { GitHubGlue } from "../lib/github-glue.js";
 import { toPrettyJSON } from "../lib/json-util.js";
 import { IGitMailingListMirrorState, stateKey } from "../lib/mail-archive-helper.js";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata.js";
-import { IConfig, getExternalConfig, setConfig } from "../lib/project-config.js";
+import { IConfig } from "../lib/project-config.js";
 
 let commander = new Command();
 const publishRemoteKey = "publishRemote";
@@ -46,9 +45,7 @@ interface ICommanderOptions {
 const commandOptions = commander.opts<ICommanderOptions>();
 
 (async (): Promise<void> => {
-    const config: IConfig = commandOptions.config
-        ? setConfig(await getExternalConfig(commandOptions.config))
-        : getConfig();
+    const config: IConfig = await CIHelper.getConfig(commandOptions.config);
 
     const getGitGitWorkDir = async (): Promise<string> => {
         if (!commandOptions.gitWorkDir) {
@@ -69,7 +66,12 @@ const commandOptions = commander.opts<ICommanderOptions>();
         return commandOptions.gitWorkDir;
     };
 
-    const ci = new CIHelper(await getGitGitWorkDir(), commandOptions.skipUpdate, commandOptions.gitgitgadgetWorkDir);
+    const ci = new CIHelper(
+        await getGitGitWorkDir(),
+        config,
+        commandOptions.skipUpdate,
+        commandOptions.gitgitgadgetWorkDir,
+    );
 
     const configureNotesPushToken = async (): Promise<void> => {
         const token = await gitConfig("gitgitgadget.githubToken");

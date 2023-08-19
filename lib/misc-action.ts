@@ -35,7 +35,7 @@ export async function handleAction(parms: actionInterface): Promise<void> {
         throw new Error(`git WorkDir '${parms.repositoryDir}' not found.`);
     }
 
-    const ci = new CIHelper(parms.repositoryDir, parms.skipUpdate ? true : false, parms.configRepositoryDir);
+    const ci = new CIHelper(parms.repositoryDir, config, parms.skipUpdate ? true : false, parms.configRepositoryDir);
 
     if (parms.action === "update-open-prs") {
         const result = await ci.updateOpenPrs();

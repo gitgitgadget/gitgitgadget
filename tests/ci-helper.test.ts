@@ -32,7 +32,7 @@ function testQ(label: string, fn: AsyncFn) {
     });
 }
 
-getConfig();
+const config = getConfig();
 
 const eMailOptions = {
     smtpserver: new testSmtpServer(),
@@ -61,7 +61,7 @@ class TestCIHelper extends CIHelper {
     public addPRLabelsCalls: Array<[_: string, labels: string[]]>;
 
     public constructor(workDir: string, debug = false, gggDir = ".") {
-        super(workDir, debug, gggDir);
+        super(workDir, config, debug, gggDir);
         this.testing = true;
         this.ghGlue = this.github;
 
@@ -210,7 +210,7 @@ testQ("identify merge that integrated some commit", async () => {
     const commitD = await repo.merge("d", commitF);
     await repo.git(["update-ref", "refs/remotes/upstream/seen", commitD]);
 
-    const ci = new CIHelper(repo.workDir, true);
+    const ci = new CIHelper(repo.workDir, config, true);
     expect(commitB).not.toBeUndefined();
     expect(await ci.identifyMergeCommit("seen", commitG)).toEqual(commitD);
     expect(await ci.identifyMergeCommit("seen", commitE)).toEqual(commitC);
