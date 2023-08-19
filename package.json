@@ -26,7 +26,9 @@
   },
   "homepage": "https://gitgitgadget.github.io/",
   "jest": {
-    "extensionsToTreatAsEsm": [".ts"],
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
     "moduleFileExtensions": [
       "ts",
       "tsx",
@@ -35,9 +37,10 @@
     "preset": "ts-jest/presets/default-esm",
     "resolver": "ts-jest-resolver",
     "transform": {
-      "\\.(ts|tsx)$": ["ts-jest",
+      "\\.(ts|tsx)$": [
+        "ts-jest",
         {
-            "useESM": true
+          "useESM": true
         }
       ]
     },
@@ -57,9 +60,9 @@
     "@types/rfc2047": "^2.0.3",
     "eslint": "^9.21.0",
     "eslint-config-prettier": "^10.0.1",
-    "eslint-plugin-prettier": "^5.2.3",
     "eslint-plugin-jest": "^28.11.0",
     "eslint-plugin-jsdoc": "^50.6.3",
+    "eslint-plugin-prettier": "^5.2.3",
     "eslint-plugin-security": "^3.0.1",
     "jest": "^29.7.0",
     "jest-junit": "^16.0.0",
@@ -74,6 +77,7 @@
     "@octokit/auth-app": "^7.1.5",
     "@octokit/request-error": "^6.1.4",
     "@octokit/rest": "^21.1.1",
+    "@vercel/ncc": "^0.38.3",
     "commander": "^13.1.0",
     "dugite": "^2.7.1",
     "html-to-text": "^9.0.5",
