@@ -10,8 +10,7 @@ import { GitHubGlue } from "../lib/github-glue.js";
 import { toPrettyJSON } from "../lib/json-util.js";
 import { IGitMailingListMirrorState, stateKey } from "../lib/mail-archive-helper.js";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata.js";
-import { IConfig, loadConfig, setConfig } from "../lib/project-config.js";
-import path from "path";
+import { IConfig, getExternalConfig, setConfig } from "../lib/project-config.js";
 
 let commander = new Command();
 const publishRemoteKey = "publishRemote";
@@ -488,22 +487,3 @@ const commandOptions = commander.opts<ICommanderOptions>();
     process.stderr.write(`Caught error ${reason}:\n${reason.stack}\n`);
     process.exit(1);
 });
-
-async function getExternalConfig(file: string): Promise<IConfig> {
-    const filePath = path.resolve(file);
-    const newConfig = await loadConfig(filePath);
-
-    if (!Object.prototype.hasOwnProperty.call(newConfig, "project")) {
-        throw new Error(`User configurations must have a 'project:'.  Not found in ${filePath}`);
-    }
-
-    if (!newConfig.repo.owner.match(/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i)) {
-        throw new Error(`Invalid 'owner' ${newConfig.repo.owner} in ${filePath}`);
-    }
-
-    if (!newConfig.repo.baseOwner.match(/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i)) {
-        throw new Error(`Invalid 'baseOwner' ${newConfig.repo.baseOwner} in ${filePath}`);
-    }
-
-    return newConfig;
-}
