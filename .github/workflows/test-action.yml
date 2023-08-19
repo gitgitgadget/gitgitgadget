@@ -1,0 +1,16 @@
+name: Test the GitHub Action
+
+on:
+  push:
+
+jobs:
+  test-action:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: gitgitgadget/gitgitgadget/init@github-action
+      with:
+        gitgitgadget-app-id: ${{ secrets.GITGITGADGET_GITHUB_APP_ID }}
+        gitgitgadget-private-key: ${{ secrets.GITGITGADGET_GITHUB_APP_PRIVATE_KEY }}
+        gitgitgadget-git-app-id: ${{ secrets.GITGITGADGET_GIT_GITHUB_APP_ID }}
+        gitgitgadget-git-private-key: ${{ secrets.GITGITGADGET_GIT_GITHUB_APP_PRIVATE_KEY }}
