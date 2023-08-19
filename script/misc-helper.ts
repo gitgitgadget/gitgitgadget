@@ -395,21 +395,30 @@ const commandOptions = commander.opts<ICommanderOptions>();
         .argument("[args...]")
         .description("Set the GitHub App token in the Git config")
         .action(async (args: string[]) => {
-            const set = async (options: { appID: number; installationID?: number; name: string }): Promise<void> => {
-                const appName = options.name === config.app.name ? config.app.name : config.app.altname;
-                const appNameKey = `${appName}.privateKey`;
-                const appNameVar = appNameKey.toUpperCase().replace(/\./, "_");
-                const key = process.env[appNameVar] ? process.env[appNameVar] : await gitConfig(appNameKey);
+            const set = async (options: {
+                appID: number;
+                installationID?: number;
+                name: string;
+                privateKey?: string;
+            }): Promise<void> => {
+                if (!options.privateKey) {
+                    const appName = options.name === config.app.name ? config.app.name : config.app.altname;
+                    const appNameKey = `${appName}.privateKey`;
+                    const appNameVar = appNameKey.toUpperCase().replace(/\./, "_");
+                    const key = process.env[appNameVar] ? process.env[appNameVar] : await gitConfig(appNameKey);
 
-                if (!key) {
-                    throw new Error(`Need the ${appName} App's private key`);
+                    if (!key) {
+                        throw new Error(`Need the ${appName} App's private key`);
+                    }
+
+                    options.privateKey = key.replace(/\\n/g, `\n`);
                 }
 
                 const client = new Octokit({
                     authStrategy: createAppAuth,
                     auth: {
                         appId: options.appID,
-                        privateKey: key.replace(/\\n/g, `\n`),
+                        privateKey: options.privateKey,
                     },
                 });
 
