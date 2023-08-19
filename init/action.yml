@@ -1,0 +1,29 @@
+name: 'Initialize state for use with the GitGitGadget GitHub Actions'
+description: 'Obtains installation token and sets up stuff'
+author: 'Johannes Schindelin'
+inputs:
+  gitgitgadget-app-id:
+    description: 'The ID of the primary GitHub App'
+    required: true
+  gitgitgadget-private-key:
+    description: 'The private key of the primary GitHub App'
+    required: true
+  gitgitgadget-git-app-id:
+    description: 'The ID of the GitHub App installed on git/git'
+    required: true
+  gitgitgadget-git-private-key:
+    description: 'The private key of the GitHub App installed on git/git'
+    required: true
+outputs:
+  gitgitgadget-token:
+    description: 'The installation token to work on gitgitgadget/git'
+  git-token:
+    description: 'The installation token to work on git/git'
+  dscho-token:
+    description: 'The installation token to work on dscho/git'
+runs:
+  using: 'node20'
+  main: './index.js'
+branding:
+  icon: 'git-commit'
+  color: 'orange'
