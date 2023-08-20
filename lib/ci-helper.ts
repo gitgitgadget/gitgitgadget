@@ -73,6 +73,7 @@ export class CIHelper {
         // get the access tokens via the inputs of the GitHub Action
         this.setAccessToken("gitgitgadget", core.getInput("gitgitgadget-git-access-token"));
         this.setAccessToken("git", core.getInput("git-git-access-token"));
+        this.setAccessToken("dscho", core.getInput("dscho-git-access-token"));
 
         // eslint-disable-next-line security/detect-non-literal-fs-filename
         if (fs.existsSync(this.workDir)) throw new Error(`Work directory ${this.workDir} already exists`);
