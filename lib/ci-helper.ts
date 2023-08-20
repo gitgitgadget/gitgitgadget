@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as util from "util";
 import addressparser from "nodemailer/lib/addressparser/index.js";
+import * as core from "@actions/core";
 import { createAppAuth } from "@octokit/auth-app";
 import { Octokit } from "@octokit/rest";
 import { ILintError, LintCommit } from "./commit-lint.js";
@@ -960,6 +961,10 @@ export class CIHelper {
         }
         return result.data.token;
     };
+
+    public static getActionsCore(): typeof import("@actions/core") {
+        return core;
+    }
 
     private async getPRInfo(prKey: pullRequestKey): Promise<IPullRequestInfo> {
         const pr = await this.github.getPRInfo(prKey);
