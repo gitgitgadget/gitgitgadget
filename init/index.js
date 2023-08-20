@@ -36,6 +36,9 @@ async function run() {
         core.setSecret(token)
         core.setOutput(`${options.name}-token`, token)
     }
+
+    // add a reaction
+    await ci.github.addReaction('dscho', 'git', 791752382, 'laugh')
 }
 
 run()
