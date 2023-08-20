@@ -11,6 +11,13 @@ inputs:
   dscho-git-access-token:
     description: 'The access token to work on dscho/git'
     required: true
+  pr-comment-url:
+    description: 'The URL of the PR comment to add a reaction to'
+    required: true
+  reaction:
+    description: 'The reaction to add to the PR comment'
+    required: false
+    default: 'eyes'
 runs:
   using: 'node20'
   main: './index.js'
