@@ -162,6 +162,10 @@ export class CIHelper {
         this.smtpOptions = smtpOptions;
     }
 
+    public static getActionsCore(): typeof import("@actions/core") {
+        return core;
+    }
+
     /*
      * Given a commit that was contributed as a patch via GitGitGadget (i.e.
      * a commit with a Message-ID recorded in `refs/notes/gitgitgadget`),
