@@ -71,7 +71,7 @@
     "json-stable-stringify": "^1.0.2",
     "jsonwebtoken": "^9.0.1",
     "mailparser": "^3.6.5",
-    "marked": "^7.0.2",
+    "marked": "^7.0.4",
     "nodemailer": "^6.9.4",
     "rfc2047": "^4.0.1"
   },
