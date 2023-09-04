@@ -69,7 +69,7 @@
     "dugite": "^2.5.1",
     "html-to-text": "^9.0.5",
     "json-stable-stringify": "^1.0.2",
-    "jsonwebtoken": "^9.0.1",
+    "jsonwebtoken": "^9.0.2",
     "mailparser": "^3.6.5",
     "marked": "^7.0.5",
     "nodemailer": "^6.9.4",
