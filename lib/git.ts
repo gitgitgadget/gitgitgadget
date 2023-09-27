@@ -10,6 +10,7 @@ export interface IGitOptions {
     workDir?: string;
     trimTrailingNewline?: boolean; // defaults to true
     trace?: boolean;
+    env?: NodeJS.ProcessEnv;
 }
 
 export const emptyBlobName = "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391";
