@@ -20,7 +20,26 @@ function trimTrailingNewline(str: string): string {
     return str.replace(/\r?\n$/, "");
 }
 
+/**
+ * Spawn a Git process with the given arguments.
+ *
+ * Note that the `workDir` attribute of the `options` can be used to specify
+ * the working directory in which to run the command. If it is not specified,
+ * the current working directory will be used.
+ *
+ * It can also be used to specify the path to a bare repository. This is only
+ * possible, though, if the specified path ends with `.git`. Otherwise, this
+ * function will assume that the repository is non-bare.
+ *
+ * @param {string[]} args the arguments to pass to `git`
+ * @param {IGitOptions} options the options to pass to `dugite`
+ * @returns {Promise<string>} the output of the command
+ * @throws {Error} if the command fails
+ */
 export function git(args: string[], options?: IGitOptions): Promise<string> {
+    // allow the command to run in a bare repository
+    if (options?.workDir?.endsWith(".git")) args = [`--git-dir=${options.workDir}`, ...args];
+
     const workDir = (options && options.workDir) || ".";
     if (options && options.trace) {
         process.stderr.write(`Called 'git ${args.join(" ")}' in '${workDir}':\n${new Error().stack}\n`);
