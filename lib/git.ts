@@ -21,6 +21,9 @@ function trimTrailingNewline(str: string): string {
 }
 
 export function git(args: string[], options?: IGitOptions): Promise<string> {
+    // allow the command to run in a bare repository
+    if (options?.workDir?.endsWith(".git")) args = [`--git-dir=${options.workDir}`, ...args];
+
     const workDir = (options && options.workDir) || ".";
     if (options && options.trace) {
         process.stderr.write(`Called 'git ${args.join(" ")}' in '${workDir}':\n${new Error().stack}\n`);
