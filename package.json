@@ -64,7 +64,7 @@
   "dependencies": {
     "@octokit/auth-app": "^6.0.1",
     "@octokit/request-error": "^5.0.1",
-    "@octokit/rest": "^20.0.1",
+    "@octokit/rest": "^20.0.2",
     "commander": "^11.0.0",
     "dugite": "^2.5.1",
     "html-to-text": "^9.0.5",
