@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@types/html-to-text": "^9.0.2",
-    "@types/imap-simple": "^4.2.6",
+    "@types/imap-simple": "^4.2.7",
     "@types/jest": "^29.5.5",
     "@types/json-stable-stringify": "^1.0.34",
     "@types/jsonwebtoken": "^9.0.3",
