@@ -47,7 +47,7 @@
     "@types/marked": "^5.0.2",
     "@types/nodemailer": "^6.4.11",
     "@types/rfc2047": "^2.0.1",
-    "@typescript-eslint/eslint-plugin": "^6.7.3",
+    "@typescript-eslint/eslint-plugin": "^6.7.4",
     "@typescript-eslint/parser": "^6.7.4",
     "eslint": "^8.51.0",
     "eslint-config-prettier": "^9.0.0",
