@@ -43,7 +43,7 @@
     "@types/jest": "^29.5.5",
     "@types/json-stable-stringify": "^1.0.34",
     "@types/jsonwebtoken": "^9.0.3",
-    "@types/mailparser": "^3.4.1",
+    "@types/mailparser": "^3.4.2",
     "@types/marked": "^5.0.2",
     "@types/nodemailer": "^6.4.11",
     "@types/rfc2047": "^2.0.1",
