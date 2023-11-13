@@ -40,7 +40,7 @@
   "devDependencies": {
     "@types/html-to-text": "^9.0.3",
     "@types/imap-simple": "^4.2.8",
-    "@types/jest": "^29.5.7",
+    "@types/jest": "^29.5.8",
     "@types/json-stable-stringify": "^1.0.35",
     "@types/jsonwebtoken": "^9.0.4",
     "@types/mailparser": "^3.4.3",
