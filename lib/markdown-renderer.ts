@@ -83,5 +83,5 @@ export function md2text(markdown: string, columns = 76): string {
         ],
     };
 
-    return htmlToText(marked.parse(markdown), formatOptions);
+    return htmlToText(marked.parse(markdown) as string, formatOptions);
 }
