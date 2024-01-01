@@ -1,6 +1,5 @@
 import addressparser from "nodemailer/lib/addressparser";
 import mimeFuncs from "nodemailer/lib/mime-funcs";
-// import { encodeWords } from "nodemailer/lib/mime-funcs";
 import { commitExists, git, gitConfig, gitShortHash, revListCount, revParse, } from "./git";
 import { GitNotes } from "./git-notes";
 import { IGitGitGadgetOptions } from "./gitgitgadget";
