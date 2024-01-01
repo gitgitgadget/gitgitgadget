@@ -18,13 +18,12 @@ export class ProjectOptions {
             for (const user of project.cc) {
                 cc.push(user);
             }
-        } else if (await commitExists("cb07fc2a29c86d1bc11", workDir) &&
-            await revParse(`${baseCommit}:git-gui.sh`, workDir) !== undefined) {
+        } else if (await revParse(`${baseCommit}:git-gui.sh`, workDir) !== undefined) {
             // Git GUI
             to = "--to=git@vger.kernel.org";
             cc.push("Pratyush Yadav <me@yadavpratyush.com>");
             upstreamBranch = "git-gui/master";
-        } else if (await commitExists("e83c5163316f89bfbde", workDir)) {
+        } else if (await revParse(`${baseCommit}:git.c`, workDir) !== undefined) {
             // Git
             to = "--to=git@vger.kernel.org";
             // Do *not* Cc: Junio Hamano by default
@@ -36,12 +35,12 @@ export class ProjectOptions {
                 upstreamBranch = "upstream/master";
             }
             midUrlPrefix = "https://lore.kernel.org/git/";
-        } else if (await commitExists("a3acbf46947e52ff596", workDir)) {
+        } else if (await revParse(`${baseCommit}:winsup`, workDir) !== undefined) {
             // Cygwin
             to = "--to=cygwin-patches@cygwin.com";
             upstreamBranch = "cygwin/master";
             midUrlPrefix = "https://www.mail-archive.com/search?l=cygwin-patches@cygwin.com&q=";
-        } else if (await commitExists("cc8ed39b240180b5881", workDir)) {
+        } else if (await revParse(`${baseCommit}:include/busybox.h`, workDir) !== undefined) {
             // BusyBox
             to = "--to=busybox@busybox.net";
             upstreamBranch = "busybox/master";
