@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, expect, jest, test } from "@jest/globals";
 import { CIHelper } from "../lib/ci-helper";
 import { GitNotes } from "../lib/git-notes";
-// import { getConfig } from "../lib/gitgitgadget-config";
 import { GitHubGlue, IGitHubUser, IPRComment, IPRCommit, IPullRequestInfo, } from "../lib/github-glue";
 import { IMailMetadata } from "../lib/mail-metadata";
 import { IConfig, loadConfig, setConfig } from "../lib/project-config";

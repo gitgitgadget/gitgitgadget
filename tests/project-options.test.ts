@@ -24,10 +24,6 @@ test("project options", async () => {
     expect(await repo.commit("B")).not.toEqual("");
     expect(await repo.commit("C")).not.toEqual("");
 
-    const options1 = await ProjectOptions.getLocal(repo.workDir);
-    expect(options1.basedOn).toBeUndefined();
-    expect(options1.to).toEqual("--to=reviewer@example.com");
-    expect(options1.publishToRemote).toBeUndefined();
     const options2 =
         await ProjectOptions.get(repo.workDir, "test-project-options",
                                  ["Nguyễn Thái Ngọc Duy <pclouds@gmail.com>"],

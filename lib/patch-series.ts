@@ -1,6 +1,5 @@
 import addressparser from "nodemailer/lib/addressparser";
 import mimeFuncs from "nodemailer/lib/mime-funcs";
-// import { encodeWords } from "nodemailer/lib/mime-funcs";
 import { commitExists, git, gitConfig, gitShortHash, revListCount, revParse, } from "./git";
 import { GitNotes } from "./git-notes";
 import { IGitGitGadgetOptions } from "./gitgitgadget";
@@ -57,78 +56,6 @@ interface IRangeDiff {
 }
 
 export class PatchSeries {
-    public static async getFromTag(options: PatchSeriesOptions, project: ProjectOptions): Promise<PatchSeries> {
-        const latestTag: string = await this.getLatestTag(project.branchName, options.redo);
-
-        const baseCommit = await revParse(project.upstreamBranch);
-        if (!baseCommit) {
-            throw new Error(`Cannot determine tip of ${project.basedOn}`);
-        }
-        const headCommit = await revParse("HEAD");
-        if (!headCommit) {
-            throw new Error("Cannot determine HEAD revision");
-        }
-        const metadata: IPatchSeriesMetadata = {
-            baseCommit,
-            baseLabel: project.upstreamBranch,
-            headCommit,
-            headLabel: project.branchName,
-            iteration: 1,
-        };
-        let rangeDiffRanges: IRangeDiff | undefined;
-        const currentRange = `${baseCommit}..${headCommit}`;
-
-        if (latestTag) {
-            const range = latestTag + "..." + project.branchName;
-            if (! await git(["rev-list", range])) {
-                throw new Error(`Branch ${project.branchName} was already submitted: ${latestTag}`);
-            }
-
-            let match = latestTag.match(/-v([1-9][0-9]*)$/);
-            metadata.iteration = parseInt(match && match[1] || "0", 10) + 1;
-
-            const tagMessage = await git(["cat-file", "tag", latestTag]);
-            match = tagMessage.match(/^[\s\S]*?\n\n([\s\S]*)/);
-            (match ? match[1] : tagMessage).split("\n").map((line) => {
-                match = line.match(/https:\/\/lore\.kernel\.org\/.*\/([^/]+)/);
-                if (!match) {
-                    const re = /https:\/\/public-inbox\.org\/.*\/([^/]+)/;
-                    match = line.match(re);
-                }
-                if (!match) {
-                    const re = /https:\/\/www\.mail-archive\.com\/.*\/([^/]+)/;
-                    match = line.match(re);
-                }
-                if (!match) {
-                    match = line.match(/http:\/\/mid.gmane.org\/(.*)/);
-                }
-                if (!match) {
-                    match = line.match(/^[^ :]*: Message-ID: ([^/]+)/);
-                }
-                if (match) {
-                    if (metadata.referencesMessageIds) {
-                        metadata.referencesMessageIds.unshift(match[1]);
-                    } else {
-                        metadata.referencesMessageIds = [match[1]];
-                    }
-                }
-            });
-
-            const tagCommit = await revParse(latestTag);
-            if (!tagCommit) {
-                throw new Error(`Cannot determine commit for tag: ${latestTag}`);
-            }
-
-            const previousRange = `${baseCommit}..${tagCommit}`;
-            rangeDiffRanges = { previousRange, currentRange, baseCommit, headCommit };
-        }
-
-        const patchCount = await revListCount(["--no-merges", currentRange], project.workDir);
-
-        const notes = new GitNotes(project.workDir, "refs/notes/mail-patch-series");
-        return new PatchSeries(notes, options, project, metadata, rangeDiffRanges, patchCount);
-    }
-
     public static async getFromNotes(notes: GitNotes,
                                      pullRequestURL: string,
                                      pullRequestTitle: string,
@@ -332,17 +259,6 @@ export class PatchSeries {
             coverLetterBody,
             rangeDiff
         };
-    }
-
-    protected static async getLatestTag(branchName: string, redo?: boolean): Promise<string> {
-        const args: string[] = [
-            "for-each-ref", "--format=%(refname)", "--sort=-taggerdate", `refs/tags/${branchName}-v*[0-9]`];
-        const latesttags: string[] = (await git(args)).split("\n");
-
-        if (redo) {
-            return latesttags.length > 1 ? latesttags[1] : "";
-        }
-        return latesttags.length > 0 ? latesttags[0] : "";
     }
 
     protected static splitMails(mbox: string): string[] {
