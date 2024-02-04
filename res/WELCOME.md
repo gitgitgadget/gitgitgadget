@@ -15,7 +15,7 @@ Also, it is a good idea to review the commit messages one last time, as the Git 
 
 * the lines should not exceed 76 columns,
 * the first line should be like a header and typically start with a prefix like "tests:" or "revisions:" to state which subsystem the change is about, and
-* the commit messages' body should be describing the "why?" of the change.
+* the commit messages' body should be [describing the "why?" of the change](https://git-scm.com/docs/SubmittingPatches#describe-changes).
 * Finally, the commit messages should end in a [Signed-off-by:](https://git-scm.com/docs/SubmittingPatches#dco) line matching the commits' author.
 
 It is in general a good idea to await the automated test ("Checks") in this Pull Request before contributing the patches, e.g. to avoid trivial issues such as unportable code.
