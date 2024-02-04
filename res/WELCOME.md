@@ -2,7 +2,9 @@
 
 Hi @${username}, and welcome to GitGitGadget, the GitHub App to send patch series to the Git mailing list from GitHub Pull Requests.
 
-Please make sure that your Pull Request has a good description, as it will be used as cover letter. You can CC potential reviewers by adding a footer to the PR description with the following syntax:
+Please make sure that your Pull Request has a good description, as it will be used as cover letter.
+
+You can CC potential reviewers by adding a footer to the PR description with the following syntax:
 
     CC: Revi Ewer <revi.ewer@example.com>, Ill Takalook <ill.takalook@example.net>
 
