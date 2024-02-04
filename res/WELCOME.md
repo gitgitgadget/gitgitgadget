@@ -2,7 +2,10 @@
 
 Hi @${username}, and welcome to GitGitGadget, the GitHub App to send patch series to the Git mailing list from GitHub Pull Requests.
 
-Please make sure that your Pull Request has a good description, as it will be used as cover letter.
+Please make sure that either:
+
+- Your Pull Request has a good description, if it consists of multiple commits, as it will be used as cover letter.
+- Your Pull Request description is empty, if it consists of a single commit, as the commit message should be descriptive enough by itself.
 
 You can CC potential reviewers by adding a footer to the PR description with the following syntax:
 
