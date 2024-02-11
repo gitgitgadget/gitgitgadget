@@ -2,7 +2,12 @@
 
 Hi @${username}, and welcome to GitGitGadget, the GitHub App to send patch series to the Git mailing list from GitHub Pull Requests.
 
-Please make sure that your Pull Request has a good description, as it will be used as cover letter. You can CC potential reviewers by adding a footer to the PR description with the following syntax:
+Please make sure that either:
+
+- Your Pull Request has a good description, if it consists of multiple commits, as it will be used as cover letter.
+- Your Pull Request description is empty, if it consists of a single commit, as the commit message should be descriptive enough by itself.
+
+You can CC potential reviewers by adding a footer to the PR description with the following syntax:
 
     CC: Revi Ewer <revi.ewer@example.com>, Ill Takalook <ill.takalook@example.net>
 
@@ -10,7 +15,7 @@ Also, it is a good idea to review the commit messages one last time, as the Git 
 
 * the lines should not exceed 76 columns,
 * the first line should be like a header and typically start with a prefix like "tests:" or "revisions:" to state which subsystem the change is about, and
-* the commit messages' body should be describing the "why?" of the change.
+* the commit messages' body should be [describing the "why?" of the change](https://git-scm.com/docs/SubmittingPatches#describe-changes).
 * Finally, the commit messages should end in a [Signed-off-by:](https://git-scm.com/docs/SubmittingPatches#dco) line matching the commits' author.
 
 It is in general a good idea to await the automated test ("Checks") in this Pull Request before contributing the patches, e.g. to avoid trivial issues such as unportable code.
