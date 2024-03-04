@@ -70,7 +70,7 @@
     "html-to-text": "^9.0.5",
     "json-stable-stringify": "^1.1.1",
     "jsonwebtoken": "^9.0.2",
-    "mailparser": "^3.6.7",
+    "mailparser": "^3.6.9",
     "marked": "^12.0.0",
     "nodemailer": "^6.9.10",
     "rfc2047": "^4.0.1"
