@@ -278,6 +278,10 @@ export class PatchSeries {
                 headers = PatchSeries.stripDuplicateHeaders(headers, header);
             });
 
+            headers = headers
+                .replace(/(\n|^)message-id:/ig, "$1Message-Id:")
+                .replace(/(\n|^)date:/ig, "$1Date:");
+
             mails[i] = headers + mail.substring(endOfHeader + 1);
         });
     }
