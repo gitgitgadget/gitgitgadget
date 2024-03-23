@@ -266,7 +266,7 @@ export class PatchSeries {
         return mbox.split(re);
     }
 
-    protected static removeDuplicateHeaders(mails: string[]): void {
+    protected static cleanUpHeaders(mails: string[]): void {
         mails.map((mail: string, i: number) => {
             const endOfHeader = mail.indexOf("\n\n");
             if (endOfHeader < 0) {
@@ -277,6 +277,10 @@ export class PatchSeries {
             singletonHeaders.forEach((header: ISingletonHeader) => {
                 headers = PatchSeries.stripDuplicateHeaders(headers, header);
             });
+
+            headers = headers
+                .replace(/(\n|^)message-id:/ig, "$1Message-Id:")
+                .replace(/(\n|^)date:/ig, "$1Date:");
 
             mails[i] = headers + mail.substring(endOfHeader + 1);
         });
@@ -556,7 +560,7 @@ export class PatchSeries {
         logger.log("Generating mbox");
         const mbox = await this.generateMBox();
         const mails: string[] = PatchSeries.splitMails(mbox);
-        PatchSeries.removeDuplicateHeaders(mails);
+        PatchSeries.cleanUpHeaders(mails);
 
         const ident = await git(["var", "GIT_AUTHOR_IDENT"], {
             workDir: this.project.workDir,
