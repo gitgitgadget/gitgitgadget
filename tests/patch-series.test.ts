@@ -224,7 +224,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("duplicate MIME-Version headers are eliminated", () => {
             const mails1 = [mimeBox1];
-            PatchSeries.removeDuplicateHeaders(mails1);
+            PatchSeries.cleanUpHeaders(mails1);
             expect(mails1[0]).not.toMatch(/MIME-Version[^]*MIME-Version/);
         });
 
@@ -243,7 +243,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             const logSpy = jest.spyOn(console, "log")
                 .mockImplementation(() => {return;});
 
-            PatchSeries.removeDuplicateHeaders(mails1);
+            PatchSeries.cleanUpHeaders(mails1);
 
             expect(logSpy.mock.calls[0][0]).toMatch(/Found multiple headers/);
             expect(logSpy).toHaveBeenCalledTimes(1); // verify no more errors
@@ -265,7 +265,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("duplicate Content-Type headers are eliminated", () => {
             const mails1 = [contentTypeBox1];
-            PatchSeries.removeDuplicateHeaders(mails1);
+            PatchSeries.cleanUpHeaders(mails1);
             expect(mails1[0]).not.toMatch(/Content-Type[^]*Content-Type/);
         });
 
@@ -284,7 +284,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             const logSpy = jest.spyOn(console, "log")
                 .mockImplementation(() => {return;});
 
-            PatchSeries.removeDuplicateHeaders(mails1);
+            PatchSeries.cleanUpHeaders(mails1);
 
             expect(logSpy.mock.calls[0][0]).toMatch(/Found multiple headers/);
             expect(logSpy).toHaveBeenCalledTimes(1); // verify no more errors
@@ -304,7 +304,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("duplicate Content-Type headers are eliminated (take 2)", () => {
             const mails1 = [contentTypeBox3];
-            PatchSeries.removeDuplicateHeaders(mails1);
+            PatchSeries.cleanUpHeaders(mails1);
             expect(mails1[0]).not.toMatch(/Content-Type[^]*Content-Type/);
         });
 
@@ -322,7 +322,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         test("duplicate Content-Transfer-Encoding headers are eliminated",
              () => {
             const mails1 = [contentTransferEncodingBox1];
-            PatchSeries.removeDuplicateHeaders(mails1);
+            PatchSeries.cleanUpHeaders(mails1);
             expect(mails1[0]).not.toMatch(new RegExp("Content-Transfer-Encoding"
                 + "[^]*Content-Transfer-Encoding"));
         });
@@ -342,7 +342,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             const logSpy = jest.spyOn(console, "log")
                 .mockImplementation(() => {return;});
 
-            PatchSeries.removeDuplicateHeaders(mails1);
+            PatchSeries.cleanUpHeaders(mails1);
 
             expect(logSpy.mock.calls[0][0]).toMatch(/Found multiple headers/);
             expect(logSpy).toHaveBeenCalledTimes(1); // verify no more errors
@@ -362,7 +362,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("duplicate Content-Description headers throw error", () => {
             const mails1 = [contentDescriptionBox1];
-            PatchSeries.removeDuplicateHeaders(mails1);
+            PatchSeries.cleanUpHeaders(mails1);
             expect(mails1[0]).not.toMatch(new RegExp("Content-Description"
             + "[^]*Content-Description"));
         });
@@ -383,7 +383,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             const logSpy = jest.spyOn(console, "log")
                 .mockImplementation(() => {return;});
 
-            PatchSeries.removeDuplicateHeaders(mails1);
+            PatchSeries.cleanUpHeaders(mails1);
 
             expect(logSpy.mock.calls[0][0]).toMatch(/Found multiple headers/);
             expect(logSpy).toHaveBeenCalledTimes(1); // verify no more errors
@@ -403,7 +403,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("duplicate Content-ID headers throw error", () => {
             const mails1 = [contentIDBox1];
-            PatchSeries.removeDuplicateHeaders(mails1);
+            PatchSeries.cleanUpHeaders(mails1);
             expect(mails1[0]).not.toMatch(/Content-ID[^]*Content-ID/);
         });
 
@@ -423,7 +423,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             const logSpy = jest.spyOn(console, "log")
                 .mockImplementation(() => {return;});
 
-            PatchSeries.removeDuplicateHeaders(mails1);
+            PatchSeries.cleanUpHeaders(mails1);
 
             expect(logSpy.mock.calls[0][0]).toMatch(/Found multiple headers/);
             expect(logSpy).toHaveBeenCalledTimes(1); // verify no more errors
