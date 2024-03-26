@@ -10,6 +10,7 @@ export interface IGitOptions {
     workDir?: string;
     trimTrailingNewline?: boolean; // defaults to true
     trace?: boolean;
+    env?: NodeJS.ProcessEnv;
 }
 
 export const emptyBlobName = "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391";
@@ -21,6 +22,9 @@ function trimTrailingNewline(str: string): string {
 
 export function git(args: string[], options?: IGitOptions | undefined):
     Promise<string> {
+    // allow the command to run in a bare repository
+    if (options?.workDir?.endsWith(".git")) args = [`--git-dir=${options.workDir}`, ...args];
+
     const workDir = options && options.workDir || ".";
     if (options && options.trace) {
         process.stderr.write(`Called 'git ${args.join(" ")}' in '${workDir
