@@ -1,3 +1,4 @@
+https://github.com/gitgitgadget/git
 # Contributing git.git patches via GitHub PRs
 
 This project's goal is to make contributions to the Git project (almost) as easy as opening a GitHub PR. The idea is for users to open a Pull Request at
