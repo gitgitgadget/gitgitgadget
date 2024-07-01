@@ -11,6 +11,10 @@ You can CC potential reviewers by adding a footer to the PR description with the
 
     CC: Revi Ewer <revi.ewer@example.com>, Ill Takalook <ill.takalook@example.net>
 
+NOTE: DO NOT copy/paste your CC list from a previous GGG PR's description,
+because it will result in a malformed CC list on the mailing list. See
+[example](https://lore.kernel.org/git/owly4jd741ph.fsf@fine.c.googlers.com/).
+
 Also, it is a good idea to review the commit messages one last time, as the Git project expects them in a quite specific form:
 
 * the lines should not exceed 76 columns,
