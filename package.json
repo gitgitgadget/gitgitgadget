@@ -59,7 +59,7 @@
     "test-smtp-server": "0.9.8",
     "ts-jest": "^29.1.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.5.2"
+    "typescript": "^5.5.3"
   },
   "dependencies": {
     "@octokit/auth-app": "^6.1.1",
