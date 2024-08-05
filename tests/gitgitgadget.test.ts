@@ -1,4 +1,5 @@
 import { expect, jest, test } from "@jest/globals";
+import { fileURLToPath } from 'url';
 import { git, gitCommandExists } from "../lib/git.js";
 import { GitNotes } from "../lib/git-notes.js";
 import { GitGitGadget, IGitGitGadgetOptions } from "../lib/gitgitgadget.js";
@@ -9,6 +10,7 @@ import { testCreateRepo } from "./test-lib.js";
 
 // This test script might take quite a while to run
 jest.setTimeout(60000);
+const sourceFileName = fileURLToPath(import.meta.url);
 
 getConfig();
 
@@ -167,7 +169,7 @@ test("generate tag/notes from a Pull Request", async () => {
             }
         },
     };
-    const repo = await testCreateRepo(__filename);
+    const repo = await testCreateRepo(sourceFileName);
     const notes = new GitNotes(repo.workDir);
 
     const gitGitGadgetOptions: IGitGitGadgetOptions = {
@@ -322,9 +324,9 @@ In-Reply-To: https://dummy.com/?mid=${refMid}`);
 });
 
 test("allow/disallow", async () => {
-    const repo = await testCreateRepo(__filename);
+    const repo = await testCreateRepo(sourceFileName);
     const workDir = repo.workDir;
-    const remote = await testCreateRepo(__filename, "-remote");
+    const remote = await testCreateRepo(sourceFileName, "-remote");
 
     await git(["config", "gitgitgadget.workDir", workDir], { workDir });
     await git(["config",
@@ -358,9 +360,9 @@ test("allow/disallow", async () => {
 });
 
 test("allow/disallow with env vars", async () => {
-    const repo = await testCreateRepo(__filename);
+    const repo = await testCreateRepo(sourceFileName);
     const workDir = repo.workDir;
-    const remote = await testCreateRepo(__filename, "-remote");
+    const remote = await testCreateRepo(sourceFileName, "-remote");
 
     process.env.GITGITGADGET_WORKDIR = workDir;
     process.env.GITGITGADGET_PUBLISHREMOTE = remote.workDir;

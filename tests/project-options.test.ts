@@ -1,4 +1,5 @@
 import { expect, jest, test } from "@jest/globals";
+import { fileURLToPath } from 'url';
 import { isDirectory } from "../lib/fs-util.js";
 import { GitNotes } from "../lib/git-notes.js";
 import { getConfig } from "../lib/gitgitgadget-config.js";
@@ -8,11 +9,12 @@ import { testCreateRepo } from "./test-lib.js";
 
 // This test script might take quite a while to run
 jest.setTimeout(20000);
+const sourceFileName = fileURLToPath(import.meta.url);
 
 getConfig();
 
 test("project options", async () => {
-    const repo = await testCreateRepo(__filename);
+    const repo = await testCreateRepo(sourceFileName);
     expect(await isDirectory(`${repo.workDir}/.git`)).toBeTruthy();
 
     const initialCommit = "e073a465d0c7bf27664959bc93a9f018ac6f6f00";

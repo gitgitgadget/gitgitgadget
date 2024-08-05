@@ -1,9 +1,11 @@
 import { expect, test } from "@jest/globals";
 import * as fs from "fs";
+import path from "path";
+import { fileURLToPath } from 'url';
 import { SousChef } from "../lib/sous-chef.js";
-import { SousChef } from "../lib/sous-chef";
+const dirName = path.dirname(fileURLToPath(import.meta.url));
 
-const mboxFixturePath = `${__dirname}/fixtures/whats-cooking-2021-02-10.mbox`;
+const mboxFixturePath = `${dirName}/fixtures/whats-cooking-2021-02-10.mbox`;
 
 test("Parse What's Cooking mail", async () => {
     const mbox = await fs.promises.readFile(mboxFixturePath);
