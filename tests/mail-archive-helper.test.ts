@@ -1,6 +1,7 @@
 import { Octokit } from "@octokit/rest";
 import { OctokitResponse } from "@octokit/types";
 import { expect, jest, test } from "@jest/globals";
+import { fileURLToPath } from 'url';
 import { GitNotes } from "../lib/git-notes.js";
 import { getConfig } from "../lib/gitgitgadget-config.js";
 import { GitHubGlue } from "../lib/github-glue.js";
@@ -30,6 +31,7 @@ class GitHubProxy extends GitHubGlue {
 }
 
 jest.setTimeout(180000);
+const sourceFileName = fileURLToPath(import.meta.url);
 
 // Minimal interfaces for github responses
 
@@ -169,7 +171,7 @@ const issueCommentResponse: OctokitResponse<IIssueComment> = {
 };
 
 test("test not a pr related email", async () => {
-    const repo = await testCreateRepo(__filename, "-unrelated");
+    const repo = await testCreateRepo(sourceFileName, "-unrelated");
     await repo.commit("1", "1", "");    // need at least one commit to back up to
 
     const mailMeta: IMailMetadata = {
@@ -207,7 +209,7 @@ This Pull Request contains some ipsum lorem.
 });
 
 test("test already seen", async () => {
-    const repo = await testCreateRepo(__filename, "-seen");
+    const repo = await testCreateRepo(sourceFileName, "-seen");
     await repo.commit("1", "1", "");    // need at least one commit to back up to
 
     const mailMeta: IMailMetadata = {
@@ -243,7 +245,7 @@ This Pull Request contains some ipsum lorem.
 });
 
 test("test reply to cover letter", async () => {
-    const repo = await testCreateRepo(__filename, "-cover");
+    const repo = await testCreateRepo(sourceFileName, "-cover");
     await repo.commit("1", "1", "");    // need at least one commit to back up to
 
     const mailMeta: IMailMetadata = {
@@ -312,7 +314,7 @@ This Pull Request contains some ipsum lorem.
 });
 
 test("test reply to patch letter", async () => {
-    const repo = await testCreateRepo(__filename, "-patchr");
+    const repo = await testCreateRepo(sourceFileName, "-patchr");
     await repo.commit("1", "1", "");    // need at least one commit to back up to
 
     const mailMeta: IMailMetadata = {
@@ -414,7 +416,7 @@ This Pull Request contains some ipsum lorem.
 });
 
 test("test reply to outdated patch letter (throws error)", async () => {
-    const repo = await testCreateRepo(__filename, "-patcho");
+    const repo = await testCreateRepo(sourceFileName, "-patcho");
     await repo.commit("1", "1", "");    // need at least one commit to back up to
 
     const mailMeta: IMailMetadata = {
@@ -491,7 +493,7 @@ This Pull Request contains some ipsum lorem.
 });
 
 test("test reply to not outdated patch letter (throws error)", async () => {
-    const repo = await testCreateRepo(__filename, "-patchn");
+    const repo = await testCreateRepo(sourceFileName, "-patchn");
     await repo.commit("1", "1", "");    // need at least one commit to back up to
 
     const mailMeta: IMailMetadata = {
