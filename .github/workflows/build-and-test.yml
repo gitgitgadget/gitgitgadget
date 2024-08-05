@@ -125,6 +125,8 @@ jobs:
       with:
         github-token: ${{ env.GGG_TOKEN }}
         script: |
-            const exports = require(`${process.env.GITHUB_WORKSPACE}/gitgitgadget/build/lib/delete-ci-test-branches.js`)
-            await exports.deleteBranches(github, process.env.GITHUB_REPOSITORY_OWNER, process.env.GGG_REPOSITORY);
+            const {pathToFileURL} = await import("node:url");
+            const filePath = pathToFileURL(`${process.env.GITHUB_WORKSPACE}/gitgitgadget/build/lib/delete-ci-test-branches.js`);
+            const {deleteBranches} = await import(filePath);
+            await deleteBranches(github, process.env.GITHUB_REPOSITORY_OWNER, process.env.GGG_REPOSITORY);
       if: env.GGG_REPOSITORY
