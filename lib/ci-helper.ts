@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as util from "util";
-import addressparser from "nodemailer/lib/addressparser";
+import addressparser from "nodemailer/lib/addressparser/index.js";
 import { ILintError, LintCommit } from "./commit-lint.js";
 import { commitExists, git, emptyTreeName } from "./git.js";
 import { GitNotes } from "./git-notes.js";
