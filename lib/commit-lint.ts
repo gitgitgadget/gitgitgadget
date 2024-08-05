@@ -1,4 +1,4 @@
-import { IPRCommit } from "./github-glue";
+import { IPRCommit } from "./github-glue.js";
 
 export interface ILintError {
     checkFailed: boolean;           // true if check failed

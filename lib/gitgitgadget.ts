@@ -1,12 +1,12 @@
-import { isDirectory } from "./fs-util";
-import { git, gitConfig } from "./git";
-import { GitNotes } from "./git-notes";
-import { IGitHubUser, IPullRequestInfo } from "./github-glue";
-import { PatchSeries, SendFunction } from "./patch-series";
-import { IPatchSeriesMetadata } from "./patch-series-metadata";
-import { PatchSeriesOptions } from "./patch-series-options";
-import { IConfig, getConfig } from "./project-config";
-import { ISMTPOptions, parseHeadersAndSendMail, parseMBox, sendMail } from "./send-mail";
+import { isDirectory } from "./fs-util.js";
+import { git, gitConfig } from "./git.js";
+import { GitNotes } from "./git-notes.js";
+import { IGitHubUser, IPullRequestInfo } from "./github-glue.js";
+import { PatchSeries, SendFunction } from "./patch-series.js";
+import { IPatchSeriesMetadata } from "./patch-series-metadata.js";
+import { PatchSeriesOptions } from "./patch-series-options.js";
+import { IConfig, getConfig } from "./project-config.js";
+import { ISMTPOptions, parseHeadersAndSendMail, parseMBox, sendMail } from "./send-mail.js";
 
 export interface IGitGitGadgetOptions {
     allowedUsers: string[];
