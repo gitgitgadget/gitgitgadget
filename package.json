@@ -9,6 +9,7 @@
     "lib": "lib",
     "test": "tests"
   },
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "cleanbranch": "node ./build/script/delete-test-branches.js",
@@ -45,6 +46,7 @@
     "@types/jsonwebtoken": "^9.0.6",
     "@types/mailparser": "^3.4.4",
     "@types/marked": "^6.0.0",
+    "@types/node": "^22.1.0",
     "@types/nodemailer": "^6.4.15",
     "@types/rfc2047": "^2.0.3",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
