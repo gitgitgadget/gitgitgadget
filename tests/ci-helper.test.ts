@@ -1,11 +1,14 @@
 import { afterAll, beforeAll, expect, jest, test } from "@jest/globals";
-import { CIHelper } from "../lib/ci-helper";
-import { GitNotes } from "../lib/git-notes";
-import { getConfig } from "../lib/gitgitgadget-config";
-import { GitHubGlue, IGitHubUser, IPRComment, IPRCommit, IPullRequestInfo, } from "../lib/github-glue";
-import { IMailMetadata } from "../lib/mail-metadata";
+import { fileURLToPath } from 'url';
+import { CIHelper } from "../lib/ci-helper.js";
+import { GitNotes } from "../lib/git-notes.js";
+import { getConfig } from "../lib/gitgitgadget-config.js";
+import { GitHubGlue, IGitHubUser, IPRComment, IPRCommit, IPullRequestInfo, } from "../lib/github-glue.js";
+import { IMailMetadata } from "../lib/mail-metadata.js";
 import { testSmtpServer } from "test-smtp-server";
-import { testCreateRepo, TestRepo } from "./test-lib";
+import { testCreateRepo, TestRepo } from "./test-lib.js";
+
+const sourceFileName = fileURLToPath(import.meta.url);
 
 jest.setTimeout(180000);
 
@@ -130,9 +133,9 @@ class TestCIHelper extends CIHelper {
 
 async function setupRepos(instance: string):
     Promise <{ worktree: TestRepo; gggLocal: TestRepo; gggRemote: TestRepo }> {
-    const worktree = await testCreateRepo(__filename, `-work-cmt${instance}`);
-    const gggLocal = await testCreateRepo(__filename, `-git-lcl${instance}`);
-    const gggRemote = await testCreateRepo(__filename, `-git-rmt${instance}`);
+    const worktree = await testCreateRepo(sourceFileName, `-work-cmt${instance}`);
+    const gggLocal = await testCreateRepo(sourceFileName, `-git-lcl${instance}`);
+    const gggRemote = await testCreateRepo(sourceFileName, `-git-rmt${instance}`);
 
     // re-route the URLs
     const url = `https://github.com/gitgitgadget/git`;
@@ -183,7 +186,7 @@ async function checkMsgId(messageId: string): Promise<boolean> {
 }
 
 testQ("identify merge that integrated some commit", async () => {
-    const repo = await testCreateRepo(__filename);
+    const repo = await testCreateRepo(sourceFileName);
 
     /*
      * Create a branch structure like this:
@@ -215,8 +218,8 @@ testQ("identify merge that integrated some commit", async () => {
 
 testQ("identify upstream commit", async () => {
     // initialize test worktree and gitgitgadget remote
-    const worktree = await testCreateRepo(__filename, "-worktree");
-    const gggRemote = await testCreateRepo(__filename, "-gitgitgadget");
+    const worktree = await testCreateRepo(sourceFileName, "-worktree");
+    const gggRemote = await testCreateRepo(sourceFileName, "-gitgitgadget");
 
     // re-route the URLs
     await worktree.git(["config", `url.${gggRemote.workDir}.insteadOf`,

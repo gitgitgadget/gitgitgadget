@@ -1,5 +1,5 @@
-import { emptyBlobName, git, revParse } from "./git";
-import { fromJSON, toJSON } from "./json-util";
+import { emptyBlobName, git, revParse } from "./git.js";
+import { fromJSON, toJSON } from "./json-util.js";
 
 export class GitNotes {
     public static readonly defaultNotesRef = "refs/notes/gitgitgadget";

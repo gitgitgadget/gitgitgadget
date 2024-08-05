@@ -1,7 +1,7 @@
 import { simpleParser, SimpleParserOptions } from "mailparser";
 import { createTransport, SendMailOptions } from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
-import { decode } from "rfc2047";
+import rfc2047  from "rfc2047";
 
 export interface IParsedMBox {
     body: string;
@@ -71,7 +71,7 @@ export async function parseMBox(mbox: string, gentle?: boolean): Promise<IParsed
                 )); break;
             case "date": date = value; break;
             case "fcc": break;
-            case "from": from = decode(value.trim()); break;
+            case "from": from = rfc2047.decode(value.trim()); break;
             case "message-id": messageId = value; break;
             case "subject": subject = value; break;
             case "to": to = value; break;

@@ -1,9 +1,9 @@
 import { Octokit } from "@octokit/rest";
 import { OctokitResponse } from "@octokit/types";
 import { beforeAll, expect, jest, test } from "@jest/globals";
-import { git, gitConfig } from "../lib/git";
-import { GitHubGlue, IGitHubUser, IPullRequestInfo } from "../lib/github-glue";
-import { pullRequestKey } from "../lib/pullRequestKey";
+import { git, gitConfig } from "../lib/git.js";
+import { GitHubGlue, IGitHubUser, IPullRequestInfo } from "../lib/github-glue.js";
+import { pullRequestKey } from "../lib/pullRequestKey.js";
 
 /*
 This test requires setup.  It will run successfully if setup has
