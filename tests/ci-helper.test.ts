@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, expect, jest, test } from "@jest/globals";
-import { CIHelper } from "../lib/ci-helper";
-import { GitNotes } from "../lib/git-notes";
-import { getConfig } from "../lib/gitgitgadget-config";
-import { GitHubGlue, IGitHubUser, IPRComment, IPRCommit, IPullRequestInfo, } from "../lib/github-glue";
-import { IMailMetadata } from "../lib/mail-metadata";
+import { CIHelper } from "../lib/ci-helper.js";
+import { GitNotes } from "../lib/git-notes.js";
+import { getConfig } from "../lib/gitgitgadget-config.js";
+import { GitHubGlue, IGitHubUser, IPRComment, IPRCommit, IPullRequestInfo, } from "../lib/github-glue.js";
+import { IMailMetadata } from "../lib/mail-metadata.js";
 import { testSmtpServer } from "test-smtp-server";
-import { testCreateRepo, TestRepo } from "./test-lib";
+import { testCreateRepo, TestRepo } from "./test-lib.js";
 
 jest.setTimeout(180000);
 

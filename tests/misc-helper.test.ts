@@ -1,7 +1,7 @@
 import { expect, jest, test } from "@jest/globals";
-import { git } from "../lib/git";
-import { getConfig } from "../lib/gitgitgadget-config";
-import { testCreateRepo, TestRepo } from "./test-lib";
+import { git } from "../lib/git.js";
+import { getConfig } from "../lib/gitgitgadget-config.js";
+import { testCreateRepo, TestRepo } from "./test-lib.js";
 import { execFile } from "child_process";
 import * as util from "util";
 

@@ -1,6 +1,6 @@
 /* eslint-disable max-len */
 import { expect, test } from "@jest/globals";
-import { md2text } from "../lib/markdown-renderer";
+import { md2text } from "../lib/markdown-renderer.js";
 
 const md = `# Welcome to GitGitGadget
 A paragraph with [links](https://gitgitgadget.github.io/), with

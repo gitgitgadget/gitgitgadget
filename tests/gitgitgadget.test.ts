@@ -1,11 +1,11 @@
 import { expect, jest, test } from "@jest/globals";
-import { git, gitCommandExists } from "../lib/git";
-import { GitNotes } from "../lib/git-notes";
-import { GitGitGadget, IGitGitGadgetOptions } from "../lib/gitgitgadget";
-import { getConfig } from "../lib/gitgitgadget-config";
-import { PatchSeries } from "../lib/patch-series";
-import { IPatchSeriesMetadata } from "../lib/patch-series-metadata";
-import { testCreateRepo } from "./test-lib";
+import { git, gitCommandExists } from "../lib/git.js";
+import { GitNotes } from "../lib/git-notes.js";
+import { GitGitGadget, IGitGitGadgetOptions } from "../lib/gitgitgadget.js";
+import { getConfig } from "../lib/gitgitgadget-config.js";
+import { PatchSeries } from "../lib/patch-series.js";
+import { IPatchSeriesMetadata } from "../lib/patch-series-metadata.js";
+import { testCreateRepo } from "./test-lib.js";
 
 // This test script might take quite a while to run
 jest.setTimeout(60000);

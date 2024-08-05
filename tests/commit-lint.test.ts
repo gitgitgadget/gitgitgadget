@@ -1,6 +1,6 @@
 import { expect, jest, test } from "@jest/globals";
-import { ILintError, ILintOptions, LintCommit } from "../lib/commit-lint";
-import { IPRCommit } from "../lib/github-glue";
+import { ILintError, ILintOptions, LintCommit } from "../lib/commit-lint.js";
+import { IPRCommit } from "../lib/github-glue.js";
 
 jest.setTimeout(180000);
 
