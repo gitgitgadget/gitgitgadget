@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tsc",
     "cleanbranch": "node ./build/script/delete-test-branches.js",
-    "lint": "eslint -c .eslintrc.js --ext .ts,.js \"{lib,script,tests,tests-config}/**/*.{ts,tsx,js}\"",
+    "lint": "eslint -c .eslintrc.cjs --ext .ts,.js \"{lib,script,tests,tests-config}/**/*.{ts,tsx,js}\"",
     "start": "node server.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --env=node",
     "test:clean": "jest --clearCache && npm test",
