@@ -1,6 +1,6 @@
-import { git } from "./git";
-import { GitNotes } from "./git-notes";
-import { IConfig, getConfig } from "./project-config";
+import { git } from "./git.js";
+import { GitNotes } from "./git-notes.js";
+import { IConfig, getConfig } from "./project-config.js";
 
 export class MailCommitMapping {
     public readonly config: IConfig = getConfig();

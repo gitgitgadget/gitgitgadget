@@ -1,15 +1,15 @@
 import addressparser from "nodemailer/lib/addressparser";
 import mimeFuncs from "nodemailer/lib/mime-funcs";
-import { commitExists, git, gitConfig, gitShortHash, revListCount, revParse, } from "./git";
-import { GitNotes } from "./git-notes";
-import { IGitGitGadgetOptions } from "./gitgitgadget";
-import { IMailMetadata } from "./mail-metadata";
-import { md2text } from "./markdown-renderer";
-import { IPatchSeriesMetadata } from "./patch-series-metadata";
-import { PatchSeriesOptions } from "./patch-series-options";
-import { IConfig, getConfig } from "./project-config";
-import { ProjectOptions } from "./project-options";
-import { getPullRequestKeyFromURL } from "./pullRequestKey";
+import { commitExists, git, gitConfig, gitShortHash, revListCount, revParse, } from "./git.js";
+import { GitNotes } from "./git-notes.js";
+import { IGitGitGadgetOptions } from "./gitgitgadget.js";
+import { IMailMetadata } from "./mail-metadata.js";
+import { md2text } from "./markdown-renderer.js";
+import { IPatchSeriesMetadata } from "./patch-series-metadata.js";
+import { PatchSeriesOptions } from "./patch-series-options.js";
+import { IConfig, getConfig } from "./project-config.js";
+import { ProjectOptions } from "./project-options.js";
+import { getPullRequestKeyFromURL } from "./pullRequestKey.js";
 
 export interface ILogger {
     log(message: string): void;

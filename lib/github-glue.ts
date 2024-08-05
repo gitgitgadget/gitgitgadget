@@ -1,7 +1,7 @@
 import addressparser from "nodemailer/lib/addressparser";
 import { Octokit } from "@octokit/rest";
-import { git, gitConfig } from "./git";
-import { getPullRequestKey, pullRequestKeyInfo, pullRequestKey } from "./pullRequestKey";
+import { git, gitConfig } from "./git.js";
+import { getPullRequestKey, pullRequestKeyInfo, pullRequestKey } from "./pullRequestKey.js";
 export { RequestError } from "@octokit/request-error";
 
 export interface IPullRequestInfo {

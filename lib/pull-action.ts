@@ -1,7 +1,7 @@
-import { CIHelper } from "./ci-helper";
-import { isDirectory } from "./fs-util";
-import { getConfig } from "./gitgitgadget-config";
-import { IConfig, loadConfig, setConfig } from "./project-config";
+import { CIHelper } from "./ci-helper.js";
+import { isDirectory } from "./fs-util.js";
+import { getConfig } from "./gitgitgadget-config.js";
+import { IConfig, loadConfig, setConfig } from "./project-config.js";
 import path from "path";
 
 export interface PRUpdateInterface {

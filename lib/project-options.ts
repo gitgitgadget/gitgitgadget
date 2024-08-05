@@ -1,5 +1,5 @@
-import { commitExists, git, revParse } from "./git";
-import { IConfig, getConfig, projectInfo } from "./project-config";
+import { commitExists, git, revParse } from "./git.js";
+import { IConfig, getConfig, projectInfo } from "./project-config.js";
 
 // For now, only the Git, Cygwin and BusyBox projects are supported
 export class ProjectOptions {
