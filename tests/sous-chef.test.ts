@@ -1,5 +1,6 @@
 import { expect, test } from "@jest/globals";
 import * as fs from "fs";
+import { SousChef } from "../lib/sous-chef.js";
 import { SousChef } from "../lib/sous-chef";
 
 const mboxFixturePath = `${__dirname}/fixtures/whats-cooking-2021-02-10.mbox`;

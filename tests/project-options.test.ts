@@ -1,10 +1,10 @@
 import { expect, jest, test } from "@jest/globals";
-import { isDirectory } from "../lib/fs-util";
-import { GitNotes } from "../lib/git-notes";
-import { getConfig } from "../lib/gitgitgadget-config";
-import { PatchSeries } from "../lib/patch-series";
-import { ProjectOptions } from "../lib/project-options";
-import { testCreateRepo } from "./test-lib";
+import { isDirectory } from "../lib/fs-util.js";
+import { GitNotes } from "../lib/git-notes.js";
+import { getConfig } from "../lib/gitgitgadget-config.js";
+import { PatchSeries } from "../lib/patch-series.js";
+import { ProjectOptions } from "../lib/project-options.js";
+import { testCreateRepo } from "./test-lib.js";
 
 // This test script might take quite a while to run
 jest.setTimeout(20000);

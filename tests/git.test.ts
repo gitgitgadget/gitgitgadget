@@ -1,6 +1,6 @@
 import { expect, jest, test } from "@jest/globals";
-import { git, gitConfig } from "../lib/git";
-import logger from "./logger";
+import { git, gitConfig } from "../lib/git.js";
+import logger from "./logger.js";
 
 jest.setTimeout(180000);
 

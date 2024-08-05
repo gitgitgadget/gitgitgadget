@@ -1,6 +1,6 @@
 import { expect, test } from "@jest/globals";
-import { MailArchiveGitHelper } from "../lib/mail-archive-helper";
-import { parseMBox, parseMBoxMessageIDAndReferences } from "../lib/send-mail";
+import { MailArchiveGitHelper } from "../lib/mail-archive-helper.js";
+import { parseMBox, parseMBoxMessageIDAndReferences } from "../lib/send-mail.js";
 
 const mbox0 =
     `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001

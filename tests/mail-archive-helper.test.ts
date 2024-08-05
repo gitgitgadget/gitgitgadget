@@ -1,13 +1,13 @@
 import { Octokit } from "@octokit/rest";
 import { OctokitResponse } from "@octokit/types";
 import { expect, jest, test } from "@jest/globals";
-import { GitNotes } from "../lib/git-notes";
-import { getConfig } from "../lib/gitgitgadget-config";
-import { GitHubGlue } from "../lib/github-glue";
-import { MailArchiveGitHelper, IGitMailingListMirrorState } from "../lib/mail-archive-helper";
-import { IMailMetadata } from "../lib/mail-metadata";
-import { setConfig } from "../lib/project-config";
-import { testCreateRepo } from "./test-lib";
+import { GitNotes } from "../lib/git-notes.js";
+import { getConfig } from "../lib/gitgitgadget-config.js";
+import { GitHubGlue } from "../lib/github-glue.js";
+import { MailArchiveGitHelper, IGitMailingListMirrorState } from "../lib/mail-archive-helper.js";
+import { IMailMetadata } from "../lib/mail-metadata.js";
+import { setConfig } from "../lib/project-config.js";
+import { testCreateRepo } from "./test-lib.js";
 
 /* eslint max-classes-per-file: ["error", 2] */
 

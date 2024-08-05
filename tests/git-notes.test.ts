@@ -1,9 +1,9 @@
 import { expect, jest, test } from "@jest/globals";
-import { isDirectory } from "../lib/fs-util";
-import { git, revParse } from "../lib/git";
-import { GitNotes } from "../lib/git-notes";
-import { IPatchSeriesMetadata } from "../lib/patch-series-metadata";
-import { testCreateRepo } from "./test-lib";
+import { isDirectory } from "../lib/fs-util.js";
+import { git, revParse } from "../lib/git.js";
+import { GitNotes } from "../lib/git-notes.js";
+import { IPatchSeriesMetadata } from "../lib/patch-series-metadata.js";
+import { testCreateRepo } from "./test-lib.js";
 
 // This test script might take quite a while to run
 jest.setTimeout(60000);

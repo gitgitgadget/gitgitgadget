@@ -1,11 +1,11 @@
 /* eslint-disable max-classes-per-file */
 import { expect, jest, test } from "@jest/globals";
-import { getConfig } from "../lib/gitgitgadget-config";
-import { git } from "../lib/git";
-import { GitNotes } from "../lib/git-notes";
-import { PatchSeries } from "../lib/patch-series";
-import { ProjectOptions } from "../lib/project-options";
-import { testCreateRepo } from "./test-lib";
+import { getConfig } from "../lib/gitgitgadget-config.js";
+import { git } from "../lib/git.js";
+import { GitNotes } from "../lib/git-notes.js";
+import { PatchSeries } from "../lib/patch-series.js";
+import { ProjectOptions } from "../lib/project-options.js";
+import { testCreateRepo } from "./test-lib.js";
 
 jest.setTimeout(60000);
 
