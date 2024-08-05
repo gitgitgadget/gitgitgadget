@@ -1,5 +1,5 @@
-import addressparser from "nodemailer/lib/addressparser";
-import mimeFuncs from "nodemailer/lib/mime-funcs";
+import addressparser from "nodemailer/lib/addressparser/index.js";
+import mimeFuncs from "nodemailer/lib/mime-funcs/index.js";
 import { commitExists, git, gitConfig, gitShortHash, revListCount, revParse, } from "./git.js";
 import { GitNotes } from "./git-notes.js";
 import { IGitGitGadgetOptions } from "./gitgitgadget.js";
