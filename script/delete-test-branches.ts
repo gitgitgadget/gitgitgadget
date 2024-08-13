@@ -1,8 +1,8 @@
 import { Octokit } from "@octokit/rest";
 import { Command } from "commander";
 import { deleteBranches,
-    deletionOptions } from "../lib/delete-ci-test-branches";
-import { GitHubGlue } from "../lib/github-glue";
+    deletionOptions } from "../lib/delete-ci-test-branches.js";
+import { GitHubGlue } from "../lib/github-glue.js";
 
 const description = `Clean up GitHubGlue test branches.
 

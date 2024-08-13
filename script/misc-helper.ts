@@ -1,16 +1,16 @@
 import { createAppAuth } from "@octokit/auth-app";
 import { Octokit } from "@octokit/rest";
 import { Command } from "commander";
-import { CIHelper } from "../lib/ci-helper";
-import { isDirectory } from "../lib/fs-util";
-import { git, gitConfig } from "../lib/git";
-import { IGitGitGadgetOptions, getVar } from "../lib/gitgitgadget";
-import { getConfig } from "../lib/gitgitgadget-config";
-import { GitHubGlue } from "../lib/github-glue";
-import { toPrettyJSON } from "../lib/json-util";
-import { IGitMailingListMirrorState, stateKey } from "../lib/mail-archive-helper";
-import { IPatchSeriesMetadata } from "../lib/patch-series-metadata";
-import { IConfig, loadConfig, setConfig } from "../lib/project-config";
+import { CIHelper } from "../lib/ci-helper.js";
+import { isDirectory } from "../lib/fs-util.js";
+import { git, gitConfig } from "../lib/git.js";
+import { IGitGitGadgetOptions, getVar } from "../lib/gitgitgadget.js";
+import { getConfig } from "../lib/gitgitgadget-config.js";
+import { GitHubGlue } from "../lib/github-glue.js";
+import { toPrettyJSON } from "../lib/json-util.js";
+import { IGitMailingListMirrorState, stateKey } from "../lib/mail-archive-helper.js";
+import { IPatchSeriesMetadata } from "../lib/patch-series-metadata.js";
+import { IConfig, loadConfig, setConfig } from "../lib/project-config.js";
 import path from "path";
 
 const commander = new Command();

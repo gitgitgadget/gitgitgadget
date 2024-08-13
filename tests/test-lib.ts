@@ -1,8 +1,10 @@
 import * as fs from "fs";
 import * as path from "path";
+import { fileURLToPath } from 'url';
 import * as util from "util";
-import { isDirectory, isFile } from "../lib/fs-util";
-import { git, IGitOptions, revParse } from "../lib/git";
+import { isDirectory, isFile } from "../lib/fs-util.js";
+import { git, IGitOptions, revParse } from "../lib/git.js";
+const dirName = path.dirname(fileURLToPath(import.meta.url));
 
 const mkdir = util.promisify(fs.mkdir);
 const readdir = util.promisify(fs.readdir);
@@ -139,7 +141,7 @@ export class TestRepo {
 
 export async function testCreateRepo(name: string, suffix?: string):
     Promise<TestRepo> {
-    let tmp = `${__dirname}/../.test-dir/`;
+    let tmp = `${dirName}/../.test-dir/`;
     if (!await isDirectory(tmp)) {
         await mkdir(tmp);
     }

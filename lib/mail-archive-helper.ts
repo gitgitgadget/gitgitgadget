@@ -1,14 +1,14 @@
 import { createHash } from "crypto";
-import { git, revParse } from "./git";
-import { GitNotes } from "./git-notes";
-import { IGitGitGadgetOptions } from "./gitgitgadget";
-import { GitHubGlue } from "./github-glue";
-import { IMailMetadata } from "./mail-metadata";
-import { IPatchSeriesMetadata } from "./patch-series-metadata";
-import { IConfig, getConfig } from "./project-config";
-import { getPullRequestKey } from "./pullRequestKey";
-import { IParsedMBox, parseMBox, parseMBoxMessageIDAndReferences } from "./send-mail";
-import { SousChef } from "./sous-chef";
+import { git, revParse } from "./git.js";
+import { GitNotes } from "./git-notes.js";
+import { IGitGitGadgetOptions } from "./gitgitgadget.js";
+import { GitHubGlue } from "./github-glue.js";
+import { IMailMetadata } from "./mail-metadata.js";
+import { IPatchSeriesMetadata } from "./patch-series-metadata.js";
+import { IConfig, getConfig } from "./project-config.js";
+import { getPullRequestKey } from "./pullRequestKey.js";
+import { IParsedMBox, parseMBox, parseMBoxMessageIDAndReferences } from "./send-mail.js";
+import { SousChef } from "./sous-chef.js";
 
 export const stateKey = "git@vger.kernel.org <-> GitGitGadget";
 const replyToThisURL = "https://github.com/gitgitgadget/gitgitgadget/wiki/ReplyToThis";

@@ -1,13 +1,15 @@
 /* eslint-disable max-classes-per-file */
 import { expect, jest, test } from "@jest/globals";
-import { getConfig } from "../lib/gitgitgadget-config";
-import { git } from "../lib/git";
-import { GitNotes } from "../lib/git-notes";
-import { PatchSeries } from "../lib/patch-series";
-import { ProjectOptions } from "../lib/project-options";
-import { testCreateRepo } from "./test-lib";
+import { fileURLToPath } from 'url';
+import { getConfig } from "../lib/gitgitgadget-config.js";
+import { git } from "../lib/git.js";
+import { GitNotes } from "../lib/git-notes.js";
+import { PatchSeries } from "../lib/patch-series.js";
+import { ProjectOptions } from "../lib/project-options.js";
+import { testCreateRepo } from "./test-lib.js";
 
 jest.setTimeout(60000);
+const sourceFileName = fileURLToPath(import.meta.url);
 
 getConfig();
 
@@ -431,7 +433,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         });
 
         test("test parsePullRequest()", async () => {
-            const repo = await testCreateRepo(__filename);
+            const repo = await testCreateRepo(sourceFileName);
             await git(["config", "gitgitgadget.workDir", repo.workDir], {
                 workDir: repo.workDir,
             });

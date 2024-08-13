@@ -1,13 +1,15 @@
 import { expect, jest, test } from "@jest/globals";
-import { git } from "../lib/git";
-import { getConfig } from "../lib/gitgitgadget-config";
-import { testCreateRepo, TestRepo } from "./test-lib";
+import { fileURLToPath } from 'url';
+import { git } from "../lib/git.js";
+import { getConfig } from "../lib/gitgitgadget-config.js";
+import { testCreateRepo, TestRepo } from "./test-lib.js";
 import { execFile } from "child_process";
 import * as util from "util";
 
 const execChild = util.promisify(execFile);
 
 jest.setTimeout(180000);
+const sourceFileName = fileURLToPath(import.meta.url);
 
 const config = getConfig();
 
@@ -24,9 +26,9 @@ const config = getConfig();
 // have objects present).
 
 async function setupRepos(instance: string): Promise<{ worktree: TestRepo; gggLocal: TestRepo; gggRemote: TestRepo }> {
-    const worktree = await testCreateRepo(__filename, `-work-cmt${instance}`);
-    const gggLocal = await testCreateRepo(__filename, `-git-lcl${instance}`);
-    const gggRemote = await testCreateRepo(__filename, `-git-rmt${instance}`);
+    const worktree = await testCreateRepo(sourceFileName, `-work-cmt${instance}`);
+    const gggLocal = await testCreateRepo(sourceFileName, `-git-lcl${instance}`);
+    const gggRemote = await testCreateRepo(sourceFileName, `-git-rmt${instance}`);
 
     // re-route the URLs
     const url = `https://github.com/${config.repo.owner}/${config.repo.name}`;

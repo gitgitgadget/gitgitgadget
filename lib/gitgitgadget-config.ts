@@ -1,4 +1,4 @@
-import { IConfig, setConfig } from "./project-config";
+import { IConfig, setConfig } from "./project-config.js";
 
 const defaultConfig: IConfig = {
     repo: {
