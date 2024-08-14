@@ -13,7 +13,7 @@ export async function isDirectory(path: string): Promise<boolean> {
         if ((await stat(path)).isDirectory()) {
             return true;
         }
-    } catch (reason) {
+    } catch (_reason) {
         /* it's okay */
     }
     return false;
@@ -30,7 +30,7 @@ export async function isFile(path: string): Promise<boolean> {
         if ((await stat(path)).isFile()) {
             return true;
         }
-    } catch (reason) {
+    } catch (_reason) {
         /* it's okay */
     }
     return false;

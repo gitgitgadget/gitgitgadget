@@ -23,7 +23,7 @@ export class GitNotes {
         const obj = await this.key2obj(key);
         try {
             return await this.notes("show", obj);
-        } catch (reason) {
+        } catch (_reason) {
             return undefined;
         }
     }
@@ -45,7 +45,7 @@ export class GitNotes {
                 await this.notes("add", "-m", key, this.notesRef);
                 // Remove the note to avoid clutter
                 await this.notes("remove", `${this.notesRef}^`);
-            } catch (reason) {
+            } catch (_reason) {
                 /*
                  * Apparently there is no notes ref yet. Initialize it, by
                  * annotating the empty blob and immediately removing the note.
