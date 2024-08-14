@@ -52,7 +52,7 @@ export interface IGitHubUser {
 
 export class GitHubGlue {
     public workDir: string;
-    protected client = new Octokit(); // add { log: console } to debug
+    protected client: Octokit = new Octokit(); // add { log: console } to debug
     protected authenticated?: string;
     protected owner: string;
     protected repo: string;
