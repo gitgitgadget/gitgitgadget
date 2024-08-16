@@ -56,11 +56,11 @@ export function git(args: string[], options?: IGitOptions | undefined):
                             });
                         }
                         linePromise.catch((reason) => {
-                            reject(reason);
+                            reject(reason as Error);
                             process.kill();
                         });
                     } catch (reason) {
-                        reject(reason);
+                        reject(reason as Error);
                         process.kill();
                         return false;
                     }
@@ -86,7 +86,7 @@ export function git(args: string[], options?: IGitOptions | undefined):
                     }
                     if (linePromise) {
                         linePromise.then(() => { resolve(""); })
-                            .catch((reason) => { reject(reason); });
+                            .catch((reason) => { reject(reason as Error); });
                     } else {
                         resolve("");
                     }
@@ -112,7 +112,7 @@ export function git(args: string[], options?: IGitOptions | undefined):
                         result.stdout : trimTrailingNewline(result.stdout));
             }
         }).catch((reason) => {
-            reject(reason);
+            reject(reason as Error);
         });
     });
 }

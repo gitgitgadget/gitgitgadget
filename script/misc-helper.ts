@@ -222,7 +222,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
             await ci.getGitGitGadgetOptions();
             process.stderr.write(`${command}: ${config.repo.owner}/${config.repo.name} already initialized\n`);
             process.exit(1);
-        } catch (error) {
+        } catch (_error) {
             const options: IGitGitGadgetOptions = { allowedUsers: [ commander.args[1] ] };
             await ci.notes.set("", options, true);
 

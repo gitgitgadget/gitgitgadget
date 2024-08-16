@@ -188,7 +188,7 @@ export class MailArchiveGitHelper {
                         const result = await this.githubGlue.addPRCommitComment(pullRequestURL, originalCommit,
                                                 this.gggNotes.workDir, fullComment, firstPatchLine);
                         issueCommentId = result.id;
-                    } catch (error) {
+                    } catch (_error) {
                         const commits = await this.githubGlue.getPRCommits(prKey.owner, prKey.pull_number);
                         const regarding = `${header.slice(0,-3)}, regarding ${originalCommit}${
                             commits.find(e => e.commit === originalCommit) ? "" : " (outdated)"}:\n\n`;
