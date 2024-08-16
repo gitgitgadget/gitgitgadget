@@ -246,7 +246,7 @@ export class CIHelper {
         let result = false;
         let optionsUpdated = false;
         for (const pullRequestURL in options.openPRs) {
-            if (!options.openPRs.hasOwnProperty(pullRequestURL)) {
+            if (!Object.prototype.hasOwnProperty.call(options.openPRs, pullRequestURL)) {
                 continue;
             }
             console.log(`Handling ${pullRequestURL}`);

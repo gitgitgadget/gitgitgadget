@@ -60,7 +60,7 @@ async function getExternalConfig(file: string): Promise<IConfig> {
 }
 
 function lintConfig(config: IConfig): void {
-    if (!config.hasOwnProperty("project")) {
+    if (!Object.prototype.hasOwnProperty.call(config, "project")) {
         throw new Error(`User configurations must have a 'project:'.  Not found in\n${
             JSON.stringify(config, null, 2)}`);
     }

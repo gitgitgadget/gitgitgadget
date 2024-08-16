@@ -89,7 +89,7 @@ test("pull requests", async () => {
         // branch/PR request that gets cleaned up separately.
 
         if (!process.env.GITHUB_WORKFLOW &&
-            !process.env.hasOwnProperty("system.definitionId")) {
+            !Object.prototype.hasOwnProperty.call(process.env, "system.definitionId")) {
             let pullRequestURL = "";
 
             oldPrs.map(pr => {

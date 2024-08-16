@@ -10,7 +10,7 @@ export class ProjectOptions {
         let to: string;
         let midUrlPrefix = " Message-ID: ";
 
-        if (config.hasOwnProperty("project")) {
+        if (Object.prototype.hasOwnProperty.call(config, "project")) {
             const project = config.project as projectInfo;
             to = `--to=${project.to}`;
             upstreamBranch = project.branch;

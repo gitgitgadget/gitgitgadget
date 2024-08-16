@@ -450,7 +450,7 @@ async function getExternalConfig(file: string): Promise<IConfig> {
     const filePath = path.resolve(file);
     const newConfig = await loadConfig(filePath);
 
-    if (!newConfig.hasOwnProperty("project")) {
+    if (!Object.prototype.hasOwnProperty.call(newConfig, "project")) {
         throw new Error(`User configurations must have a 'project:'.  Not found in ${filePath}`);
     }
 
