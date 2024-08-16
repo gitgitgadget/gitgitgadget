@@ -366,7 +366,7 @@ export class PatchSeries {
                 const onBehalfOf = i === 0 && senderName ? PatchSeries.encodeSender(senderName) :
                     authorMatch[2].replace(/ <.*>$/, "");
                 // Special-case GitGitGadget to send from  "<author> via GitGitGadget"
-                replaceSender = `\"${onBehalfOf.replace(/^"(.*)"$/, "$1").replace(/"/g, "\\\"")
+                replaceSender = `"${onBehalfOf.replace(/^"(.*)"$/, "$1").replace(/"/g, "\\\"")
                     } via ${this.config.mail.sender}" ${isGitGitGadget[1]}`;
             } else if (authorMatch[2] === thisAuthor) {
                 return;

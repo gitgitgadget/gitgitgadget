@@ -112,7 +112,7 @@ export async function deleteBranches(octocat: Octokit, owner: string,
         result.repository.refs.edges.map(ref => {
             const br = ref.node;
             const name = br.name;
-            const suffix = name.match(/ggg[_\-]test-branch-\S+?[\-_](.*)/);
+            const suffix = name.match(/ggg[_-]test-branch-\S+?[-_](.*)/);
 
             if (suffix && suffix[1] < expireDate) {
                 if (br.pulls.edges.length) {
