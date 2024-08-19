@@ -18,12 +18,12 @@ export class ProjectOptions {
             for (const user of project.cc) {
                 cc.push(user);
             }
-        } else if (await revParse(`${baseCommit}:git-gui.sh`, workDir) !== undefined) {
+        } else if ((await revParse(`${baseCommit}:git-gui.sh`, workDir)) !== undefined) {
             // Git GUI
             to = "--to=git@vger.kernel.org";
             cc.push("Pratyush Yadav <me@yadavpratyush.com>");
             upstreamBranch = "git-gui/master";
-        } else if (await revParse(`${baseCommit}:git.c`, workDir) !== undefined) {
+        } else if ((await revParse(`${baseCommit}:git.c`, workDir)) !== undefined) {
             // Git
             to = "--to=git@vger.kernel.org";
             // Do *not* Cc: Junio Hamano by default
@@ -35,12 +35,12 @@ export class ProjectOptions {
                 upstreamBranch = "upstream/master";
             }
             midUrlPrefix = "https://lore.kernel.org/git/";
-        } else if (await revParse(`${baseCommit}:winsup`, workDir) !== undefined) {
+        } else if ((await revParse(`${baseCommit}:winsup`, workDir)) !== undefined) {
             // Cygwin
             to = "--to=cygwin-patches@cygwin.com";
             upstreamBranch = "cygwin/master";
             midUrlPrefix = "https://www.mail-archive.com/search?l=cygwin-patches@cygwin.com&q=";
-        } else if (await revParse(`${baseCommit}:include/busybox.h`, workDir) !== undefined) {
+        } else if ((await revParse(`${baseCommit}:include/busybox.h`, workDir)) !== undefined) {
             // BusyBox
             to = "--to=busybox@busybox.net";
             upstreamBranch = "busybox/master";
@@ -58,8 +58,7 @@ export class ProjectOptions {
             upstreamBranch = basedOn;
         }
 
-        if (!baseCommit &&
-            await git(["rev-list", branchName + ".." + upstreamBranch], { workDir })) {
+        if (!baseCommit && (await git(["rev-list", branchName + ".." + upstreamBranch], { workDir }))) {
             throw new Error(`Branch ${branchName} is not rebased to ${upstreamBranch}`);
         }
 
