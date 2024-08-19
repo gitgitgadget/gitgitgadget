@@ -18,28 +18,28 @@ const defaultConfig: IConfig = {
         branch: "master",
         host: "lore.kernel.org",
         url: "https://lore.kernel.org/git/",
-        descriptiveName: "lore.kernel/git"
+        descriptiveName: "lore.kernel/git",
     },
     mail: {
         author: "GitGitGadget",
-        sender: "GitGitGadget"
+        sender: "GitGitGadget",
     },
     app: {
         appID: 12836,
         installationID: 195971,
         name: "gitgitgadget",
         displayName: "GitGitGadget",
-        altname: "gitgitgadget-git"
+        altname: "gitgitgadget-git",
     },
     lint: {
         maxCommitsIgnore: [
-            "https://github.com/gitgitgadget/git/pull/923"
+            "https://github.com/gitgitgadget/git/pull/923",
         ],
         maxCommits: 30,
     },
     user: {
         allowUserAsLogin: false,
-    }
+    },
 };
 
 export default defaultConfig;
