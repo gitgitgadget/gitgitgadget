@@ -20,7 +20,7 @@ export interface IGitMailingListMirrorState {
 export class MailArchiveGitHelper {
     public static async get(gggNotes: GitNotes, mailArchiveGitDir: string, githubGlue: GitHubGlue, branch: string):
         Promise<MailArchiveGitHelper> {
-        const state: IGitMailingListMirrorState = await gggNotes.get<IGitMailingListMirrorState>(stateKey) || {};
+        const state: IGitMailingListMirrorState = (await gggNotes.get<IGitMailingListMirrorState>(stateKey)) || {};
         return new MailArchiveGitHelper(gggNotes, mailArchiveGitDir, githubGlue, state, branch);
     }
 
@@ -71,9 +71,7 @@ export class MailArchiveGitHelper {
         const keys: Set<string> = new Set<string>();
         (await git(["ls-tree", "-r", `${this.gggNotes.notesRef}:`],
                    { workDir: this.gggNotes.workDir })).split("\n")
-                .map((line: string) => {
-                    keys.add(line.substring(53).replace(/\//g, ""));
-                });
+            .map((line: string) => { keys.add(line.substring(53).replace(/\//g, "")); });
         const seen = (messageID: string): boolean => {
             return keys.has(MailArchiveGitHelper.hashKey(messageID));
         };
@@ -126,100 +124,98 @@ export class MailArchiveGitHelper {
         };
 
         const mboxHandler = async (mbox: string): Promise<void> => {
-                const parsedMbox = await parseMBox(mbox, true);
+            const parsedMbox = await parseMBox(mbox, true);
 
-                if (!parsedMbox.headers) {
-                    throw new Error(`Could not parse ${mbox}`);
-                }
-                const parsed = parseMBoxMessageIDAndReferences(parsedMbox);
+            if (!parsedMbox.headers) {
+                throw new Error(`Could not parse ${mbox}`);
+            }
+            const parsed = parseMBoxMessageIDAndReferences(parsedMbox);
 
-                if (parsedMbox.subject?.match(/^What's cooking in git.git /) &&
-                    parsedMbox.from === "Junio C Hamano <gitster@pobox.com>") {
-                    return handleWhatsCooking(mbox);
-                }
+            if (parsedMbox.subject?.match(/^What's cooking in git.git /) &&
+                parsedMbox.from === "Junio C Hamano <gitster@pobox.com>") {
+                return handleWhatsCooking(mbox);
+            }
 
-                if (seen(parsed.messageID)) {
-                    console.log(`Already handled: ${parsed.messageID}`);
-                    return;
-                }
+            if (seen(parsed.messageID)) {
+                console.log(`Already handled: ${parsed.messageID}`);
+                return;
+            }
 
-                let pullRequestURL: string | undefined;
-                let originalCommit: string | undefined;
-                let issueCommentId: number | undefined;
-                let firstPatchLine: number | undefined;
-                for (const reference of parsed.references.filter(seen)) {
-                    const data = await this.gggNotes.get<IMailMetadata>(reference);
-                    if (data && data.pullRequestURL) {
-                        if (prFilter && !prFilter(data.pullRequestURL)) {
-                            continue;
-                        }
-                        /* Cover letters were recorded with their tip commits */
-                        const commit = reference.match(/^pull/) ? undefined : data.originalCommit;
-                        if (!pullRequestURL || (!originalCommit && commit) ||
-                            (!issueCommentId && data.issueCommentId)) {
-                            pullRequestURL = data.pullRequestURL;
-                            issueCommentId = data.issueCommentId;
-                            firstPatchLine = data.firstPatchLine;
-                            originalCommit = commit;
-                        }
+            let pullRequestURL: string | undefined;
+            let originalCommit: string | undefined;
+            let issueCommentId: number | undefined;
+            let firstPatchLine: number | undefined;
+            for (const reference of parsed.references.filter(seen)) {
+                const data = await this.gggNotes.get<IMailMetadata>(reference);
+                if (data && data.pullRequestURL) {
+                    if (prFilter && !prFilter(data.pullRequestURL)) {
+                        continue;
+                    }
+                    /* Cover letters were recorded with their tip commits */
+                    const commit = reference.match(/^pull/) ? undefined : data.originalCommit;
+                    if (!pullRequestURL || (!originalCommit && commit) || (!issueCommentId && data.issueCommentId)) {
+                        pullRequestURL = data.pullRequestURL;
+                        issueCommentId = data.issueCommentId;
+                        firstPatchLine = data.firstPatchLine;
+                        originalCommit = commit;
                     }
                 }
-                if (!pullRequestURL) {
-                    return;
+            }
+            if (!pullRequestURL) {
+                return;
+            }
+            console.log(`Message-ID ${parsed.messageID
+                        } (length ${mbox.length
+                        }) for PR ${pullRequestURL
+                        }, commit ${originalCommit
+                        }, comment ID: ${issueCommentId}`);
+
+            const archiveURL = `${this.config.mailrepo.url}${parsed.messageID}`;
+            const header = `[On the Git mailing list](${archiveURL}), ${
+                parsedMbox.from ? parsedMbox.from.replace(/ *<.*>/, "") : "Somebody"
+                } wrote ([reply to this](${replyToThisURL})):\n\n`;
+            const comment = MailArchiveGitHelper.mbox2markdown(parsedMbox);
+            const fullComment = header + comment;
+            const prKey = getPullRequestKey(pullRequestURL);
+
+            if (issueCommentId) {
+                await this.githubGlue.addPRCommentReply(pullRequestURL, issueCommentId, fullComment);
+            } else if (originalCommit) {
+                try {
+                    const result = await this.githubGlue.addPRCommitComment(pullRequestURL, originalCommit,
+                                            this.gggNotes.workDir, fullComment, firstPatchLine);
+                    issueCommentId = result.id;
+                } catch (_error) {
+                    const commits = await this.githubGlue.getPRCommits(prKey.owner, prKey.pull_number);
+                    const regarding = `${header.slice(0, -3)}, regarding ${originalCommit}${
+                        commits.find((e) => e.commit === originalCommit) ? "" : " (outdated)"}:\n\n`;
+                    await this.githubGlue.addPRComment(pullRequestURL, regarding + comment);
+                    originalCommit = undefined;
                 }
-                console.log(`Message-ID ${parsed.messageID
-                            } (length ${mbox.length
-                            }) for PR ${pullRequestURL
-                            }, commit ${originalCommit
-                            }, comment ID: ${issueCommentId}`);
+            } else {
+                /*
+                 * We will not use the ID of this comment, as it is an
+                 * issue comment, really, not a Pull Request comment.
+                 */
+                await this.githubGlue.addPRComment(pullRequestURL, fullComment);
+            }
 
-                const archiveURL = `${this.config.mailrepo.url}${parsed.messageID}`;
-                const header = `[On the Git mailing list](${archiveURL}), ${
-                    parsedMbox.from ? parsedMbox.from.replace(/ *<.*>/, "") : "Somebody"
-                     } wrote ([reply to this](${replyToThisURL})):\n\n`;
-                const comment = MailArchiveGitHelper.mbox2markdown(parsedMbox);
-                const fullComment = header + comment;
-                const prKey = getPullRequestKey(pullRequestURL);
+            await this.githubGlue.addPRCc(pullRequestURL, parsedMbox.from || "");
 
-                if (issueCommentId) {
-                    await this.githubGlue.addPRCommentReply(pullRequestURL, issueCommentId, fullComment);
-                } else if (originalCommit) {
-                    try {
-                        const result = await this.githubGlue.addPRCommitComment(pullRequestURL, originalCommit,
-                                                this.gggNotes.workDir, fullComment, firstPatchLine);
-                        issueCommentId = result.id;
-                    } catch (_error) {
-                        const commits = await this.githubGlue.getPRCommits(prKey.owner, prKey.pull_number);
-                        const regarding = `${header.slice(0,-3)}, regarding ${originalCommit}${
-                            commits.find(e => e.commit === originalCommit) ? "" : " (outdated)"}:\n\n`;
-                        await this.githubGlue.addPRComment(pullRequestURL, regarding + comment);
-                        originalCommit = undefined;
-                    }
-                } else {
-                    /*
-                     * We will not use the ID of this comment, as it is an
-                     * issue comment, really, not a Pull Request comment.
-                     */
-                    await this.githubGlue.addPRComment(pullRequestURL, fullComment);
-                }
+            await this.gggNotes.set(parsed.messageID, {
+                issueCommentId,
+                messageID: parsed.messageID,
+                originalCommit,
+                pullRequestURL,
+            } as IMailMetadata);
 
-                await this.githubGlue.addPRCc(pullRequestURL, parsedMbox.from || "");
-
-                await this.gggNotes.set(parsed.messageID, {
-                    issueCommentId,
-                    messageID: parsed.messageID,
-                    originalCommit,
-                    pullRequestURL,
-                } as IMailMetadata);
-
-                /* It is now known */
-                keys.add(MailArchiveGitHelper.hashKey(parsed.messageID));
-            };
+            /* It is now known */
+            keys.add(MailArchiveGitHelper.hashKey(parsed.messageID));
+        };
 
         let buffer = "";
         let counter = 0;
         const lineHandler = async (line: string): Promise<void> => {
-
             if (line.startsWith("@@ ")) {
                 const match = line.match(/^@@ -(\d+,)?\d+ \+(\d+,)?(\d+)?/);
                 if (match) {
