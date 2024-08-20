@@ -1,7 +1,7 @@
 import { simpleParser, SimpleParserOptions } from "mailparser";
 import { createTransport, SendMailOptions } from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
-import rfc2047  from "rfc2047";
+import rfc2047 from "rfc2047";
 
 export interface IParsedMBox {
     body: string;
@@ -22,10 +22,8 @@ export interface ISMTPOptions {
     smtpPass: string;
 }
 
-export async function parseHeadersAndSendMail(mbox: string,
-                                              smtpOptions: ISMTPOptions):
-    Promise<string> {
-    return await sendMail( await parseMBox(mbox), smtpOptions);
+export async function parseHeadersAndSendMail(mbox: string, smtpOptions: ISMTPOptions): Promise<string> {
+    return await sendMail(await parseMBox(mbox), smtpOptions);
 }
 
 /**
@@ -48,8 +46,8 @@ export async function parseMBox(mbox: string, gentle?: boolean): Promise<IParsed
 
     const options: SimpleParserOptions = {
         skipHtmlToText: true,
-        skipTextLinks : true,
-        skipTextToHtml: true
+        skipTextLinks: true,
+        skipTextToHtml: true,
     };
 
     const parsed = await simpleParser(mbox, options);
@@ -66,9 +64,7 @@ export async function parseMBox(mbox: string, gentle?: boolean): Promise<IParsed
         const value = valueSet[2];
 
         switch (entry.key) {
-            case "cc": cc = (cc || []).concat(value.replace(/\r?\n/g, " ").split(", ").map(item =>
-                    item.trim()
-                )); break;
+            case "cc": cc = (cc || []).concat(value.replace(/\r?\n/g, " ").split(", ").map(item => item.trim())); break;
             case "date": date = value; break;
             case "fcc": break;
             case "from": from = rfc2047.decode(value.trim()); break;
@@ -97,8 +93,7 @@ export async function parseMBox(mbox: string, gentle?: boolean): Promise<IParsed
     };
 }
 
-export function parseMBoxMessageIDAndReferences(parsed: IParsedMBox):
-        {messageID: string; references: string[]} {
+export function parseMBoxMessageIDAndReferences(parsed: IParsedMBox): { messageID: string; references: string[] } {
     const references: string[] = [];
     const seen: Set<string> = new Set<string>();
     /*
@@ -111,8 +106,7 @@ export function parseMBoxMessageIDAndReferences(parsed: IParsedMBox):
      * using regular expressions due to its recursive nature) but seems to be
      * good enough for the Git mailing list.
      */
-    const msgIdRegex =
-        /^\s*<([^>]+)>(\s*|,)(\([^")]*("[^"]*")?\)\s*|\([^)]*\)$)?(<.*)?$/;
+    const msgIdRegex = /^\s*<([^>]+)>(\s*|,)(\([^")]*("[^"]*")?\)\s*|\([^)]*\)$)?(<.*)?$/;
     for (const header of parsed.headers ?? []) {
         if (header.key.match(/In-Reply-To|References/i)) {
             let value: string = header.value.replace(/[\r\n]/g, " ");
@@ -142,9 +136,7 @@ export function parseMBoxMessageIDAndReferences(parsed: IParsedMBox):
     return { messageID: messageID[1], references };
 }
 
-export async function sendMail(mail: IParsedMBox,
-                               smtpOptions: ISMTPOptions):
-    Promise<string> {
+export async function sendMail(mail: IParsedMBox, smtpOptions: ISMTPOptions): Promise<string> {
     const transportOpts: SMTPTransport.Options = {
         auth: {
             pass: smtpOptions.smtpPass,
@@ -156,13 +148,12 @@ export async function sendMail(mail: IParsedMBox,
 
     if (smtpOptions.smtpOpts) {
         // Add quoting for JSON.parse
-        const smtpOpts = smtpOptions.smtpOpts
-            .replace(/([ {])([a-zA-Z0-9.]+?) *?:/g,"$1\"$2\":");
+        const smtpOpts = smtpOptions.smtpOpts.replace(/([ {])([a-zA-Z0-9.]+?) *?:/g,"$1\"$2\":");
         Object.assign(transportOpts, JSON.parse(smtpOpts));
     }
 
     return new Promise<string>((resolve, reject) => {
-        const transporter = createTransport( transportOpts );
+        const transporter = createTransport(transportOpts);
 
         // setup email data with unicode symbols
         const mailOptions: SendMailOptions = {
@@ -174,8 +165,7 @@ export async function sendMail(mail: IParsedMBox,
             raw: mail.raw,
         };
 
-        transporter.sendMail(mailOptions, (error, info: { messageId: string })
-            : void => {
+        transporter.sendMail(mailOptions, (error, info: { messageId: string }): void => {
             if (error) {
                 reject(error);
             } else {

@@ -7,12 +7,12 @@ export type pullRequestKey = {
     owner: string;
     repo: string;
     pull_number: number;
-}
+};
 
 export type pullRequestKeyInfo = string | pullRequestKey;
 
 export function getPullRequestKey(pullRequest: pullRequestKeyInfo): pullRequestKey {
-    return typeof(pullRequest) === "string" ? getPullRequestKeyFromURL(pullRequest) : pullRequest;
+    return typeof pullRequest === "string" ? getPullRequestKeyFromURL(pullRequest) : pullRequest;
 }
 
 export function getPullRequestKeyFromURL(pullRequestURL: string): pullRequestKey {
@@ -21,6 +21,5 @@ export function getPullRequestKeyFromURL(pullRequestURL: string): pullRequestKey
         throw new Error(`Unrecognized PR URL: "${pullRequestURL}`);
     }
 
-    return {owner: match[1], repo: match[2], pull_number: parseInt(match[3], 10)};
+    return { owner: match[1], repo: match[2], pull_number: parseInt(match[3], 10) };
 }
-
