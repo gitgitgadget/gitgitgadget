@@ -70,8 +70,7 @@ export class GitGitGadget {
 
         const [options, allowedUsers] = await GitGitGadget.readOptions(notes);
 
-        return new GitGitGadget(notes, options, allowedUsers,
-                                { smtpHost, smtpOpts, smtpPass, smtpUser },
+        return new GitGitGadget(notes, options, allowedUsers, { smtpHost, smtpOpts, smtpPass, smtpUser },
                                 publishTagsAndNotesToRemote);
     }
 
@@ -144,7 +143,7 @@ export class GitGitGadget {
             throw new Error(`User ${vouchingUser} lacks permission for this.`);
         }
 
-        if (!this.isUserAllowed(user)) {
+        if (!this.allowedUsers.delete(user)) {
             return false;
         }
         for (let i = 0; i < this.options.allowedUsers.length; i++) {
@@ -153,7 +152,7 @@ export class GitGitGadget {
                 break;
             }
         }
-        this.allowedUsers.delete(user);
+
         await this.notes.set("", this.options, true);
         await this.pushNotesRef();
         return true;
@@ -260,16 +259,13 @@ export class GitGitGadget {
         await this.updateNotesAndPullRef(pr.baseOwner, pr.number, previousTag);
 
         const series =
-            await PatchSeries.getFromNotes(this.notes, pr.pullRequestURL,
-                                           pr.title, pr.body, pr.baseLabel,
-                                           pr.baseCommit, pr.headLabel,
-                                           pr.headCommit, options,
+            await PatchSeries.getFromNotes(this.notes, pr.pullRequestURL, pr.title, pr.body, pr.baseLabel,
+                                           pr.baseCommit, pr.headLabel, pr.headCommit, options,
                                            userInfo.name, userInfo.email);
 
         const patchSeriesMetadata =
-            await series.generateAndSend(console, send,
-                                         this.publishTagsAndNotesToRemote,
-                                         pr.pullRequestURL, new Date());
+            await series.generateAndSend(console, send, this.publishTagsAndNotesToRemote, pr.pullRequestURL,
+                                         new Date());
         return patchSeriesMetadata;
     }
 }
