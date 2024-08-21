@@ -19,12 +19,10 @@ function trimTrailingNewline(str: string): string {
     return str.replace(/\r?\n$/, "");
 }
 
-export function git(args: string[], options?: IGitOptions | undefined):
-    Promise<string> {
+export function git(args: string[], options?: IGitOptions | undefined): Promise<string> {
     const workDir = options && options.workDir || ".";
     if (options && options.trace) {
-        process.stderr.write(`Called 'git ${args.join(" ")}' in '${workDir
-                            }':\n${new Error().stack}\n`);
+        process.stderr.write(`Called 'git ${args.join(" ")}' in '${workDir}':\n${new Error().stack}\n`);
     }
 
     return new Promise<string>((resolve, reject) => {
@@ -94,18 +92,14 @@ export function git(args: string[], options?: IGitOptions | undefined):
             };
         }
 
-        GitProcess.exec(args, workDir, options as IGitExecutionOptions)
-        .then((result) => {
+        GitProcess.exec(args, workDir, options as IGitExecutionOptions).then((result) => {
             if (result.exitCode) {
-                reject(new Error(`git ${args.join(" ")
-                                } failed: ${result.exitCode
-                                },\n${result.stderr}`));
+                reject(new Error(`git ${args.join(" ")} failed: ${result.exitCode},\n${result.stderr}`));
                 return;
             }
             if (options && options.trace) {
-                process.stderr.write(`Output of 'git ${args.join(" ")
-                                    }':\nstderr: ${result.stderr
-                                    }\nstdout: ${result.stdout}\n`);
+                process.stderr.write(`Output of 'git ${args.join(" ")}':\nstderr: ${result.stderr}\nstdout: ${
+                                    result.stdout}\n`);
             }
             if (!options?.lineHandler) { // let callback resolve the promise
                 resolve(!options || options.trimTrailingNewline === false ?
@@ -129,11 +123,8 @@ export function git(args: string[], options?: IGitOptions | undefined):
  *    the working directory in which to run `git rev-parse`
  * @returns { string | undefined } the full SHA-1, or undefined
  */
-export async function revParse(argument: string, workDir?: string):
-    Promise<string | undefined> {
-    const result = await GitProcess.exec(["rev-parse", "--verify", "-q",
-                                          argument],
-                                         workDir || ".");
+export async function revParse(argument: string, workDir?: string): Promise<string | undefined> {
+    const result = await GitProcess.exec(["rev-parse", "--verify", "-q", argument], workDir || ".");
     return result.exitCode ? undefined : trimTrailingNewline(result.stdout);
 }
 
@@ -145,9 +136,7 @@ export async function revParse(argument: string, workDir?: string):
  *    the working directory in which to run `git rev-parse`
  * @returns number the number of commits in the commit range
  */
-export async function revListCount(rangeArgs: string | string[],
-                                   workDir = "."):
-    Promise<number> {
+export async function revListCount(rangeArgs: string | string[], workDir = "."): Promise<number> {
     const gitArgs: string[] = ["rev-list", "--count"];
     if (typeof(rangeArgs) === "string") {
         gitArgs.push(rangeArgs);
@@ -169,13 +158,11 @@ export async function revListCount(rangeArgs: string | string[],
  * @param {string} workDir the Git worktree where to look
  * @returns {boolean} whether the commit exists
  */
-export async function commitExists(commit: string, workDir: string):
-    Promise<boolean> {
+export async function commitExists(commit: string, workDir: string): Promise<boolean> {
     return await revParse(`${commit}^{commit}`, workDir) !== undefined;
 }
 
-export async function gitConfig(key: string, workDir?: string):
-    Promise<string | undefined> {
+export async function gitConfig(key: string, workDir?: string): Promise<string | undefined> {
     const result = await GitProcess.exec(["config", key], workDir || ".");
     if (result.exitCode !== 0) {
         return undefined;
@@ -187,13 +174,11 @@ export async function gitConfigForEach(key: string,
                                        callbackfn: (value: string) => void,
                                        workDir?: string):
     Promise<void> {
-    const result = await GitProcess.exec(["config", "--get-all", key],
-                                         workDir || ".");
+    const result = await GitProcess.exec(["config", "--get-all", key], workDir || ".");
     result.stdout.split(/\r?\n/).map(callbackfn);
 }
 
-export async function gitCommandExists(command: string, workDir?: string):
-    Promise<boolean> {
+export async function gitCommandExists(command: string, workDir?: string): Promise<boolean> {
     const result = await GitProcess.exec([command, "-h"], workDir || ".");
     return result.exitCode === 129;
 }

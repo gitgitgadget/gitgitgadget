@@ -24,7 +24,8 @@ test("set/get notes", async () => {
         workDir: repo.workDir,
     })).toMatch(/\n\+hello$/);
 
-    const pullRequestURL = "https://github.com/gitgitgadget/git/pull/1";
+    const gitURL = "https://github.com/gitgitgadget/git";
+    const pullRequestURL = `${gitURL}/git/pull/1`;
     const metadata: IPatchSeriesMetadata = {
         baseCommit: "0123456789012345678901234567890123456789",
         baseLabel: "gitgitgadget:test",
@@ -45,4 +46,18 @@ test("set/get notes", async () => {
     expect(await notes.appendCommitNote(commit as string, "2")).toEqual("");
     expect(await notes.getCommitNotes(commit as string)).toEqual("1\n\n2");
     expect(await notes.getLastCommitNote(commit as string)).toEqual("2");
+
+    // error tests for update
+    await expect(notes.update(gitURL)).resolves.toBeUndefined();
+    const notesM2C = new GitNotes(repo.workDir, "refs/notes/mail-to-commit");
+    await expect(notesM2C.update(gitURL)).resolves.toBeUndefined();
+    const notesC2M = new GitNotes(repo.workDir, "refs/notes/commit-to-mail");
+    await expect(notesC2M.update(gitURL)).resolves.toBeUndefined();
+    const notesBad = new GitNotes(repo.workDir, "unknown");
+    await expect(notesBad.update(gitURL)).rejects.toThrow(/know how to update/);
+    const notesNotM2Chead = new GitNotes(repo.workDir, "xrefs/notes/mail-to-commit");
+    await expect(notesNotM2Chead.update(gitURL)).rejects.toThrow(/know how to update/);
+    const notesNotM2Ctail = new GitNotes(repo.workDir, "refs/notes/mail-to-commitx");
+    await expect(notesNotM2Ctail.update(gitURL)).rejects.toThrow(/know how to update/);
+
 });

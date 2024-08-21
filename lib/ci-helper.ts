@@ -122,9 +122,9 @@ export class CIHelper {
         }
         await this.notes.set(messageID, mailMeta, true);
 
-        if (!this.testing && mailMeta.pullRequestURL && mailMeta.pullRequestURL.startsWith(this.urlBase) ) {
-            await this.github.annotateCommit(mailMeta.originalCommit, upstreamCommit,
-                this.config.repo.owner, this.config.repo.baseOwner);
+        if (!this.testing && mailMeta.pullRequestURL && mailMeta.pullRequestURL.startsWith(this.urlBase)) {
+            await this.github.annotateCommit(mailMeta.originalCommit, upstreamCommit, this.config.repo.owner,
+                this.config.repo.baseOwner);
         }
 
         return true;
@@ -134,12 +134,10 @@ export class CIHelper {
         if (!this.gggNotesUpdated) {
             const args: string[] = [];
 
-            args.push(...this.config.repo.branches.map(branch =>
+            args.push(...this.config.repo.branches.map((branch) =>
                 `+refs/heads/${branch}:refs/remotes/upstream/${branch}`));
 
-            await git(["fetch", this.urlRepo, "--tags",
-                       "+refs/notes/gitgitgadget:refs/notes/gitgitgadget",
-                       ...args],
+            await git(["fetch", this.urlRepo, "--tags", "+refs/notes/gitgitgadget:refs/notes/gitgitgadget", ...args],
                       { workDir: this.workDir });
             this.gggNotesUpdated = true;
         }
@@ -150,9 +148,7 @@ export class CIHelper {
         }
 
         const commitsInSeen: Set<string> = new Set<string>(
-            (await git(["rev-list", "--no-merges",
-                        "^refs/remotes/upstream/maint~100",
-                        "refs/remotes/upstream/seen"],
+            (await git(["rev-list", "--no-merges", "^refs/remotes/upstream/maint~100", "refs/remotes/upstream/seen"],
                        { workDir: this.workDir })).split("\n"),
         );
         let result = false;
@@ -166,8 +162,7 @@ export class CIHelper {
         const heads = new Set<string>();
         for (const pullRequestURL of Object.keys(options.openPRs)) {
             const info = await this.getPRMetadata(pullRequestURL);
-            if (info === undefined || info.latestTag === undefined ||
-                info.baseCommit === undefined ||
+            if (info === undefined || info.latestTag === undefined || info.baseCommit === undefined ||
                 info.headCommit === undefined || info.baseLabel === undefined ||
                 info.baseLabel.match(/^gitgitgadget:git-gui\//)) {
                 continue;
@@ -209,8 +204,7 @@ export class CIHelper {
             const range1 = `${await octopus(bases)}..${await octopus(heads)}`;
             const range2 = "refs/remotes/upstream/maint~100..refs/remotes/upstream/seen";
             const start = Date.now();
-            const out = await git(["-c", "core.abbrev=40", "range-diff", "-s",
-                                   range1, range2],
+            const out = await git(["-c", "core.abbrev=40", "range-diff", "-s", range1, range2],
                                   { workDir: this.workDir });
             const duration = Date.now() - start;
             if (duration > 2000)
@@ -246,7 +240,7 @@ export class CIHelper {
         let result = false;
         let optionsUpdated = false;
         for (const pullRequestURL in options.openPRs) {
-            if (!options.openPRs.hasOwnProperty(pullRequestURL)) {
+            if (!Object.prototype.hasOwnProperty.call(options.openPRs, pullRequestURL)) {
                 continue;
             }
             console.log(`Handling ${pullRequestURL}`);
@@ -301,7 +295,7 @@ export class CIHelper {
         }
 
         const headMessageID = await this.getMessageIdForOriginalCommit(prMeta.headCommit);
-        const headMeta = headMessageID && await this.getMailMetadata(headMessageID);
+        const headMeta = headMessageID && (await this.getMailMetadata(headMessageID));
         const tipCommitInGitGit = headMeta && headMeta.commitInGitGit;
         if (!tipCommitInGitGit) {
             return [false, false];
@@ -320,8 +314,7 @@ export class CIHelper {
         const maintainerRepo = `${this.config.repo.owner}/${this.config.repo.name}`;
 
         let gitsterBranch: string | undefined =
-            await git(["for-each-ref", `--points-at=${tipCommitInGitGit}`,
-                       "--format=%(refname)", maintainerBranch],
+            await git(["for-each-ref", `--points-at=${tipCommitInGitGit}`, "--format=%(refname)", maintainerBranch],
                       { workDir: this.workDir });
         if (gitsterBranch) {
             const newline = gitsterBranch.indexOf("\n");
@@ -427,9 +420,9 @@ export class CIHelper {
     public async identifyMergeCommit(upstreamBranch: string, integratedCommit: string): Promise<string | undefined> {
         await this.maybeUpdateMail2CommitMap();
 
-        const revs =  await git(["rev-list", "--ancestry-path", "--parents",
-                                `${integratedCommit}..upstream/${upstreamBranch}`],
-                                { workDir: this.workDir });
+        const revs = await git(["rev-list", "--ancestry-path", "--parents",
+                               `${integratedCommit}..upstream/${upstreamBranch}`],
+                               { workDir: this.workDir });
         if (revs === "") {
             return undefined;
         }
@@ -440,7 +433,7 @@ export class CIHelper {
         let match = revs.match(`(^|\n)([^ ]+) ([^\n]+) ${commit}`);
         if (!match) {
             // Look for a descendant that *was* integrated via a merge
-            for (; ;) {
+            for (;;) {
                 match = revs.match(`(^|\n)([^ ]+) ${commit}(\n|$)`);
                 if (!match) {
                     // None found, return the original commit
@@ -455,7 +448,7 @@ export class CIHelper {
             }
         }
 
-        for (; ;) {
+        for (;;) {
             commit = match[2];
             // was this merge integrated via another merge?
             match = revs.match(`(^|\n)([^ ]+) ([^\n]+) ${commit}`);
@@ -488,7 +481,7 @@ export class CIHelper {
         if (!this.workDir) {
             throw new Error("Need a workDir");
         }
-        if (!await commitExists(prMeta.headCommit, this.workDir)) {
+        if (!(await commitExists(prMeta.headCommit, this.workDir))) {
             if (!prMeta.pullRequestURL) {
                 throw new Error(`Require URL in ${JSON.stringify(prMeta, null, 4)}`);
             }
@@ -502,16 +495,14 @@ export class CIHelper {
                 workDir: this.workDir,
             });
         }
-        const revs = await git(["rev-list",
-                                `${prMeta.baseCommit}..${prMeta.headCommit}`],
-                               { workDir: this.workDir });
+        const revs = await git(["rev-list", `${prMeta.baseCommit}..${prMeta.headCommit}`], { workDir: this.workDir });
         return revs.split(/\s+/);
     }
 
     protected warnOnMissingPublicEmail(username: string): string {
         return `WARNING: ${username} has no public email address set on GitHub;
-GitGitGadget needs an email address to Cc: you on your contribution, so that you receive any feedback ${ ""
-}on the Git mailing list. Go to https://github.com/settings/profile to make your preferred email public ${ ""
+GitGitGadget needs an email address to Cc: you on your contribution, so that you receive any feedback ${""
+}on the Git mailing list. Go to https://github.com/settings/profile to make your preferred email public ${""
 }to let GitGitGadget know which email address to use.`;
     }
 
@@ -526,7 +517,7 @@ GitGitGadget needs an email address to Cc: you on your contribution, so that you
         try {
             comment = await this.github.getPRComment(repositoryOwner, commentID);
         } catch (e) {
-            if (e instanceof RequestError && e.status === 404 ) {
+            if (e instanceof RequestError && e.status === 404) {
                 console.log(`Comment ${commentID} not found; doing nothing:\n'${JSON.stringify(e, null, 2)}'`);
                 return;
             } else {
@@ -544,7 +535,7 @@ GitGitGadget needs an email address to Cc: you on your contribution, so that you
         const prKey = {
             owner: repositoryOwner,
             repo: this.config.repo.name,
-            pull_number: comment.prNumber
+            pull_number: comment.prNumber,
         };
 
         const pullRequestURL = `https://github.com/${repositoryOwner}/${this.config.repo.name
@@ -590,14 +581,13 @@ GitGitGadget needs an email address to Cc: you on your contribution, so that you
                     const metadata = await gitGitGadget.submit(pr, userInfo);
                     const code = "\n```";
                     await addComment(`Submitted as [${metadata?.coverLetterMessageId
-                            }](https://${this.config.mailrepo.host}/${this.config.mailrepo.name}/${
-                            metadata?.coverLetterMessageId})\n\nTo fetch this version into \`FETCH_HEAD\`:${
-                            code}\ngit fetch ${this.urlRepo} ${metadata?.latestTag}${code
-                            }\n\nTo fetch this version to local tag \`${metadata?.latestTag}\`:${
-                            code}\ngit fetch --no-tags ${this.urlRepo} tag ${metadata?.latestTag}${code}${
-                            extraComment}`);
+                        }](https://${this.config.mailrepo.host}/${this.config.mailrepo.name}/${
+                        metadata?.coverLetterMessageId})\n\nTo fetch this version into \`FETCH_HEAD\`:${
+                        code}\ngit fetch ${this.urlRepo} ${metadata?.latestTag}${code
+                        }\n\nTo fetch this version to local tag \`${metadata?.latestTag}\`:${
+                        code}\ngit fetch --no-tags ${this.urlRepo} tag ${metadata?.latestTag}${code}${
+                        extraComment}`);
                 }
-
             } else if (command === "/preview") {
                 if (argument && argument !== "") {
                     throw new Error(`/preview does not accept arguments ('${argument}')`);
@@ -616,9 +606,8 @@ GitGitGadget needs an email address to Cc: you on your contribution, so that you
                     const metadata = await gitGitGadget.preview(pr, userInfo);
                     await addComment(`Preview email sent as ${metadata?.coverLetterMessageId}`);
                 }
-
             } else if (command === "/allow") {
-                const accountName = argument || await getPRAuthor();
+                const accountName = argument || (await getPRAuthor());
                 let extraComment = "";
                 try {
                     const userInfo = await this.github.getGitHubUserInfo(accountName);
@@ -636,7 +625,7 @@ GitGitGadget needs an email address to Cc: you on your contribution, so that you
                     await addComment(`User ${accountName} already allowed to use ${this.config.app.displayName}.`);
                 }
             } else if (command === "/disallow") {
-                const accountName = argument || await getPRAuthor();
+                const accountName = argument || (await getPRAuthor());
 
                 if (await gitGitGadget.denyUser(comment.author, accountName)) {
                     await addComment(`User ${accountName} is no longer allowed to use ${this.config.app.displayName}.`);
@@ -707,12 +696,12 @@ GitGitGadget needs an email address to Cc: you on your contribution, so that you
         if (result) {
             const results = await Promise.all(
                 commits.map((commit: IPRCommit) => {
-                const linter = new LintCommit(commit);
-                return linter.lint();
-            }));
+                    const linter = new LintCommit(commit);
+                    return linter.lint();
+                })
+            );
 
-            for (const lintError of
-                 (results.filter((el) => el) as ILintError[])) {
+            for (const lintError of results.filter((el) => el) as ILintError[]) {
                 await addComment(lintError.message);
                 if (lintError.checkFailed) {
                     result = false;
@@ -740,12 +729,12 @@ GitGitGadget needs an email address to Cc: you on your contribution, so that you
         const prKey = {
             owner: repositoryOwner,
             repo: this.config.repo.name,
-            pull_number: prNumber
+            pull_number: prNumber,
         };
 
         const pr = await this.github.getPRInfo(prKey);
 
-        const addComment = async (body: string): Promise<void>  => {
+        const addComment = async (body: string): Promise<void> => {
             const redacted = CIHelper.redactGitHubToken(body);
             console.log(`Adding comment to ${pr.pullRequestURL}:\n${redacted}`);
             await this.github.addPRComment(prKey, redacted);
@@ -753,8 +742,7 @@ GitGitGadget needs an email address to Cc: you on your contribution, so that you
 
         const gitGitGadget = await GitGitGadget.get(this.gggConfigDir, this.workDir);
         if (!pr.hasComments && !gitGitGadget.isUserAllowed(pr.author)) {
-            const welcome = (await readFile("res/WELCOME.md")).toString()
-                    .replace(/\${username}/g, pr.author);
+            const welcome = (await readFile("res/WELCOME.md")).toString().replace(/\${username}/g, pr.author);
             await this.github.addPRComment(prKey, welcome);
 
             await this.github.addPRLabels(prKey, ["new user"]);
@@ -769,11 +757,10 @@ GitGitGadget needs an email address to Cc: you on your contribution, so that you
 
     public async handleNewMails(mailArchiveGitDir: string, onlyPRs?: Set<number>): Promise<boolean> {
         await git(["fetch"], { workDir: mailArchiveGitDir });
-        const prFilter = !onlyPRs ? undefined :
-            (pullRequestURL: string): boolean => {
-                const match = pullRequestURL.match(/.*\/(\d+)$/);
-                return !match ? false : onlyPRs.has(parseInt(match[1], 10));
-            };
+        const prFilter = !onlyPRs ? undefined : (pullRequestURL: string): boolean => {
+            const match = pullRequestURL.match(/.*\/(\d+)$/);
+            return !match ? false : onlyPRs.has(parseInt(match[1], 10));
+        };
         await this.maybeUpdateGGGNotes();
         const mailArchiveGit = await MailArchiveGitHelper.get(this.notes, mailArchiveGitDir, this.github,
             this.config.mailrepo.branch);
@@ -854,8 +841,7 @@ GitGitGadget needs an email address to Cc: you on your contribution, so that you
     private async getPRInfo(prKey: pullRequestKey): Promise<IPullRequestInfo> {
         const pr = await this.github.getPRInfo(prKey);
 
-        if (!this.config.repo.owners.includes(pr.baseOwner) ||
-            pr.baseRepo !== this.config.repo.name) {
+        if (!this.config.repo.owners.includes(pr.baseOwner) || pr.baseRepo !== this.config.repo.name) {
             throw new Error(`Unsupported repository: ${pr.pullRequestURL}`);
         }
 

@@ -19,7 +19,7 @@ export interface IConfig {
         trackingBranches: string[]; // comment if the pr is added to this branch
         maintainerBranch?: string;  // branch/owner manually implementing changes
         host: string;
-    },
+    };
     mailrepo: {
         name: string;
         owner: string;
@@ -27,27 +27,27 @@ export interface IConfig {
         host: string;
         url: string;
         descriptiveName: string;
-    },
+    };
     mail: {
         author: string;
         sender: string;
-    },
-    project?: projectInfo | undefined, // project-options values
+    };
+    project?: projectInfo | undefined; // project-options values
     app: {
         appID: number;
         installationID: number;
          name: string;
-         displayName: string;           // name to use in comments to identify app
-         altname: string | undefined;   // is this even needed?
-    },
+         displayName: string;       // name to use in comments to identify app
+         altname: string | undefined; // is this even needed?
+    };
     lint: {
-        maxCommitsIgnore?: string[];    // array of pull request urls to skip check
-        maxCommits: number;             // limit on number of commits in a pull request
-    },
+        maxCommitsIgnore?: string[]; // array of pull request urls to skip check
+        maxCommits: number;         // limit on number of commits in a pull request
+    };
     user: {
-        allowUserAsLogin: boolean;      // use GitHub login as name if name is private
-    }
-};
+        allowUserAsLogin: boolean;  // use GitHub login as name if name is private
+    };
+}
 
 let config: IConfig;                // singleton
 
@@ -64,7 +64,7 @@ export function getConfig(): IConfig {
     return config;
 }
 
-type importedConfig = { default: IConfig; }
+type importedConfig = { default: IConfig };
 
 /**
  * Load a config.  The config may be a javascript file (plain or generated
@@ -80,7 +80,7 @@ export async function loadConfig(file: string): Promise<IConfig> {
         const { default: newConfig } = (await import(file)) as importedConfig;
         loadedConfig = newConfig;
     } else {
-        const fileText = fs.readFileSync(file, {encoding: "utf-8"});
+        const fileText = fs.readFileSync(file, { encoding: "utf-8" });
         loadedConfig = JSON.parse(fileText) as IConfig;
     }
 

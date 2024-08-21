@@ -9,12 +9,10 @@ export class MailCommitMapping {
 
     public constructor(workDir?: string) {
         this.workDir = workDir;
-        this.mail2CommitNotes = new GitNotes(workDir,
-                                             "refs/notes/mail-to-commit");
+        this.mail2CommitNotes = new GitNotes(workDir, "refs/notes/mail-to-commit");
     }
 
-    public async getGitGitCommitForMessageId(messageID: string):
-        Promise<string | undefined> {
+    public async getGitGitCommitForMessageId(messageID: string): Promise<string | undefined> {
         return await this.mail2CommitNotes.getString(messageID);
     }
 

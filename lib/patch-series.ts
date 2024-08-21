@@ -1,6 +1,6 @@
 import addressparser from "nodemailer/lib/addressparser/index.js";
 import mimeFuncs from "nodemailer/lib/mime-funcs/index.js";
-import { commitExists, git, gitConfig, gitShortHash, revListCount, revParse, } from "./git.js";
+import { commitExists, git, gitConfig, gitShortHash, revListCount, revParse } from "./git.js";
 import { GitNotes } from "./git-notes.js";
 import { IGitGitGadgetOptions } from "./gitgitgadget.js";
 import { IMailMetadata } from "./mail-metadata.js";
@@ -70,8 +70,7 @@ export class PatchSeries {
         if (!workDir) {
             throw new Error("Need a worktree!");
         }
-        let metadata: IPatchSeriesMetadata | undefined =
-            await notes.get<IPatchSeriesMetadata>(pullRequestURL);
+        let metadata: IPatchSeriesMetadata | undefined = await notes.get<IPatchSeriesMetadata>(pullRequestURL);
 
         const currentRange = `${baseCommit}..${headCommit}`;
         const patchCount = await revListCount(["--no-merges", currentRange], workDir);
@@ -92,7 +91,7 @@ export class PatchSeries {
             };
         } else {
             if (!options.noUpdate &&   // allow reprint of submitted PRs
-                !await git(["rev-list", `${metadata.headCommit}...${headCommit}`], { workDir })) {
+                !(await git(["rev-list", `${metadata.headCommit}...${headCommit}`], { workDir }))) {
                 throw new Error(`${headCommit} was already submitted`);
             }
 
@@ -121,11 +120,11 @@ export class PatchSeries {
             cc,
             coverLetter,
             rangeDiff
-        } = await PatchSeries.parsePullRequest(workDir,
-                                               pullRequestTitle,
-                                               pullRequestBody,
-                                               wrapCoverLetterAt,
-                                               indentCoverLetter);
+        } = (await PatchSeries.parsePullRequest(workDir,
+                                                pullRequestTitle,
+                                                pullRequestBody,
+                                                wrapCoverLetterAt,
+                                                indentCoverLetter));
 
         // if known, add submitter to email chain
         if (senderEmail) {
@@ -172,25 +171,15 @@ export class PatchSeries {
             // Just ignore it
         }
 
-        const {
-            basedOn,
-            cc,
-            coverLetterBody,
-            rangeDiff,
-        } = PatchSeries.parsePullRequestBody(prBody);
+        const { basedOn, cc, coverLetterBody, rangeDiff } = PatchSeries.parsePullRequestBody(prBody);
 
         const coverLetter = `${prTitle}\n${coverLetterBody.length ? `\n${coverLetterBody}` : ""}`;
         let wrappedLetter = md2text(coverLetter, wrapCoverLetterAtColumn);
         if (indentCoverLetter) {
-            wrappedLetter = wrappedLetter.replace(/^/mg, indentCoverLetter);
+            wrappedLetter = wrappedLetter.replace(/^/gm, indentCoverLetter);
         }
 
-        return {
-            basedOn,
-            cc,
-            coverLetter: wrappedLetter,
-            rangeDiff,
-        };
+        return { basedOn, cc, coverLetter: wrappedLetter, rangeDiff };
     }
 
     protected static parsePullRequestBody(prBody: string): {
@@ -228,8 +217,7 @@ export class PatchSeries {
                             basedOn = match2[2];
                             break;
                         case "cc:":
-                            addressparser(match2[2], { flatten: true })
-                                .forEach((e: addressparser.Address) => {
+                            addressparser(match2[2], { flatten: true }).forEach((e: addressparser.Address) => {
                                 if (e.name) {
                                     cc.push(`${e.name} <${e.address}>`);
                                 } else {
@@ -257,7 +245,7 @@ export class PatchSeries {
             basedOn,
             cc,
             coverLetterBody,
-            rangeDiff
+            rangeDiff,
         };
     }
 
@@ -334,7 +322,7 @@ export class PatchSeries {
         const encoded = mimeFuncs.encodeWords(sender);
 
         /* Don't quote if already quoted */
-        if (encoded.startsWith("\"") && encoded.match(/"\s*</)) {
+        if (encoded.startsWith('"') && encoded.match(/"\s*</)) {
             return encoded;
         }
 
@@ -366,7 +354,7 @@ export class PatchSeries {
                 const onBehalfOf = i === 0 && senderName ? PatchSeries.encodeSender(senderName) :
                     authorMatch[2].replace(/ <.*>$/, "");
                 // Special-case GitGitGadget to send from  "<author> via GitGitGadget"
-                replaceSender = `\"${onBehalfOf.replace(/^"(.*)"$/, "$1").replace(/"/g, "\\\"")
+                replaceSender = `"${onBehalfOf.replace(/^"(.*)"$/, "$1").replace(/"/g, "\\\"")
                     } via ${this.config.mail.sender}" ${isGitGitGadget[1]}`;
             } else if (authorMatch[2] === thisAuthor) {
                 return;
@@ -407,9 +395,8 @@ export class PatchSeries {
 
     protected static generateTagMessage(mail: string, isCoverLetter: boolean, midUrlPrefix: string,
                                         inReplyTo: string[] | undefined): string {
-        const regex = isCoverLetter ?
-            /\nSubject: (\[.*?\] )?([^]*?(?=\n[^ ]))[^]*?\n\n([^]*?)\n*-- \n/ :
-            /\nSubject: (\[.*?\] )?([^]*?(?=\n[^ ]))[^]*?\n\n([^]*?)\n*---\n/;
+        const regex = isCoverLetter ? /\nSubject: (\[.*?\] )?([^]*?(?=\n[^ ]))[^]*?\n\n([^]*?)\n*-- \n/
+                                    : /\nSubject: (\[.*?\] )?([^]*?(?=\n[^ ]))[^]*?\n\n([^]*?)\n*---\n/;
         const match = mail.match(regex);
         if (!match) {
             throw new Error(`Could not generate tag message from mail:\n\n${mail}`);
@@ -445,10 +432,10 @@ export class PatchSeries {
             }
         }
 
-        let insert =`Published-As: ${url}/releases/tag/${tagName}\nFetch-It-Via: git fetch ${url} ${tagName}\n`;
+        let insert = `Published-As: ${url}/releases/tag/${tagName}\nFetch-It-Via: git fetch ${url} ${tagName}\n`;
 
         if (basedOn) {
-            insert =`Based-On: ${basedOn} at ${url}\nFetch-Base-Via: git fetch ${url} ${basedOn}\n${insert}`;
+            insert = `Based-On: ${basedOn} at ${url}\nFetch-Base-Via: git fetch ${url} ${basedOn}\n${insert}`;
         }
 
         if (!tagMessage.match(/\n[-A-Za-z]+: [^\n]*\n$/)) {
@@ -457,8 +444,7 @@ export class PatchSeries {
         return tagMessage + insert;
     }
 
-    protected static insertFooters(mail: string, isCoverLetter: boolean,
-                                   footers: string[]): string {
+    protected static insertFooters(mail: string, isCoverLetter: boolean, footers: string[]): string {
         const regex = isCoverLetter ? /^([^]*?\n)(-- \n[^]*)$/ : /^([^]*?\n---\n(?:\n[A-Za-z:]+ [^]*?\n\n)?)([^]*)$/;
         const match = mail.match(regex);
         if (!match) {
@@ -473,7 +459,7 @@ export class PatchSeries {
         let count = 0;
 
         const time = forceDate.getTime();
-        for (let i = 0, j = mails.length - 1; i < mails.length; i++ , j--) {
+        for (let i = 0, j = mails.length - 1; i < mails.length; i++, j--) {
             const mail = mails[i];
 
             /* Look for the date header */
@@ -575,8 +561,7 @@ export class PatchSeries {
         this.insertCcAndFromLines(mails, thisAuthor, this.senderName);
         if (mails.length > 1) {
             if (this.coverLetter) {
-                const match2 = mails[0].match(
-                    /^([^]*?\n\*\*\* BLURB HERE \*\*\*\n\n)([^]*)/);
+                const match2 = mails[0].match(/^([^]*?\n\*\*\* BLURB HERE \*\*\*\n\n)([^]*)/);
                 if (!match2) {
                     throw new Error(`Could not find blurb in ${mails[0]}`);
                 }
@@ -645,9 +630,7 @@ export class PatchSeries {
 
         if (this.options.noUpdate) {
             logger.log(`Would generate tag ${tagName} with message:\n\n ${
-                tagMessage.split("\n").map((line: string) => {
-                    return "    " + line;
-                }).join("\n")}`);
+                tagMessage.split("\n").map((line: string) => { return "    " + line; }).join("\n")}`);
         } else {
             logger.log("Generating tag object");
             await this.generateTagObject(tagName, tagMessage);
@@ -723,9 +706,7 @@ export class PatchSeries {
 
         if (this.options.dryRun) {
             logger.log(`Would send this mbox:\n\n${
-                mbox.split("\n").map((line) => {
-                    return "    " + line;
-                }).join("\n")}`);
+                mbox.split("\n").map((line) => { return "    " + line; }).join("\n") }`);
         } else if (send) {
             for (const mail of mails) {
                 await send(mail);
@@ -762,18 +743,17 @@ export class PatchSeries {
                     messageID: mid,
                     originalCommit,
                     pullRequestURL: this.metadata.pullRequestURL,
-                    firstPatchLine
+                    firstPatchLine,
                 } as IMailMetadata;
                 await this.notes.set(mid, mailMeta, true);
-                if (globalOptions && originalCommit &&
-                    this.metadata.pullRequestURL) {
+                if (globalOptions && originalCommit && this.metadata.pullRequestURL) {
                     if (!globalOptions.activeMessageIDs) {
                         globalOptions.activeMessageIDs = {};
                     }
                     globalOptions.activeMessageIDs[mid] = originalCommit;
                 }
 
-                if (originalCommit && await commitExists(originalCommit, this.project.workDir)) {
+                if (originalCommit && (await commitExists(originalCommit, this.project.workDir))) {
                     await this.notes.appendCommitNote(originalCommit, mid);
                 }
             }
@@ -822,9 +802,9 @@ export class PatchSeries {
         if (subjectPrefix) {
             args.push("--subject-prefix=" + subjectPrefix);
         }
-        if (this.patchCount > 1 ) {
+        if (this.patchCount > 1) {
             if (!this.coverLetter) {
-                    throw new Error(`Branch ${this.project.branchName} needs a description`);
+                throw new Error(`Branch ${this.project.branchName} needs a description`);
             }
             args.push("--cover-letter");
         }
@@ -860,7 +840,6 @@ export class PatchSeries {
             tagName = "+" + tagName;
         }
         await git(["push", this.project.publishToRemote,`+${this.project.branchName}`, tagName],
-                  { workDir: this.project.workDir },
-        );
+                  { workDir: this.project.workDir });
     }
 }
