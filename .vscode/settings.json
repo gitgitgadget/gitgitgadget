@@ -1,5 +1,9 @@
 {
-    "editor.codeActionsOnSave": {"source.fixAll.eslint": true},
+    "editor.formatOnSave": false,
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "never",
+        "source.fixAll.eslint": "never"
+    },
     "[typescript]": {
         "editor.detectIndentation": false,
         "editor.autoIndent": "none",
