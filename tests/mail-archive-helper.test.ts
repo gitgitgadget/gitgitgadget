@@ -1,7 +1,7 @@
 import { Octokit } from "@octokit/rest";
 import { OctokitResponse } from "@octokit/types";
 import { expect, jest, test } from "@jest/globals";
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
 import { GitNotes } from "../lib/git-notes.js";
 import { getConfig } from "../lib/gitgitgadget-config.js";
 import { GitHubGlue } from "../lib/github-glue.js";
@@ -14,13 +14,13 @@ import { testCreateRepo } from "./test-lib.js";
 
 class MailArchiveGitHelperProxy extends MailArchiveGitHelper {
     public constructor(gggNotes: GitNotes, mailArchiveGitDir: string, githubGlue: GitHubGlue,
-                          state: IGitMailingListMirrorState, branch: string){
+                          state: IGitMailingListMirrorState, branch: string) {
         super(gggNotes, mailArchiveGitDir, githubGlue, state, branch);
     }
 }
 class GitHubProxy extends GitHubGlue {
     public octo: Octokit;
-    public constructor(workDir = "./" , owner = "gitgitfadget", repo = "git") {
+    public constructor(workDir = "./", owner = "gitgitfadget", repo = "git") {
         super(workDir, owner, repo);
         this.octo = this.client;
     }
@@ -172,13 +172,13 @@ const issueCommentResponse: OctokitResponse<IIssueComment> = {
 
 test("test not a pr related email", async () => {
     const repo = await testCreateRepo(sourceFileName, "-unrelated");
-    await repo.commit("1", "1", "");    // need at least one commit to back up to
+    await repo.commit("1", "1", ""); // need at least one commit to back up to
 
     const mailMeta: IMailMetadata = {
         messageID: "pull.12345.v1.git.gitgitgadget@example.com",
         originalCommit: "feeddeadbeef",
         pullRequestURL: `https://github.com/${config.repo.owner}/${config.repo.name}/pull/1`,
-        firstPatchLine: 5
+        firstPatchLine: 5,
     };
 
     const replyMessageId = `i${mailMeta.messageID}`;
@@ -200,9 +200,9 @@ This Pull Request contains some ipsum lorem.
     const notes = new GitNotes(repo.workDir);
     await notes.set(mailMeta.messageID, mailMeta, true);
 
-    const mail = new MailArchiveGitHelperProxy(notes, repo.workDir, github, { latestRevision: "HEAD~"}, "master");
+    const mail = new MailArchiveGitHelperProxy(notes, repo.workDir, github, { latestRevision: "HEAD~" }, "master");
 
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {return;});
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
     await mail.processMails();
     expect(logSpy).toHaveBeenCalledTimes(1); // verify no more errors
     logSpy.mockRestore();
@@ -210,13 +210,13 @@ This Pull Request contains some ipsum lorem.
 
 test("test already seen", async () => {
     const repo = await testCreateRepo(sourceFileName, "-seen");
-    await repo.commit("1", "1", "");    // need at least one commit to back up to
+    await repo.commit("1", "1", ""); // need at least one commit to back up to
 
     const mailMeta: IMailMetadata = {
         messageID: "pull.12345.v1.git.gitgitgadget@example.com",
         originalCommit: "feeddeadbeef",
         pullRequestURL: `https://github.com/${config.repo.owner}/${config.repo.name}/pull/1`,
-        firstPatchLine: 5
+        firstPatchLine: 5,
     };
 
     const mbox0 = `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
@@ -235,9 +235,9 @@ This Pull Request contains some ipsum lorem.
     const notes = new GitNotes(repo.workDir);
     await notes.set(mailMeta.messageID, mailMeta, true);
 
-    const mail = new MailArchiveGitHelperProxy(notes, repo.workDir, github, { latestRevision: "HEAD~"}, "master");
+    const mail = new MailArchiveGitHelperProxy(notes, repo.workDir, github, { latestRevision: "HEAD~" }, "master");
 
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {return;});
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
     await mail.processMails();
     expect(logSpy).toHaveBeenCalledTimes(2); // verify no more errors
     expect(logSpy.mock.calls[1][0]).toMatch(/Already handled:/);
@@ -246,13 +246,13 @@ This Pull Request contains some ipsum lorem.
 
 test("test reply to cover letter", async () => {
     const repo = await testCreateRepo(sourceFileName, "-cover");
-    await repo.commit("1", "1", "");    // need at least one commit to back up to
+    await repo.commit("1", "1", ""); // need at least one commit to back up to
 
     const mailMeta: IMailMetadata = {
         messageID: "pull.12345.v1.git.gitgitgadget@example.com",
         originalCommit: "feeddeadbeef",
         pullRequestURL: `https://github.com/${config.repo.owner}/${config.repo.name}/pull/1`,
-        firstPatchLine: 5
+        firstPatchLine: 5,
     };
     const replyMessageId = `i${mailMeta.messageID}`;
 
@@ -274,7 +274,7 @@ This Pull Request contains some ipsum lorem.
     const notes = new GitNotes(repo.workDir);
     await notes.set(mailMeta.messageID, mailMeta, true);
 
-    const mail = new MailArchiveGitHelperProxy(notes, repo.workDir, github, { latestRevision: "HEAD~"}, "master");
+    const mail = new MailArchiveGitHelperProxy(notes, repo.workDir, github, { latestRevision: "HEAD~" }, "master");
 
     const commitsResponse = getCommitsResponse;
     const fail = false;
@@ -303,7 +303,7 @@ This Pull Request contains some ipsum lorem.
         return issueCommentResponse; // dummy
     });
 
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {return;});
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
     await mail.processMails();
     expect(logSpy).toHaveBeenCalledTimes(2); // verify no more errors
     logSpy.mockRestore();
@@ -315,13 +315,13 @@ This Pull Request contains some ipsum lorem.
 
 test("test reply to patch letter", async () => {
     const repo = await testCreateRepo(sourceFileName, "-patchr");
-    await repo.commit("1", "1", "");    // need at least one commit to back up to
+    await repo.commit("1", "1", ""); // need at least one commit to back up to
 
     const mailMeta: IMailMetadata = {
         messageID: "ppull.12345.v1.git.gitgitgadget@example.com",
         originalCommit: "feeddeadbeef",
         pullRequestURL: `https://github.com/${config.repo.owner}/${config.repo.name}/pull/1`,
-        firstPatchLine: 5
+        firstPatchLine: 5,
     };
 
     const replyMessageId = `i${mailMeta.messageID}`;
@@ -360,7 +360,7 @@ This Pull Request contains some ipsum lorem.
     const notes = new GitNotes(repo.workDir);
     await notes.set(mailMeta.messageID, mailMeta, true);
 
-    const mail = new MailArchiveGitHelperProxy(notes, repo.workDir, github, { latestRevision: "HEAD~~"}, "master");
+    const mail = new MailArchiveGitHelperProxy(notes, repo.workDir, github, { latestRevision: "HEAD~~" }, "master");
 
     const commitsResponse = getCommitsResponse;
     const fail = false;
@@ -394,16 +394,16 @@ This Pull Request contains some ipsum lorem.
         return issueCommentResponse; // dummy
     });
 
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {return;});
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
     await mail.processMails();
     expect(logSpy).toHaveBeenCalledTimes(3); // verify no more errors
     logSpy.mockRestore();
     expect(commentBody).not.toMatch(/outdated/);
 
-    {   // allow name reuse
-    const data = await notes.get<IMailMetadata>(replyMessageId);
-    expect(data).toBeDefined();
-    expect(data?.pullRequestURL).toEqual(mailMeta.pullRequestURL);
+    { // allow name reuse
+        const data = await notes.get<IMailMetadata>(replyMessageId);
+        expect(data).toBeDefined();
+        expect(data?.pullRequestURL).toEqual(mailMeta.pullRequestURL);
     }
 
     // check reply to reply tracking
@@ -417,13 +417,13 @@ This Pull Request contains some ipsum lorem.
 
 test("test reply to outdated patch letter (throws error)", async () => {
     const repo = await testCreateRepo(sourceFileName, "-patcho");
-    await repo.commit("1", "1", "");    // need at least one commit to back up to
+    await repo.commit("1", "1", ""); // need at least one commit to back up to
 
     const mailMeta: IMailMetadata = {
         messageID: "ppull.12345.v1.git.gitgitgadget@example.com",
         originalCommit: "feeddeadbeef",
         pullRequestURL: `https://github.com/${config.repo.owner}/${config.repo.name}/pull/1`,
-        firstPatchLine: 5
+        firstPatchLine: 5,
     };
 
     const replyMessageId = `i${mailMeta.messageID}`;
@@ -447,7 +447,7 @@ This Pull Request contains some ipsum lorem.
     const notes = new GitNotes(repo.workDir);
     await notes.set(mailMeta.messageID, mailMeta, true);
 
-    const mail = new MailArchiveGitHelperProxy(notes, repo.workDir, github, { latestRevision: "HEAD~"}, "master");
+    const mail = new MailArchiveGitHelperProxy(notes, repo.workDir, github, { latestRevision: "HEAD~" }, "master");
 
     const commitsResponse = getCommitsResponse;
     const fail = true;
@@ -481,7 +481,7 @@ This Pull Request contains some ipsum lorem.
         return issueCommentResponse; // dummy
     });
 
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {return;});
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
     await mail.processMails();
     expect(logSpy).toHaveBeenCalledTimes(2); // verify no more errors
     logSpy.mockRestore();
@@ -494,13 +494,13 @@ This Pull Request contains some ipsum lorem.
 
 test("test reply to not outdated patch letter (throws error)", async () => {
     const repo = await testCreateRepo(sourceFileName, "-patchn");
-    await repo.commit("1", "1", "");    // need at least one commit to back up to
+    await repo.commit("1", "1", ""); // need at least one commit to back up to
 
     const mailMeta: IMailMetadata = {
         messageID: "ppull.12345.v1.git.gitgitgadget@example.com",
         originalCommit: "feeddeadbeef",
         pullRequestURL: `https://github.com/${config.repo.owner}/${config.repo.name}/pull/1`,
-        firstPatchLine: 5
+        firstPatchLine: 5,
     };
 
     const replyMessageId = `i${mailMeta.messageID}`;
@@ -524,7 +524,7 @@ This Pull Request contains some ipsum lorem.
     const notes = new GitNotes(repo.workDir);
     await notes.set(mailMeta.messageID, mailMeta, true);
 
-    const mail = new MailArchiveGitHelperProxy(notes, repo.workDir, github, { latestRevision: "HEAD~"}, "master");
+    const mail = new MailArchiveGitHelperProxy(notes, repo.workDir, github, { latestRevision: "HEAD~" }, "master");
 
     const commitsResponse = getCommitsResponse;
     commitsResponse.data[0].sha = mailMeta.originalCommit;
@@ -559,7 +559,7 @@ This Pull Request contains some ipsum lorem.
         return issueCommentResponse; // dummy
     });
 
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {return;});
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
     await mail.processMails();
     expect(logSpy).toHaveBeenCalledTimes(2); // verify no more errors
     logSpy.mockRestore();

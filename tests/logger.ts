@@ -7,7 +7,6 @@
 // logger("some  test related data");
 
 const logger = (() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const debugLog = (...body: any[]) => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         return console.log(...body);
