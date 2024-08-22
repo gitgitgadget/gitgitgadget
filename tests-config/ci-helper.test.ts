@@ -29,6 +29,8 @@ const testConfig: IConfig = {
         owner: "gitgitgadget",
         branch: "main",
         host: "lore.kernel.org",
+        url: "https://localhost",
+        descriptiveName: "string",
     },
     mail: {
         author: "GitGadget",
