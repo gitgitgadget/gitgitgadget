@@ -2,8 +2,7 @@ import { expect, test } from "@jest/globals";
 import { MailArchiveGitHelper } from "../lib/mail-archive-helper.js";
 import { parseMBox, parseMBoxMessageIDAndReferences } from "../lib/send-mail.js";
 
-const mbox0 =
-    `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
+const mbox0 = `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
 Message-Id: <pull.12345.v17.git.gitgitgadget@example.com>
 From:   =?utf-8?B?w4Z2YXIgQXJuZmrDtnLDsA==?= Bjarmason <avarab@gmail.com>
 Date: Fri Sep 21 12:34:56 2001
@@ -54,7 +53,8 @@ test("parse mbox", async () => {
     expect(parsed.from).toEqual("Ævar Arnfjörð Bjarmason <avarab@gmail.com>");
     expect(parsed.cc).toEqual([
         "Some Body <somebody@example.com>",
-        "And Somebody Else <somebody@else.org>", "And Nobody Else <nobody@else.org>",
+        "And Somebody Else <somebody@else.org>",
+        "And Nobody Else <nobody@else.org>",
     ]);
     expect(parsed.subject).toEqual("[PATCH 0/3] My first Pull Request!");
     expect(parsed.headers).toEqual([
@@ -68,8 +68,7 @@ test("parse mbox", async () => {
 });
 
 test("test quoted printable", async () => {
-    const mbox =
-    `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
+    const mbox = `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
 Message-Id: <pull.12345.v17.git.gitgitgadget@example.com>
 From:   =?utf-8?B?w4Z2YXIgQXJuZmrDtnLDsA==?= Bjarmason <avarab@gmail.com>
 Date: Fri Sep 21 12:34:56 2001
@@ -98,8 +97,7 @@ four byte /=[Ff][0-7]/=f0=90=8d=88
 });
 
 test("test quoted printable ascii", async () => {
-    const mbox =
-    `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
+    const mbox = `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
 Message-Id: <pull.12345.v17.git.gitgitgadget@example.com>
 From:   =?utf-8?B?w4Z2YXIgQXJuZmrDtnLDsA==?= Bjarmason <avarab@gmail.com>
 Date: Fri Sep 21 12:34:56 2001
@@ -125,8 +123,7 @@ have included in git.git.
 
 test("test base64", async () => {
     const mailBody = "Base 64 Data";
-    const mbox =
-    `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
+    const mbox = `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
 Message-Id: <pull.12345.v17.git.gitgitgadget@example.com>
 From:   =?utf-8?B?w4Z2YXIgQXJuZmrDtnLDsA==?= Bjarmason <avarab@gmail.com>
 Date: Fri Sep 21 12:34:56 2001
@@ -147,8 +144,7 @@ ${Buffer.from(mailBody).toString("base64")}`;
 });
 
 test("test empty body", async () => {
-    const mbox =
-    `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
+    const mbox = `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
 Message-Id: <pull.12345.v17.git.gitgitgadget@example.com>
 From:   =?utf-8?B?w4Z2YXIgQXJuZmrDtnLDsA==?= Bjarmason <avarab@gmail.com>
 Date: Fri Sep 21 12:34:56 2001
@@ -169,8 +165,7 @@ Cc: Some Body <somebody@example.com>,
 });
 
 test("In-Reply-To/References is parsed correctly", async () => {
-    const mbox =
-`From junio Mon Sep 17 00:00:00 2001
+    const mbox = `From junio Mon Sep 17 00:00:00 2001
 From:   Junio C Hamano <gitster@pobox.com>
 To:     Tao Klerks <tao@klerks.biz>
 Cc:     Tao Klerks via GitGitGadget <gitgitgadget@gmail.com>,

@@ -1,5 +1,5 @@
 import { expect, jest, test } from "@jest/globals";
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
 import { isDirectory } from "../lib/fs-util.js";
 import { git, revParse } from "../lib/git.js";
 import { GitNotes } from "../lib/git-notes.js";
@@ -20,9 +20,7 @@ test("set/get notes", async () => {
     expect(await notes.setString("hello", "world")).toBeUndefined();
     expect(await notes.getString("hello")).toEqual("world");
 
-    expect(await git(["log", "-p", "refs/notes/gitgitgadget"], {
-        workDir: repo.workDir,
-    })).toMatch(/\n\+hello$/);
+    expect(await git(["log", "-p", "refs/notes/gitgitgadget"], { workDir: repo.workDir })).toMatch(/\n\+hello$/);
 
     const gitURL = "https://github.com/gitgitgadget/git";
     const pullRequestURL = `${gitURL}/git/pull/1`;
@@ -36,8 +34,7 @@ test("set/get notes", async () => {
         pullRequestURL,
     };
     expect(await notes.set(pullRequestURL, metadata)).toBeUndefined();
-    expect(await notes.get<IPatchSeriesMetadata>(pullRequestURL))
-        .toEqual(metadata);
+    expect(await notes.get<IPatchSeriesMetadata>(pullRequestURL)).toEqual(metadata);
 
     const commit = await revParse(notes.notesRef, notes.workDir);
     expect(commit).not.toBeUndefined();
@@ -59,5 +56,4 @@ test("set/get notes", async () => {
     await expect(notesNotM2Chead.update(gitURL)).rejects.toThrow(/know how to update/);
     const notesNotM2Ctail = new GitNotes(repo.workDir, "refs/notes/mail-to-commitx");
     await expect(notesNotM2Ctail.update(gitURL)).rejects.toThrow(/know how to update/);
-
 });

@@ -32,7 +32,7 @@ located at the same directory level as this project (ie ../).
 
 class GitHubProxy extends GitHubGlue {
     public octo: Octokit;
-    public constructor(workDir = "./" , owner = "gitgitfadget", repo = "git") {
+    public constructor(workDir = "./", owner = "gitgitfadget", repo = "git") {
         super(workDir, owner, repo);
         this.octo = this.client;
     }
@@ -53,13 +53,13 @@ let owner: string;
 let repo: string;
 
 beforeAll(async () => {
-    owner = await gitConfig(`gitgitgadget.CIGitHubTestUser`) || "";
-    repo = await gitConfig(`gitgitgadget.${owner}.gitHubRepo`) || "";
+    owner = (await gitConfig(`gitgitgadget.CIGitHubTestUser`)) || "";
+    repo = (await gitConfig(`gitgitgadget.${owner}.gitHubRepo`)) || "";
 });
 
 test("identify user", async () => {
     if (owner && repo) {
-        const userName = await gitConfig(`user.name`, `../${repo}`) || "";
+        const userName = (await gitConfig(`user.name`, `../${repo}`)) || "";
 
         const github = new GitHubProxy(`../${repo}`, owner, repo);
         await github.authenticate(owner);
@@ -92,7 +92,7 @@ test("pull requests", async () => {
             !Object.prototype.hasOwnProperty.call(process.env, "system.definitionId")) {
             let pullRequestURL = "";
 
-            oldPrs.map(pr => {
+            oldPrs.map((pr) => {
                 if (pr.title === titleBase) { // need to clean up?
                     pullRequestURL = pr.pullRequestURL;
                 }
@@ -103,11 +103,7 @@ test("pull requests", async () => {
             }
 
             try {                   // delete remote branch
-                await github.octo.rest.git.deleteRef({
-                    owner,
-                    ref: `heads/${branchBase}`,
-                    repo,
-                    });
+                await github.octo.rest.git.deleteRef({ owner, ref: `heads/${branchBase}`, repo });
             } catch (e) {
                 const error = e as Error;
                 expect(error.toString()).toMatch(/Reference does not exist/);
@@ -119,9 +115,7 @@ test("pull requests", async () => {
                 const error = e as Error;
                 expect(error.toString()).toMatch(/not found/);
             }
-        }
-        else
-        {
+        } else {
             const now = new Date();
             suffix = `_${now.toISOString().replace(/[:.]/g, "_")}`;
         }
@@ -167,7 +161,7 @@ test("pull requests", async () => {
         const prKey: pullRequestKey = {
             owner,
             repo,
-            pull_number: prData.number
+            pull_number: prData.number,
         };
 
         const prs = await github.getOpenPRs(owner);
@@ -193,25 +187,20 @@ test("pull requests", async () => {
         expect(prNewTitle.title).toMatch(prTitle);
 
         const newComment = "Adding a comment to the PR";
-        const {id, url} = await github.addPRComment(prData.html_url,
-                                                    newComment);
+        const { id, url } = await github.addPRComment(prData.html_url, newComment);
         expect(url).toMatch(id.toString());
 
         const comment = await github.getPRComment(owner, id);
         expect(comment.body).toMatch(newComment);
 
         // update the local repo to test commit comment
-        await git(["fetch", "origin", "--", `+${branchRef}:${branchRef}`],
-                  { workDir: repoDir });
+        await git(["fetch", "origin", "--", `+${branchRef}:${branchRef}`], { workDir: repoDir });
 
         const commitComment = "comment about commit";
         const reviewResult = await github
-            .addPRCommitComment(prData.html_url, cFile.data.commit.sha || '',
-                                repoDir, commitComment);
+            .addPRCommitComment(prData.html_url, cFile.data.commit.sha || '', repoDir, commitComment);
 
-        const commentReply =
-            await github.addPRCommentReply(prData.html_url,
-                                           reviewResult.id, newComment);
+        const commentReply = await github.addPRCommentReply(prData.html_url, reviewResult.id, newComment);
 
         expect(commentReply.url).toMatch(commentReply.id.toString());
 
@@ -255,21 +244,19 @@ test("add PR cc requests", async () => {
     };
 
     const commentInfo = { id: 1, url: "ok" };
-    github.addPRComment = jest.fn( async ():
-        // eslint-disable-next-line @typescript-eslint/require-await
-        Promise<{id: number; url: string}> => commentInfo );
+    // eslint-disable-next-line @typescript-eslint/require-await
+    github.addPRComment = jest.fn(async (): Promise<{ id: number; url: string }> => commentInfo);
 
-        // eslint-disable-next-line @typescript-eslint/require-await
-    const updatePR = jest.fn( async (_prKey, body: string): Promise<number> => {
+    // eslint-disable-next-line @typescript-eslint/require-await
+    const updatePR = jest.fn(async (_prKey, body: string): Promise<number> => {
         prInfo.body = body;     // set new body for next test
         return 1;
     });
 
     github.updatePR = updatePR;
 
-    github.getPRInfo = jest.fn( async ():
-        // eslint-disable-next-line @typescript-eslint/require-await
-        Promise<IPullRequestInfo> => prInfo);
+    // eslint-disable-next-line @typescript-eslint/require-await
+    github.getPRInfo = jest.fn(async (): Promise<IPullRequestInfo> => prInfo);
 
     const ghUser = {
         email: "joe_kerr@example.org",
@@ -278,9 +265,8 @@ test("add PR cc requests", async () => {
         type: "unknown",
     };
 
-    github.getGitHubUserInfo= jest.fn( async ():
-        // eslint-disable-next-line @typescript-eslint/require-await
-        Promise<IGitHubUser> => ghUser);
+    // eslint-disable-next-line @typescript-eslint/require-await
+    github.getGitHubUserInfo = jest.fn(async (): Promise<IGitHubUser> => ghUser);
 
     // Test cc update to PR
     const prCc = "Not Real <ReallyNot@saturn.cosmos>";
@@ -480,17 +466,16 @@ test("test missing values in response using small schema", async () => {
     // Response for any octokit calls - will be returned by the hook.wrap()
     // being set below.
 
-    let response: OctokitResponse<IPullRequestSimple[]> |
-        OctokitResponse<IPullRequestSimple> |
-        OctokitResponse<IIssueComment> |
-        OctokitResponse<[ICommit]> |
-        OctokitResponse<IPrivateUser>;
+    let response: OctokitResponse<IPullRequestSimple[]>
+        | OctokitResponse<IPullRequestSimple>
+        | OctokitResponse<IIssueComment>
+        | OctokitResponse<[ICommit]>
+        | OctokitResponse<IPrivateUser>;
 
     response = prListResponse;
 
     // eslint-disable-next-line @typescript-eslint/require-await
     github.octo.hook.wrap("request", async () => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return response;
     });
 
@@ -513,7 +498,7 @@ test("test missing values in response using small schema", async () => {
     pullRequestSimple.user = null;
     pullRequestSimple.base.repo.owner = sampleUser;
     // if (!pullRequest.user) {
-    await expect(github.getPRInfo({owner, repo: testRepo.name, pull_number: 2})).rejects.toThrow(/is missing info/);
+    await expect(github.getPRInfo({ owner, repo: testRepo.name, pull_number: 2 })).rejects.toThrow(/is missing info/);
 
     interface IIssueComment {
         body?: string;
@@ -534,9 +519,7 @@ test("test missing values in response using small schema", async () => {
     response = issueCommentResponse; // reset response value
 
     // if (!response.data.user) {
-    await expect(github.getPRComment(owner, 77)).rejects.toThrow(
-        /is missing info/
-    );
+    await expect(github.getPRComment(owner, 77)).rejects.toThrow(/is missing info/);
 
     interface ICommit {
         commit: {
@@ -570,19 +553,13 @@ test("test missing values in response using small schema", async () => {
     response = getCommitsResponse; // reset response value
 
     // if (!cm.commit.committer || !cm.commit.author || !cm.sha) {
-    await expect(github.getPRCommits(owner, 22)).rejects.toThrow(
-        /information missing/
-    );
+    await expect(github.getPRCommits(owner, 22)).rejects.toThrow(/information missing/);
 
     commitObj.commit.author = null;
-    await expect(github.getPRCommits(owner, 22)).rejects.toThrow(
-        /information missing/
-    );
+    await expect(github.getPRCommits(owner, 22)).rejects.toThrow(/information missing/);
 
     commitObj.commit.committer = null;
-    await expect(github.getPRCommits(owner, 22)).rejects.toThrow(
-        /information missing/
-    );
+    await expect(github.getPRCommits(owner, 22)).rejects.toThrow(/information missing/);
 
     interface IPrivateUser extends IBasicUser {
         name: string | null;

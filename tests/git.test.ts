@@ -14,7 +14,7 @@ for (let i = 0; i < configCount; i++) {
 
 const sleep = async (ms: number) => {
     await new Promise<void>((resolve) => {
-        setTimeout(() => { resolve(); }, ms);
+        setTimeout(() => resolve(), ms);
     });
 };
 
@@ -31,14 +31,14 @@ test("serialization", async () => {
         if (waitTime) {
             const myWait = --waitTime;
             logger(`waiting ${myWait}`);
-            await sleep(waitTime*50+waitTime%2*60); // odd/even have different waits
+            await sleep(waitTime * 50 + waitTime % 2 * 60); // odd/even have different waits
             logger(`waiting ${myWait} done`);
             // track waitTime before and after wait
-            times.push( {myWait, waitTime});
+            times.push({ myWait, waitTime });
         }
     };
 
-    expect(await git(["config", "--get-regexp", "TEST"], {lineHandler})).toMatch("");
+    expect(await git(["config", "--get-regexp", "TEST"], { lineHandler })).toMatch("");
     times.map((el) => {
         logger(el.waitTime, el.myWait);
     });
@@ -53,11 +53,11 @@ test("sequencing", async () => {
 
     const lineHandler = async (line: string): Promise<void> => {
         waitTime--;
-        await sleep(waitTime*50+waitTime%2*60); // odd/even have different waits
+        await sleep(waitTime * 50 + waitTime % 2 * 60); // odd/even have different waits
         buffer += `${line}\n`;
     };
 
-    expect(await git(["config", "--get-regexp", "TEST"], {lineHandler})).toMatch("");
+    expect(await git(["config", "--get-regexp", "TEST"], { lineHandler })).toMatch("");
     expect(await git(["config", "--get-regexp", "TEST"], { trimTrailingNewline: false })).toEqual(buffer);
 });
 
@@ -90,6 +90,6 @@ test("slow stdout", async () => {
     process.env.GIT_CONFIG_KEY_0 = `alias.node`;
     process.env.GIT_CONFIG_VALUE_0 = `!node`;
 
-    expect(await git([`node`, `-e`, `${code}`], {lineHandler})).toEqual("");
+    expect(await git([`node`, `-e`, `${code}`], { lineHandler })).toEqual("");
     expect(await git([`node`, `-e`, `${code}`])).toEqual(buffer);
 });

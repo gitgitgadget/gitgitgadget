@@ -167,14 +167,12 @@ blah http://www.github.com\n\nSigned-off-by: x`;
 
     commit.message = `contains a long URL that cannot be wrapped\n\n ${
                 ""}[2] https://lore.kernel.org/git/CABPp-BH9tju7WVm=${
-                ""}QZDOvaMDdZbpNXrVWQdN-jmfN8wC6YVhmw@mail.gmail.com/\n\n${
-                ""}Signed-off-by: x}`;
+                ""}QZDOvaMDdZbpNXrVWQdN-jmfN8wC6YVhmw@mail.gmail.com/\n\nSigned-off-by: x}`;
     lintCheck(commit);
 
     commit.message = `contains a long, whitespace-prefixed error message\n\n${
                 ""}    ld-elf.so.1: /usr/local/lib/perl5/5.32/mach/CORE/libperl.so.5.32:${
-                ""} Undefined symbol "strerror_l@FBSD_1.6"\n\n${
-                ""}Signed-off-by: x}`;
+                ""} Undefined symbol "strerror_l@FBSD_1.6"\n\nSigned-off-by: x}`;
     lintCheck(commit);
 });
 
@@ -201,8 +199,7 @@ test("combo lint tests", () => {
         expect(lintError.message).toMatch(/not signed/);
     });
 
-    commit.message = `x: A 34578901234567890123456789012345678901234567890${
-                ""}123456789012345678901234567890`;
+    commit.message = `x: A 34578901234567890123456789012345678901234567890123456789012345678901234567890`;
     lintCheck(commit, (lintError) => {
         expect(lintError.checkFailed).toBe(true);
         expect(lintError.message).toMatch(/too short/);
@@ -250,16 +247,16 @@ test("lint options tests", () => {
     };
 
     lintCheck(commit, (lintError) => {
-        expect(lintError.checkFailed).toBe(true);
-        expect(lintError.message).toMatch(/is too long/);
-        expect(lintError.message).toMatch(/should be wrapped/);
-        expect(lintError.message).toMatch(/76/);
-    }, {});
+            expect(lintError.checkFailed).toBe(true);
+            expect(lintError.message).toMatch(/is too long/);
+            expect(lintError.message).toMatch(/should be wrapped/);
+            expect(lintError.message).toMatch(/76/);
+        }, {});
 
     lintCheck(commit, (lintError) => {
-        expect(lintError.checkFailed).toBe(true);
-        expect(lintError.message).toMatch(/is too long/);
-        expect(lintError.message).toMatch(/should be wrapped/);
-        expect(lintError.message).toMatch(/66/);
-    }, {maxColumns: 66});
+            expect(lintError.checkFailed).toBe(true);
+            expect(lintError.message).toMatch(/is too long/);
+            expect(lintError.message).toMatch(/should be wrapped/);
+            expect(lintError.message).toMatch(/66/);
+        }, { maxColumns: 66 });
 });

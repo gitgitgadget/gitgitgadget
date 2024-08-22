@@ -17,22 +17,15 @@ const commander = new Command();
 const publishRemoteKey = "publishRemote";
 
 commander.version("1.0.0")
-    .usage("[options] ( update-open-prs | lookup-upstream-commit | "
-        + "annotate-commit <pr-number> <original> <git.git> )")
+    .usage("[options] ( update-open-prs | lookup-upstream-commit | annotate-commit <pr-number> <original> <git.git> )")
     .description("Command-line helper for GitGitGadget")
     .option("-g, --git-work-dir [directory]",
-            "Use a different git.git working directory than specified via "
-            + "`gitgitgadget.workDir`",
-            undefined)
+            "Use a different git.git working directory than specified via `gitgitgadget.workDir`", undefined)
     .option("-G, --gitgitgadget-work-dir [directory]",
-            "Use a different gitgitgadget working directory than the "
-            + "current working directory to access the Git config e.g. for "
-            + "`gitgitgadget.workDir`",
-            ".")
-    .option("-c, --config <string>",
-            "Use this configuration when using gitgitgadget with a project other than git", "")
-    .option("-s, --skip-update",
-            "Do not update the local refs (useful for debugging)")
+            "Use a different gitgitgadget working directory than the current working directory to access the Git "
+            + "config e.g. for `gitgitgadget.workDir`", ".")
+    .option("-c, --config <string>", "Use this configuration when using gitgitgadget with a project other than git", "")
+    .option("-s, --skip-update", "Do not update the local refs (useful for debugging)")
     .parse(process.argv);
 
 interface ICommanderOptions {
@@ -60,7 +53,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
                 throw new Error("Could not determine gitgitgadget.workDir");
             }
         }
-        if (!await isDirectory(commandOptions.gitWorkDir)) {
+        if (!(await isDirectory(commandOptions.gitWorkDir))) {
             console.log(`Cloning git into ${commandOptions.gitWorkDir}`);
             await git([
                 "clone",
@@ -71,8 +64,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
         return commandOptions.gitWorkDir;
     };
 
-    const ci = new CIHelper(await getGitGitWorkDir(), commandOptions.skipUpdate,
-        commandOptions.gitgitgadgetWorkDir);
+    const ci = new CIHelper(await getGitGitWorkDir(), commandOptions.skipUpdate, commandOptions.gitgitgadgetWorkDir);
 
     const command = commander.args[0];
     if (command === "update-open-prs") {
@@ -114,8 +106,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
         console.log(`Upstream commit for ${commit}: ${upstreamCommit}`);
     } else if (command === "set-upstream-commit") {
         if (commander.args.length !== 3) {
-            process.stderr.write(`${command}: needs 2 parameters:${
-                "\n"}original and upstream commit`);
+            process.stderr.write(`${command}: needs 2 parameters:\noriginal and upstream commit`);
             process.exit(1);
         }
         const originalCommit = commander.args[1];
@@ -124,8 +115,8 @@ const commandOptions = commander.opts<ICommanderOptions>();
         await ci.setUpstreamCommit(originalCommit, gitGitCommit);
     } else if (command === "set-tip-commit-in-git.git") {
         if (commander.args.length !== 3) {
-            process.stderr.write(`${command}: needs 2 parameters:${
-                "\n"}PR URL and tip commit in ${config.repo.baseOwner}.${config.repo.name}`);
+            process.stderr.write(`${command}: needs 2 parameters:\nPR URL and tip commit in ${
+                config.repo.baseOwner}.${config.repo.name}`);
             process.exit(1);
         }
         const pullRequestURL = commander.args[1];
@@ -139,8 +130,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
         await ci.notes.set(pullRequestURL, data, true);
     } else if (command === "set-previous-iteration") {
         if (commander.args.length !== 9) {
-            process.stderr.write(`${command}: needs PR URL, iteration, ${
-                ""}cover-letter Message ID, latest tag, ${
+            process.stderr.write(`${command}: needs PR URL, iteration, cover-letter Message ID, latest tag, ${
                 ""}base commit, base label, head commit, head label\n`);
             process.exit(1);
         }
@@ -155,8 +145,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
 
         const data = await ci.getPRMetadata(pullRequestURL);
         if (data !== undefined) {
-            process.stderr.write(`Found existing data for ${pullRequestURL}: ${
-                toPrettyJSON(data)}`);
+            process.stderr.write(`Found existing data for ${pullRequestURL}: ${toPrettyJSON(data)}`);
             process.exit(1);
         }
         const newData = {
@@ -196,8 +185,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
         console.log(`Created check with id ${id}`);
     } else if (command === "identify-merge-commit") {
         if (commander.args.length !== 3) {
-            process.stderr.write(`${command}: needs 2 parameters: ${
-                ""}upstream branch and tip commit\n`);
+            process.stderr.write(`${command}: needs 2 parameters: upstream branch and tip commit\n`);
             process.exit(1);
         }
         const upstreamBranch = commander.args[1];
@@ -245,11 +233,10 @@ const commandOptions = commander.opts<ICommanderOptions>();
         try {
             await ci.getGitGitGadgetOptions(); // get the notes updated
         } catch (_error) {
-            console.log(`Options not set.  Please run \`misc-helper init-gitgitgadget-options\` ${
-                ""}to set the allowedUsers.`);
+            console.log("Options not set. Please run `misc-helper init-gitgitgadget-options` to set the allowedUsers.");
         }
 
-        const state: IGitMailingListMirrorState = await ci.notes.get<IGitMailingListMirrorState>(stateKey) || {};
+        const state: IGitMailingListMirrorState = (await ci.notes.get<IGitMailingListMirrorState>(stateKey)) || {};
         state.latestRevision = commander.args[1];
         await ci.notes.set(stateKey, state, true);
         const publishTagsAndNotesToRemote = await getVar(publishRemoteKey, commandOptions.gitgitgadgetWorkDir);
@@ -341,8 +328,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
             }
         }
 
-        const [notesUpdated2, optionsUpdated2] =
-            await ci.handlePR(pullRequestURL, options);
+        const [notesUpdated2, optionsUpdated2] = await ci.handlePR(pullRequestURL, options);
         if (notesUpdated2) {
             notesUpdated = true;
         }
@@ -383,7 +369,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
                 auth: {
                     appId: options.appID,
                     privateKey: key.replace(/\\n/g, `\n`)
-                }
+                },
             });
 
             if (options.installationID === undefined) {
@@ -393,18 +379,17 @@ const commandOptions = commander.opts<ICommanderOptions>();
                         repo: config.repo.name,
                 })).data.id;
             }
-            const result = await client.rest.apps.createInstallationAccessToken(
-                {
-                    installation_id: options.installationID,
+            const result = await client.rest.apps.createInstallationAccessToken( {
+                installation_id: options.installationID,
                 });
-            const configKey = options.name === config.app.name ?
-                `${config.app.name}.githubToken` : `gitgitgadget.${options.name}.githubToken`;
+            const configKey = options.name === config.app.name ? `${config.app.name}.githubToken`
+                    : `gitgitgadget.${options.name}.githubToken`;
             await git(["config", configKey, result.data.token]);
         };
 
         await set(config.app);
         for (const org of commander.args.slice(1)) {
-            await set({ appID: 46807, name: org});
+            await set({ appID: 46807, name: org });
         }
     } else if (command === "handle-pr-comment") {
         if (commander.args.length !== 2 && commander.args.length !== 3) {
