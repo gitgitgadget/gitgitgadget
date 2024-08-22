@@ -1,7 +1,6 @@
 import { Octokit } from "@octokit/rest";
 import { Command } from "commander";
-import { deleteBranches,
-    deletionOptions } from "../lib/delete-ci-test-branches.js";
+import { deleteBranches, deletionOptions } from "../lib/delete-ci-test-branches.js";
 import { GitHubGlue } from "../lib/github-glue.js";
 
 const description = `Clean up GitHubGlue test branches.
@@ -33,19 +32,12 @@ const commander = new Command();
 commander.version("1.0.0")
     .usage("[options]")
     .description(description)
-    .requiredOption("-o, --owner <string>",
-        "owner must be specified")
-    .requiredOption("-r, --repo <string>",
-        "repository must be specified")
+    .requiredOption("-o, --owner <string>", "owner must be specified")
+    .requiredOption("-r, --repo <string>", "repository must be specified")
     .option("-h, --hours <number>",
-            `how old a branch is before expiring.  This is the hours
-before last midnight`,
-            undefined)
-    .option("-m, --minutes <number>",
-            "how old a branch is before expiring.  --hours has priority.",
-            undefined)
-    .option("--dry-run",
-            "do not delete the refs (useful for debugging)")
+            "how old a branch is before expiring.  This is the hours before last midnight", undefined)
+    .option("-m, --minutes <number>", "how old a branch is before expiring.  --hours has priority.", undefined)
+    .option("--dry-run", "do not delete the refs (useful for debugging)")
     .parse(process.argv);
 
 interface ICommanderOptions {
@@ -76,8 +68,7 @@ if (commander.args.length > 0) {
     const github = new GitHubProxy("", commandOptions.owner, commandOptions.repo);
     await github.authenticate(commandOptions.owner);
 
-    await deleteBranches(github.octo, commandOptions.owner, commandOptions.repo, options );
-
+    await deleteBranches(github.octo, commandOptions.owner, commandOptions.repo, options);
 })().catch((reason: Error) => {
     console.log(`Caught error ${reason}:\n${reason.stack}\n`);
     process.exit(1);
