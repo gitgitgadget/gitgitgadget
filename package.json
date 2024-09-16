@@ -50,7 +50,7 @@
     "@stylistic/eslint-plugin": "^2.7.2",
     "@types/html-to-text": "^9.0.4",
     "@types/imap-simple": "^4.2.9",
-    "@types/jest": "^29.5.12",
+    "@types/jest": "^29.5.13",
     "@types/json-stable-stringify": "^1.0.36",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/mailparser": "^3.4.4",
