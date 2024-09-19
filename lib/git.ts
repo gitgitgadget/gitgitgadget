@@ -19,7 +19,7 @@ function trimTrailingNewline(str: string): string {
     return str.replace(/\r?\n$/, "");
 }
 
-export function git(args: string[], options?: IGitOptions | undefined): Promise<string> {
+export function git(args: string[], options?: IGitOptions): Promise<string> {
     const workDir = options && options.workDir || ".";
     if (options && options.trace) {
         process.stderr.write(`Called 'git ${args.join(" ")}' in '${workDir}':\n${new Error().stack}\n`);

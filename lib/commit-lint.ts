@@ -19,7 +19,7 @@ export class LintCommit {
     private messages: string[] = [];
     private maxColumns = 76;
 
-    public constructor(patch: IPRCommit, options?: ILintOptions | undefined) {
+    public constructor(patch: IPRCommit, options?: ILintOptions) {
         this.blocked = false;
         this.lines = patch.message.split("\n");
         this.patch = patch;

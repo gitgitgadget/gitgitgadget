@@ -192,7 +192,7 @@ export class GitHubGlue {
     public async addPRCommitComment(pullRequest: pullRequestKeyInfo,
                                     commit: string,
                                     gitWorkDir: string | undefined,
-                                    comment: string, line?: number | undefined):
+                                    comment: string, line?: number):
         Promise<{ id: number; url: string }> {
         const prKey = getPullRequestKey(pullRequest);
 
@@ -248,7 +248,7 @@ export class GitHubGlue {
      * @param {string} title the updated title
      * @returns the PR number
      */
-    public async updatePR(prKey: pullRequestKey, body?: string | undefined, title?: string): Promise<number> {
+    public async updatePR(prKey: pullRequestKey, body?: string, title?: string): Promise<number> {
         await this.ensureAuthenticated(prKey.owner);
 
         const result = await this.client.rest.pulls.update({
