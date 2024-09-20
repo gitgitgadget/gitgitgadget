@@ -29,7 +29,7 @@ Furthermore, for all iterations of a patch series but the first one,
 GitGitGadget will insert a machine-generated representation of what changed
 between revisions,
 and reply to the cover letter of the previous iteration.  This patch revision
-diff can be supressed if the change may be too large or irrelevant by adding
+diff can be suppressed if the change may be too large or irrelevant by adding
 a `Range-Diff: false` footer in the Pull Request description.
 
 For convenience of reviewers, GitGitGadget will generate tags for each
