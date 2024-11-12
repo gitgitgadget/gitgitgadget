@@ -139,7 +139,7 @@ export class TestRepo {
 export async function testCreateRepo(name: string, suffix?: string): Promise<TestRepo> {
     let tmp = `${dirName}/../.test-dir/`;
     if (!(await isDirectory(tmp))) {
-        await mkdir(tmp);
+        await mkdir(tmp, { recursive: true });
     }
     tmp = await realpath(tmp);
 
@@ -163,8 +163,15 @@ export async function testCreateRepo(name: string, suffix?: string): Promise<Tes
 
     process.env.HOME = tmp;
     if (!(await isFile(`${tmp}/.gitconfig`))) {
-        await git(["config", "--global", "user.name", "Test User"]);
-        await git(["config", "--global", "user.email", "user@example.com"]);
+        try {
+            await git(["config", "--global", "user.name", "Test User"]);
+            await git(["config", "--global", "user.email", "user@example.com"]);
+        } catch (e) {
+            const error = e as Error;
+            if (!error.message.match(/File exists/)) {
+                throw error
+            }
+        }
     }
     const user = await git(["config", "user.name"], { workDir: dir });
     if (user !== "Test User") {
