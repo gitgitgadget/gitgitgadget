@@ -1,17 +1,9 @@
-import * as fs from "fs";
+import {mkdir, readdir, realpath, rmdir, unlink, writeFile} from "fs/promises";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import * as util from "util";
 import { isDirectory, isFile } from "../lib/fs-util.js";
 import { git, IGitOptions, revParse } from "../lib/git.js";
 const dirName = path.dirname(fileURLToPath(import.meta.url));
-
-const mkdir = util.promisify(fs.mkdir);
-const readdir = util.promisify(fs.readdir);
-const realpath = util.promisify(fs.realpath);
-const rmdir = util.promisify(fs.rmdir);
-const writeFile = util.promisify(fs.writeFile);
-const unlink = util.promisify(fs.unlink);
 
 export async function removeRecursively(directory: string): Promise<void> {
     if (!(await isDirectory(directory))) {
