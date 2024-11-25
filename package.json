@@ -56,7 +56,7 @@
     "@types/mailparser": "^3.4.5",
     "@types/marked": "^6.0.0",
     "@types/node": "^22.9.3",
-    "@types/nodemailer": "^6.4.16",
+    "@types/nodemailer": "^6.4.17",
     "@types/rfc2047": "^2.0.3",
     "eslint": "^9.15.0",
     "eslint-config-prettier": "^9.1.0",
