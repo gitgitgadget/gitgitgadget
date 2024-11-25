@@ -83,7 +83,7 @@
     "json-stable-stringify": "^1.1.1",
     "jsonwebtoken": "^9.0.2",
     "mailparser": "^3.7.1",
-    "marked": "^15.0.1",
+    "marked": "^15.0.2",
     "nodemailer": "^6.9.16",
     "rfc2047": "^4.0.1"
   },
