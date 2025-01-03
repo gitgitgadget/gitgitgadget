@@ -13,13 +13,14 @@ import { IPatchSeriesMetadata } from "../lib/patch-series-metadata.js";
 import { IConfig, loadConfig, setConfig } from "../lib/project-config.js";
 import path from "path";
 
-const commander = new Command();
+let commander = new Command();
 const publishRemoteKey = "publishRemote";
 
 commander
     .version("1.0.0")
-    .usage("[options] ( update-open-prs | lookup-upstream-commit | annotate-commit <pr-number> <original> <git.git> )")
+    .usage("[options] <command> [args...]")
     .description("Command-line helper for GitGitGadget")
+    .passThroughOptions()
     .option(
         "-g, --git-work-dir [directory]",
         "Use a different git.git working directory than specified via `gitgitgadget.workDir`",
@@ -33,7 +34,7 @@ commander
     )
     .option("-c, --config <string>", "Use this configuration when using gitgitgadget with a project other than git", "")
     .option("-s, --skip-update", "Do not update the local refs (useful for debugging)")
-    .argument("[args...]", "command and arguments")
+    .argument("[args...]", "command arguments (call `list -h` for more information)")
     .parse(process.argv);
 
 interface ICommanderOptions {
@@ -41,10 +42,6 @@ interface ICommanderOptions {
     gitgitgadgetWorkDir: string | undefined;
     gitWorkDir: string | undefined;
     skipUpdate: boolean | undefined;
-}
-
-if (commander.args.length === 0) {
-    commander.help();
 }
 
 const commandOptions = commander.opts<ICommanderOptions>();
@@ -75,6 +72,8 @@ const commandOptions = commander.opts<ICommanderOptions>();
 
     const ci = new CIHelper(await getGitGitWorkDir(), commandOptions.skipUpdate, commandOptions.gitgitgadgetWorkDir);
 
+    const argv = commander.args;
+    commander = new Command().version("1.0.0");
     commander
         .usage("[options] command")
         .command("update-open-prs")
@@ -474,7 +473,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
             }
             await ci.handleNewMails(mailArchiveGitDir, onlyPRs.size ? onlyPRs : undefined);
         });
-    await commander.parseAsync(commander.args, { from: "user" });
+    await commander.parseAsync(argv, { from: "user" });
 })().catch((reason: Error) => {
     console.log(`Caught error ${reason}:\n${reason.stack}\n`);
     process.stderr.write(`Caught error ${reason}:\n${reason.stack}\n`);
