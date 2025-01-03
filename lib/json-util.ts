@@ -5,9 +5,13 @@ export function fromJSON<T>(input: string): T {
 }
 
 export function toJSON<T>(input: T): string {
-    return stringify(input);
+    const result = stringify(input);
+    if (typeof result !== "string") throw new Error(`Could not convert ${input} to JSON`);
+    return result;
 }
 
 export function toPrettyJSON<T>(input: T): string {
-    return stringify(input, { space: 4 });
+    const result = stringify(input, { space: 4 });
+    if (typeof result !== "string") throw new Error(`Could not convert ${input} to JSON`);
+    return result;
 }
