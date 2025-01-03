@@ -33,6 +33,7 @@ commander
     )
     .option("-c, --config <string>", "Use this configuration when using gitgitgadget with a project other than git", "")
     .option("-s, --skip-update", "Do not update the local refs (useful for debugging)")
+    .argument("[args...]", "command and arguments")
     .parse(process.argv);
 
 interface ICommanderOptions {
