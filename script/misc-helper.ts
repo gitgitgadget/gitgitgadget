@@ -16,14 +16,21 @@ import path from "path";
 const commander = new Command();
 const publishRemoteKey = "publishRemote";
 
-commander.version("1.0.0")
+commander
+    .version("1.0.0")
     .usage("[options] ( update-open-prs | lookup-upstream-commit | annotate-commit <pr-number> <original> <git.git> )")
     .description("Command-line helper for GitGitGadget")
-    .option("-g, --git-work-dir [directory]",
-            "Use a different git.git working directory than specified via `gitgitgadget.workDir`", undefined)
-    .option("-G, --gitgitgadget-work-dir [directory]",
-            "Use a different gitgitgadget working directory than the current working directory to access the Git "
-            + "config e.g. for `gitgitgadget.workDir`", ".")
+    .option(
+        "-g, --git-work-dir [directory]",
+        "Use a different git.git working directory than specified via `gitgitgadget.workDir`",
+        undefined,
+    )
+    .option(
+        "-G, --gitgitgadget-work-dir [directory]",
+        "Use a different gitgitgadget working directory than the current working directory to access the Git config" +
+            "e.g. for `gitgitgadget.workDir`",
+        ".",
+    )
     .option("-c, --config <string>", "Use this configuration when using gitgitgadget with a project other than git", "")
     .option("-s, --skip-update", "Do not update the local refs (useful for debugging)")
     .parse(process.argv);
@@ -42,7 +49,8 @@ if (commander.args.length === 0) {
 const commandOptions = commander.opts<ICommanderOptions>();
 
 (async (): Promise<void> => {
-    const config: IConfig = commandOptions.config ? setConfig(await getExternalConfig(commandOptions.config))
+    const config: IConfig = commandOptions.config
+        ? setConfig(await getExternalConfig(commandOptions.config))
         : getConfig();
 
     const getGitGitWorkDir = async (): Promise<string> => {
@@ -115,8 +123,11 @@ const commandOptions = commander.opts<ICommanderOptions>();
         await ci.setUpstreamCommit(originalCommit, gitGitCommit);
     } else if (command === "set-tip-commit-in-git.git") {
         if (commander.args.length !== 3) {
-            process.stderr.write(`${command}: needs 2 parameters:\nPR URL and tip commit in ${
-                config.repo.baseOwner}.${config.repo.name}`);
+            process.stderr.write(
+                `${command}: needs 2 parameters:\nPR URL and tip commit in ${
+                    config.repo.baseOwner
+                }.${config.repo.name}`,
+            );
             process.exit(1);
         }
         const pullRequestURL = commander.args[1];
@@ -130,8 +141,10 @@ const commandOptions = commander.opts<ICommanderOptions>();
         await ci.notes.set(pullRequestURL, data, true);
     } else if (command === "set-previous-iteration") {
         if (commander.args.length !== 9) {
-            process.stderr.write(`${command}: needs PR URL, iteration, cover-letter Message ID, latest tag, ${
-                ""}base commit, base label, head commit, head label\n`);
+            process.stderr.write(
+                `${command}: needs PR URL, iteration, cover-letter Message ID, latest tag, ` +
+                    "base commit, base label, head commit, head label\n",
+            );
             process.exit(1);
         }
         const pullRequestURL = commander.args[1];
@@ -172,8 +185,9 @@ const commandOptions = commander.opts<ICommanderOptions>();
         console.log(`Result: ${result}`);
     } else if (command === "annotate-commit") {
         if (commander.args.length !== 3) {
-            process.stderr.write(`${command}: needs 2 parameters: original and ${
-                config.repo.baseOwner}.${config.repo.name} commit\n`);
+            process.stderr.write(
+                `${command}: needs 2 parameters: original and ${config.repo.baseOwner}.${config.repo.name} commit\n`,
+            );
             process.exit(1);
         }
 
@@ -211,7 +225,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
             process.stderr.write(`${command}: ${config.repo.owner}/${config.repo.name} already initialized\n`);
             process.exit(1);
         } catch (_error) {
-            const options: IGitGitGadgetOptions = { allowedUsers: [ commander.args[1] ] };
+            const options: IGitGitGadgetOptions = { allowedUsers: [commander.args[1]] };
             await ci.notes.set("", options, true);
 
             const publishTagsAndNotesToRemote = await getVar(publishRemoteKey, commandOptions.gitgitgadgetWorkDir);
@@ -219,8 +233,9 @@ const commandOptions = commander.opts<ICommanderOptions>();
             if (!publishTagsAndNotesToRemote) {
                 throw new Error("No remote to which to push configured");
             }
-            await git(["push", publishTagsAndNotesToRemote, "--", `${ci.notes.notesRef}`],
-                    { workDir: commandOptions.gitWorkDir });
+            await git(["push", publishTagsAndNotesToRemote, "--", `${ci.notes.notesRef}`], {
+                workDir: commandOptions.gitWorkDir,
+            });
         }
 
         console.log(toPrettyJSON(await ci.getGitGitGadgetOptions()));
@@ -243,8 +258,9 @@ const commandOptions = commander.opts<ICommanderOptions>();
         if (!publishTagsAndNotesToRemote) {
             throw new Error("No remote to which to push configured");
         }
-        await git(["push", publishTagsAndNotesToRemote, "--", `${ci.notes.notesRef}`],
-                { workDir: commandOptions.gitWorkDir });
+        await git(["push", publishTagsAndNotesToRemote, "--", `${ci.notes.notesRef}`], {
+            workDir: commandOptions.gitWorkDir,
+        });
 
         console.log(toPrettyJSON(state));
     } else if (command === "get-mail-meta") {
@@ -263,8 +279,9 @@ const commandOptions = commander.opts<ICommanderOptions>();
         const repositoryOwner = commander.args.length === 3 ? commander.args[1] : config.repo.owner;
         const prNumber = commander.args[commander.args.length === 3 ? 2 : 1];
 
-        const pullRequestURL = prNumber.match(/^http/) ? prNumber :
-            `https://github.com/${repositoryOwner}/${config.repo.name}/pull/${prNumber}`;
+        const pullRequestURL = prNumber.match(/^http/)
+            ? prNumber
+            : `https://github.com/${repositoryOwner}/${config.repo.name}/pull/${prNumber}`;
         console.log(toPrettyJSON(await ci.getPRMetadata(pullRequestURL)));
     } else if (command === "get-pr-commits") {
         if (commander.args.length !== 2 && commander.args.length !== 3) {
@@ -317,8 +334,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
         if (meta.baseCommit && meta.headCommit) {
             for (const rev of await ci.getOriginalCommitsForPR(meta)) {
                 const messageID = await ci.notes.getLastCommitNote(rev);
-                if (messageID &&
-                    options.activeMessageIDs[messageID] === undefined) {
+                if (messageID && options.activeMessageIDs[messageID] === undefined) {
                     options.activeMessageIDs[messageID] = rev;
                     optionsUpdated = true;
                     if (await ci.updateCommitMapping(messageID)) {
@@ -342,19 +358,15 @@ const commandOptions = commander.opts<ICommanderOptions>();
             process.stderr.write(`${command}: need a PR URL and a comment\n`);
             process.exit(1);
         }
-        const pullRequestURL = commander.args[1].match(/^[0-9]+$/) ?
-            `https://github.com/gitgitgadget/${config.repo.name}/pull/${commander.args[1]}` :
-            commander.args[1];
+        const pullRequestURL = commander.args[1].match(/^[0-9]+$/)
+            ? `https://github.com/gitgitgadget/${config.repo.name}/pull/${commander.args[1]}`
+            : commander.args[1];
         const comment = commander.args[2];
 
         const glue = new GitHubGlue(ci.workDir, config.repo.owner, config.repo.name);
         await glue.addPRComment(pullRequestURL, comment);
     } else if (command === "set-app-token") {
-        const set = async (options: {
-             appID: number;
-             installationID?: number;
-             name: string;
-        }): Promise<void> => {
+        const set = async (options: { appID: number; installationID?: number; name: string }): Promise<void> => {
             const appName = options.name === config.app.name ? config.app.name : config.app.altname;
             const appNameKey = `${appName}.privateKey`;
             const appNameVar = appNameKey.toUpperCase().replace(/\./, "_");
@@ -368,21 +380,24 @@ const commandOptions = commander.opts<ICommanderOptions>();
                 authStrategy: createAppAuth,
                 auth: {
                     appId: options.appID,
-                    privateKey: key.replace(/\\n/g, `\n`)
+                    privateKey: key.replace(/\\n/g, `\n`),
                 },
             });
 
             if (options.installationID === undefined) {
-                options.installationID =
-                    (await client.rest.apps.getRepoInstallation({
+                options.installationID = (
+                    await client.rest.apps.getRepoInstallation({
                         owner: options.name,
                         repo: config.repo.name,
-                })).data.id;
+                    })
+                ).data.id;
             }
-            const result = await client.rest.apps.createInstallationAccessToken( {
+            const result = await client.rest.apps.createInstallationAccessToken({
                 installation_id: options.installationID,
-                });
-            const configKey = options.name === config.app.name ? `${config.app.name}.githubToken`
+            });
+            const configKey =
+                options.name === config.app.name
+                    ? `${config.app.name}.githubToken`
                     : `gitgitgadget.${options.name}.githubToken`;
             await git(["config", configKey, result.data.token]);
         };
