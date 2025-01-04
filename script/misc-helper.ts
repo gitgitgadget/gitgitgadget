@@ -393,7 +393,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
         .command("set-app-token")
         .argument("[args...]")
         .description("Set the GitHub App token in the Git config")
-        .action(async (...args: string[]) => {
+        .action(async (args: string[]) => {
             const set = async (options: { appID: number; installationID?: number; name: string }): Promise<void> => {
                 const appName = options.name === config.app.name ? config.app.name : config.app.altname;
                 const appNameKey = `${appName}.privateKey`;
