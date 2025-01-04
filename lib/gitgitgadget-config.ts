@@ -32,9 +32,7 @@ const defaultConfig: IConfig = {
         altname: "gitgitgadget-git",
     },
     lint: {
-        maxCommitsIgnore: [
-            "https://github.com/gitgitgadget/git/pull/923",
-        ],
+        maxCommitsIgnore: ["https://github.com/gitgitgadget/git/pull/923"],
         maxCommits: 30,
     },
     user: {

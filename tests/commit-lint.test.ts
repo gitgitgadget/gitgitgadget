@@ -15,11 +15,7 @@ jest.setTimeout(180000);
  * @param check a function to verify the lint result
  * @param options extra linter options, if any
  */
-function lintCheck(
-    commit: IPRCommit,
-    check?: (error: ILintError) => void,
-    options?: ILintOptions
-) {
+function lintCheck(commit: IPRCommit, check?: (error: ILintError) => void, options?: ILintOptions) {
     const linter = new LintCommit(commit, options);
     const lintError = linter.lint();
     if (!check) {
@@ -66,8 +62,11 @@ test("basic lint tests", () => {
         expect(lintError.message).toMatch(/too short/);
     });
 
-    commit.message = `1234578901234567890123456789012345678901234567890${
-                ""}123456789012345678901234567890\nmore bad\nSigned-off-by: x`;
+    commit.message = [
+        "1234578901234567890123456789012345678901234567890123456789012345678901234567890",
+        "more bad",
+        "Signed-off-by: x",
+    ].join("\n");
     lintCheck(commit, (lintError) => {
         expect(lintError.checkFailed).toBe(true);
         expect(lintError.message).toMatch(/too long/);
@@ -157,22 +156,35 @@ http://www.github.com blah\n\nSigned-off-by: x`;
 blah http://www.github.com\n\nSigned-off-by: x`;
     lintCheck(commit);
 
-    commit.message = `wrapped but too long\n\n${
-                ""}1234578901234567890123456789012345678901234567890${
-                ""} 23456789012345678901234567890\nmore bad\nSigned-off-by: x`;
+    commit.message = [
+        "wrapped but too long",
+        "",
+        "1234578901234567890123456789012345678901234567890 23456789012345678901234567890",
+        "more bad",
+        "Signed-off-by: x",
+    ].join("\n");
     lintCheck(commit, (lintError) => {
         expect(lintError.checkFailed).toBe(true);
         expect(lintError.message).toMatch(/should be wrapped/);
     });
 
-    commit.message = `contains a long URL that cannot be wrapped\n\n ${
-                ""}[2] https://lore.kernel.org/git/CABPp-BH9tju7WVm=${
-                ""}QZDOvaMDdZbpNXrVWQdN-jmfN8wC6YVhmw@mail.gmail.com/\n\nSigned-off-by: x}`;
+    commit.message = [
+        "contains a long URL that cannot be wrapped",
+        "",
+        "[2] https://lore.kernel.org/git/CABPp-BH9tju7WVm=QZDOvaMDdZbpNXrVWQdN-jmfN8wC6YVhmw@mail.gmail.com/",
+        "",
+        "Signed-off-by: x}",
+    ].join("\n");
     lintCheck(commit);
 
-    commit.message = `contains a long, whitespace-prefixed error message\n\n${
-                ""}    ld-elf.so.1: /usr/local/lib/perl5/5.32/mach/CORE/libperl.so.5.32:${
-                ""} Undefined symbol "strerror_l@FBSD_1.6"\n\nSigned-off-by: x}`;
+    commit.message = [
+        "contains a long, whitespace-prefixed error message",
+        "",
+        "    ld-elf.so.1: /usr/local/lib/perl5/5.32/mach/CORE/libperl.so.5.32: " +
+            'Undefined symbol "strerror_l@FBSD_1.6"',
+        "",
+        "Signed-off-by: x}",
+    ].join("\n");
     lintCheck(commit);
 });
 
@@ -208,17 +220,23 @@ test("combo lint tests", () => {
         expect(lintError.message).toMatch(/lower/);
     });
 
-    commit.message = `1234578901234567890123456789012345678901234567890${
-                ""}123456789012345678901234567890\nmore bad\nSigned-off-by: x`;
+    commit.message = [
+        "1234578901234567890123456789012345678901234567890123456789012345678901234567890",
+        "more bad",
+        "Signed-off-by: x",
+    ].join("\n");
     lintCheck(commit, (lintError) => {
         expect(lintError.checkFailed).toBe(true);
         expect(lintError.message).toMatch(/is too long/);
         expect(lintError.message).toMatch(/empty line/);
     });
 
-    commit.message = `all good but too long\n${
-                ""}1234578901234567890123456789012345678901234567890${
-                ""} 23456789012345678901234567890\nmore bad\nSigned-off-by: x`;
+    commit.message = [
+        "all good but too long",
+        "1234578901234567890123456789012345678901234567890 23456789012345678901234567890",
+        "more bad",
+        "Signed-off-by: x",
+    ].join("\n");
     lintCheck(commit, (lintError) => {
         expect(lintError.checkFailed).toBe(true);
         expect(lintError.message).toMatch(/should be wrapped/);
@@ -239,24 +257,35 @@ test("lint options tests", () => {
             login: "ggg",
             name: "e. e. cummings",
         },
-        message: `all good but too long 1234567890${
-                ""} 234578901234567890123456789012345678901234567890\n\n${
-                ""}1234578901234567890123456789012345678901234567890${
-                ""} 23456789012345678901234567890\nmore bad\nSigned-off-by: x`,
+        message: [
+            "all good but too long 1234567890 234578901234567890123456789012345678901234567890",
+            "",
+            "1234578901234567890123456789012345678901234567890 23456789012345678901234567890",
+            "more bad",
+            "Signed-off-by: x",
+        ].join("\n"),
         parentCount: 1,
     };
 
-    lintCheck(commit, (lintError) => {
+    lintCheck(
+        commit,
+        (lintError) => {
             expect(lintError.checkFailed).toBe(true);
             expect(lintError.message).toMatch(/is too long/);
             expect(lintError.message).toMatch(/should be wrapped/);
             expect(lintError.message).toMatch(/76/);
-        }, {});
+        },
+        {},
+    );
 
-    lintCheck(commit, (lintError) => {
+    lintCheck(
+        commit,
+        (lintError) => {
             expect(lintError.checkFailed).toBe(true);
             expect(lintError.message).toMatch(/is too long/);
             expect(lintError.message).toMatch(/should be wrapped/);
             expect(lintError.message).toMatch(/66/);
-        }, { maxColumns: 66 });
+        },
+        { maxColumns: 66 },
+    );
 });

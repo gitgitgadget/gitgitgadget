@@ -61,8 +61,9 @@ async function getExternalConfig(file: string): Promise<IConfig> {
 
 function lintConfig(config: IConfig): void {
     if (!Object.prototype.hasOwnProperty.call(config, "project")) {
-        throw new Error(`User configurations must have a 'project:'.  Not found in\n${
-            JSON.stringify(config, null, 2)}`);
+        throw new Error(
+            `User configurations must have a 'project:'.  Not found in\n${JSON.stringify(config, null, 2)}`,
+        );
     }
 
     if (!config.repo.owner.match(/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i)) {

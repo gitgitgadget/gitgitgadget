@@ -11,7 +11,9 @@ const logger = (() => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         return console.log(...body);
     };
-    const nodebugLog = () => { return; };
+    const nodebugLog = () => {
+        return;
+    };
 
     return process.env.npm_config_GGGVERBOSE ? debugLog : nodebugLog;
 })();

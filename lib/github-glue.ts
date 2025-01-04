@@ -44,7 +44,7 @@ export interface IPRCommit {
 }
 
 export interface IGitHubUser {
-    email: string | null;           // null if no public email
+    email: string | null; // null if no public email
     login: string;
     name: string;
     type: string;
@@ -63,8 +63,12 @@ export class GitHubGlue {
         this.workDir = workDir;
     }
 
-    public async annotateCommit(originalCommit: string, gitGitCommit: string,
-                                repositoryOwner: string, baseOwner: string): Promise<number> {
+    public async annotateCommit(
+        originalCommit: string,
+        gitGitCommit: string,
+        repositoryOwner: string,
+        baseOwner: string,
+    ): Promise<number> {
         const output = await git(["show", "-s", "--format=%h %cI", gitGitCommit], { workDir: this.workDir });
         const match = output.match(/^(\S+) (\S+)$/);
         if (!match) {
@@ -122,30 +126,36 @@ export class GitHubGlue {
         let found = false;
         let footerSeparator = "\r\n";
 
-        if (footer && footer[1].match(/:/)) try {
-            footer[1].split(/\r?\n/).reverse().forEach(line => {
-                const match = line.match(/^([a-z][-a-z0-9]+):\s*(.*)$/i);
+        if (footer && footer[1].match(/:/))
+            try {
+                footer[1]
+                    .split(/\r?\n/)
+                    .reverse()
+                    .forEach((line) => {
+                        const match = line.match(/^([a-z][-a-z0-9]+):\s*(.*)$/i);
 
-                if (!match) {       // stop if not a footer
-                    throw new Error("No Footer");
-                }
-
-                footerSeparator = ""; // body already has footers
-                if (!found && match[1].toLowerCase() === "cc") try {
-                    addressparser(match[2], {flatten: true}).forEach(email => {
-                        if (ccLower === email.address.toLowerCase()) {
-                            found = true;
-                            throw new Error("Found");
+                        if (!match) {
+                            // stop if not a footer
+                            throw new Error("No Footer");
                         }
+
+                        footerSeparator = ""; // body already has footers
+                        if (!found && match[1].toLowerCase() === "cc")
+                            try {
+                                addressparser(match[2], { flatten: true }).forEach((email) => {
+                                    if (ccLower === email.address.toLowerCase()) {
+                                        found = true;
+                                        throw new Error("Found");
+                                    }
+                                });
+                            } catch (_) {
+                                // quick exit for cc matched (comment to quiet linter)
+                            }
                     });
-                } catch (_) {
-                    // quick exit for cc matched (comment to quiet linter)
-                }
-            });
-        } catch (_) {
-            found = false;          // ensure it was not a cc: false positive
-            footerSeparator = "\r\n"; // reset
-        }
+            } catch (_) {
+                found = false; // ensure it was not a cc: false positive
+                footerSeparator = "\r\n"; // reset
+            }
 
         if (!found) {
             const user = await this.getGitHubUserInfo(pr.author);
@@ -189,17 +199,18 @@ export class GitHubGlue {
      * @param {number} line the comment is referencing
      * @returns the comment ID and the URL to the comment
      */
-    public async addPRCommitComment(pullRequest: pullRequestKeyInfo,
-                                    commit: string,
-                                    gitWorkDir: string | undefined,
-                                    comment: string, line?: number):
-        Promise<{ id: number; url: string }> {
+    public async addPRCommitComment(
+        pullRequest: pullRequestKeyInfo,
+        commit: string,
+        gitWorkDir: string | undefined,
+        comment: string,
+        line?: number,
+    ): Promise<{ id: number; url: string }> {
         const prKey = getPullRequestKey(pullRequest);
 
         await this.ensureAuthenticated(prKey.owner);
 
-        const files = await git(["diff", "--name-only", `${commit}^..${commit}`, "--"],
-                                {workDir: gitWorkDir});
+        const files = await git(["diff", "--name-only", `${commit}^..${commit}`, "--"], { workDir: gitWorkDir });
         const path = files.replace(/\n[^]*/, "");
 
         const status = await this.client.rest.pulls.createReviewComment({
@@ -223,8 +234,11 @@ export class GitHubGlue {
      * @param {string} comment the comment to add
      * @returns the comment ID and the URL to the added comment
      */
-    public async addPRCommentReply(pullRequest: pullRequestKeyInfo, id: number, comment: string):
-        Promise<{ id: number, url: string }> {
+    public async addPRCommentReply(
+        pullRequest: pullRequestKeyInfo,
+        id: number,
+        comment: string,
+    ): Promise<{ id: number; url: string }> {
         const prKey = getPullRequestKey(pullRequest);
 
         await this.ensureAuthenticated(prKey.owner);
@@ -273,8 +287,7 @@ export class GitHubGlue {
         return result.data.map((res: { id: number }) => `${res.id}`);
     }
 
-    public async closePR(pullRequest: pullRequestKeyInfo, viaMergeCommit: string):
-        Promise<number> {
+    public async closePR(pullRequest: pullRequestKeyInfo, viaMergeCommit: string): Promise<number> {
         const prKey = getPullRequestKey(pullRequest);
 
         await this.ensureAuthenticated(prKey.owner);
@@ -338,8 +351,9 @@ export class GitHubGlue {
 
         const pullRequest = response.data;
         if (!pullRequest.user) {
-            throw new Error(`PR ${pullRequest.number} is missing information.\n${
-                JSON.stringify(pullRequest, null, 2)}`);
+            throw new Error(
+                `PR ${pullRequest.number} is missing information.\n${JSON.stringify(pullRequest, null, 2)}`,
+            );
         }
 
         return {
@@ -376,8 +390,9 @@ export class GitHubGlue {
         const prNumber = match ? parseInt(match[1], 10) : -1;
 
         if (!response.data.user) {
-            throw new Error(`PR ${prNumber} comment is missing information.\n${
-                JSON.stringify(response.data, null, 2)}`);
+            throw new Error(
+                `PR ${prNumber} comment is missing information.\n${JSON.stringify(response.data, null, 2)}`,
+            );
         }
 
         return {

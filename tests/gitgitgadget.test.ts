@@ -197,21 +197,30 @@ test("generate tag/notes from a Pull Request", async () => {
 
     const pullRequestURL = "https://github.com/gitgitgadget/git/pull/1";
     const pullRequestTitle = "My first Pull Request!";
-    const pullRequestBody = `This Pull Request contains some really important ${
-        ""}changes that I would love to have included in [git.git](https://github.com/git/git).
-
-Cc: Some Body <somebody@example.com>
-`;
+    const pullRequestBody = [
+        "This Pull Request contains some really important " +
+            "changes that I would love to have included in [git.git](https://github.com/git/git).",
+        "",
+        "Cc: Some Body <somebody@example.com>",
+        "",
+    ].join("\n");
 
     await git(["config", "user.name", "GitGitGadget"], repo.options);
     await git(["config", "user.email", "gitgitgadget@example.com"], repo.options);
 
-    const patches =
-        await PatchSeries.getFromNotes(notes, pullRequestURL, pullRequestTitle,
-                                       pullRequestBody,
-                                       "gitgitgadget:next", baseCommit,
-                                       "somebody:master", headCommit,
-                                       {}, "GitHub User", undefined);
+    const patches = await PatchSeries.getFromNotes(
+        notes,
+        pullRequestURL,
+        pullRequestTitle,
+        pullRequestBody,
+        "gitgitgadget:next",
+        baseCommit,
+        "somebody:master",
+        headCommit,
+        {},
+        "GitHub User",
+        undefined,
+    );
 
     expect(patches.coverLetter).toEqual(`My first Pull Request!
 
@@ -219,8 +228,10 @@ This Pull Request contains some really important changes that I would love
 to have included in git.git [https://github.com/git/git].`);
 
     const mails: string[] = [];
-    const midRegex = new RegExp("<(pull|[0-9a-f]{40})\\.\\d+(\\.v\\d+)?"
-        + "\\.git(\\.*\\d*)\\.gitgitgadget@example\\.com>", "g");
+    const midRegex = new RegExp(
+        "<(pull|[0-9a-f]{40})\\.\\d+(\\.v\\d+)?" + "\\.git(\\.*\\d*)\\.gitgitgadget@example\\.com>",
+        "g",
+    );
     // eslint-disable-next-line @typescript-eslint/require-await
     async function send(mail: string): Promise<string> {
         if (mails.length === 0) {
@@ -239,12 +250,19 @@ to have included in git.git [https://github.com/git/git].`);
     expect(await repo.commit("D")).not.toEqual("");
 
     const headCommit2 = await repo.revParse("HEAD");
-    const patches2 =
-        await PatchSeries.getFromNotes(notes, pullRequestURL, pullRequestTitle,
-                                       pullRequestBody,
-                                       "gitgitgadget:next", baseCommit,
-                                       "somebody:master", headCommit2,
-                                       {}, "GitHub User", undefined);
+    const patches2 = await PatchSeries.getFromNotes(
+        notes,
+        pullRequestURL,
+        pullRequestTitle,
+        pullRequestBody,
+        "gitgitgadget:next",
+        baseCommit,
+        "somebody:master",
+        headCommit2,
+        {},
+        "GitHub User",
+        undefined,
+    );
     mails.splice(0);
     const metadata2 = await patches2.generateAndSend(logger, send, undefined, pullRequestURL);
 
@@ -276,8 +294,8 @@ to have included in git.git [https://github.com/git/git].`);
     } as IPatchSeriesMetadata);
 
     // verify that the tag was generated correctly
-    expect((await git(["cat-file", "tag", "pr-1/somebody/master-v2"], repo.options))
-        .replace(/^[^]*?\n\n/, "")).toEqual(`My first Pull Request!
+    expect((await git(["cat-file", "tag", "pr-1/somebody/master-v2"], repo.options)).replace(/^[^]*?\n\n/, ""))
+        .toEqual(`My first Pull Request!
 
 This Pull Request contains some really important changes that I would love
 to have included in git.git [https://github.com/git/git].

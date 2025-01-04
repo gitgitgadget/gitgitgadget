@@ -64,11 +64,11 @@ async function setupRepos(instance: string): Promise<{ worktree: TestRepo; gggLo
 
 const notesRef = "--ref=refs/notes/gitgitgadget";
 const helperEnv = {
-        "GIT_AUTHOR_NAME": "J Doe",
-        "GIT_AUTHOR_EMAIL": "jdoe@example.com",
-        "GIT_COMMITTER_NAME": "J Doe",
-        "GIT_COMMITTER_EMAIL": "jdoe@example.com",
-        ...process.env
+    GIT_AUTHOR_NAME: "J Doe",
+    GIT_AUTHOR_EMAIL: "jdoe@example.com",
+    GIT_COMMITTER_NAME: "J Doe",
+    GIT_COMMITTER_EMAIL: "jdoe@example.com",
+    ...process.env,
 };
 
 async function getNote(reg: RegExp, workDir: string): Promise<string> {

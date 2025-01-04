@@ -3,8 +3,14 @@ import { IConfig, getConfig, projectInfo } from "./project-config.js";
 
 // For now, only the Git, Cygwin and BusyBox projects are supported
 export class ProjectOptions {
-    public static async get(workDir: string, branchName: string, cc: string[], basedOn?: string,
-                            publishToRemote?: string, baseCommit?: string): Promise<ProjectOptions> {
+    public static async get(
+        workDir: string,
+        branchName: string,
+        cc: string[],
+        basedOn?: string,
+        publishToRemote?: string,
+        baseCommit?: string,
+    ): Promise<ProjectOptions> {
         const config: IConfig = getConfig();
         let upstreamBranch: string;
         let to: string;
@@ -62,8 +68,17 @@ export class ProjectOptions {
             throw new Error(`Branch ${branchName} is not rebased to ${upstreamBranch}`);
         }
 
-        return new ProjectOptions(branchName, upstreamBranch, basedOn, publishToRemote, to, cc, midUrlPrefix,
-                                  workDir, baseCommit);
+        return new ProjectOptions(
+            branchName,
+            upstreamBranch,
+            basedOn,
+            publishToRemote,
+            to,
+            cc,
+            midUrlPrefix,
+            workDir,
+            baseCommit,
+        );
     }
 
     public readonly branchName: string;
@@ -77,9 +92,17 @@ export class ProjectOptions {
     public readonly cc: string[];
     public readonly midUrlPrefix: string;
 
-    protected constructor(branchName: string, upstreamBranch: string, basedOn: string | undefined,
-                          publishToRemote: string | undefined, to: string, cc: string[], midUrlPrefix: string,
-                          workDir: string, baseCommit?: string) {
+    protected constructor(
+        branchName: string,
+        upstreamBranch: string,
+        basedOn: string | undefined,
+        publishToRemote: string | undefined,
+        to: string,
+        cc: string[],
+        midUrlPrefix: string,
+        workDir: string,
+        baseCommit?: string,
+    ) {
         this.branchName = branchName;
         this.upstreamBranch = upstreamBranch;
 

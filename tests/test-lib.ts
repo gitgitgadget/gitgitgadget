@@ -1,4 +1,5 @@
-import {mkdir, readdir, realpath, rmdir, unlink, writeFile} from "fs/promises";
+/* eslint-disable security/detect-non-literal-fs-filename */
+import { mkdir, readdir, realpath, rmdir, unlink, writeFile } from "fs/promises";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import { isDirectory, isFile } from "../lib/fs-util.js";
@@ -135,6 +136,7 @@ export async function testCreateRepo(name: string, suffix?: string): Promise<Tes
     }
     tmp = await realpath(tmp);
 
+    // eslint-disable-next-line security/detect-unsafe-regex
     const match = name.match(/^(.*[\\/])?(.*?)(\.test)?\.ts$/);
     if (match) {
         name = `trash directory.${match[2]}`;
@@ -161,7 +163,7 @@ export async function testCreateRepo(name: string, suffix?: string): Promise<Tes
         } catch (e) {
             const error = e as Error;
             if (!error.message.match(/File exists/)) {
-                throw error
+                throw error;
             }
         }
     }

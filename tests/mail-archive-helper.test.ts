@@ -13,8 +13,13 @@ import { testCreateRepo } from "./test-lib.js";
 /* eslint max-classes-per-file: ["error", 2] */
 
 class MailArchiveGitHelperProxy extends MailArchiveGitHelper {
-    public constructor(gggNotes: GitNotes, mailArchiveGitDir: string, githubGlue: GitHubGlue,
-                          state: IGitMailingListMirrorState, branch: string) {
+    public constructor(
+        gggNotes: GitNotes,
+        mailArchiveGitDir: string,
+        githubGlue: GitHubGlue,
+        state: IGitMailingListMirrorState,
+        branch: string,
+    ) {
         super(gggNotes, mailArchiveGitDir, githubGlue, state, branch);
     }
 }
@@ -400,7 +405,8 @@ This Pull Request contains some ipsum lorem.
     logSpy.mockRestore();
     expect(commentBody).not.toMatch(/outdated/);
 
-    { // allow name reuse
+    {
+        // allow name reuse
         const data = await notes.get<IMailMetadata>(replyMessageId);
         expect(data).toBeDefined();
         expect(data?.pullRequestURL).toEqual(mailMeta.pullRequestURL);
