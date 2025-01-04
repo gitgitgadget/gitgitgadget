@@ -270,6 +270,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
             name: string,
             description: string,
             action: (repositoryOwner: string, pullRequestURL: string) => Promise<void>,
+            verbatim2ndArgument = false,
         ) {
             super(name);
             super.argument("[repository-owner]");
@@ -281,9 +282,10 @@ const commandOptions = commander.opts<ICommanderOptions>();
                     args[0] = config.repo.owner;
                 }
                 const [repositoryOwner, prNumber] = args;
-                const pullRequestURL = prNumber.match(/^http/)
-                    ? prNumber
-                    : `https://github.com/${repositoryOwner}/${config.repo.name}/pull/${prNumber}`;
+                const pullRequestURL =
+                    verbatim2ndArgument || prNumber.match(/^http/)
+                        ? prNumber
+                        : `https://github.com/${repositoryOwner}/${config.repo.name}/pull/${prNumber}`;
                 return await action(repositoryOwner, pullRequestURL);
             });
         }
@@ -311,9 +313,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
         new OptionalRepoOwnerCommand(
             "get-pr-commits",
             "Get the commits for a given Pull Request",
-            async (repositoryOwner, prNumber) => {
-                if (repositoryOwner === undefined) repositoryOwner = config.repo.owner;
-                const pullRequestURL = `https://github.com/${repositoryOwner}/${config.repo.name}/pull/${prNumber}`;
+            async (_repositoryOwner, pullRequestURL) => {
                 const prMeta = await ci.getPRMetadata(pullRequestURL);
                 if (!prMeta) {
                     throw new Error(`No metadata found for ${pullRequestURL}`);
@@ -326,10 +326,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
         new OptionalRepoOwnerCommand(
             "handle-pr",
             "Handle a given Pull Request (add it to open PRs, update commit <-> message ID mapping, etc.)",
-            async (repositoryOwner, prNumber) => {
-                if (repositoryOwner === undefined) repositoryOwner = config.repo.owner;
-                const pullRequestURL = `https://github.com/${repositoryOwner}/${config.repo.name}/pull/${prNumber}`;
-
+            async (_repositoryOwner, pullRequestURL) => {
                 const meta = await ci.getPRMetadata(pullRequestURL);
                 if (!meta) {
                     throw new Error(`No metadata for ${pullRequestURL}`);
@@ -441,20 +438,21 @@ const commandOptions = commander.opts<ICommanderOptions>();
         new OptionalRepoOwnerCommand(
             "handle-pr-comment",
             "Handle a comment on a Pull Request",
-            async (repositoryOwner: string | undefined, commentID: string) => {
+            async (repositoryOwner: string, commentID: string) => {
                 if (repositoryOwner === undefined) repositoryOwner = config.repo.owner;
                 await ci.handleComment(repositoryOwner, parseInt(commentID, 10));
             },
+            true,
         ),
     );
     commander.addCommand(
         new OptionalRepoOwnerCommand(
             "handle-pr-push",
             "Handle a push to a Pull Request",
-            async (repositoryOwner: string | undefined, prNumber: string) => {
-                if (repositoryOwner === undefined) repositoryOwner = config.repo.owner;
+            async (repositoryOwner: string, prNumber: string) => {
                 await ci.handlePush(repositoryOwner, parseInt(prNumber, 10));
             },
+            true,
         ),
     );
     commander
