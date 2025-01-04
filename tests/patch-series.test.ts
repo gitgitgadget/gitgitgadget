@@ -107,24 +107,25 @@ class PatchSeriesTest extends PatchSeries {
         x.insertCcAndFromLines(mails, thisAuthor, senderName);
 
         test("non-ASCII characters are encoded correctly", () => {
-            const needle = "\"=?UTF-8?Q?Nguy=E1=BB=85n_Th=C3=A1i_Ng=E1=BB=8Dc?= Duy via GitGitGadget\" ";
+            const needle = '"=?UTF-8?Q?Nguy=E1=BB=85n_Th=C3=A1i_Ng=E1=BB=8Dc?= Duy via GitGitGadget" ';
             expect(mails[0]).toEqual(expect.stringContaining(needle));
         });
 
         test("sender names are quoted properly", () => {
             const pairs: { [sender: string]: string | string[] | boolean } = {
-                "bee <nobody <email.org>": "\"bee <nobody\" <email.org>",
-                "bob@obo <email.org>": "\"bob@obo\" <email.org>",
+                "bee <nobody <email.org>": '"bee <nobody" <email.org>',
+                "bob@obo <email.org>": '"bob@obo" <email.org>',
                 "excited! <email.org>": false,
-                "foo [bar] name <email.org>": "\"foo [bar] name\" <email.org>",
-                "harry \"s\" truman <usa.gov>":
-                    [ "\"harry \\\"s\\\" truman\" <usa.gov>",
-                      "harry =?UTF-8?Q?=22s=22?= truman <usa.gov>" ],
-                "mr. name <email.org>": "\"mr. name\" <email.org>",
-                "ms. \\backslash <email.org>": "\"ms. \\\\backslash\" <email.org>",
+                "foo [bar] name <email.org>": '"foo [bar] name" <email.org>',
+                'harry "s" truman <usa.gov>': [
+                    '"harry \\"s\\" truman" <usa.gov>',
+                    "harry =?UTF-8?Q?=22s=22?= truman <usa.gov>",
+                ],
+                "mr. name <email.org>": '"mr. name" <email.org>',
+                "ms. \\backslash <email.org>": '"ms. \\\\backslash" <email.org>',
                 "my name <email.org>": false,
                 "name <email.org>": false,
-                "wile e. coyote <coyote@desert.net>": "\"wile e. coyote\" <coyote@desert.net>",
+                "wile e. coyote <coyote@desert.net>": '"wile e. coyote" <coyote@desert.net>',
             };
             for (const sender of Object.keys(pairs)) {
                 const expected = pairs[sender] || sender;
@@ -138,8 +139,12 @@ class PatchSeriesTest extends PatchSeries {
         });
 
         test("Cc: is inserted correctly", () => {
-            expect(mails[1]).toMatch(new RegExp("From: \"Some One Else via "
-                + "GitGitGadget\"[^]*\\nCc: Some One Else[^]*\\n\\nFrom: Some One Else.*\\n\\n"));
+            expect(mails[1]).toMatch(
+                new RegExp(
+                    'From: "Some One Else via ' +
+                        'GitGitGadget"[^]*\\nCc: Some One Else[^]*\\n\\nFrom: Some One Else.*\\n\\n',
+                ),
+            );
         });
 
         const coverLetter = PatchSeries.adjustCoverLetter(mails[0]);
@@ -147,10 +152,7 @@ class PatchSeriesTest extends PatchSeries {
             expect(coverLetter).toMatch(/\nSubject: .*This is the subject/);
         });
 
-        const mids = [
-            "cover.2.git.author@example.com",
-            "cover.1.git.author@example.com",
-        ];
+        const mids = ["cover.2.git.author@example.com", "cover.1.git.author@example.com"];
         const tagMessage = PatchSeries.generateTagMessage(coverLetter, true, "https://mid.lookup/", mids);
         test("Tag message is generated correctly", () => {
             expect(tagMessage).toBe(tagMessage1);
@@ -168,16 +170,16 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             expect(withLinks).toBe(tagMessage1 + footer);
         });
 
-        const footers = [
-            "HEADER",
-        ].concat(["This", "is", "a", "fake", "cover letter",].map((element: string): string => ` ${element}`));
+        const footers = ["HEADER"].concat(
+            ["This", "is", "a", "fake", "cover letter"].map((element: string): string => ` ${element}`),
+        );
 
         const coverLetterWithRangeDiff = PatchSeries.insertFooters(coverLetter, true, footers);
         const mailWithRangeDiff = PatchSeries.insertFooters(mails[1], false, footers);
         test("range-diff is inserted correctly", () => {
             expect(coverLetterWithRangeDiff).toMatch(/\n\nHEADER\n This\n is\n a\n fake\n cover letter\n-- \n2\.17/);
             expect(mailWithRangeDiff).toMatch(
-                new RegExp("\\n---\\n\\nHEADER\\n This\\n is\\n a\\n fake\\n cover letter\\n\\n README")
+                new RegExp("\\n---\\n\\nHEADER\\n This\\n is\\n a\\n fake\\n cover letter\\n\\n README"),
             );
         });
 
@@ -413,10 +415,11 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
                 workDir: repo.workDir,
             });
             await repo.newBranch("upstream/master");
-            await repo.commit("template", ".github/PULL_REQUEST_TEMPLATE.md", [
-                "This is PR template",
-                "Please read our guide to continue",
-            ].join("\n"));
+            await repo.commit(
+                "template",
+                ".github/PULL_REQUEST_TEMPLATE.md",
+                ["This is PR template", "Please read our guide to continue"].join("\n"),
+            );
 
             const prTitle = "My test PR!";
             const basedOn = "Disintegration";
@@ -426,8 +429,8 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
                 "",
                 `based-on: ${basedOn}`,
                 "Cc: Some Contributor <contributor@example.com>",
-                "CC: Capital Letters <shout@out.loud>, Hello <hello@wor.ld>, without@any.explicit.name"
-                + "; Semi Cologne <semi@col.on>",
+                "CC: Capital Letters <shout@out.loud>, Hello <hello@wor.ld>, without@any.explicit.name" +
+                    "; Semi Cologne <semi@col.on>",
                 "Cc:No Space <no@outer.space>",
                 "Cc:   Several Space <i@love.spaces>",
                 "Cc:	Even A. Tab <john@tabular.com>",

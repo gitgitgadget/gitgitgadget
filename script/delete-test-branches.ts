@@ -29,13 +29,17 @@ class GitHubProxy extends GitHubGlue {
 
 const commander = new Command();
 
-commander.version("1.0.0")
+commander
+    .version("1.0.0")
     .usage("[options]")
     .description(description)
     .requiredOption("-o, --owner <string>", "owner must be specified")
     .requiredOption("-r, --repo <string>", "repository must be specified")
-    .option("-h, --hours <number>",
-            "how old a branch is before expiring.  This is the hours before last midnight", undefined)
+    .option(
+        "-h, --hours <number>",
+        "how old a branch is before expiring.  This is the hours before last midnight",
+        undefined,
+    )
     .option("-m, --minutes <number>", "how old a branch is before expiring.  --hours has priority.", undefined)
     .option("--dry-run", "do not delete the refs (useful for debugging)")
     .parse(process.argv);

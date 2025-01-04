@@ -10,13 +10,13 @@ export function md2text(markdown: string, columns = 76): string {
         formatters: {
             headerFormatter: (elem, walk, builder, options) => {
                 builder.openBlock({
-                    leadingLineBreaks: options.leadingLineBreaks || 2 });
+                    leadingLineBreaks: options.leadingLineBreaks || 2,
+                });
                 walk(elem.children, builder);
                 builder.closeBlock({
                     trailingLineBreaks: options.trailingLineBreaks || 2,
                     blockTransform: (str) => {
-                        const underline = str.substring(str.lastIndexOf("\n") + 1)
-                            .replace(/./g, "=");
+                        const underline = str.substring(str.lastIndexOf("\n") + 1).replace(/./g, "=");
                         return `${str}\n${underline}`;
                     },
                 });
@@ -24,16 +24,18 @@ export function md2text(markdown: string, columns = 76): string {
             blockFormatter: (elem, walk, builder, options) => {
                 builder.openBlock({
                     leadingLineBreaks: options.leadingLineBreaks || 2,
-                    reservedLineLength: quoteDepth ? 1 : 2});
+                    reservedLineLength: quoteDepth ? 1 : 2,
+                });
                 quoteDepth++;
                 walk(elem.children, builder);
                 quoteDepth--;
                 builder.closeBlock({
                     trailingLineBreaks: options.trailingLineBreaks || 2,
-                    blockTransform: (str) => { return str
-                        .replace(/^>/gm, ">>") // add to quote
-                        .replace(/^(?!>|$)/gm, "> ") // new quote
-                        .replace(/(^|\n)(\n)(?!$)/g, "$1>$2"); // quote empty
+                    blockTransform: (str) => {
+                        return str
+                            .replace(/^>/gm, ">>") // add to quote
+                            .replace(/^(?!>|$)/gm, "> ") // new quote
+                            .replace(/(^|\n)(\n)(?!$)/g, "$1>$2"); // quote empty
                     },
                 });
             },

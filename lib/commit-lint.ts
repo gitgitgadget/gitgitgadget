@@ -1,7 +1,7 @@
 import { IPRCommit } from "./github-glue.js";
 
 export interface ILintError {
-    checkFailed: boolean;           // true if check failed
+    checkFailed: boolean; // true if check failed
     message: string;
 }
 
@@ -35,30 +35,36 @@ export class LintCommit {
      * Linter method to run checks on the commit message.
      */
     public lint(): ILintError | void {
-        const phase1 = [
-            this.commitViable
-        ];
+        const phase1 = [this.commitViable];
 
-        const phase2 = [            // checks to always run
+        const phase2 = [
+            // checks to always run
             this.commitMessageLength,
             this.bangPrefix,
             this.lowerCaseAfterPrefix,
             this.signedOffBy,
         ];
 
-        const phase3 = [            // checks if phase1 was successful
+        const phase3 = [
+            // checks if phase1 was successful
             this.commitTextLength,
             this.moreThanAHyperlink,
         ];
 
-        phase1.map((linter) => { linter(); });
+        phase1.map((linter) => {
+            linter();
+        });
 
         const phase1Okay = false === this.blocked;
 
-        phase2.map((linter) => { linter(); });
+        phase2.map((linter) => {
+            linter();
+        });
 
         if (phase1Okay) {
-            phase3.map((linter) => { linter(); });
+            phase3.map((linter) => {
+                linter();
+            });
         }
 
         if (this.messages.length) {
@@ -66,7 +72,8 @@ export class LintCommit {
             return {
                 checkFailed: this.blocked,
                 message: `There ${this.messages.length > 1 ? "are issues" : "is an issue"} in commit ${
-                    this.patch.commit}:\n${this.messages.join("\n")}`,
+                    this.patch.commit
+                }:\n${this.messages.join("\n")}`,
             };
         }
     }
@@ -107,14 +114,19 @@ export class LintCommit {
         }
 
         for (const line of this.lines) {
-            if (line.length > this.maxColumns &&
+            if (
+                line.length > this.maxColumns &&
                 // Allow long lines if prefixed with whitespace (ex. quoted error messages)
                 !line.match(/^\s+/) &&
                 // Allow long lines if they cannot be wrapped at some white-space character, e.g. URLs. To allow a
                 // short preamble such as `ref [1] <URL>` lines, we skip the first 10 (arbitrary) characters.
-                line.slice(10).match(/\s/)) {
-                this.block(`Lines in the body of the commit messages should be wrapped between 60 and ${
-                        this.maxColumns} characters.\nIndented lines, and lines without whitespace, are exempt`);
+                line.slice(10).match(/\s/)
+            ) {
+                this.block(
+                    `Lines in the body of the commit messages should be wrapped between 60 and ${
+                        this.maxColumns
+                    } characters.\nIndented lines, and lines without whitespace, are exempt`,
+                );
                 break;
             }
         }

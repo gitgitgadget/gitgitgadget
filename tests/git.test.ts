@@ -31,7 +31,7 @@ test("serialization", async () => {
         if (waitTime) {
             const myWait = --waitTime;
             logger(`waiting ${myWait}`);
-            await sleep(waitTime * 50 + waitTime % 2 * 60); // odd/even have different waits
+            await sleep(waitTime * 50 + (waitTime % 2) * 60); // odd/even have different waits
             logger(`waiting ${myWait} done`);
             // track waitTime before and after wait
             times.push({ myWait, waitTime });
@@ -53,7 +53,7 @@ test("sequencing", async () => {
 
     const lineHandler = async (line: string): Promise<void> => {
         waitTime--;
-        await sleep(waitTime * 50 + waitTime % 2 * 60); // odd/even have different waits
+        await sleep(waitTime * 50 + (waitTime % 2) * 60); // odd/even have different waits
         buffer += `${line}\n`;
     };
 

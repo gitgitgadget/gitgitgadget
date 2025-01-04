@@ -24,9 +24,11 @@ export class MailCommitMapping {
         return await this.update(true);
     }
 
-    private async update(includeNotesRef?: boolean,
-                         includeUpstreamBranches?: boolean,
-                         includeGitsterBranches?: boolean): Promise<void> {
+    private async update(
+        includeNotesRef?: boolean,
+        includeUpstreamBranches?: boolean,
+        includeGitsterBranches?: boolean,
+    ): Promise<void> {
         const refs: string[] = [];
         if (includeNotesRef) {
             refs.push("refs/notes/mail-to-commit:refs/notes/mail-to-commit");
@@ -40,8 +42,9 @@ export class MailCommitMapping {
             refs.push(`+refs/heads/*:refs/remotes/${this.config.repo.maintainerBranch}/*`);
         }
         if (refs.length) {
-            await git(["fetch", `https://github.com/${this.config.repo.owner}/${this.config.repo.name}`, ...refs],
-                { workDir: this.workDir });
+            await git(["fetch", `https://github.com/${this.config.repo.owner}/${this.config.repo.name}`, ...refs], {
+                workDir: this.workDir,
+            });
         }
     }
 }

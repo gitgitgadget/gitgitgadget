@@ -88,12 +88,12 @@ test("pull requests", async () => {
         // NOTE: Runs on GitHub and Azure pipelines use a timestamped
         // branch/PR request that gets cleaned up separately.
 
-        if (!process.env.GITHUB_WORKFLOW &&
-            !Object.prototype.hasOwnProperty.call(process.env, "system.definitionId")) {
+        if (!process.env.GITHUB_WORKFLOW && !Object.prototype.hasOwnProperty.call(process.env, "system.definitionId")) {
             let pullRequestURL = "";
 
             oldPrs.map((pr) => {
-                if (pr.title === titleBase) { // need to clean up?
+                if (pr.title === titleBase) {
+                    // need to clean up?
                     pullRequestURL = pr.pullRequestURL;
                 }
             });
@@ -102,14 +102,16 @@ test("pull requests", async () => {
                 await github.closePR(pullRequestURL, "Not merged");
             }
 
-            try {                   // delete remote branch
+            try {
+                // delete remote branch
                 await github.octo.rest.git.deleteRef({ owner, ref: `heads/${branchBase}`, repo });
             } catch (e) {
                 const error = e as Error;
                 expect(error.toString()).toMatch(/Reference does not exist/);
             }
 
-            try {                   // delete local branch
+            try {
+                // delete local branch
                 await git(["branch", "-D", branchBase], { workDir: repoDir });
             } catch (e) {
                 const error = e as Error;
@@ -197,8 +199,12 @@ test("pull requests", async () => {
         await git(["fetch", "origin", "--", `+${branchRef}:${branchRef}`], { workDir: repoDir });
 
         const commitComment = "comment about commit";
-        const reviewResult = await github
-            .addPRCommitComment(prData.html_url, cFile.data.commit.sha || '', repoDir, commitComment);
+        const reviewResult = await github.addPRCommitComment(
+            prData.html_url,
+            cFile.data.commit.sha || "",
+            repoDir,
+            commitComment,
+        );
 
         const commentReply = await github.addPRCommentReply(prData.html_url, reviewResult.id, newComment);
 
@@ -249,7 +255,7 @@ test("add PR cc requests", async () => {
 
     // eslint-disable-next-line @typescript-eslint/require-await
     const updatePR = jest.fn(async (_prKey, body: string): Promise<number> => {
-        prInfo.body = body;     // set new body for next test
+        prInfo.body = body; // set new body for next test
         return 1;
     });
 
@@ -466,7 +472,8 @@ test("test missing values in response using small schema", async () => {
     // Response for any octokit calls - will be returned by the hook.wrap()
     // being set below.
 
-    let response: OctokitResponse<IPullRequestSimple[]>
+    let response:
+        | OctokitResponse<IPullRequestSimple[]>
         | OctokitResponse<IPullRequestSimple>
         | OctokitResponse<IIssueComment>
         | OctokitResponse<[ICommit]>

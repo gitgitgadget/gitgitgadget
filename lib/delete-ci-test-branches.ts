@@ -10,11 +10,13 @@ a workflow.  The default is to delete branches older than two days.
 // ref level results of the GraphQL query
 
 declare type refGraph = {
-    node: {                         // branches as refs
+    node: {
+        // branches as refs
         name: string;
         id: string;
         pulls: {
-            edges: [                // pull requests
+            edges: [
+                // pull requests
                 {
                     node: {
                         number: number;
@@ -57,9 +59,12 @@ export type deletionOptions = {
  * @param repo name of repository on GitHub
  * @param options deletionOptions to override default of two days
  */
-export async function deleteBranches(octocat: Octokit, owner: string,
-    repo: string, options: deletionOptions = {}): Promise<void> {
-
+export async function deleteBranches(
+    octocat: Octokit,
+    owner: string,
+    repo: string,
+    options: deletionOptions = {},
+): Promise<void> {
     if (!owner || !repo) {
         throw new Error("Missing owner or repo name.");
     }

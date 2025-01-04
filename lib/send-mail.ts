@@ -64,13 +64,31 @@ export async function parseMBox(mbox: string, gentle?: boolean): Promise<IParsed
         const value = valueSet[2];
 
         switch (entry.key) {
-            case "cc": cc = (cc || []).concat(value.replace(/\r?\n/g, " ").split(", ").map(item => item.trim())); break;
-            case "date": date = value; break;
-            case "fcc": break;
-            case "from": from = rfc2047.decode(value.trim()); break;
-            case "message-id": messageId = value; break;
-            case "subject": subject = value; break;
-            case "to": to = value; break;
+            case "cc":
+                cc = (cc || []).concat(
+                    value
+                        .replace(/\r?\n/g, " ")
+                        .split(", ")
+                        .map((item) => item.trim()),
+                );
+                break;
+            case "date":
+                date = value;
+                break;
+            case "fcc":
+                break;
+            case "from":
+                from = rfc2047.decode(value.trim());
+                break;
+            case "message-id":
+                messageId = value;
+                break;
+            case "subject":
+                subject = value;
+                break;
+            case "to":
+                to = value;
+                break;
             default:
                 headers.push({ key, value });
         }
@@ -148,7 +166,7 @@ export async function sendMail(mail: IParsedMBox, smtpOptions: ISMTPOptions): Pr
 
     if (smtpOptions.smtpOpts) {
         // Add quoting for JSON.parse
-        const smtpOpts = smtpOptions.smtpOpts.replace(/([ {])([a-zA-Z0-9.]+?) *?:/g,"$1\"$2\":");
+        const smtpOpts = smtpOptions.smtpOpts.replace(/([ {])([a-zA-Z0-9.]+?) *?:/g, '$1"$2":');
         Object.assign(transportOpts, JSON.parse(smtpOpts));
     }
 

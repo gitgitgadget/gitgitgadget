@@ -18,8 +18,12 @@ export interface IGitMailingListMirrorState {
 }
 
 export class MailArchiveGitHelper {
-    public static async get(gggNotes: GitNotes, mailArchiveGitDir: string, githubGlue: GitHubGlue, branch: string):
-        Promise<MailArchiveGitHelper> {
+    public static async get(
+        gggNotes: GitNotes,
+        mailArchiveGitDir: string,
+        githubGlue: GitHubGlue,
+        branch: string,
+    ): Promise<MailArchiveGitHelper> {
         const state: IGitMailingListMirrorState = (await gggNotes.get<IGitMailingListMirrorState>(stateKey)) || {};
         return new MailArchiveGitHelper(gggNotes, mailArchiveGitDir, githubGlue, state, branch);
     }
@@ -58,8 +62,13 @@ export class MailArchiveGitHelper {
     protected readonly mailArchiveGitDir: string;
     protected readonly githubGlue: GitHubGlue;
 
-    protected constructor(gggNotes: GitNotes, mailArchiveGitDir: string, githubGlue: GitHubGlue,
-                          state: IGitMailingListMirrorState, branch: string) {
+    protected constructor(
+        gggNotes: GitNotes,
+        mailArchiveGitDir: string,
+        githubGlue: GitHubGlue,
+        state: IGitMailingListMirrorState,
+        branch: string,
+    ) {
         this.branch = branch;
         this.gggNotes = gggNotes;
         this.mailArchiveGitDir = mailArchiveGitDir;
@@ -69,9 +78,11 @@ export class MailArchiveGitHelper {
 
     public async processMails(prFilter?: (pullRequestURL: string) => boolean): Promise<boolean> {
         const keys: Set<string> = new Set<string>();
-        (await git(["ls-tree", "-r", `${this.gggNotes.notesRef}:`],
-                   { workDir: this.gggNotes.workDir })).split("\n")
-            .map((line: string) => { keys.add(line.substring(53).replace(/\//g, "")); });
+        (await git(["ls-tree", "-r", `${this.gggNotes.notesRef}:`], { workDir: this.gggNotes.workDir }))
+            .split("\n")
+            .map((line: string) => {
+                keys.add(line.substring(53).replace(/\//g, ""));
+            });
         const seen = (messageID: string): boolean => {
             return keys.has(MailArchiveGitHelper.hashKey(messageID));
         };
@@ -110,12 +121,16 @@ export class MailArchiveGitHelper {
                     let comment: string;
                     if (!pre || pre.trim() === "") {
                         comment = `The branch [\`${branchName}\`](${branchBaseURL}${
-                            branchName}) was mentioned in the "${info?.sectionName}" section of the [status updates](${
-                            whatsCookingBaseURL}${sousChef.messageID}) on the Git mailing list.`;
+                            branchName
+                        }) was mentioned in the "${info?.sectionName}" section of the [status updates](${
+                            whatsCookingBaseURL
+                        }${sousChef.messageID}) on the Git mailing list.`;
                     } else {
                         comment = `There was a [status update](${whatsCookingBaseURL}${sousChef.messageID}) in the "${
-                            info?.sectionName}" section about the branch [\`${branchName}\`](${branchBaseURL}${
-                            branchName}) on the Git mailing list:\n\n<pre>\n${pre}\n</pre>`;
+                            info?.sectionName
+                        }" section about the branch [\`${branchName}\`](${branchBaseURL}${
+                            branchName
+                        }) on the Git mailing list:\n\n<pre>\n${pre}\n</pre>`;
                     }
                     console.log(`\n${pullRequestURL}: ${comment}`);
                     await this.githubGlue.addPRComment(pullRequestURL, comment);
@@ -131,8 +146,10 @@ export class MailArchiveGitHelper {
             }
             const parsed = parseMBoxMessageIDAndReferences(parsedMbox);
 
-            if (parsedMbox.subject?.match(/^What's cooking in git.git /) &&
-                parsedMbox.from === "Junio C Hamano <gitster@pobox.com>") {
+            if (
+                parsedMbox.subject?.match(/^What's cooking in git.git /) &&
+                parsedMbox.from === "Junio C Hamano <gitster@pobox.com>"
+            ) {
                 return handleWhatsCooking(mbox);
             }
 
@@ -164,16 +181,16 @@ export class MailArchiveGitHelper {
             if (!pullRequestURL) {
                 return;
             }
-            console.log(`Message-ID ${parsed.messageID
-                        } (length ${mbox.length
-                        }) for PR ${pullRequestURL
-                        }, commit ${originalCommit
-                        }, comment ID: ${issueCommentId}`);
+            console.log(
+                `Message-ID ${parsed.messageID} (length ${mbox.length}) for PR ${pullRequestURL}, commit ${
+                    originalCommit
+                }, comment ID: ${issueCommentId}`,
+            );
 
             const archiveURL = `${this.config.mailrepo.url}${parsed.messageID}`;
             const header = `[On the Git mailing list](${archiveURL}), ${
                 parsedMbox.from ? parsedMbox.from.replace(/ *<.*>/, "") : "Somebody"
-                } wrote ([reply to this](${replyToThisURL})):\n\n`;
+            } wrote ([reply to this](${replyToThisURL})):\n\n`;
             const comment = MailArchiveGitHelper.mbox2markdown(parsedMbox);
             const fullComment = header + comment;
             const prKey = getPullRequestKey(pullRequestURL);
@@ -182,13 +199,19 @@ export class MailArchiveGitHelper {
                 await this.githubGlue.addPRCommentReply(pullRequestURL, issueCommentId, fullComment);
             } else if (originalCommit) {
                 try {
-                    const result = await this.githubGlue.addPRCommitComment(pullRequestURL, originalCommit,
-                                            this.gggNotes.workDir, fullComment, firstPatchLine);
+                    const result = await this.githubGlue.addPRCommitComment(
+                        pullRequestURL,
+                        originalCommit,
+                        this.gggNotes.workDir,
+                        fullComment,
+                        firstPatchLine,
+                    );
                     issueCommentId = result.id;
                 } catch (_error) {
                     const commits = await this.githubGlue.getPRCommits(prKey.owner, prKey.pull_number);
                     const regarding = `${header.slice(0, -3)}, regarding ${originalCommit}${
-                        commits.find((e) => e.commit === originalCommit) ? "" : " (outdated)"}:\n\n`;
+                        commits.find((e) => e.commit === originalCommit) ? "" : " (outdated)"
+                    }:\n\n`;
                     await this.githubGlue.addPRComment(pullRequestURL, regarding + comment);
                     originalCommit = undefined;
                 }
@@ -239,8 +262,12 @@ export class MailArchiveGitHelper {
         };
 
         if (!this.state.latestRevision) {
-            throw new Error(`Mail archive email commit tip not set.  Please run \`misc-helper init-email-commit-tip\` ${
-                ""}to set the value.`);
+            throw new Error(
+                [
+                    "Mail archive email commit tip not set.  ",
+                    "Please run `misc-helper init-email-commit-tip` to set the value.",
+                ].join(""),
+            );
         }
 
         const head = await revParse(this.branch, this.mailArchiveGitDir);

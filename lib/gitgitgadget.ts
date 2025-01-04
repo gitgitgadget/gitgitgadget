@@ -36,8 +36,7 @@ export class GitGitGadget {
         return workDir;
     }
 
-    public static async get(gitGitGadgetDir: string, workDir?: string):
-        Promise<GitGitGadget> {
+    public static async get(gitGitGadgetDir: string, workDir?: string): Promise<GitGitGadget> {
         if (!workDir) {
             workDir = await this.getWorkDir(gitGitGadgetDir);
         }
@@ -48,14 +47,15 @@ export class GitGitGadget {
         }
 
         // Initialize the worktree if necessary
-        if (!await isDirectory(workDir)) {
+        if (!(await isDirectory(workDir))) {
             await git(["init", "--bare", workDir]);
         }
 
         // Always fetch the Git notes first thing
-        await git(["fetch", publishTagsAndNotesToRemote, "--",
-                   `+${GitNotes.defaultNotesRef}:${GitNotes.defaultNotesRef}`],
-                  { workDir });
+        await git(
+            ["fetch", publishTagsAndNotesToRemote, "--", `+${GitNotes.defaultNotesRef}:${GitNotes.defaultNotesRef}`],
+            { workDir },
+        );
 
         const notes = new GitNotes(workDir);
 
@@ -70,17 +70,19 @@ export class GitGitGadget {
 
         const [options, allowedUsers] = await GitGitGadget.readOptions(notes);
 
-        return new GitGitGadget(notes, options, allowedUsers, { smtpHost, smtpOpts, smtpPass, smtpUser },
-                                publishTagsAndNotesToRemote);
+        return new GitGitGadget(
+            notes,
+            options,
+            allowedUsers,
+            { smtpHost, smtpOpts, smtpPass, smtpUser },
+            publishTagsAndNotesToRemote,
+        );
     }
 
-    protected static async readOptions(notes: GitNotes):
-        Promise<[IGitGitGadgetOptions, Set<string>]> {
+    protected static async readOptions(notes: GitNotes): Promise<[IGitGitGadgetOptions, Set<string>]> {
+        const defaultOptions: IGitGitGadgetOptions = { allowedUsers: [] };
 
-        const defaultOptions: IGitGitGadgetOptions = { allowedUsers: [], };
-
-        const options: IGitGitGadgetOptions
-            = await notes.get<IGitGitGadgetOptions>("") ?? defaultOptions;
+        const options: IGitGitGadgetOptions = (await notes.get<IGitGitGadgetOptions>("")) ?? defaultOptions;
 
         const allowedUsers = new Set<string>(options.allowedUsers);
 
@@ -97,11 +99,13 @@ export class GitGitGadget {
 
     protected readonly publishTagsAndNotesToRemote: string;
 
-    protected constructor(notes: GitNotes,
-                          options: IGitGitGadgetOptions,
-                          allowedUsers: Set<string>,
-                          smtpOptions: ISMTPOptions,
-                          publishTagsAndNotesToRemote: string) {
+    protected constructor(
+        notes: GitNotes,
+        options: IGitGitGadgetOptions,
+        allowedUsers: Set<string>,
+        smtpOptions: ISMTPOptions,
+        publishTagsAndNotesToRemote: string,
+    ) {
         if (!notes.workDir) {
             throw new Error("Could not determine Git worktree");
         }
@@ -119,8 +123,7 @@ export class GitGitGadget {
         return this.allowedUsers.has(user);
     }
 
-    public async allowUser(vouchingUser: string, user: string):
-        Promise<boolean> {
+    public async allowUser(vouchingUser: string, user: string): Promise<boolean> {
         await this.fetchAndReReadOptions();
         if (!this.isUserAllowed(vouchingUser)) {
             throw new Error(`User ${vouchingUser} lacks permission for this.`);
@@ -136,8 +139,7 @@ export class GitGitGadget {
         return true;
     }
 
-    public async denyUser(vouchingUser: string, user: string):
-        Promise<boolean> {
+    public async denyUser(vouchingUser: string, user: string): Promise<boolean> {
         await this.fetchAndReReadOptions();
         if (!this.isUserAllowed(vouchingUser)) {
             throw new Error(`User ${vouchingUser} lacks permission for this.`);
@@ -159,9 +161,7 @@ export class GitGitGadget {
     }
 
     // Send emails only to the user
-    public async preview(pr: IPullRequestInfo, userInfo: IGitHubUser):
-        Promise<IPatchSeriesMetadata | undefined> {
-
+    public async preview(pr: IPullRequestInfo, userInfo: IGitHubUser): Promise<IPatchSeriesMetadata | undefined> {
         if (!userInfo.email) {
             throw new Error(`No email in user info for ${userInfo.login}`);
         }
@@ -175,13 +175,11 @@ export class GitGitGadget {
             return await sendMail(mbox, this.smtpOptions);
         };
 
-        return await this.genAndSend( pr, userInfo, {noUpdate: true}, send);
+        return await this.genAndSend(pr, userInfo, { noUpdate: true }, send);
     }
 
     // Send emails out for review
-    public async submit(pr: IPullRequestInfo, userInfo: IGitHubUser):
-        Promise<IPatchSeriesMetadata | undefined> {
-
+    public async submit(pr: IPullRequestInfo, userInfo: IGitHubUser): Promise<IPatchSeriesMetadata | undefined> {
         const send = async (mail: string): Promise<string> => {
             return await parseHeadersAndSendMail(mail, this.smtpOptions);
         };
@@ -189,34 +187,36 @@ export class GitGitGadget {
         return await this.genAndSend(pr, userInfo, {}, send);
     }
 
-    protected async updateNotesAndPullRef(repositoryOwner: string,
-                                          pullRequestNumber: number,
-                                          additionalRef?: string):
-        Promise<string> {
+    protected async updateNotesAndPullRef(
+        repositoryOwner: string,
+        pullRequestNumber: number,
+        additionalRef?: string,
+    ): Promise<string> {
         const pullRequestRef = `refs/pull/${pullRequestNumber}/head`;
         const pullRequestMerge = `refs/pull/${pullRequestNumber}/merge`;
         const args = [
             "fetch",
             this.publishTagsAndNotesToRemote,
             "--",
-            `+${this.notes.notesRef}:${this.notes.notesRef}`
+            `+${this.notes.notesRef}:${this.notes.notesRef}`,
         ];
 
-        args.push(...this.config.repo.trackingBranches.map(branch =>
-            `+refs/heads/${branch}:refs/remotes/upstream/${branch}`));
+        args.push(
+            ...this.config.repo.trackingBranches.map(
+                (branch) => `+refs/heads/${branch}:refs/remotes/upstream/${branch}`,
+            ),
+        );
 
-        const prArgs = [
-            `+${pullRequestRef}:${pullRequestRef}`,
-            `+${pullRequestMerge}:${pullRequestMerge}`,
-        ];
+        const prArgs = [`+${pullRequestRef}:${pullRequestRef}`, `+${pullRequestMerge}:${pullRequestMerge}`];
         if (additionalRef) {
             args.push(`+${additionalRef}:${additionalRef}`);
         }
         if (repositoryOwner === this.config.repo.owner) {
             args.push(...prArgs);
         } else {
-            await git(["fetch", `https://github.com/${repositoryOwner}/${this.config.repo.name}`, ...prArgs],
-                { workDir: this.workDir });
+            await git(["fetch", `https://github.com/${repositoryOwner}/${this.config.repo.name}`, ...prArgs], {
+                workDir: this.workDir,
+            });
         }
         await git(args, { workDir: this.workDir });
 
@@ -227,45 +227,61 @@ export class GitGitGadget {
     }
 
     protected async fetchAndReReadOptions(): Promise<void> {
-        await git(["fetch", this.publishTagsAndNotesToRemote, "--",
-                   `+${GitNotes.defaultNotesRef}:${GitNotes.defaultNotesRef}`],
-                  { workDir: this.workDir });
-        [this.options, this.allowedUsers] =
-            await GitGitGadget.readOptions(this.notes);
+        await git(
+            [
+                "fetch",
+                this.publishTagsAndNotesToRemote,
+                "--",
+                `+${GitNotes.defaultNotesRef}:${GitNotes.defaultNotesRef}`,
+            ],
+            { workDir: this.workDir },
+        );
+        [this.options, this.allowedUsers] = await GitGitGadget.readOptions(this.notes);
     }
 
     protected async pushNotesRef(): Promise<void> {
-        await git(["push", this.publishTagsAndNotesToRemote, "--",
-                   `${this.notes.notesRef}`],
-                  { workDir: this.workDir });
+        await git(["push", this.publishTagsAndNotesToRemote, "--", `${this.notes.notesRef}`], {
+            workDir: this.workDir,
+        });
 
         // re-read options
-        [this.options, this.allowedUsers] =
-            await GitGitGadget.readOptions(this.notes);
+        [this.options, this.allowedUsers] = await GitGitGadget.readOptions(this.notes);
     }
 
     // Finish the job for preview and submit
-    protected async genAndSend(pr: IPullRequestInfo, userInfo: IGitHubUser,
-                               options: PatchSeriesOptions,
-                               send: SendFunction):
-        Promise<IPatchSeriesMetadata | undefined> {
-
+    protected async genAndSend(
+        pr: IPullRequestInfo,
+        userInfo: IGitHubUser,
+        options: PatchSeriesOptions,
+        send: SendFunction,
+    ): Promise<IPatchSeriesMetadata | undefined> {
         // get metadata in work repo
-        const metadata =
-            await this.notes.get<IPatchSeriesMetadata>(pr.pullRequestURL);
-        const previousTag = metadata && metadata.latestTag ?
-            `refs/tags/${metadata.latestTag}` : undefined;
+        const metadata = await this.notes.get<IPatchSeriesMetadata>(pr.pullRequestURL);
+        const previousTag = metadata && metadata.latestTag ? `refs/tags/${metadata.latestTag}` : undefined;
         // update work repo from base
         await this.updateNotesAndPullRef(pr.baseOwner, pr.number, previousTag);
 
-        const series =
-            await PatchSeries.getFromNotes(this.notes, pr.pullRequestURL, pr.title, pr.body, pr.baseLabel,
-                                           pr.baseCommit, pr.headLabel, pr.headCommit, options,
-                                           userInfo.name, userInfo.email);
+        const series = await PatchSeries.getFromNotes(
+            this.notes,
+            pr.pullRequestURL,
+            pr.title,
+            pr.body,
+            pr.baseLabel,
+            pr.baseCommit,
+            pr.headLabel,
+            pr.headCommit,
+            options,
+            userInfo.name,
+            userInfo.email,
+        );
 
-        const patchSeriesMetadata =
-            await series.generateAndSend(console, send, this.publishTagsAndNotesToRemote, pr.pullRequestURL,
-                                         new Date());
+        const patchSeriesMetadata = await series.generateAndSend(
+            console,
+            send,
+            this.publishTagsAndNotesToRemote,
+            pr.pullRequestURL,
+            new Date(),
+        );
         return patchSeriesMetadata;
     }
 }

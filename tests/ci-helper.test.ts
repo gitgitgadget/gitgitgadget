@@ -41,8 +41,11 @@ const eMailOptions = {
 
 beforeAll((): void => {
     eMailOptions.smtpserver.startServer(); // start listening
-    eMailOptions.smtpOpts =
-        `{port: ${eMailOptions.smtpserver.getPort()}, secure: true, tls: {rejectUnauthorized: false}}`;
+    eMailOptions.smtpOpts = JSON.stringify({
+        port: eMailOptions.smtpserver.getPort(),
+        secure: true,
+        tls: { rejectUnauthorized: false },
+    });
 });
 
 afterAll((): void => {
@@ -52,7 +55,7 @@ afterAll((): void => {
 // Mocking class to replace GithubGlue with mock of GitHubGlue
 
 class TestCIHelper extends CIHelper {
-    public ghGlue: GitHubGlue;      // not readonly reference
+    public ghGlue: GitHubGlue; // not readonly reference
     public addPRCommentCalls: string[][]; // reference mock.calls
     public updatePRCalls: string[][]; // reference mock.calls
     public addPRLabelsCalls: Array<[_: string, labels: string[]]>;
@@ -123,8 +126,7 @@ class TestCIHelper extends CIHelper {
 // is empty to ensure nothing needs to be present (worktree would
 // have objects present).
 
-async function setupRepos(instance: string):
-    Promise <{ worktree: TestRepo; gggLocal: TestRepo; gggRemote: TestRepo }> {
+async function setupRepos(instance: string): Promise<{ worktree: TestRepo; gggLocal: TestRepo; gggRemote: TestRepo }> {
     const worktree = await testCreateRepo(sourceFileName, `-work-cmt${instance}`);
     const gggLocal = await testCreateRepo(sourceFileName, `-git-lcl${instance}`);
     const gggRemote = await testCreateRepo(sourceFileName, `-git-rmt${instance}`);
@@ -271,7 +273,7 @@ testQ("handle comment allow basic test", async () => {
 
     // GitHubGlue Responses
     const comment = {
-        author: "ggg",              // set in setupRepos
+        author: "ggg", // set in setupRepos
         body: "/allow  user2",
         prNumber,
     };
