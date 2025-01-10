@@ -54,7 +54,7 @@ export async function parseMBox(mbox: string, gentle?: boolean): Promise<IParsed
 
     for (const entry of parsed.headerLines) {
         // try to parse header line and consume a leading line break after the colon in folded headers
-        const valueSet = entry.line.match(/(.*?):(?:\r?\n)? *([^]*)$/);
+        const valueSet = entry.line.match(/(.*?):(?:\r\n)? *([^]*)$/);
         if (!valueSet) {
             if (entry.line[entry.line.length - 1] === ":") {
                 continue;
