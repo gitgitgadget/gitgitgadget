@@ -393,6 +393,7 @@ testQ("handle comment allow no name specified (with trailing white space)", asyn
         number: prNumber,
         pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
         title: "Submit a fun fix",
+        draft: false,
     };
 
     ci.setGHGetPRInfo(prInfo);
@@ -480,6 +481,7 @@ testQ("handle comment submit not author", async () => {
         number: prNumber,
         pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
         title: "Submit a fun fix",
+        draft: false,
     };
 
     ci.setGHGetPRInfo(prInfo);
@@ -522,6 +524,7 @@ testQ("handle comment submit not mergeable", async () => {
         number: prNumber,
         pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
         title: "Do Not Submit a fun fix",
+        draft: false,
     };
 
     ci.setGHGetPRInfo(prInfo);
@@ -600,6 +603,7 @@ testQ("handle comment submit email success", async () => {
         number: prNumber,
         pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
         title: "Submit a fun fix",
+        draft: false,
     };
 
     ci.setGHGetPRInfo(prInfo);
@@ -685,6 +689,7 @@ testQ("handle comment preview email success", async () => {
         number: prNumber,
         pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
         title: "Preview a fun fix",
+        draft: false,
     };
 
     ci.setGHGetPRInfo(prInfo);
@@ -792,6 +797,7 @@ testQ("handle push/comment too many commits fails", async () => {
         number: prNumber,
         pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
         title: "Preview a fun fix",
+        draft: false,
     };
 
     ci.setGHGetPRInfo(prInfo);
@@ -911,6 +917,7 @@ testQ("handle push/comment merge commits fails", async () => {
         number: prNumber,
         pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
         title: "Preview a fun fix",
+        draft: false,
     };
 
     ci.setGHGetPRInfo(prInfo);
@@ -1058,6 +1065,7 @@ testQ("disallow no-reply emails", async () => {
         number: prNumber,
         pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
         title: "Preview a fun fix",
+        draft: false,
     };
 
     ci.setGHGetPRInfo(prInfo);
@@ -1184,6 +1192,7 @@ testQ("basic lint tests", async () => {
         number: prNumber,
         pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
         title: "Preview a fun fix",
+        draft: false,
     };
 
     ci.setGHGetPRInfo(prInfo);
@@ -1235,6 +1244,7 @@ testQ("Handle comment cc", async () => {
         number: prNumber,
         pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
         title: "Preview a fun fix",
+        draft: false,
     };
 
     ci.setGHGetPRInfo(prInfo);
