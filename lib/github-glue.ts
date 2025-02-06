@@ -19,6 +19,7 @@ export interface IPullRequestInfo {
     headCommit: string;
     mergeable: boolean;
     number: number;
+    draft: boolean;
 }
 
 export interface IPRComment {
@@ -335,6 +336,7 @@ export class GitHubGlue {
                 number: pr.number,
                 pullRequestURL: pr.html_url,
                 title: pr.title,
+                draft: false,
             });
         });
         return result;
@@ -371,6 +373,7 @@ export class GitHubGlue {
             number: pullRequest.number,
             pullRequestURL: pullRequest.html_url,
             title: pullRequest.title,
+            draft: pullRequest.draft || false,
         };
     }
 

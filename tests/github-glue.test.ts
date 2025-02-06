@@ -247,6 +247,7 @@ test("add PR cc requests", async () => {
         number: 59,
         pullRequestURL: "https://github.com/webstech/gitout/pull/59",
         title: "Submit a fun fix",
+        draft: false,
     };
 
     const commentInfo = { id: 1, url: "ok" };
