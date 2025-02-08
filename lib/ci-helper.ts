@@ -17,6 +17,7 @@ import { IPatchSeriesMetadata } from "./patch-series-metadata.js";
 import { IConfig, getExternalConfig, setConfig } from "./project-config.js";
 import { getPullRequestKeyFromURL, pullRequestKey } from "./pullRequestKey.js";
 import { ISMTPOptions } from "./send-mail.js";
+import { fileURLToPath } from "url";
 
 const readFile = util.promisify(fs.readFile);
 type CommentFunction = (comment: string) => Promise<void>;
@@ -878,6 +879,11 @@ export class CIHelper {
         }
     }
 
+    public static async getWelcomeMessage(username: string): Promise<string> {
+        const resPath = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..", "res", "WELCOME.md");
+        return (await readFile(resPath)).toString().replace(/\${username}/g, username);
+    }
+
     public async handlePush(repositoryOwner: string, prNumber: number): Promise<void> {
         const prKey = {
             owner: repositoryOwner,
@@ -901,7 +907,7 @@ export class CIHelper {
             this.smtpOptions,
         );
         if (!pr.hasComments && !gitGitGadget.isUserAllowed(pr.author)) {
-            const welcome = (await readFile("res/WELCOME.md")).toString().replace(/\${username}/g, pr.author);
+            const welcome = await CIHelper.getWelcomeMessage(pr.author);
             await this.github.addPRComment(prKey, welcome);
 
             await this.github.addPRLabels(prKey, ["new user"]);
