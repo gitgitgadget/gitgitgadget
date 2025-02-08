@@ -283,6 +283,9 @@ export class GitGitGadget {
             pr.pullRequestURL,
             new Date(),
         );
+        if (!options.noUpdate) {
+            await this.pushNotesRef();
+        }
         return patchSeriesMetadata;
     }
 }
