@@ -240,9 +240,7 @@ export class GitGitGadget {
     }
 
     protected async pushNotesRef(): Promise<void> {
-        await git(["push", this.publishTagsAndNotesToRemote, "--", `${this.notes.notesRef}`], {
-            workDir: this.workDir,
-        });
+        await this.notes.push(this.publishTagsAndNotesToRemote);
 
         // re-read options
         [this.options, this.allowedUsers] = await GitGitGadget.readOptions(this.notes);

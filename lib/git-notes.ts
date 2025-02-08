@@ -1,6 +1,7 @@
 /* eslint-disable security/detect-object-injection */
 import { emptyBlobName, git, revParse } from "./git.js";
 import { fromJSON, toJSON } from "./json-util.js";
+import { sleep } from "./sleep.js";
 
 export type POJO = { [name: string]: string | string[] | number | number[] | boolean | POJO };
 
@@ -19,6 +20,31 @@ type TemporaryNoteIndex = {
 };
 
 export class GitNotes {
+    public async push(url: string) {
+        for (const backoff of [50, 500, 2000, 5000, 20000, 0]) {
+            try {
+                await git(["push", url, "--", `${this.notesRef}`], {
+                    workDir: this.workDir,
+                });
+            } catch (e) {
+                if (!backoff) throw e;
+
+                // TODO: verify that the push failed because of a non-fast-forward
+
+                // wait a while before trying again to push (after fetching the remote notes ref and merging it)
+                await sleep(backoff);
+
+                const output = await git(["fetch", "--porcelain", url, "--", `${this.notesRef}`], {
+                    workDir: this.workDir,
+                });
+                // parse the output to obtain the OID of the remote notes ref
+                const [, fetchOID] = output.match(/^\* [0-9a-f]{40,64} ([0-9a-f]{40,64}) FETCH_HEAD$/) || [];
+                if (!fetchOID) throw new Error(`Could not parse the output of 'git fetch':\n${output}`);
+                // then use GitNotes.notesSync(remoteCommit)
+                await this.notesSync(fetchOID);
+            }
+        }
+    }
     public static readonly defaultNotesRef = "refs/notes/gitgitgadget";
     public readonly workDir?: string;
     public readonly notesRef: string;
