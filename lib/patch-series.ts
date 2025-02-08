@@ -812,15 +812,13 @@ export class PatchSeries {
             await this.notes.set("", globalOptions, true);
         }
 
-        logger.log("Publishing branch and tag");
-        await this.publishBranch(tagName);
-
         if (!this.options.dryRun) {
             const key = this.metadata.pullRequestURL || this.project.branchName;
             await this.notes.set(key, this.metadata, true);
         }
 
         if (publishTagsAndNotesToRemote) {
+            logger.log("Publishing tag");
             await git(["push", publishTagsAndNotesToRemote, this.notes.notesRef, `refs/tags/${tagName}`], {
                 workDir: this.notes.workDir,
             });
@@ -882,18 +880,5 @@ export class PatchSeries {
 
     protected async sendMBox(mbox: string): Promise<void> {
         await git(["send-mbox"], { stdin: mbox, workDir: this.project.workDir });
-    }
-
-    protected async publishBranch(tagName: string): Promise<void> {
-        if (!this.project.publishToRemote || this.options.noUpdate) {
-            return;
-        }
-
-        if (this.options.redo) {
-            tagName = "+" + tagName;
-        }
-        await git(["push", this.project.publishToRemote, `+${this.project.branchName}`, tagName], {
-            workDir: this.project.workDir,
-        });
     }
 }
