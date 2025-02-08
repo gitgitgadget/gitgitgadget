@@ -2,6 +2,8 @@ async function run() {
     const { execSync } = await import('child_process')
     const { CIHelper } = await import('../dist/index.js')
 
+    console.log(await CIHelper.getWelcomeMessage('world!'))
+
     const core = CIHelper.getActionsCore()
 
     // help dugite realize where `git` is...

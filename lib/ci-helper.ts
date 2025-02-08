@@ -788,6 +788,7 @@ export class CIHelper {
 
     public static async getWelcomeMessage(username: string): Promise<string> {
         const resPath = path.resolve(fileURLToPath(new URL('.', import.meta.url)), "..", "res", "WELCOME.md");
+process.stderr.write(`resPath: ${resPath}\n`);
         return (await readFile(resPath)).toString().replace(/\${username}/g, username);
     }
 
