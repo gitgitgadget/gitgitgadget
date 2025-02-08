@@ -260,7 +260,7 @@ export class GitGitGadget {
         const previousTag = metadata && metadata.latestTag ? `refs/tags/${metadata.latestTag}` : undefined;
         // update work repo from base
         await this.updateNotesAndPullRef(pr.baseOwner, pr.number, previousTag);
-        options.rfc = pr.draft;
+        options.rfc = pr.draft ?? false;
 
         const series = await PatchSeries.getFromNotes(
             this.notes,
