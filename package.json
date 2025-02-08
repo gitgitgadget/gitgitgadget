@@ -25,9 +25,6 @@
     "url": "https://github.com/gitgitgadget/gitgitgadget/issues"
   },
   "homepage": "https://gitgitgadget.github.io/",
-  "files": [
-    "lib/*.ts"
-  ],
   "jest": {
     "extensionsToTreatAsEsm": [
       ".ts"
