@@ -819,7 +819,7 @@ export class PatchSeries {
 
         if (publishTagsAndNotesToRemote) {
             logger.log("Publishing tag");
-            await git(["push", publishTagsAndNotesToRemote, this.notes.notesRef, `refs/tags/${tagName}`], {
+            await git(["push", publishTagsAndNotesToRemote, `refs/tags/${tagName}`], {
                 workDir: this.notes.workDir,
             });
         }
