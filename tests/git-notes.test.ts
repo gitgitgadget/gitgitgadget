@@ -116,3 +116,38 @@ test("notesSync()", async () => {
     const addedNotes = await notes.getCommitNotes(commit as string);
     expect(addedNotes).toEqual(`first note\n\nlow note\n\nsecond note`);
 });
+
+test("push()", async () => {
+    const remoteRepo = await testCreateRepo(sourceFileName, "-remote");
+    const repo = await testCreateRepo(sourceFileName);
+    const notes = new GitNotes(repo.workDir);
+
+    interface O {
+        hello: string;
+        bye?: string;
+    };
+    const o: O = { hello: "world" };
+    await notes.set("", o);
+    await notes.push(remoteRepo.workDir);
+
+    const otherRepo = await testCreateRepo(sourceFileName, "-other");
+    const otherNotes = new GitNotes(otherRepo.workDir);
+    await otherNotes.update(remoteRepo.workDir);
+
+    const otherO = await otherNotes.get<O>("");
+    expect(otherO).toEqual(o);
+    otherO!.hello = "world!!!";
+    await otherNotes.set("", otherO, true);
+    await otherNotes.push(remoteRepo.workDir);
+
+    o.bye = "wonderful world";
+    await notes.set("", o, true);
+    await notes.push(remoteRepo.workDir);
+
+    const mergedO = await notes.get<O>("");
+    expect(mergedO!.hello).toEqual("world!!!");
+    expect(mergedO!.bye).toEqual("wonderful world");
+    expect(mergedO).not.toEqual(o);
+    await otherNotes.update(remoteRepo.workDir);
+    expect(await otherNotes.get("")).toEqual(mergedO);
+});
