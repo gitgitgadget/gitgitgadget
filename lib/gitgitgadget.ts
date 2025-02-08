@@ -239,10 +239,32 @@ export class GitGitGadget {
         [this.options, this.allowedUsers] = await GitGitGadget.readOptions(this.notes);
     }
 
-    protected async pushNotesRef(): Promise<void> {
-        await git(["push", this.publishTagsAndNotesToRemote, "--", `${this.notes.notesRef}`], {
-            workDir: this.workDir,
+    public async sleep(ms: number): Promise<void> {
+        return new Promise((resolve) => {
+            setTimeout(resolve, ms);
         });
+    }
+
+    protected async pushNotesRef(): Promise<void> {
+        for (const backoff of [50, 500, 2000, 5000, 20000, 0]) {
+            try {
+                await git(["push", this.publishTagsAndNotesToRemote, "--", `${this.notes.notesRef}`], {
+                    workDir: this.workDir,
+                });
+            } catch (e) {
+                if (!backoff) throw e;
+
+                // TODO: verify that the push failed because of a non-fast-forward
+
+                await this.sleep(backoff);
+                const output = await git(["fetch", this.publishTagsAndNotesToRemote, "--", `${this.notes.notesRef}`], {
+                    workDir: this.workDir,
+                });
+                // TODO: parse the output to obtain the OID of the remote notes ref,
+                // then use GitNotes.notesSync(remoteCommit)
+                // throw exception if any of that failed
+            }
+        }
 
         // re-read options
         [this.options, this.allowedUsers] = await GitGitGadget.readOptions(this.notes);
