@@ -242,6 +242,9 @@ export class CIHelper {
                 }
             }
         }
+        if (result) {
+            await this.notes.push(this.urlRepo);
+        }
         return result;
     }
 
@@ -274,6 +277,7 @@ export class CIHelper {
 
         if (optionsUpdated) {
             await this.notes.set("", options, true);
+            await this.notes.push(this.urlRepo);
             result = true;
         }
 
@@ -420,6 +424,7 @@ export class CIHelper {
 
         if (optionsUpdated && updateOptionsInRef) {
             await this.notes.set("", options, true);
+            await this.notes.push(this.urlRepo);
         }
 
         return [notesUpdated, optionsUpdated];
@@ -816,7 +821,11 @@ export class CIHelper {
             this.github,
             this.config.mailrepo.branch,
         );
-        return await mailArchiveGit.processMails(prFilter);
+        if (await mailArchiveGit.processMails(prFilter)) {
+            await this.notes.push(this.urlRepo);
+            return true;
+        }
+        return false;
     }
 
     public async updateOpenPrs(): Promise<boolean> {
@@ -885,6 +894,7 @@ export class CIHelper {
         if (optionsChanged) {
             console.log(`Changed options:\n${toPrettyJSON(options)}`);
             await this.notes.set("", options, true);
+            await this.notes.push(this.urlRepo);
         }
 
         return optionsChanged;
