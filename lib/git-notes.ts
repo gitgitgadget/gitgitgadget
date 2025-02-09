@@ -151,7 +151,7 @@ export class GitNotes {
         const tmpIndex = await this.makeTemporaryNotesIndex(upstreamCommit, this.workDir);
 
         // Need to do a 3-way merge
-        // not as easy as `git merge-tree` because some file contain JSON objects that need special handling
+        // not as easy as `git merge-tree` because some files contain JSON objects that need special handling
         const diff = await git(["diff", mergeBases[0], head, "--"], options);
         const fileNameRegExp = "(?:\\/dev\\/null|[ab]\\/(.*))";
         const lineRangeRegExp = "(\\d+)(?:,(\\d+))?";
