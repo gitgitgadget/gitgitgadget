@@ -4,8 +4,8 @@ import { fromJSON, toJSON } from "./json-util.js";
 export type POJO = { [name: string]: string | string[] | number | number[] | boolean | POJO };
 
 /*
- * Represents a temporary Git index that reflects a note tip commit, ready
- * for making changes without committing them immediately.
+ * Represents a temporary Git index that reflects the revision at the tip of the `refs/notes/gitgitgadget` branch,
+ * ready for making changes without committing them immediately.
  *
  * The purpose of this data structure is to support the `GitNotes.notesSync()`
  * method.
