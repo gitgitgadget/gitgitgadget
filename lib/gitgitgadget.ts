@@ -256,13 +256,17 @@ export class GitGitGadget {
 
                 // TODO: verify that the push failed because of a non-fast-forward
 
+                // wait a while before trying again to push (after fetching the remote notes ref and merging it)
                 await this.sleep(backoff);
+
                 const output = await git(["fetch", this.publishTagsAndNotesToRemote, "--", `${this.notes.notesRef}`], {
                     workDir: this.workDir,
                 });
-                // TODO: parse the output to obtain the OID of the remote notes ref,
+                // parse the output to obtain the OID of the remote notes ref
+                const [, fetchOID ] = output.match(/\.\.([0-9a-f]+)/) || [];
+                if (!fetchOID) throw new Error(`Could not parse the output of 'git fetch':\n${output}`);
                 // then use GitNotes.notesSync(remoteCommit)
-                // throw exception if any of that failed
+                await this.notes.notesSync(fetchOID);
             }
         }
 
