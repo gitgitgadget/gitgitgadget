@@ -239,10 +239,36 @@ export class GitGitGadget {
         [this.options, this.allowedUsers] = await GitGitGadget.readOptions(this.notes);
     }
 
-    protected async pushNotesRef(): Promise<void> {
-        await git(["push", this.publishTagsAndNotesToRemote, "--", `${this.notes.notesRef}`], {
-            workDir: this.workDir,
+    public async sleep(ms: number): Promise<void> {
+        return new Promise((resolve) => {
+            setTimeout(resolve, ms);
         });
+    }
+
+    protected async pushNotesRef(): Promise<void> {
+        for (const backoff of [50, 500, 2000, 5000, 20000, 0]) {
+            try {
+                await git(["push", this.publishTagsAndNotesToRemote, "--", `${this.notes.notesRef}`], {
+                    workDir: this.workDir,
+                });
+            } catch (e) {
+                if (!backoff) throw e;
+
+                // TODO: verify that the push failed because of a non-fast-forward
+
+                // wait a while before trying again to push (after fetching the remote notes ref and merging it)
+                await this.sleep(backoff);
+
+                const output = await git(["fetch", this.publishTagsAndNotesToRemote, "--", `${this.notes.notesRef}`], {
+                    workDir: this.workDir,
+                });
+                // parse the output to obtain the OID of the remote notes ref
+                const [, fetchOID ] = output.match(/\.\.([0-9a-f]+)/) || [];
+                if (!fetchOID) throw new Error(`Could not parse the output of 'git fetch':\n${output}`);
+                // then use GitNotes.notesSync(remoteCommit)
+                await this.notes.notesSync(fetchOID);
+            }
+        }
 
         // re-read options
         [this.options, this.allowedUsers] = await GitGitGadget.readOptions(this.notes);
@@ -260,7 +286,7 @@ export class GitGitGadget {
         const previousTag = metadata && metadata.latestTag ? `refs/tags/${metadata.latestTag}` : undefined;
         // update work repo from base
         await this.updateNotesAndPullRef(pr.baseOwner, pr.number, previousTag);
-        options.rfc = pr.draft;
+        options.rfc = pr.draft ?? false;
 
         const series = await PatchSeries.getFromNotes(
             this.notes,
@@ -283,6 +309,9 @@ export class GitGitGadget {
             pr.pullRequestURL,
             new Date(),
         );
+        if (!options.noUpdate) {
+            await this.pushNotesRef();
+        }
         return patchSeriesMetadata;
     }
 }
