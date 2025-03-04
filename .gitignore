@@ -2,6 +2,7 @@
 /.env
 /.test-dir/
 /build/
+/dist/**/*.d.ts
 /node_modules/
 /npm-debug.log
 /junit.xml
