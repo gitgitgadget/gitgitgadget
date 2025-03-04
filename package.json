@@ -12,6 +12,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
+    "build-dist": "ncc build -s -m ./lib/ci-helper.ts -o dist",
     "cleanbranch": "node ./build/script/delete-test-branches.js",
     "lint": "eslint \"{lib,script,tests,tests-config}/**/*.{ts,tsx,mjs,js}\"",
     "start": "node server.js",
