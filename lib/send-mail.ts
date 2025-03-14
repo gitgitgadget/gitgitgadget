@@ -53,7 +53,8 @@ export async function parseMBox(mbox: string, gentle?: boolean): Promise<IParsed
     const parsed = await simpleParser(mbox, options);
 
     for (const entry of parsed.headerLines) {
-        const valueSet = entry.line.match(/(.*?): *([^]*)$/);
+        // try to parse header line and consume a leading line break after the colon in folded headers
+        const valueSet = entry.line.match(/(.*?):(?:\r\n)? *([^]*)$/);
         if (!valueSet) {
             if (entry.line[entry.line.length - 1] === ":") {
                 continue;

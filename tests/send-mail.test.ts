@@ -62,7 +62,7 @@ test("parse mbox", async () => {
         { key: "Content-Transfer-Encoding", value: "8bit" },
         { key: "MIME-Version", value: "1.0" },
         { key: "Header-with-no-value", value: "" },
-        { key: "Multiline-header", value: "\r\n new line value" },
+        { key: "Multiline-header", value: "new line value" },
     ]);
     expect(parsed.to).toEqual(to);
 });
@@ -190,4 +190,17 @@ I can be pursuaded either way.
     expect(references).toHaveLength(5);
     expect(references[0]).toEqual("pull.986.git.1624559401.gitgitgadget@gmail.com");
     expect(references[4]).toEqual("lowerReply@mail.gmail.com");
+});
+
+test("Folded Message-ID header is parsed correctly", async () => {
+    const mbox = `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
+Message-Id:
+ <pull.12345.v17.git.gitgitgadget@example.com>
+From:   Example <mail@example.com>
+Date: Fri Sep 21 12:34:56 2001
+Subject: [PATCH 0/3] My first Pull Request!
+To: reviewer@example.com
+`;
+    const parsed = await parseMBox(mbox);
+    expect(parsed.messageId).toEqual("<pull.12345.v17.git.gitgitgadget@example.com>");
 });
