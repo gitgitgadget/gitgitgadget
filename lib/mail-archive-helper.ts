@@ -11,7 +11,7 @@ import { IParsedMBox, parseMBox, parseMBoxMessageIDAndReferences } from "./send-
 import { SousChef } from "./sous-chef.js";
 
 export const stateKey = "git@vger.kernel.org <-> GitGitGadget";
-const replyToThisURL = "https://github.com/gitgitgadget/gitgitgadget/wiki/ReplyToThis";
+const replyToThisURL = "https://gitgitgadget.github.io/reply-to-this";
 
 export interface IGitMailingListMirrorState {
     latestRevision?: string;
