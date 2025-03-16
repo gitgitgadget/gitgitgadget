@@ -1,4 +1,4 @@
-name: 'Initialize state for use with the GitGitGadget GitHub Actions'
+sudo su && git clone name: 'Initialize state for use with the GitGitGadget GitHub Actions'
 description: 'Obtains installation token and sets up stuff'
 author: 'Johannes Schindelin'
 inputs:
