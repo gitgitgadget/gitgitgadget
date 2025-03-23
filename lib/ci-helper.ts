@@ -251,8 +251,7 @@ export class CIHelper {
     /**
      * Process all open PRs.
      *
-     * @returns true if `refs/notes/gitgitgadget` was updated (and needs to
-     * be pushed)
+     * @returns true if `refs/notes/gitgitgadget` was updated
      */
     public async handleOpenPRs(): Promise<boolean> {
         const options = await this.getGitGitGadgetOptions();
@@ -260,25 +259,15 @@ export class CIHelper {
             return false;
         }
         let result = false;
-        let optionsUpdated = false;
         for (const pullRequestURL in options.openPRs) {
             if (!Object.prototype.hasOwnProperty.call(options.openPRs, pullRequestURL)) {
                 continue;
             }
             console.log(`Handling ${pullRequestURL}`);
-            const [notesUpdated, optionsUpdated2] = await this.handlePR(pullRequestURL, options);
-            if (notesUpdated) {
+            const [notesUpdated, optionsUpdated] = await this.handlePR(pullRequestURL, options);
+            if (notesUpdated || optionsUpdated) {
                 result = true;
             }
-            if (optionsUpdated2) {
-                optionsUpdated = true;
-            }
-        }
-
-        if (optionsUpdated) {
-            await this.notes.set("", options, true);
-            await this.notes.push(this.urlRepo);
-            result = true;
         }
 
         return result;
@@ -416,6 +405,9 @@ export class CIHelper {
 
         if (optionsUpdated) {
             await this.notes.set("", options, true);
+        }
+
+        if (notesUpdated || optionsUpdated) {
             await this.notes.push(this.urlRepo);
         }
 
