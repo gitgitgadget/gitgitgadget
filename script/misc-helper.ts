@@ -365,11 +365,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
                 }
 
                 const [notesUpdated2, optionsUpdated2] = await ci.handlePR(pullRequestURL, options);
-                if (notesUpdated2) {
-                    notesUpdated = true;
-                }
-                if (optionsUpdated || optionsUpdated2) {
-                    await ci.notes.set("", options, true);
+                if (notesUpdated2 || optionsUpdated || optionsUpdated2) {
                     notesUpdated = true;
                 }
                 console.log(`Notes were ${notesUpdated ? "" : "not "}updated`);
