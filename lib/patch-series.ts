@@ -818,10 +818,14 @@ export class PatchSeries {
         }
 
         if (publishTagsAndNotesToRemote) {
-            logger.log("Publishing tag");
-            await git(["push", publishTagsAndNotesToRemote, `refs/tags/${tagName}`], {
-                workDir: this.notes.workDir,
-            });
+            if (this.options.dryRun) {
+                logger.log("Would publish tag");
+            } else {
+                logger.log("Publishing tag");
+                await git(["push", publishTagsAndNotesToRemote, `refs/tags/${tagName}`], {
+                    workDir: this.notes.workDir,
+                });
+            }
         }
 
         return this.metadata;
