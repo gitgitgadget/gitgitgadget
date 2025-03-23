@@ -300,17 +300,9 @@ export class CIHelper {
      * require `refs/notes/gitgitgadget` to be pushed. The second is `true`
      * if the `options` were updated.
      */
-    public async handlePR(pullRequestURL: string, options?: IGitGitGadgetOptions): Promise<[boolean, boolean]> {
+    public async handlePR(pullRequestURL: string, options: IGitGitGadgetOptions): Promise<[boolean, boolean]> {
         await this.maybeUpdateGGGNotes();
         await this.maybeUpdateMail2CommitMap();
-
-        let updateOptionsInRef: boolean;
-        if (options) {
-            updateOptionsInRef = false;
-        } else {
-            options = await this.getGitGitGadgetOptions();
-            updateOptionsInRef = true;
-        }
 
         const prMeta = await this.notes.get<IPatchSeriesMetadata>(pullRequestURL);
         if (!prMeta || !prMeta.coverLetterMessageId) {
@@ -422,7 +414,7 @@ export class CIHelper {
             await this.notes.set(pullRequestURL, prMeta, true);
         }
 
-        if (optionsUpdated && updateOptionsInRef) {
+        if (optionsUpdated) {
             await this.notes.set("", options, true);
             await this.notes.push(this.urlRepo);
         }
