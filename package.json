@@ -58,7 +58,7 @@
     "@types/node": "^22.15.29",
     "@types/nodemailer": "^6.4.17",
     "@types/rfc2047": "^2.0.3",
-    "eslint": "^9.27.0",
+    "eslint": "^9.30.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.4.0",
     "eslint-plugin-jest": "^28.12.0",
