@@ -242,14 +242,16 @@ export class CIHelper {
                 }
             }
         }
+        if (result) {
+            await this.notes.push(this.urlRepo);
+        }
         return result;
     }
 
     /**
      * Process all open PRs.
      *
-     * @returns true if `refs/notes/gitgitgadget` was updated (and needs to
-     * be pushed)
+     * @returns true if `refs/notes/gitgitgadget` was updated
      */
     public async handleOpenPRs(): Promise<boolean> {
         const options = await this.getGitGitGadgetOptions();
@@ -257,24 +259,15 @@ export class CIHelper {
             return false;
         }
         let result = false;
-        let optionsUpdated = false;
         for (const pullRequestURL in options.openPRs) {
             if (!Object.prototype.hasOwnProperty.call(options.openPRs, pullRequestURL)) {
                 continue;
             }
             console.log(`Handling ${pullRequestURL}`);
-            const [notesUpdated, optionsUpdated2] = await this.handlePR(pullRequestURL, options);
-            if (notesUpdated) {
+            const [notesUpdated, optionsUpdated] = await this.handlePR(pullRequestURL, options);
+            if (notesUpdated || optionsUpdated) {
                 result = true;
             }
-            if (optionsUpdated2) {
-                optionsUpdated = true;
-            }
-        }
-
-        if (optionsUpdated) {
-            await this.notes.set("", options, true);
-            result = true;
         }
 
         return result;
@@ -296,17 +289,9 @@ export class CIHelper {
      * require `refs/notes/gitgitgadget` to be pushed. The second is `true`
      * if the `options` were updated.
      */
-    public async handlePR(pullRequestURL: string, options?: IGitGitGadgetOptions): Promise<[boolean, boolean]> {
+    public async handlePR(pullRequestURL: string, options: IGitGitGadgetOptions): Promise<[boolean, boolean]> {
         await this.maybeUpdateGGGNotes();
         await this.maybeUpdateMail2CommitMap();
-
-        let updateOptionsInRef: boolean;
-        if (options) {
-            updateOptionsInRef = false;
-        } else {
-            options = await this.getGitGitGadgetOptions();
-            updateOptionsInRef = true;
-        }
 
         const prMeta = await this.notes.get<IPatchSeriesMetadata>(pullRequestURL);
         if (!prMeta || !prMeta.coverLetterMessageId) {
@@ -418,8 +403,12 @@ export class CIHelper {
             await this.notes.set(pullRequestURL, prMeta, true);
         }
 
-        if (optionsUpdated && updateOptionsInRef) {
+        if (optionsUpdated) {
             await this.notes.set("", options, true);
+        }
+
+        if (notesUpdated || optionsUpdated) {
+            await this.notes.push(this.urlRepo);
         }
 
         return [notesUpdated, optionsUpdated];
@@ -816,7 +805,11 @@ export class CIHelper {
             this.github,
             this.config.mailrepo.branch,
         );
-        return await mailArchiveGit.processMails(prFilter);
+        if (await mailArchiveGit.processMails(prFilter)) {
+            await this.notes.push(this.urlRepo);
+            return true;
+        }
+        return false;
     }
 
     public async updateOpenPrs(): Promise<boolean> {
@@ -885,6 +878,7 @@ export class CIHelper {
         if (optionsChanged) {
             console.log(`Changed options:\n${toPrettyJSON(options)}`);
             await this.notes.set("", options, true);
+            await this.notes.push(this.urlRepo);
         }
 
         return optionsChanged;
