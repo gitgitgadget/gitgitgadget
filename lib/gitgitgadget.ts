@@ -240,9 +240,7 @@ export class GitGitGadget {
     }
 
     protected async pushNotesRef(): Promise<void> {
-        await git(["push", this.publishTagsAndNotesToRemote, "--", `${this.notes.notesRef}`], {
-            workDir: this.workDir,
-        });
+        await this.notes.push(this.publishTagsAndNotesToRemote);
 
         // re-read options
         [this.options, this.allowedUsers] = await GitGitGadget.readOptions(this.notes);
@@ -260,7 +258,7 @@ export class GitGitGadget {
         const previousTag = metadata && metadata.latestTag ? `refs/tags/${metadata.latestTag}` : undefined;
         // update work repo from base
         await this.updateNotesAndPullRef(pr.baseOwner, pr.number, previousTag);
-        options.rfc = pr.draft;
+        options.rfc = pr.draft ?? false;
 
         const series = await PatchSeries.getFromNotes(
             this.notes,
@@ -283,6 +281,9 @@ export class GitGitGadget {
             pr.pullRequestURL,
             new Date(),
         );
+        if (!options.noUpdate) {
+            await this.pushNotesRef();
+        }
         return patchSeriesMetadata;
     }
 }
