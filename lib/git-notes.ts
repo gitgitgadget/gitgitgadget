@@ -19,10 +19,16 @@ type TemporaryNoteIndex = {
 };
 
 export class GitNotes {
-    public async push(url: string) {
+    public async push(url: string, token: string | undefined = undefined): Promise<void> {
+        const auth = !token
+            ? []
+            : [
+                  "-c",
+                  `http.extraheader=Authorization: Basic ${Buffer.from(`x-access-token:${token}`).toString("base64")}`,
+              ];
         for (const backoff of [50, 500, 2000, 5000, 20000, 0]) {
             try {
-                await git(["push", url, "--", `${this.notesRef}`], {
+                await git([...auth, "push", url, "--", `${this.notesRef}`], {
                     workDir: this.workDir,
                 });
             } catch (e) {
