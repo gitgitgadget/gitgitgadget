@@ -36,7 +36,7 @@ export class GitGitGadget {
         return workDir;
     }
 
-    public static async get(gitGitGadgetDir: string, workDir?: string): Promise<GitGitGadget> {
+    public static async get(gitGitGadgetDir: string, workDir?: string, notesPushToken?: string): Promise<GitGitGadget> {
         if (!workDir) {
             workDir = await this.getWorkDir(gitGitGadgetDir);
         }
@@ -76,6 +76,7 @@ export class GitGitGadget {
             allowedUsers,
             { smtpHost, smtpOpts, smtpPass, smtpUser },
             publishTagsAndNotesToRemote,
+            notesPushToken,
         );
     }
 
@@ -98,6 +99,7 @@ export class GitGitGadget {
     protected readonly smtpOptions: ISMTPOptions;
 
     protected readonly publishTagsAndNotesToRemote: string;
+    private readonly publishToken: string | undefined;
 
     protected constructor(
         notes: GitNotes,
@@ -105,6 +107,7 @@ export class GitGitGadget {
         allowedUsers: Set<string>,
         smtpOptions: ISMTPOptions,
         publishTagsAndNotesToRemote: string,
+        publishToken?: string,
     ) {
         if (!notes.workDir) {
             throw new Error("Could not determine Git worktree");
@@ -117,6 +120,7 @@ export class GitGitGadget {
         this.smtpOptions = smtpOptions;
 
         this.publishTagsAndNotesToRemote = publishTagsAndNotesToRemote;
+        this.publishToken = publishToken;
     }
 
     public isUserAllowed(user: string): boolean {
@@ -240,7 +244,7 @@ export class GitGitGadget {
     }
 
     protected async pushNotesRef(): Promise<void> {
-        await this.notes.push(this.publishTagsAndNotesToRemote);
+        await this.notes.push(this.publishTagsAndNotesToRemote, this.publishToken);
 
         // re-read options
         [this.options, this.allowedUsers] = await GitGitGadget.readOptions(this.notes);
