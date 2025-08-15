@@ -1,3 +1,4 @@
+/* eslint-disable security/detect-unsafe-regex */
 import addressparser from "nodemailer/lib/addressparser/index.js";
 import mimeFuncs from "nodemailer/lib/mime-funcs/index.js";
 import { commitExists, git, gitConfig, gitShortHash, revListCount, revParse } from "./git.js";

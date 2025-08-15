@@ -219,6 +219,7 @@ export class GitNotes {
                 continue;
             }
 
+            // eslint-disable-next-line security/detect-unsafe-regex
             const removeAdd = split[i + 6].match(/^(?:-(.*)\n)?\+(.*)$/);
             if (!removeAdd) throw new Error(`Not a single modified line?\n${split[i + 6]}`);
 
