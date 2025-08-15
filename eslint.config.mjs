@@ -128,6 +128,18 @@ export default tseslint.config(
     },
   },
   {
+    files: ["**/*.js", "**/*.mjs"],
+    rules: {
+      "@stylistic/semi": ["error", "never"],
+      "prettier/prettier": [
+        "warn",
+        {
+          semi: false,
+        },
+      ],
+    },
+  },
+  {
     files: ["tests/*.ts", "lib/*.ts", "script/*.ts"],
     extends: [...tseslint.configs.recommendedTypeChecked],
     languageOptions: {
