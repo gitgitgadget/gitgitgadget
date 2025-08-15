@@ -105,6 +105,13 @@ class TestCIHelper extends CIHelper {
         this.ghGlue.getGitHubUserInfo = jest.fn(async (): Promise<IGitHubUser> => o);
     }
 
+    public letGHGetGitHubUserInfoThrow(err: string): void {
+        // eslint-disable-next-line @typescript-eslint/require-await
+        this.ghGlue.getGitHubUserInfo = jest.fn(async (): Promise<IGitHubUser> => {
+            throw new Error(err);
+        });
+    }
+
     public addMaxCommitsException(pullRequestURL: string): void {
         this.maxCommitsExceptions = [pullRequestURL];
     }
@@ -304,6 +311,7 @@ testQ("handle comment allow fail invalid user", async () => {
     };
 
     ci.setGHGetPRComment(comment);
+    ci.letGHGetGitHubUserInfoThrow("is not a valid GitHub username");
 
     await expect(ci.handleComment("gitgitgadget", 433865360)).rejects.toThrow(/is not a valid GitHub username/);
     expect(ci.addPRCommentCalls[0][1]).toMatch(/is not a valid GitHub username/);
