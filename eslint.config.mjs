@@ -33,14 +33,8 @@ export default tseslint.config(
 
     rules: {
       ...eslintConfigPrettier.rules,
-      "@stylistic/function-call-argument-newline": [
-        "warn",
-        "consistent",
-      ],
-      "@stylistic/function-paren-newline": [
-        "error",
-        "consistent",
-      ],
+      "@stylistic/function-call-argument-newline": ["warn", "consistent"],
+      "@stylistic/function-paren-newline": ["error", "consistent"],
       "@stylistic/max-len": [
         "error",
         {
@@ -98,10 +92,7 @@ export default tseslint.config(
         },
       ],
 
-      "max-classes-per-file": [
-        "error",
-        2,
-      ],
+      "max-classes-per-file": ["error", 2],
 
       "no-bitwise": "error",
       "no-caller": "error",
