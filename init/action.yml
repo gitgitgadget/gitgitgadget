@@ -2,12 +2,16 @@ name: 'Initialize state for use with the GitGitGadget GitHub Actions'
 description: 'Obtains installation token and sets up stuff'
 author: 'Johannes Schindelin'
 inputs:
-  gitgitgadget-git-access-token:
-    description: 'The access token to work on gitgitgadget/git'
+  dscho-git-access-token:
+    description: 'The access token to work on dscho/git'
     required: true
-  git-git-access-token:
-    description: 'The access token to work on git/git'
+  pr-comment-url:
+    description: 'The URL of the PR comment to add a reaction to'
     required: true
+  reaction:
+    description: 'The reaction to add to the PR comment'
+    required: false
+    default: 'eyes'
 runs:
   using: 'node20'
   main: './index.js'

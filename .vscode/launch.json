@@ -5,6 +5,31 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Launch `init`",
+            "type": "node",
+            "request": "launch",
+            "runtimeArgs": [
+                "--inspect-brk",
+                // "--nolazy",
+            ],
+            "args": [
+                "${workspaceFolder}/init/index.js"
+            ],
+            "stopOnEntry": false,
+            "cwd": "${workspaceFolder}",
+            "runtimeExecutable": null,
+            "env": {
+                "NODE_ENV": "development"
+            },
+            "console": "integratedTerminal",
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceFolder}/build/**/*.js",
+                "${workspaceFolder}/dist/**/*.js",
+                "${workspaceFolder}/lib/**/*.js"
+            ]
+        },
+        {
             "name": "Tests",
             "type": "node",
             "request": "launch",

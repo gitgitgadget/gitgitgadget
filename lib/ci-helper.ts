@@ -4,7 +4,7 @@ import * as util from "util";
 import addressparser from "nodemailer/lib/addressparser/index.js";
 import path from "path";
 import { ILintError, LintCommit } from "./commit-lint.js";
-import { commitExists, git, emptyTreeName } from "./git.js";
+import { commitExists, git, emptyTreeName, IGitOptions } from "./git.js";
 import { GitNotes } from "./git-notes.js";
 import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget.js";
 import { getConfig } from "./gitgitgadget-config.js";
@@ -73,6 +73,7 @@ export class CIHelper {
         // get the access tokens via the inputs of the GitHub Action
         this.setAccessToken("gitgitgadget", core.getInput("gitgitgadget-git-access-token"));
         this.setAccessToken("git", core.getInput("git-git-access-token"));
+        this.setAccessToken("dscho", core.getInput("dscho-git-access-token"));
 
         // eslint-disable-next-line security/detect-non-literal-fs-filename
         if (fs.existsSync(this.workDir)) throw new Error(`Work directory ${this.workDir} already exists`);
@@ -126,6 +127,21 @@ export class CIHelper {
 
     public static getActionsCore(): typeof import("@actions/core") {
         return core;
+    }
+
+    public static async git(args: string[], options?: IGitOptions): Promise<string> {
+        return await git(args, options);
+    }
+
+    public async isAllowed(username: string): Promise<boolean> {
+        const gitGitGadget = await GitGitGadget.get(
+            this.gggConfigDir,
+            this.workDir,
+            this.urlRepo,
+            this.notesPushToken,
+            this.smtpOptions,
+        );
+        return gitGitGadget.isUserAllowed(username);
     }
 
     /*
