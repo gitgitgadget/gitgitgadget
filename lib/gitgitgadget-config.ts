@@ -5,6 +5,7 @@ const defaultConfig: IConfig = {
         name: "git",
         owner: "gitgitgadget",
         baseOwner: "git",
+        testOwner: "dscho",
         owners: ["gitgitgadget", "git", "dscho"],
         branches: ["maint", "seen"],
         closingBranches: ["maint", "master"],

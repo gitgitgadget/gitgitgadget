@@ -1,6 +1,9 @@
+import * as core from "@actions/core";
 import * as fs from "fs";
+import * as os from "os";
 import * as util from "util";
 import addressparser from "nodemailer/lib/addressparser/index.js";
+import path from "path";
 import { ILintError, LintCommit } from "./commit-lint.js";
 import { commitExists, git, emptyTreeName } from "./git.js";
 import { GitNotes } from "./git-notes.js";
@@ -60,6 +63,68 @@ export class CIHelper {
         this.maxCommitsExceptions = this.config.lint?.maxCommitsIgnore || [];
         this.urlBase = `https://github.com/${this.config.repo.owner}/`;
         this.urlRepo = `${this.urlBase}${this.config.repo.name}/`;
+    }
+
+    public async setupGitHubAction(): Promise<void> {
+        // help dugite realize where `git` is...
+        const gitExecutable = os.type() === "Windows_NT" ? "git.exe" : "git";
+        const stripSuffix = `bin${path.sep}${gitExecutable}`;
+        for (const gitPath of (process.env.PATH || "/")
+            .split(path.delimiter)
+            .map((p) => path.normalize(`${p}${path.sep}${gitExecutable}`))
+            // eslint-disable-next-line security/detect-non-literal-fs-filename
+            .filter((p) => p.endsWith(`${path.sep}${stripSuffix}`) && fs.existsSync(p))) {
+            process.env.LOCAL_GIT_DIRECTORY = gitPath.substring(0, gitPath.length - stripSuffix.length);
+            // need to override GIT_EXEC_PATH, so that Dugite can find the `git-remote-https` executable,
+            // see https://github.com/desktop/dugite/blob/v2.7.1/lib/git-environment.ts#L44-L64
+            // Also: We cannot use `await git(["--exec-path"]);` because that would use Dugite, which would
+            // override `GIT_EXEC_PATH` and then `git --exec-path` would report _that_...
+            process.env.GIT_EXEC_PATH = spawnSync("/usr/bin/git", ["--exec-path"]).stdout.toString("utf-8").trimEnd();
+            break;
+        }
+
+        // get the access tokens via the inputs of the GitHub Action
+        this.setAccessToken(this.config.repo.owner, core.getInput("pr-repo-token"));
+        this.setAccessToken(this.config.repo.baseOwner, core.getInput("upstream-repo-token"));
+        if (this.config.repo.testOwner) {
+            this.setAccessToken(this.config.repo.testOwner, core.getInput("test-repo-token"));
+        }
+
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
+        if (!fs.existsSync(this.workDir)) await git(["init", "--bare", "--initial-branch", "unused", this.workDir]);
+        for (const [key, value] of [
+            ["gc.auto", "0"],
+            ["remote.origin.url", `https://github.com/${this.config.repo.owner}/${this.config.repo.name}`],
+            ["remote.origin.promisor", "true"],
+            ["remote.origin.partialCloneFilter", "blob:none"],
+        ]) {
+            await git(["config", key, value], { workDir: this.workDir });
+        }
+        console.time("fetch Git notes");
+        await git(
+            [
+                "fetch",
+                "--filter=blob:limit=1g", // let's fetch the notes with all of their blobs
+                "--no-tags",
+                "origin",
+                "--depth=1",
+                `+${GitNotes.defaultNotesRef}:${GitNotes.defaultNotesRef}`,
+            ],
+            {
+                workDir: this.workDir,
+            },
+        );
+        console.timeEnd("fetch Git notes");
+        this.gggNotesUpdated = true;
+        // "Unshallow" the refs by fetching the shallow commits with a tree-less filter.
+        // This is needed because Git will otherwise fall over left and right when trying
+        // to determine merge bases with really old branches.
+        const unshallow = async (workDir: string) => {
+            console.time(`Making ${workDir} non-shallow`);
+            console.log(await git(["fetch", "--filter=tree:0", "origin", "--unshallow"], { workDir }));
+            console.timeEnd(`Making ${workDir} non-shallow`);
+        };
+        await unshallow(this.workDir);
     }
 
     public setAccessToken(repositoryOwner: string, token: string): void {

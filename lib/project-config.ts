@@ -12,7 +12,8 @@ export interface IConfig {
     repo: {
         name: string; // name of the repo
         owner: string; // owner of repo holding the notes (tracking data)
-        baseOwner: string; // owner of base repo
+        baseOwner: string; // owner of upstream ("base") repo
+        testOwner?: string; // owner of the test repo (if any)
         owners: string[]; // owners of clones being monitored (PR checking)
         branches: string[]; // remote branches to fetch - just use trackingBranches?
         closingBranches: string[]; // close if the pr is added to this branch
