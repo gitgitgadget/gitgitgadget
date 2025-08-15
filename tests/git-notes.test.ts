@@ -120,7 +120,7 @@ test("push()", async () => {
     interface O {
         hello: string;
         bye?: string;
-    };
+    }
     const o: O = { hello: "world" };
     await notes.set("", o);
     await notes.push(remoteRepo.workDir);
