@@ -57,6 +57,7 @@ export class GitHubGlue {
     protected authenticated?: string;
     protected owner: string;
     protected repo: string;
+    private tokens: Map<string, string> = new Map();
 
     public constructor(workDir: string, owner: string, repo: string) {
         this.owner = owner;
@@ -472,12 +473,19 @@ export class GitHubGlue {
         }
     }
 
+    public setAccessToken(repositoryOwner: string, token: string): void {
+        this.tokens.set(repositoryOwner, token);
+    }
+
     protected async ensureAuthenticated(repositoryOwner: string): Promise<void> {
         if (repositoryOwner !== this.authenticated) {
-            const infix = repositoryOwner === "gitgitgadget" ? "" : `.${repositoryOwner}`;
-            const tokenKey = `gitgitgadget${infix}.githubToken`;
-            const tokenVar = tokenKey.toUpperCase().replace(/\./, "_");
-            const token = process.env[tokenVar] ? process.env[tokenVar] : await gitConfig(tokenKey);
+            let token = this.tokens.get(repositoryOwner);
+            if (!token) {
+                const infix = repositoryOwner === "gitgitgadget" ? "" : `.${repositoryOwner}`;
+                const tokenKey = `gitgitgadget${infix}.githubToken`;
+                const tokenVar = tokenKey.toUpperCase().replace(/\./, "_");
+                token = process.env[tokenVar] ? process.env[tokenVar] : await gitConfig(tokenKey);
+            }
             if (!token) {
                 throw new Error(`Need a GitHub token for ${repositoryOwner}`);
             }

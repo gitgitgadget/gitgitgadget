@@ -37,6 +37,7 @@ export class CIHelper {
     protected testing: boolean;
     private gggNotesUpdated: boolean;
     private mail2CommitMapUpdated: boolean;
+    private notesPushToken: string | undefined;
     protected maxCommitsExceptions: string[];
 
     public constructor(workDir: string, skipUpdate?: boolean, gggConfigDir = ".") {
@@ -51,6 +52,13 @@ export class CIHelper {
         this.maxCommitsExceptions = this.config.lint?.maxCommitsIgnore || [];
         this.urlBase = `https://github.com/${this.config.repo.owner}/`;
         this.urlRepo = `${this.urlBase}${this.config.repo.name}/`;
+    }
+
+    public setAccessToken(repositoryOwner: string, token: string): void {
+        this.github.setAccessToken(repositoryOwner, token);
+        if (this.config.repo.owner === repositoryOwner) {
+            this.notesPushToken = token;
+        }
     }
 
     /*
@@ -243,7 +251,7 @@ export class CIHelper {
             }
         }
         if (result) {
-            await this.notes.push(this.urlRepo);
+            await this.pushNotesRef();
         }
         return result;
     }
@@ -408,7 +416,7 @@ export class CIHelper {
         }
 
         if (notesUpdated || optionsUpdated) {
-            await this.notes.push(this.urlRepo);
+            await this.pushNotesRef();
         }
 
         return [notesUpdated, optionsUpdated];
@@ -568,7 +576,7 @@ export class CIHelper {
         };
 
         try {
-            const gitGitGadget = await GitGitGadget.get(this.gggConfigDir, this.workDir);
+            const gitGitGadget = await GitGitGadget.get(this.gggConfigDir, this.workDir, this.notesPushToken);
             if (!gitGitGadget.isUserAllowed(comment.author)) {
                 throw new Error(`User ${comment.author} is not yet permitted to use ${this.config.app.displayName}`);
             }
@@ -774,7 +782,7 @@ export class CIHelper {
             await this.github.addPRComment(prKey, redacted);
         };
 
-        const gitGitGadget = await GitGitGadget.get(this.gggConfigDir, this.workDir);
+        const gitGitGadget = await GitGitGadget.get(this.gggConfigDir, this.workDir, this.notesPushToken);
         if (!pr.hasComments && !gitGitGadget.isUserAllowed(pr.author)) {
             const welcome = (await readFile("res/WELCOME.md")).toString().replace(/\${username}/g, pr.author);
             await this.github.addPRComment(prKey, welcome);
@@ -806,7 +814,7 @@ export class CIHelper {
             this.config.mailrepo.branch,
         );
         if (await mailArchiveGit.processMails(prFilter)) {
-            await this.notes.push(this.urlRepo);
+            await this.pushNotesRef();
             return true;
         }
         return false;
@@ -878,7 +886,7 @@ export class CIHelper {
         if (optionsChanged) {
             console.log(`Changed options:\n${toPrettyJSON(options)}`);
             await this.notes.set("", options, true);
-            await this.notes.push(this.urlRepo);
+            await this.pushNotesRef();
         }
 
         return optionsChanged;
@@ -932,5 +940,9 @@ export class CIHelper {
             await this.mail2commit.updateMail2CommitAndBranches();
             this.mail2CommitMapUpdated = true;
         }
+    }
+
+    private async pushNotesRef(): Promise<void> {
+        await this.notes.push(this.urlRepo, this.notesPushToken);
     }
 }

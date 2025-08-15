@@ -555,6 +555,7 @@ export class PatchSeries {
         publishTagsAndNotesToRemote?: string,
         pullRequestURL?: string,
         forceDate?: Date,
+        publishToken?: string,
     ): Promise<IPatchSeriesMetadata | undefined> {
         let globalOptions: IGitGitGadgetOptions | undefined;
         if (this.options.dryRun) {
@@ -822,8 +823,20 @@ export class PatchSeries {
             if (this.options.dryRun) {
                 logger.log("Would publish tag");
             } else {
+                const auth = [];
+                if (publishToken) {
+                    auth.push(
+                        "-c",
+                        [
+                            `http.extraheader=Authorization:`,
+                            `Basic`,
+                            Buffer.from(`x-access-token:${publishToken}`).toString("base64"),
+                        ].join(" "),
+                    );
+                }
+
                 logger.log("Publishing tag");
-                await git(["push", publishTagsAndNotesToRemote, `refs/tags/${tagName}`], {
+                await git([...auth, "push", publishTagsAndNotesToRemote, `refs/tags/${tagName}`], {
                     workDir: this.notes.workDir,
                 });
             }
