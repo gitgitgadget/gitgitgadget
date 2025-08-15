@@ -72,6 +72,14 @@ const commandOptions = commander.opts<ICommanderOptions>();
 
     const ci = new CIHelper(await getGitGitWorkDir(), commandOptions.skipUpdate, commandOptions.gitgitgadgetWorkDir);
 
+    const configureNotesPushToken = async (): Promise<void> => {
+        const token = await gitConfig("gitgitgadget.githubToken");
+        if (!token) {
+            throw new Error("No token configured for gitgitgadget.githubToken");
+        }
+        ci.setAccessToken("gitgitgadget", token);
+    };
+
     const argv = commander.args;
     commander = new Command().version("1.0.0");
     commander
@@ -79,6 +87,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
         .command("update-open-prs")
         .description("Update GitGitGadget's idea of what PRs are open")
         .action(async () => {
+            await configureNotesPushToken();
             const result = await ci.updateOpenPrs();
             console.log(`Updated notes: ${result}`);
         });
@@ -86,6 +95,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
         .command("update-commit-mappings")
         .description("Determine which commits correspond to which open PRs")
         .action(async () => {
+            await configureNotesPushToken();
             const result = await ci.updateCommitMappings();
             console.log(`Updated notes: ${result}`);
         });
@@ -93,6 +103,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
         .command("handle-open-prs")
         .description("Handle open PRs, i.e. look whether they have been integrated into upstream Git")
         .action(async () => {
+            await configureNotesPushToken();
             const options = await ci.getGitGitGadgetOptions();
             if (!options.openPRs) {
                 throw new Error("No open PRs?");
@@ -437,6 +448,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
             "Handle a comment on a Pull Request",
             async (repositoryOwner: string, commentID: string) => {
                 if (repositoryOwner === undefined) repositoryOwner = config.repo.owner;
+                await configureNotesPushToken();
                 await ci.handleComment(repositoryOwner, parseInt(commentID, 10));
             },
             true,
@@ -447,6 +459,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
             "handle-pr-push",
             "Handle a push to a Pull Request",
             async (repositoryOwner: string, prNumber: string) => {
+                await configureNotesPushToken();
                 await ci.handlePush(repositoryOwner, parseInt(prNumber, 10));
             },
             true,
@@ -456,6 +469,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
         .command("handle-new-mails")
         .description("Handle new mails in the mail archive")
         .action(async () => {
+            await configureNotesPushToken();
             const mailArchiveGitDir = await getVar("loreGitDir", commandOptions.gitgitgadgetWorkDir);
 
             if (!mailArchiveGitDir) {
