@@ -18,6 +18,7 @@ export class SousChef {
 
             const branches = sections[i + 1].split(/\n\* ([a-z][^]+?)\n\n/m);
             for (let j = 1; j < branches.length; j += 2) {
+                // eslint-disable-next-line security/detect-unsafe-regex
                 const match = branches[j].match(/([^ ]+).*\n *(\(merged to [^)]+\))?/m);
                 if (!match) {
                     continue;

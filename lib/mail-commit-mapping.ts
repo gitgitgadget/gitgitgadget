@@ -42,6 +42,7 @@ export class MailCommitMapping {
             refs.push(`+refs/heads/*:refs/remotes/${this.config.repo.maintainerBranch}/*`);
         }
         if (refs.length) {
+            console.log(`Updating mail-to-commit/refs: ${refs.join(", ")}`);
             await git(["fetch", `https://github.com/${this.config.repo.owner}/${this.config.repo.name}`, ...refs], {
                 workDir: this.workDir,
             });

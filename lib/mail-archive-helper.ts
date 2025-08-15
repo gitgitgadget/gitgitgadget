@@ -240,6 +240,7 @@ export class MailArchiveGitHelper {
         let counter = 0;
         const lineHandler = async (line: string): Promise<void> => {
             if (line.startsWith("@@ ")) {
+                // eslint-disable-next-line security/detect-unsafe-regex
                 const match = line.match(/^@@ -(\d+,)?\d+ \+(\d+,)?(\d+)?/);
                 if (match) {
                     if (counter) {

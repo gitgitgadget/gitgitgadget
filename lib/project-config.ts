@@ -80,6 +80,7 @@ export async function loadConfig(file: string): Promise<IConfig> {
         const { default: newConfig } = (await import(file)) as importedConfig;
         loadedConfig = newConfig;
     } else {
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
         const fileText = fs.readFileSync(file, { encoding: "utf-8" });
         loadedConfig = JSON.parse(fileText) as IConfig;
     }

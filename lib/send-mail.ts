@@ -125,6 +125,7 @@ export function parseMBoxMessageIDAndReferences(parsed: IParsedMBox): { messageI
      * using regular expressions due to its recursive nature) but seems to be
      * good enough for the Git mailing list.
      */
+    // eslint-disable-next-line security/detect-unsafe-regex
     const msgIdRegex = /^\s*<([^>]+)>(\s*|,)(\([^")]*("[^"]*")?\)\s*|\([^)]*\)$)?(<.*)?$/;
     for (const header of parsed.headers ?? []) {
         if (header.key.match(/In-Reply-To|References/i)) {
