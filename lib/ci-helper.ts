@@ -1,6 +1,8 @@
+import * as core from "@actions/core";
 import * as fs from "fs";
 import * as util from "util";
 import addressparser from "nodemailer/lib/addressparser/index.js";
+import path from "path";
 import { ILintError, LintCommit } from "./commit-lint.js";
 import { commitExists, git, emptyTreeName } from "./git.js";
 import { GitNotes } from "./git-notes.js";
@@ -60,6 +62,46 @@ export class CIHelper {
         this.maxCommitsExceptions = this.config.lint?.maxCommitsIgnore || [];
         this.urlBase = `https://github.com/${this.config.repo.owner}/`;
         this.urlRepo = `${this.urlBase}${this.config.repo.name}/`;
+    }
+
+    public async setupGitHubAction(): Promise<void> {
+        // help dugite realize where `git` is...
+        process.env.LOCAL_GIT_DIRECTORY = "/usr/";
+        process.env.GIT_EXEC_PATH = "/usr/lib/git-core";
+
+        // get the access tokens via the inputs of the GitHub Action
+        this.setAccessToken("gitgitgadget", core.getInput("gitgitgadget-git-access-token"));
+        this.setAccessToken("git", core.getInput("git-git-access-token"));
+        this.setAccessToken("dscho", core.getInput("dscho-git-access-token"));
+
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
+        if (!fs.existsSync(this.workDir)) await git(["init", "--bare", "--initial-branch", "main", this.workDir]);
+        for (const [key, value] of [
+            ["remote.origin.url", `https://github.com/${this.config.repo.owner}/${this.config.repo.name}`],
+            ["remote.origin.promisor", "true"],
+            ["remote.origin.partialclonefilter", "blob:none"],
+        ]) {
+            await git(["config", key, value], { workDir: this.workDir });
+        }
+        await git(
+            [
+                "-c",
+                "remote.origin.promisor=false", // let's fetch the notes with all of their blobs
+                "fetch",
+                "origin",
+                "--depth=1",
+                `+${GitNotes.defaultNotesRef}:${GitNotes.defaultNotesRef}`,
+            ],
+            {
+                workDir: this.workDir,
+            },
+        );
+        this.gggNotesUpdated = true;
+        // "Un-shallow" the refs without fetching anything; Since this is a partial clone,
+        // any missing commits will be fetched on demand (but when fetching a commit, you
+        // get the entire commit history reachable from it, too, that's why we go through
+        // the stunt of making a shallow-not-shallow fetch here).
+        await fs.promises.rm(path.join(this.workDir, ".git", "shallow"), { force: true });
     }
 
     public setAccessToken(repositoryOwner: string, token: string): void {
