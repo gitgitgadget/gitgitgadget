@@ -541,13 +541,13 @@ export class CIHelper {
             }
         }
 
-        const match = comment.body.match(/^\s*(\/[-a-z]+)(\s+(.*?))?\s*$/);
+        const match = comment.body.trim().match(/^(\/[-a-z]+)\s*(.*)$/);
         if (!match) {
             console.log(`Not a command; doing nothing: '${comment.body}'`);
             return; /* nothing to do */
         }
         const command = match[1];
-        const argument = match[3];
+        const argument = match[2].trim();
         const prKey = {
             owner: repositoryOwner,
             repo: this.config.repo.name,
