@@ -284,6 +284,7 @@ export class GitGitGadget {
             this.publishTagsAndNotesToRemote,
             pr.pullRequestURL,
             new Date(),
+            this.publishToken,
         );
         if (!options.noUpdate) {
             await this.pushNotesRef();
