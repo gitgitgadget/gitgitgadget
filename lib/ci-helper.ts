@@ -4,7 +4,7 @@ import * as util from "util";
 import addressparser from "nodemailer/lib/addressparser/index.js";
 import path from "path";
 import { ILintError, LintCommit } from "./commit-lint.js";
-import { commitExists, git, emptyTreeName } from "./git.js";
+import { commitExists, git, emptyTreeName, IGitOptions } from "./git.js";
 import { GitNotes } from "./git-notes.js";
 import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget.js";
 import { getConfig } from "./gitgitgadget-config.js";
@@ -104,6 +104,15 @@ export class CIHelper {
             // Ignore, for now
         }
 
+        if (!this.smtpOptions && process.env.GITGITGADGET_DEBUG) {
+            this.smtpOptions = {
+                smtpUser: "user@example.com",
+                smtpHost: "smtp.example.com",
+                smtpPass: "password",
+            };
+            console.log("Using debug SMTP options:", this.smtpOptions);
+        }
+
         // eslint-disable-next-line security/detect-non-literal-fs-filename
         if (!fs.existsSync(this.workDir)) await git(["init", "--bare", "--initial-branch", "main", this.workDir]);
         for (const [key, value] of [
@@ -143,7 +152,9 @@ export class CIHelper {
     }
 
     public parsePRCommentURLInput(): { owner: string; repo: string; prNumber: number; commentId: number } {
-        const prCommentUrl = core.getInput("pr-comment-url");
+        const prCommentUrl =
+            core.getInput("pr-comment-url") || "https://github.com/gitgitgadget/git/pull/1947#issuecomment-3193794374";
+
         const [, owner, repo, prNumber, commentId] =
             prCommentUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)#issuecomment-(\d+)/) || [];
         if (!this.config.repo.owners.includes(owner) || repo !== "git") {
@@ -165,6 +176,21 @@ export class CIHelper {
 
     public static getActionsCore(): typeof import("@actions/core") {
         return core;
+    }
+
+    public static async git(args: string[], options?: IGitOptions): Promise<string> {
+        return await git(args, options);
+    }
+
+    public async isAllowed(username: string): Promise<boolean> {
+        const gitGitGadget = await GitGitGadget.get(
+            this.gggConfigDir,
+            this.workDir,
+            this.urlRepo,
+            this.notesPushToken,
+            this.smtpOptions,
+        );
+        return gitGitGadget.isUserAllowed(username);
     }
 
     /*
