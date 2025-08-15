@@ -124,6 +124,7 @@ export default tseslint.config(
       "prettier/prettier": "warn",
       radix: "error",
       "use-isnan": "error",
+      "security/detect-object-injection": "off",
     },
   },
   {

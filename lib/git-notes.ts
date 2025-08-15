@@ -1,4 +1,3 @@
-/* eslint-disable security/detect-object-injection */
 import { emptyBlobName, git, revParse } from "./git.js";
 import { fromJSON, toJSON } from "./json-util.js";
 import { sleep } from "./sleep.js";
