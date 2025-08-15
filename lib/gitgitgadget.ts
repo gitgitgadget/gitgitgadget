@@ -36,12 +36,18 @@ export class GitGitGadget {
         return workDir;
     }
 
-    public static async get(gitGitGadgetDir: string, workDir?: string, notesPushToken?: string): Promise<GitGitGadget> {
+    public static async get(
+        gitGitGadgetDir: string,
+        workDir?: string,
+        publishTagsAndNotesToRemote?: string,
+        notesPushToken?: string,
+        smtpOptions?: ISMTPOptions,
+    ): Promise<GitGitGadget> {
         if (!workDir) {
             workDir = await this.getWorkDir(gitGitGadgetDir);
         }
 
-        const publishTagsAndNotesToRemote = await getVar("publishRemote", gitGitGadgetDir);
+        if (!publishTagsAndNotesToRemote) publishTagsAndNotesToRemote = await getVar("publishRemote", gitGitGadgetDir);
         if (!publishTagsAndNotesToRemote) {
             throw new Error("No remote to which to push configured");
         }
@@ -59,25 +65,26 @@ export class GitGitGadget {
 
         const notes = new GitNotes(workDir);
 
-        const smtpUser = await getVar("smtpUser", gitGitGadgetDir);
-        const smtpHost = await getVar("smtpHost", gitGitGadgetDir);
-        const smtpPass = await getVar("smtpPass", gitGitGadgetDir);
-        const smtpOpts = await getVar("smtpOpts", gitGitGadgetDir);
+        if (!smtpOptions) {
+            const smtpUser = await getVar("smtpUser", gitGitGadgetDir);
+            const smtpHost = await getVar("smtpHost", gitGitGadgetDir);
+            const smtpPass = await getVar("smtpPass", gitGitGadgetDir);
+            const smtpOpts = await getVar("smtpOpts", gitGitGadgetDir);
 
-        if (!smtpUser || !smtpHost || !smtpPass) {
-            throw new Error("No SMTP settings configured");
+            if (smtpUser && smtpHost && smtpPass) smtpOptions = { smtpHost, smtpOpts, smtpPass, smtpUser };
+            else if (smtpUser || smtpHost || smtpPass) {
+                const missing: string[] = [
+                    smtpUser ? "" : "smtpUser",
+                    smtpHost ? "" : "smtpHost",
+                    smtpPass ? "" : "smtpPass",
+                ].filter((e) => e);
+                throw new Error(`Partial SMTP configuration detected (${missing.join(", ")} missing)`);
+            }
         }
 
         const [options, allowedUsers] = await GitGitGadget.readOptions(notes);
 
-        return new GitGitGadget(
-            notes,
-            options,
-            allowedUsers,
-            { smtpHost, smtpOpts, smtpPass, smtpUser },
-            publishTagsAndNotesToRemote,
-            notesPushToken,
-        );
+        return new GitGitGadget(notes, options, allowedUsers, smtpOptions, publishTagsAndNotesToRemote, notesPushToken);
     }
 
     protected static async readOptions(notes: GitNotes): Promise<[IGitGitGadgetOptions, Set<string>]> {
@@ -96,7 +103,7 @@ export class GitGitGadget {
     protected options: IGitGitGadgetOptions;
     protected allowedUsers: Set<string>;
 
-    protected readonly smtpOptions: ISMTPOptions;
+    protected readonly smtpOptions?: ISMTPOptions;
 
     protected readonly publishTagsAndNotesToRemote: string;
     private readonly publishToken: string | undefined;
@@ -105,7 +112,7 @@ export class GitGitGadget {
         notes: GitNotes,
         options: IGitGitGadgetOptions,
         allowedUsers: Set<string>,
-        smtpOptions: ISMTPOptions,
+        smtpOptions: ISMTPOptions | undefined,
         publishTagsAndNotesToRemote: string,
         publishToken?: string,
     ) {
@@ -166,6 +173,10 @@ export class GitGitGadget {
 
     // Send emails only to the user
     public async preview(pr: IPullRequestInfo, userInfo: IGitHubUser): Promise<IPatchSeriesMetadata | undefined> {
+        const smtpOptions = this.smtpOptions;
+        if (!smtpOptions) {
+            throw new Error("No SMTP options configured");
+        }
         if (!userInfo.email) {
             throw new Error(`No email in user info for ${userInfo.login}`);
         }
@@ -176,7 +187,7 @@ export class GitGitGadget {
             mbox.cc = [];
             mbox.to = email;
             console.log(mbox);
-            return await sendMail(mbox, this.smtpOptions);
+            return await sendMail(mbox, smtpOptions);
         };
 
         return await this.genAndSend(pr, userInfo, { noUpdate: true }, send);
@@ -184,8 +195,12 @@ export class GitGitGadget {
 
     // Send emails out for review
     public async submit(pr: IPullRequestInfo, userInfo: IGitHubUser): Promise<IPatchSeriesMetadata | undefined> {
+        const smtpOptions = this.smtpOptions;
+        if (!smtpOptions) {
+            throw new Error("No SMTP options configured");
+        }
         const send = async (mail: string): Promise<string> => {
-            return await parseHeadersAndSendMail(mail, this.smtpOptions);
+            return await parseHeadersAndSendMail(mail, smtpOptions);
         };
 
         return await this.genAndSend(pr, userInfo, {}, send);

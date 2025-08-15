@@ -5,14 +5,16 @@ import { ILintError, LintCommit } from "./commit-lint.js";
 import { commitExists, git, emptyTreeName } from "./git.js";
 import { GitNotes } from "./git-notes.js";
 import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget.js";
+import { getConfig } from "./gitgitgadget-config.js";
 import { GitHubGlue, IGitHubUser, IPRComment, IPRCommit, IPullRequestInfo, RequestError } from "./github-glue.js";
 import { toPrettyJSON } from "./json-util.js";
 import { MailArchiveGitHelper } from "./mail-archive-helper.js";
 import { MailCommitMapping } from "./mail-commit-mapping.js";
 import { IMailMetadata } from "./mail-metadata.js";
 import { IPatchSeriesMetadata } from "./patch-series-metadata.js";
-import { IConfig, getConfig } from "./project-config.js";
+import { IConfig, getExternalConfig, setConfig } from "./project-config.js";
 import { getPullRequestKeyFromURL, pullRequestKey } from "./pullRequestKey.js";
+import { ISMTPOptions } from "./send-mail.js";
 
 const readFile = util.promisify(fs.readFile);
 type CommentFunction = (comment: string) => Promise<void>;
@@ -25,7 +27,7 @@ type CommentFunction = (comment: string) => Promise<void>;
  * commit.
  */
 export class CIHelper {
-    public readonly config: IConfig = getConfig();
+    public readonly config: IConfig;
     public readonly workDir: string;
     public readonly notes: GitNotes;
     public readonly urlBase: string;
@@ -38,16 +40,22 @@ export class CIHelper {
     private gggNotesUpdated: boolean;
     private mail2CommitMapUpdated: boolean;
     private notesPushToken: string | undefined;
+    private smtpOptions?: ISMTPOptions;
     protected maxCommitsExceptions: string[];
 
-    public constructor(workDir: string, skipUpdate?: boolean, gggConfigDir = ".") {
+    public static async getConfig(configFile?: string): Promise<IConfig> {
+        return configFile ? await getExternalConfig(configFile) : getConfig();
+    }
+
+    public constructor(workDir?: string, config?: IConfig, skipUpdate?: boolean, gggConfigDir = ".") {
+        this.config = config !== undefined ? setConfig(config) : getConfig();
         this.gggConfigDir = gggConfigDir;
-        this.workDir = workDir;
+        this.workDir = workDir || "git";
         this.notes = new GitNotes(workDir);
         this.gggNotesUpdated = !!skipUpdate;
         this.mail2commit = new MailCommitMapping(this.notes.workDir);
         this.mail2CommitMapUpdated = !!skipUpdate;
-        this.github = new GitHubGlue(workDir, this.config.repo.owner, this.config.repo.name);
+        this.github = new GitHubGlue(this.workDir, this.config.repo.owner, this.config.repo.name);
         this.testing = false;
         this.maxCommitsExceptions = this.config.lint?.maxCommitsIgnore || [];
         this.urlBase = `https://github.com/${this.config.repo.owner}/`;
@@ -59,6 +67,10 @@ export class CIHelper {
         if (this.config.repo.owner === repositoryOwner) {
             this.notesPushToken = token;
         }
+    }
+
+    public setSMTPOptions(smtpOptions: ISMTPOptions): void {
+        this.smtpOptions = smtpOptions;
     }
 
     /*
@@ -576,7 +588,13 @@ export class CIHelper {
         };
 
         try {
-            const gitGitGadget = await GitGitGadget.get(this.gggConfigDir, this.workDir, this.notesPushToken);
+            const gitGitGadget = await GitGitGadget.get(
+                this.gggConfigDir,
+                this.workDir,
+                this.urlRepo,
+                this.notesPushToken,
+                this.smtpOptions,
+            );
             if (!gitGitGadget.isUserAllowed(comment.author)) {
                 throw new Error(`User ${comment.author} is not yet permitted to use ${this.config.app.displayName}`);
             }
@@ -782,7 +800,13 @@ export class CIHelper {
             await this.github.addPRComment(prKey, redacted);
         };
 
-        const gitGitGadget = await GitGitGadget.get(this.gggConfigDir, this.workDir, this.notesPushToken);
+        const gitGitGadget = await GitGitGadget.get(
+            this.gggConfigDir,
+            this.workDir,
+            this.urlRepo,
+            this.notesPushToken,
+            this.smtpOptions,
+        );
         if (!pr.hasComments && !gitGitGadget.isUserAllowed(pr.author)) {
             const welcome = (await readFile("res/WELCOME.md")).toString().replace(/\${username}/g, pr.author);
             await this.github.addPRComment(prKey, welcome);
