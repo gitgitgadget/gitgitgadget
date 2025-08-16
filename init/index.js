@@ -4,6 +4,10 @@ async function run() {
   const ci = new CIHelper()
   await ci.setupGitHubAction()
 
+  for (const user of ["dscho", "xyz"]) {
+    console.log(`user ${user} allowed: ${await ci.isAllowed(user)}`)
+  }
+
   // add a reaction
   const core = CIHelper.getActionsCore()
   const prCommentUrl = core.getInput("pr-comment-url")
