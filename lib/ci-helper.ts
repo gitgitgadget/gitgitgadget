@@ -141,6 +141,16 @@ export class CIHelper {
         await fs.promises.rm(path.join(this.workDir, ".git", "shallow"), { force: true });
     }
 
+    public parsePRCommentURLInput(): { owner: string; repo: string; prNumber: number; commentId: number } {
+        const prCommentUrl = core.getInput("pr-comment-url");
+        const [, owner, repo, prNumber, commentId] =
+            prCommentUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)#issuecomment-(\d+)/) || [];
+        if (!this.config.repo.owners.includes(owner) || repo !== "git") {
+            throw new Error(`Invalid PR comment URL: ${prCommentUrl}`);
+        }
+        return { owner, repo, prNumber: parseInt(prNumber, 10), commentId: parseInt(commentId, 10) };
+    }
+
     public setAccessToken(repositoryOwner: string, token: string): void {
         this.github.setAccessToken(repositoryOwner, token);
         if (this.config.repo.owner === repositoryOwner) {
