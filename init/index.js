@@ -1,8 +1,11 @@
 async function run() {
   const { CIHelper } = await import("../dist/index.js")
 
+  console.log(`initializing CIHelper`)
   const ci = new CIHelper()
+  console.log(`setup`)
   await ci.setupGitHubAction()
+  console.log(`setup done`)
 
   for (const user of ["dscho", "xyz"]) {
     console.log(`user ${user} allowed: ${await ci.isAllowed(user)}`)
