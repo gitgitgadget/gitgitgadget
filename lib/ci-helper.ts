@@ -83,6 +83,15 @@ export class CIHelper {
             break;
         }
 
+        // configure the Git committer information
+        process.env.GIT_CONFIG_PARAMETERS = [
+            process.env.GIT_CONFIG_PARAMETERS,
+            "'user.name=GitGitGadget'",
+            "'user.email=gitgitgadget@gmail.com'",
+        ]
+            .filter((e) => e)
+            .join(" ");
+
         // get the access tokens via the inputs of the GitHub Action
         this.setAccessToken(this.config.repo.owner, core.getInput("pr-repo-token"));
         this.setAccessToken(this.config.repo.baseOwner, core.getInput("upstream-repo-token"));
