@@ -157,6 +157,10 @@ export function parseMBoxMessageIDAndReferences(parsed: IParsedMBox): { messageI
 }
 
 export async function sendMail(mail: IParsedMBox, smtpOptions: ISMTPOptions): Promise<string> {
+    if (process.env.GITGITGADGET_DEBUG) {
+        console.log(`Would send the email:\n${JSON.stringify(mail, null, 2)}`);
+        return "<Message-ID>"; // debug mode does not actually do anything
+    }
     const transportOpts: SMTPTransport.Options = {
         auth: {
             pass: smtpOptions.smtpPass,

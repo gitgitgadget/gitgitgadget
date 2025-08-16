@@ -104,6 +104,15 @@ export class CIHelper {
             // Ignore, for now
         }
 
+        if (!this.smtpOptions && process.env.GITGITGADGET_DEBUG) {
+            this.smtpOptions = {
+                smtpUser: "user@example.com",
+                smtpHost: "smtp.example.com",
+                smtpPass: "password",
+            };
+            console.log("Using debug SMTP options:", this.smtpOptions);
+        }
+
         // eslint-disable-next-line security/detect-non-literal-fs-filename
         if (!fs.existsSync(this.workDir)) await git(["init", "--bare", "--initial-branch", "main", this.workDir]);
         for (const [key, value] of [

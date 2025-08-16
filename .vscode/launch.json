@@ -19,7 +19,8 @@
             "cwd": "${workspaceFolder}",
             "runtimeExecutable": null,
             "env": {
-                "NODE_ENV": "development"
+                "NODE_ENV": "development",
+                "GITGITGADGET_DEBUG": "1",
             },
             "console": "integratedTerminal",
             "sourceMaps": true,
