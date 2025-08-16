@@ -41,6 +41,7 @@ export class GitGitGadget {
         workDir?: string,
         publishTagsAndNotesToRemote?: string,
         notesPushToken?: string,
+        smtpOptions?: ISMTPOptions,
     ): Promise<GitGitGadget> {
         if (!workDir) {
             workDir = await this.getWorkDir(gitGitGadgetDir);
@@ -64,25 +65,21 @@ export class GitGitGadget {
 
         const notes = new GitNotes(workDir);
 
-        const smtpUser = await getVar("smtpUser", gitGitGadgetDir);
-        const smtpHost = await getVar("smtpHost", gitGitGadgetDir);
-        const smtpPass = await getVar("smtpPass", gitGitGadgetDir);
-        const smtpOpts = await getVar("smtpOpts", gitGitGadgetDir);
+        if (!smtpOptions) {
+            const smtpUser = await getVar("smtpUser", gitGitGadgetDir);
+            const smtpHost = await getVar("smtpHost", gitGitGadgetDir);
+            const smtpPass = await getVar("smtpPass", gitGitGadgetDir);
+            const smtpOpts = await getVar("smtpOpts", gitGitGadgetDir);
 
-        if (!smtpUser || !smtpHost || !smtpPass) {
-            throw new Error("No SMTP settings configured");
+            if (!smtpUser || !smtpHost || !smtpPass) {
+                throw new Error("No SMTP settings configured");
+            }
+            smtpOptions = { smtpHost, smtpOpts, smtpPass, smtpUser };
         }
 
         const [options, allowedUsers] = await GitGitGadget.readOptions(notes);
 
-        return new GitGitGadget(
-            notes,
-            options,
-            allowedUsers,
-            { smtpHost, smtpOpts, smtpPass, smtpUser },
-            publishTagsAndNotesToRemote,
-            notesPushToken,
-        );
+        return new GitGitGadget(notes, options, allowedUsers, smtpOptions, publishTagsAndNotesToRemote, notesPushToken);
     }
 
     protected static async readOptions(notes: GitNotes): Promise<[IGitGitGadgetOptions, Set<string>]> {
