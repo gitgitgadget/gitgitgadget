@@ -69,6 +69,15 @@ export class CIHelper {
         process.env.LOCAL_GIT_DIRECTORY = "/usr/";
         process.env.GIT_EXEC_PATH = "/usr/lib/git-core";
 
+        // configure the Git committer information
+        process.env.GIT_CONFIG_PARAMETERS = [
+            process.env.GIT_CONFIG_PARAMETERS,
+            "'user.name=GitGitGadget'",
+            "'user.email=gitgitgadget@gmail.com'",
+        ]
+            .filter((e) => e)
+            .join(" ");
+
         // get the access tokens via the inputs of the GitHub Action
         this.setAccessToken("gitgitgadget", core.getInput("gitgitgadget-git-access-token"));
         this.setAccessToken("git", core.getInput("git-git-access-token"));
