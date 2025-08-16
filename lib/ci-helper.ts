@@ -45,15 +45,15 @@ export class CIHelper {
         return configFile ? await getExternalConfig(configFile) : getConfig();
     }
 
-    public constructor(workDir: string, config?: IConfig, skipUpdate?: boolean, gggConfigDir = ".") {
+    public constructor(workDir?: string, config?: IConfig, skipUpdate?: boolean, gggConfigDir = ".") {
         this.config = config !== undefined ? setConfig(config) : getConfig();
         this.gggConfigDir = gggConfigDir;
-        this.workDir = workDir;
+        this.workDir = workDir || "git";
         this.notes = new GitNotes(workDir);
         this.gggNotesUpdated = !!skipUpdate;
         this.mail2commit = new MailCommitMapping(this.notes.workDir);
         this.mail2CommitMapUpdated = !!skipUpdate;
-        this.github = new GitHubGlue(workDir, this.config.repo.owner, this.config.repo.name);
+        this.github = new GitHubGlue(this.workDir, this.config.repo.owner, this.config.repo.name);
         this.testing = false;
         this.maxCommitsExceptions = this.config.lint?.maxCommitsIgnore || [];
         this.urlBase = `https://github.com/${this.config.repo.owner}/`;
