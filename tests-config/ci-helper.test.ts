@@ -94,7 +94,7 @@ class TestCIHelper extends CIHelper {
     public addPRLabelsCalls: Array<[_: string, labels: string[]]>;
 
     public constructor(workDir: string, debug = false, gggDir = ".") {
-        super(workDir, debug, gggDir);
+        super(workDir, config, debug, gggDir);
         this.testing = true;
         this.ghGlue = this.github;
 
@@ -240,7 +240,7 @@ test("identify merge that integrated some commit", async () => {
     const commitD = await repo.merge("d", commitF);
     await repo.git(["update-ref", `refs/remotes/upstream/${config.repo.trackingBranches[2]}`, commitD]);
 
-    const ci = new CIHelper(repo.workDir, true);
+    const ci = new CIHelper(repo.workDir, config, true);
     expect(commitB).not.toBeUndefined();
     expect(await ci.identifyMergeCommit(config.repo.trackingBranches[2], commitG)).toEqual(commitD);
     expect(await ci.identifyMergeCommit(config.repo.trackingBranches[2], commitE)).toEqual(commitC);

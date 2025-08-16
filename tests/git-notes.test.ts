@@ -53,17 +53,22 @@ test("set/get notes", async () => {
     expect(await notes.getLastCommitNote(commit as string)).toEqual("2");
 
     // error tests for update
-    await expect(notes.update(gitURL)).resolves.toBeUndefined();
+    for (const note of ["commit-to-mail", "mail-to-commit"]) {
+        await expect(
+            git(["update-ref", `refs/notes/${note}`, "refs/notes/gitgitgadget"], { workDir: repo.workDir }),
+        ).resolves.toEqual("");
+    }
+    await expect(notes.update(".")).resolves.toBeUndefined();
     const notesM2C = new GitNotes(repo.workDir, "refs/notes/mail-to-commit");
-    await expect(notesM2C.update(gitURL)).resolves.toBeUndefined();
+    await expect(notesM2C.update(".")).resolves.toBeUndefined();
     const notesC2M = new GitNotes(repo.workDir, "refs/notes/commit-to-mail");
-    await expect(notesC2M.update(gitURL)).resolves.toBeUndefined();
+    await expect(notesC2M.update(".")).resolves.toBeUndefined();
     const notesBad = new GitNotes(repo.workDir, "unknown");
-    await expect(notesBad.update(gitURL)).rejects.toThrow(/know how to update/);
+    await expect(notesBad.update(".")).rejects.toThrow(/know how to update/);
     const notesNotM2Chead = new GitNotes(repo.workDir, "xrefs/notes/mail-to-commit");
-    await expect(notesNotM2Chead.update(gitURL)).rejects.toThrow(/know how to update/);
+    await expect(notesNotM2Chead.update(".")).rejects.toThrow(/know how to update/);
     const notesNotM2Ctail = new GitNotes(repo.workDir, "refs/notes/mail-to-commitx");
-    await expect(notesNotM2Ctail.update(gitURL)).rejects.toThrow(/know how to update/);
+    await expect(notesNotM2Ctail.update(".")).rejects.toThrow(/know how to update/);
 });
 
 test("notesSync()", async () => {
