@@ -112,6 +112,8 @@ export class CIHelper {
         ]) {
             await git(["config", key, value], { workDir: this.workDir });
         }
+        const notesRefs = [GitNotes.defaultNotesRef];
+        // TODO Add `refs/notes/mail-to-commit` on demand
         await git(
             [
                 "-c",
@@ -119,13 +121,19 @@ export class CIHelper {
                 "fetch",
                 "origin",
                 "--depth=1",
-                `+${GitNotes.defaultNotesRef}:${GitNotes.defaultNotesRef}`,
+                ...notesRefs.map((ref) => `+${ref}:${ref}`),
             ],
             {
                 workDir: this.workDir,
             },
         );
         this.gggNotesUpdated = true;
+        // TODO: determine on demand how many commits to fetch; This is contingent on the need
+        // to fetch a PR branch (for handle-pr-push or handle-pr-comment), or whether the upstream branches
+        // are needed (for update-commit-mappings and handle-open-prs).
+        // await git(["fetch", "origin", "--depth=500", `${GitNotes.defaultNotesRef}:${GitNotes.defaultNotesRef}`], {
+        //     workDir: this.workDir,
+        // });
         // "Un-shallow" the refs without fetching anything; Since this is a partial clone,
         // any missing commits will be fetched on demand (but when fetching a commit, you
         // get the entire commit history reachable from it, too, that's why we go through
