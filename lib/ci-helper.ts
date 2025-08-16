@@ -90,6 +90,21 @@ export class CIHelper {
             this.setAccessToken(this.config.repo.testOwner, core.getInput("test-repo-token"));
         }
 
+        // set the SMTP options
+        try {
+            const options = {
+                smtpUser: core.getInput("smtp-user"),
+                smtpHost: core.getInput("smtp-host"),
+                smtpPass: core.getInput("smtp-pass"),
+                smtpOpts: core.getInput("smtp-opts"),
+            };
+            if (options.smtpUser && options.smtpHost && options.smtpPass) {
+                this.setSMTPOptions(options);
+            }
+        } catch (e) {
+            // Ignore, for now
+        }
+
         // eslint-disable-next-line security/detect-non-literal-fs-filename
         if (!fs.existsSync(this.workDir)) await git(["init", "--bare", "--initial-branch", "unused", this.workDir]);
         for (const [key, value] of [
