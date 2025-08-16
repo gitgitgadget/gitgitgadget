@@ -45,7 +45,7 @@ export class CIHelper {
         return configFile ? await getExternalConfig(configFile) : getConfig();
     }
 
-    public constructor(workDir: string, config?: IConfig, skipUpdate?: boolean, gggConfigDir = ".") {
+    public constructor(workDir: string = "git.git", config?: IConfig, skipUpdate?: boolean, gggConfigDir = ".") {
         this.config = config !== undefined ? setConfig(config) : getConfig();
         this.gggConfigDir = gggConfigDir;
         this.workDir = workDir;
