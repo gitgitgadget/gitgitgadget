@@ -182,6 +182,17 @@ export class CIHelper {
         return await git(args, options);
     }
 
+    public async isAllowed(username: string): Promise<boolean> {
+        const gitGitGadget = await GitGitGadget.get(
+            this.gggConfigDir,
+            this.workDir,
+            this.urlRepo,
+            this.notesPushToken,
+            this.smtpOptions,
+        );
+        return gitGitGadget.isUserAllowed(username);
+    }
+
     /*
      * Given a commit that was contributed as a patch via GitGitGadget (i.e.
      * a commit with a Message-ID recorded in `refs/notes/gitgitgadget`),
