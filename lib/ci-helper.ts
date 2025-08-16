@@ -74,6 +74,26 @@ export class CIHelper {
         this.setAccessToken("git", core.getInput("git-git-access-token"));
         this.setAccessToken("dscho", core.getInput("dscho-git-access-token"));
 
+        // set the SMTP options
+        try {
+            const options = JSON.parse(core.getInput("smtp-options")) as {
+                user?: string;
+                host?: string;
+                pass?: string;
+                opts?: string;
+            };
+            if (typeof options === "object" && options.user && options.host && options.pass) {
+                this.setSMTPOptions({
+                    smtpUser: options.user,
+                    smtpHost: options.host,
+                    smtpPass: options.pass,
+                    smtpOpts: options.opts,
+                });
+            }
+        } catch (e) {
+            // Ignore, for now
+        }
+
         // eslint-disable-next-line security/detect-non-literal-fs-filename
         if (!fs.existsSync(this.workDir)) await git(["init", "--bare", "--initial-branch", "main", this.workDir]);
         for (const [key, value] of [
