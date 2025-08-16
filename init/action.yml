@@ -2,12 +2,6 @@ name: 'Initialize state for use with the GitGitGadget GitHub Actions'
 description: 'Obtains installation token and sets up stuff'
 author: 'Johannes Schindelin'
 inputs:
-  gitgitgadget-git-access-token:
-    description: 'The access token to work on gitgitgadget/git'
-    required: true
-  git-git-access-token:
-    description: 'The access token to work on git/git'
-    required: true
   dscho-git-access-token:
     description: 'The access token to work on dscho/git'
     required: true
