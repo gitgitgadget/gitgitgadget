@@ -14,7 +14,7 @@
     "build": "tsc",
     "build-dist": "ncc build -s -m ./lib/ci-helper.ts -o dist",
     "cleanbranch": "node ./build/script/delete-test-branches.js",
-    "lint": "eslint \"{lib,script,tests,tests-config}/**/*.{ts,tsx,mjs,js}\" --ignore-pattern \"dist/**/*\"",
+    "lint": "eslint \"{lib,script,tests,tests-config}/**/*.{ts,tsx,mjs,js}\" \"*/index.js\" --ignore-pattern \"dist/**/*\"",
     "start": "node server.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --env=node",
     "test:clean": "jest --clearCache && npm test",
