@@ -1,11 +1,11 @@
-import eslint from "@eslint/js";
-import stylistic from "@stylistic/eslint-plugin";
-import jsdoc from "eslint-plugin-jsdoc";
-import eslintConfigPrettier from "eslint-config-prettier";
-import eslintPluginPrettier from "eslint-plugin-prettier";
-import eslintPluginSecurity from "eslint-plugin-security";
-import globals from "globals";
-import tseslint from "typescript-eslint";
+import eslint from "@eslint/js"
+import stylistic from "@stylistic/eslint-plugin"
+import jsdoc from "eslint-plugin-jsdoc"
+import eslintConfigPrettier from "eslint-config-prettier"
+import eslintPluginPrettier from "eslint-plugin-prettier"
+import eslintPluginSecurity from "eslint-plugin-security"
+import globals from "globals"
+import tseslint from "typescript-eslint"
 
 export default tseslint.config(
   {
@@ -193,4 +193,4 @@ export default tseslint.config(
     },
   },
   // eslintPluginPrettierRecommended,
-);
+)
