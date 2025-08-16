@@ -36,12 +36,17 @@ export class GitGitGadget {
         return workDir;
     }
 
-    public static async get(gitGitGadgetDir: string, workDir?: string, notesPushToken?: string): Promise<GitGitGadget> {
+    public static async get(
+        gitGitGadgetDir: string,
+        workDir?: string,
+        publishTagsAndNotesToRemote?: string,
+        notesPushToken?: string,
+    ): Promise<GitGitGadget> {
         if (!workDir) {
             workDir = await this.getWorkDir(gitGitGadgetDir);
         }
 
-        const publishTagsAndNotesToRemote = await getVar("publishRemote", gitGitGadgetDir);
+        if (!publishTagsAndNotesToRemote) publishTagsAndNotesToRemote = await getVar("publishRemote", gitGitGadgetDir);
         if (!publishTagsAndNotesToRemote) {
             throw new Error("No remote to which to push configured");
         }
