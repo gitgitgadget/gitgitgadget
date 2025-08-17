@@ -67,7 +67,10 @@ export class CIHelper {
         this.urlRepo = `${this.urlBase}${this.config.repo.name}/`;
     }
 
-    public async setupGitHubAction(setupOptions?: { needsMailingListMirror?: boolean }): Promise<void> {
+    public async setupGitHubAction(setupOptions?: {
+        needsMailingListMirror?: boolean;
+        needsUpstreamBranches?: boolean;
+    }): Promise<void> {
         // help dugite realize where `git` is...
         const gitExecutable = os.type() === "Windows_NT" ? "git.exe" : "git";
         const stripSuffix = `bin${path.sep}${gitExecutable}`;
@@ -123,6 +126,9 @@ export class CIHelper {
             ["remote.origin.url", `https://github.com/${this.config.repo.owner}/${this.config.repo.name}`],
             ["remote.origin.promisor", "true"],
             ["remote.origin.partialCloneFilter", "blob:none"],
+            ["remote.upstream.url", `https://github.com/${this.config.repo.baseOwner}/${this.config.repo.name}`],
+            ["remote.upstream.promisor", "true"],
+            ["remote.upstream.partialCloneFilter", "blob:none"],
         ]) {
             await git(["config", key, value], { workDir: this.workDir });
         }
@@ -142,6 +148,41 @@ export class CIHelper {
         );
         console.timeEnd("fetch Git notes");
         this.gggNotesUpdated = true;
+        if (setupOptions?.needsUpstreamBranches) {
+            console.time("fetch upstream branches");
+            await git(
+                [
+                    "fetch",
+                    "origin",
+                    "--no-tags",
+                    "--depth=500",
+                    "--filter=blob:limit=1g",
+                    ...this.config.repo.trackingBranches.map(
+                        (name) => `+refs/heads/${name}:refs/remotes/upstream/${name}`,
+                    ),
+                ],
+                {
+                    workDir: this.workDir,
+                },
+            );
+            console.timeEnd("fetch upstream branches");
+            console.time("get open PR head commits");
+            const openPRCommits = (
+                await Promise.all(
+                    this.config.repo.owners.map(async (repositoryOwner) => {
+                        return await this.github.getOpenPRs(repositoryOwner);
+                    }),
+                )
+            )
+                .flat()
+                .map((pr) => pr.headCommit);
+            console.timeEnd("get open PR head commits");
+            console.time("fetch open PR head commits");
+            await git(["fetch", "--no-tags", "origin", "--filter=blob:limit=1g", ...openPRCommits], {
+                workDir: this.workDir,
+            });
+            console.timeEnd("fetch open PR head commits");
+        }
         // "Unshallow" the refs by fetching the shallow commits with a tree-less filter.
         // This is needed because Git will otherwise fall over left and right when trying
         // to determine merge bases with really old branches.
