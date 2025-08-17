@@ -2,10 +2,11 @@ import * as core from "@actions/core";
 import * as fs from "fs";
 import * as os from "os";
 import * as util from "util";
+import { spawnSync } from "child_process";
 import addressparser from "nodemailer/lib/addressparser/index.js";
 import path from "path";
 import { ILintError, LintCommit } from "./commit-lint.js";
-import { commitExists, git, emptyTreeName } from "./git.js";
+import { commitExists, git, emptyTreeName, revParse } from "./git.js";
 import { GitNotes } from "./git-notes.js";
 import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget.js";
 import { getConfig } from "./gitgitgadget-config.js";
@@ -70,6 +71,7 @@ export class CIHelper {
     public async setupGitHubAction(setupOptions?: {
         needsMailingListMirror?: boolean;
         needsUpstreamBranches?: boolean;
+        needsMailToCommitNotes?: boolean;
     }): Promise<void> {
         // help dugite realize where `git` is...
         const gitExecutable = os.type() === "Windows_NT" ? "git.exe" : "git";
@@ -133,6 +135,10 @@ export class CIHelper {
             await git(["config", key, value], { workDir: this.workDir });
         }
         console.time("fetch Git notes");
+        const notesRefs = [GitNotes.defaultNotesRef];
+        if (setupOptions?.needsMailToCommitNotes) {
+            notesRefs.push("refs/notes/mail-to-commit", "refs/notes/commit-to-mail");
+        }
         await git(
             [
                 "fetch",
@@ -140,7 +146,7 @@ export class CIHelper {
                 "--no-tags",
                 "origin",
                 "--depth=1",
-                `+${GitNotes.defaultNotesRef}:${GitNotes.defaultNotesRef}`,
+                ...notesRefs.map((ref) => `+${ref}:${ref}`),
             ],
             {
                 workDir: this.workDir,
@@ -217,7 +223,7 @@ export class CIHelper {
                     "remote.mirror.promisor=false", // let's fetch the mails with all of their contents
                     "fetch",
                     "mirror",
-                    "--depth=50",
+                    `--depth=${setupOptions?.needsMailToCommitNotes ? 5000 : 50}`,
                     "+REF:REF".replace("REF", this.config.mailrepo.mirrorRef || `refs/heads/lore-${epoch}`),
                 ],
                 {
@@ -315,6 +321,60 @@ export class CIHelper {
         }
         await this.mail2commit.mail2CommitNotes.setString(messageId, gitGitCommit, true);
         await this.commit2mailNotes.appendCommitNote(gitGitCommit, messageId);
+    }
+
+    /**
+     * Update the `commit-to-mail` and `mail-to-commit` Git notes refs.
+     */
+    public async updateMailToCommitNotes(): Promise<void> {
+        // We'll assume that the `commit-to-mail` and `mail-to-commit` notes refs are up to date
+        const commit2MailTipCommit = await revParse("refs/notes/commit-to-mail", this.workDir);
+        const dir = fileURLToPath(new URL(".", import.meta.url));
+        const lookupCommitScriptPath = path.resolve(dir, "..", "script", "lookup-commit.sh");
+        console.time("lookup-commit.sh");
+        const lookupCommitResult = spawnSync("sh", ["-x", lookupCommitScriptPath, "--notes", "update"], {
+            stdio: "inherit",
+            env: {
+                ...process.env,
+                GITGIT_DIR: this.workDir,
+                GITGIT_GIT_REMOTE: this.urlRepo,
+                LORE_GIT_DIR: this.mailingListMirror,
+                GITGIT_MAIL_REMOTE: this.config.mailrepo.url,
+                GITGIT_MAIL_EPOCH: "1",
+            },
+        });
+        console.timeEnd("lookup-commit.sh");
+        if (lookupCommitResult.status !== 0) throw new Error("lookup-commit.sh failed");
+        // If there were no updates, we are done
+        if (commit2MailTipCommit === (await revParse("refs/notes/commit-to-mail", this.workDir))) return;
+
+        const updateMailToCommitNotesScriptPath = path.resolve(dir, "..", "script", "update-mail-to-commit-notes.sh");
+        console.time("update-mail-to-commit-notes.sh");
+        const updateMailToCommitNotesResult = spawnSync("sh", ["-x", updateMailToCommitNotesScriptPath], {
+            stdio: "inherit",
+            env: {
+                ...process.env,
+                GITGIT_DIR: this.workDir,
+                GITGIT_GIT_REMOTE: this.urlRepo,
+            },
+        });
+        console.timeEnd("update-mail-to-commit-notes.sh");
+        if (updateMailToCommitNotesResult.status !== 0) throw new Error("update-mail-to-commit-notes.sh failed");
+
+        const mail2commitNotes = new GitNotes(this.workDir, "refs/notes/mail-to-commit");
+        await mail2commitNotes.push(this.urlRepo, this.notesPushToken);
+        const commit2MailNotes = new GitNotes(this.workDir, "refs/notes/commit-to-mail");
+        await commit2MailNotes.push(this.urlRepo, this.notesPushToken);
+
+        const commit2MailTipPatch = await git(["show", "refs/notes/commit-to-mail"], { workDir: this.workDir });
+        // Any unhandled commit will get annotated with "no match"
+        // To list all of them, the tip commit's diff is parsed and the commit hash is
+        // extracted from the "filename" on the `+++ b/` line.
+        const noMatch = commit2MailTipPatch
+            .split("\ndiff --git ")
+            .filter((d) => d.endsWith("+no match"))
+            .map((d) => d.split("\n+++ b/")[1].split("\n")[0].replace("/", ""));
+        if (noMatch.length) throw new Error(`Could not find mail(s) for: ${noMatch.join("\n")}`);
     }
 
     /**
