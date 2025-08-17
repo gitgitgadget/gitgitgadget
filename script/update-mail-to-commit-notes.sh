@@ -21,7 +21,7 @@ git_remote="${GITGIT_GIT_REMOTE:-https://github.com/gitgitgadget/git}"
 update_gitgit_dir () {
 	test -d "$GITGIT_DIR" ||
 	git clone $git_remote "$GITGIT_DIR" ||
-	die "Could not clone $gitremote to $GITGIT_DIR"
+	die "Could not clone $git_remote to $GITGIT_DIR"
 
 	git -C "$GITGIT_DIR" fetch $git_remote \
 		refs/notes/mail-to-commit:refs/notes/mail-to-commit ||
