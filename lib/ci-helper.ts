@@ -162,6 +162,17 @@ export class CIHelper {
         return { owner, repo, prNumber: parseInt(prNumber, 10), commentId: parseInt(commentId, 10) };
     }
 
+    public parsePRURLInput(): { owner: string; repo: string; prNumber: number } {
+        const prCommentUrl = core.getInput("pr-url");
+
+        const [, owner, repo, prNumber] =
+            prCommentUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)$/) || [];
+        if (!this.config.repo.owners.includes(owner) || repo !== this.config.repo.name) {
+            throw new Error(`Invalid PR comment URL: ${prCommentUrl}`);
+        }
+        return { owner, repo, prNumber: parseInt(prNumber, 10) };
+    }
+
     public setAccessToken(repositoryOwner: string, token: string): void {
         this.github.setAccessToken(repositoryOwner, token);
         if (this.config.repo.owner === repositoryOwner) {

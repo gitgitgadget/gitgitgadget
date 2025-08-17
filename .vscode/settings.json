@@ -96,6 +96,7 @@
         "CIsmtphost",
         "CIsmtppass",
         "CIsmtpopts",
+        "parsePRURLInput",
         "users\\.noreply\\.github\\.com",
     ],
     "cSpell.language": "en-US",
