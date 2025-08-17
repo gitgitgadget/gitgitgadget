@@ -19,6 +19,9 @@ const defaultConfig: IConfig = {
         branch: "master",
         host: "lore.kernel.org",
         url: "https://lore.kernel.org/git/",
+        public_inbox_epoch: 1,
+        mirrorURL: "https://github.com/gitgitgadget/git-mailing-list-mirror",
+        mirrorRef: "refs/heads/lore-1",
         descriptiveName: "lore.kernel/git",
     },
     mail: {

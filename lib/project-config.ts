@@ -27,6 +27,9 @@ export interface IConfig {
         branch: string;
         host: string;
         url: string;
+        public_inbox_epoch?: number;
+        mirrorURL?: string;
+        mirrorRef?: string;
         descriptiveName: string;
     };
     mail: {

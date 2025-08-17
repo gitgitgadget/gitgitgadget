@@ -96,6 +96,7 @@
         "CIsmtphost",
         "CIsmtppass",
         "CIsmtpopts",
+        "mailrepo",
         "parsePRURLInput",
         "users\\.noreply\\.github\\.com",
     ],
