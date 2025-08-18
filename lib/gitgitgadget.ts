@@ -59,7 +59,13 @@ export class GitGitGadget {
 
         // Always fetch the Git notes first thing
         await git(
-            ["fetch", publishTagsAndNotesToRemote, "--", `+${GitNotes.defaultNotesRef}:${GitNotes.defaultNotesRef}`],
+            [
+                "fetch",
+                "--no-tags",
+                publishTagsAndNotesToRemote,
+                "--",
+                `+${GitNotes.defaultNotesRef}:${GitNotes.defaultNotesRef}`,
+            ],
             { workDir },
         );
 
@@ -215,6 +221,7 @@ export class GitGitGadget {
         const pullRequestMerge = `refs/pull/${pullRequestNumber}/merge`;
         const args = [
             "fetch",
+            "--no-tags",
             this.publishTagsAndNotesToRemote,
             "--",
             `+${this.notes.notesRef}:${this.notes.notesRef}`,
@@ -233,9 +240,12 @@ export class GitGitGadget {
         if (repositoryOwner === this.config.repo.owner) {
             args.push(...prArgs);
         } else {
-            await git(["fetch", `https://github.com/${repositoryOwner}/${this.config.repo.name}`, ...prArgs], {
-                workDir: this.workDir,
-            });
+            await git(
+                ["fetch", "--no-tags", `https://github.com/${repositoryOwner}/${this.config.repo.name}`, ...prArgs],
+                {
+                    workDir: this.workDir,
+                },
+            );
         }
         await git(args, { workDir: this.workDir });
 
@@ -249,6 +259,7 @@ export class GitGitGadget {
         await git(
             [
                 "fetch",
+                "--no-tags",
                 this.publishTagsAndNotesToRemote,
                 "--",
                 `+${GitNotes.defaultNotesRef}:${GitNotes.defaultNotesRef}`,

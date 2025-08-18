@@ -524,7 +524,7 @@ export class CIHelper {
             const prKey = getPullRequestKeyFromURL(prMeta.pullRequestURL);
             const fetchURL = `https://github.com/${prKey.owner}/${prKey.repo}`;
             const fetchRef = `refs/pull/${prKey.pull_number}/head`;
-            await git(["fetch", fetchURL, fetchRef, prMeta.latestTag], {
+            await git(["fetch", "--no-tags", fetchURL, fetchRef, prMeta.latestTag], {
                 workDir: this.workDir,
             });
         }
