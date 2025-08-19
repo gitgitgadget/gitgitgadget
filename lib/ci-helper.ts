@@ -1,18 +1,23 @@
+import * as core from "@actions/core";
 import * as fs from "fs";
 import * as util from "util";
 import addressparser from "nodemailer/lib/addressparser/index.js";
+import path from "path";
 import { ILintError, LintCommit } from "./commit-lint.js";
-import { commitExists, git, emptyTreeName } from "./git.js";
+import { commitExists, git, emptyTreeName, IGitOptions } from "./git.js";
 import { GitNotes } from "./git-notes.js";
 import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget.js";
+import { getConfig } from "./gitgitgadget-config.js";
 import { GitHubGlue, IGitHubUser, IPRComment, IPRCommit, IPullRequestInfo, RequestError } from "./github-glue.js";
 import { toPrettyJSON } from "./json-util.js";
 import { MailArchiveGitHelper } from "./mail-archive-helper.js";
 import { MailCommitMapping } from "./mail-commit-mapping.js";
 import { IMailMetadata } from "./mail-metadata.js";
 import { IPatchSeriesMetadata } from "./patch-series-metadata.js";
-import { IConfig, getConfig } from "./project-config.js";
+import { IConfig, getExternalConfig, setConfig } from "./project-config.js";
 import { getPullRequestKeyFromURL, pullRequestKey } from "./pullRequestKey.js";
+import { ISMTPOptions } from "./send-mail.js";
+import { fileURLToPath } from "url";
 
 const readFile = util.promisify(fs.readFile);
 type CommentFunction = (comment: string) => Promise<void>;
@@ -25,7 +30,7 @@ type CommentFunction = (comment: string) => Promise<void>;
  * commit.
  */
 export class CIHelper {
-    public readonly config: IConfig = getConfig();
+    public readonly config: IConfig;
     public readonly workDir: string;
     public readonly notes: GitNotes;
     public readonly urlBase: string;
@@ -38,20 +43,124 @@ export class CIHelper {
     private gggNotesUpdated: boolean;
     private mail2CommitMapUpdated: boolean;
     private notesPushToken: string | undefined;
+    private smtpOptions?: ISMTPOptions;
     protected maxCommitsExceptions: string[];
 
-    public constructor(workDir: string, skipUpdate?: boolean, gggConfigDir = ".") {
+    public static async getConfig(configFile?: string): Promise<IConfig> {
+        return configFile ? await getExternalConfig(configFile) : getConfig();
+    }
+
+    public constructor(workDir?: string, config?: IConfig, skipUpdate?: boolean, gggConfigDir = ".") {
+        this.config = config !== undefined ? setConfig(config) : getConfig();
         this.gggConfigDir = gggConfigDir;
-        this.workDir = workDir;
+        this.workDir = workDir || "git";
         this.notes = new GitNotes(workDir);
         this.gggNotesUpdated = !!skipUpdate;
         this.mail2commit = new MailCommitMapping(this.notes.workDir);
         this.mail2CommitMapUpdated = !!skipUpdate;
-        this.github = new GitHubGlue(workDir, this.config.repo.owner, this.config.repo.name);
+        this.github = new GitHubGlue(this.workDir, this.config.repo.owner, this.config.repo.name);
         this.testing = false;
         this.maxCommitsExceptions = this.config.lint?.maxCommitsIgnore || [];
         this.urlBase = `https://github.com/${this.config.repo.owner}/`;
         this.urlRepo = `${this.urlBase}${this.config.repo.name}/`;
+    }
+
+    public async setupGitHubAction(): Promise<void> {
+        // help dugite realize where `git` is...
+        process.env.LOCAL_GIT_DIRECTORY = "/usr/";
+        process.env.GIT_EXEC_PATH = "/usr/lib/git-core";
+
+        // configure the Git committer information
+        process.env.GIT_CONFIG_PARAMETERS = [
+            process.env.GIT_CONFIG_PARAMETERS,
+            "'user.name=GitGitGadget'",
+            "'user.email=gitgitgadget@gmail.com'",
+        ]
+            .filter((e) => e)
+            .join(" ");
+
+        // get the access tokens via the inputs of the GitHub Action
+        this.setAccessToken("gitgitgadget", core.getInput("gitgitgadget-git-access-token"));
+        this.setAccessToken("git", core.getInput("git-git-access-token"));
+        this.setAccessToken("dscho", core.getInput("dscho-git-access-token"));
+
+        // set the SMTP options
+        try {
+            const options = JSON.parse(core.getInput("smtp-options")) as {
+                user?: string;
+                host?: string;
+                pass?: string;
+                opts?: string;
+            };
+            if (typeof options === "object" && options.user && options.host && options.pass) {
+                this.setSMTPOptions({
+                    smtpUser: options.user,
+                    smtpHost: options.host,
+                    smtpPass: options.pass,
+                    smtpOpts: options.opts,
+                });
+            }
+        } catch (e) {
+            // Ignore, for now
+        }
+
+        if (!this.smtpOptions && process.env.GITGITGADGET_DEBUG) {
+            this.smtpOptions = {
+                smtpUser: "user@example.com",
+                smtpHost: "smtp.example.com",
+                smtpPass: "password",
+            };
+            console.log("Using debug SMTP options:", this.smtpOptions);
+        }
+
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
+        if (!fs.existsSync(this.workDir)) await git(["init", "--bare", "--initial-branch", "main", this.workDir]);
+        for (const [key, value] of [
+            ["remote.origin.url", `https://github.com/${this.config.repo.owner}/${this.config.repo.name}`],
+            ["remote.origin.promisor", "true"],
+            ["remote.origin.partialclonefilter", "blob:none"],
+        ]) {
+            await git(["config", key, value], { workDir: this.workDir });
+        }
+        const notesRefs = [GitNotes.defaultNotesRef];
+        // TODO Add `refs/notes/mail-to-commit` on demand
+        await git(
+            [
+                "-c",
+                "remote.origin.promisor=false", // let's fetch the notes with all of their blobs
+                "fetch",
+                "origin",
+                "--depth=1",
+                ...notesRefs.map((ref) => `+${ref}:${ref}`),
+            ],
+            {
+                workDir: this.workDir,
+            },
+        );
+        this.gggNotesUpdated = true;
+        // TODO: determine on demand how many commits to fetch; This is contingent on the need
+        // to fetch a PR branch (for handle-pr-push or handle-pr-comment), or whether the upstream branches
+        // are needed (for update-commit-mappings and handle-open-prs).
+        // await git(["fetch", "origin", "--depth=500", `${GitNotes.defaultNotesRef}:${GitNotes.defaultNotesRef}`], {
+        //     workDir: this.workDir,
+        // });
+        // "Un-shallow" the refs without fetching anything; Since this is a partial clone,
+        // any missing commits will be fetched on demand (but when fetching a commit, you
+        // get the entire commit history reachable from it, too, that's why we go through
+        // the stunt of making a shallow-not-shallow fetch here).
+        await fs.promises.rm(path.join(this.workDir, ".git", "shallow"), { force: true });
+    }
+
+    public parsePRCommentURLInput(): { owner: string; repo: string; prNumber: number; commentId: number } {
+        const prCommentUrl =
+            core.getInput("pr-comment-url") || "https://github.com/gitgitgadget/git/pull/1947#issuecomment-3193794374";
+
+        const [, owner, repo, prNumber, commentId] =
+            prCommentUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)#issuecomment-(\d+)/) || [];
+        if (!this.config.repo.owners.includes(owner) || repo !== "git") {
+            throw new Error(`Invalid PR comment URL: ${prCommentUrl}`);
+        }
+        return { owner, repo, prNumber: parseInt(prNumber, 10), commentId: parseInt(commentId, 10) };
     }
 
     public setAccessToken(repositoryOwner: string, token: string): void {
@@ -59,6 +168,29 @@ export class CIHelper {
         if (this.config.repo.owner === repositoryOwner) {
             this.notesPushToken = token;
         }
+    }
+
+    public setSMTPOptions(smtpOptions: ISMTPOptions): void {
+        this.smtpOptions = smtpOptions;
+    }
+
+    public static getActionsCore(): typeof import("@actions/core") {
+        return core;
+    }
+
+    public static async git(args: string[], options?: IGitOptions): Promise<string> {
+        return await git(args, options);
+    }
+
+    public async isAllowed(username: string): Promise<boolean> {
+        const gitGitGadget = await GitGitGadget.get(
+            this.gggConfigDir,
+            this.workDir,
+            this.urlRepo,
+            this.notesPushToken,
+            this.smtpOptions,
+        );
+        return gitGitGadget.isUserAllowed(username);
     }
 
     /*
@@ -576,7 +708,13 @@ export class CIHelper {
         };
 
         try {
-            const gitGitGadget = await GitGitGadget.get(this.gggConfigDir, this.workDir, this.notesPushToken);
+            const gitGitGadget = await GitGitGadget.get(
+                this.gggConfigDir,
+                this.workDir,
+                this.urlRepo,
+                this.notesPushToken,
+                this.smtpOptions,
+            );
             if (!gitGitGadget.isUserAllowed(comment.author)) {
                 throw new Error(`User ${comment.author} is not yet permitted to use ${this.config.app.displayName}`);
             }
@@ -767,6 +905,11 @@ export class CIHelper {
         }
     }
 
+    public static async getWelcomeMessage(username: string): Promise<string> {
+        const resPath = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..", "res", "WELCOME.md");
+        return (await readFile(resPath)).toString().replace(/\${username}/g, username);
+    }
+
     public async handlePush(repositoryOwner: string, prNumber: number): Promise<void> {
         const prKey = {
             owner: repositoryOwner,
@@ -782,9 +925,15 @@ export class CIHelper {
             await this.github.addPRComment(prKey, redacted);
         };
 
-        const gitGitGadget = await GitGitGadget.get(this.gggConfigDir, this.workDir, this.notesPushToken);
+        const gitGitGadget = await GitGitGadget.get(
+            this.gggConfigDir,
+            this.workDir,
+            this.urlRepo,
+            this.notesPushToken,
+            this.smtpOptions,
+        );
         if (!pr.hasComments && !gitGitGadget.isUserAllowed(pr.author)) {
-            const welcome = (await readFile("res/WELCOME.md")).toString().replace(/\${username}/g, pr.author);
+            const welcome = await CIHelper.getWelcomeMessage(pr.author);
             await this.github.addPRComment(prKey, welcome);
 
             await this.github.addPRLabels(prKey, ["new user"]);

@@ -5,13 +5,11 @@ import { CIHelper } from "../lib/ci-helper.js";
 import { isDirectory } from "../lib/fs-util.js";
 import { git, gitConfig } from "../lib/git.js";
 import { IGitGitGadgetOptions, getVar } from "../lib/gitgitgadget.js";
-import { getConfig } from "../lib/gitgitgadget-config.js";
 import { GitHubGlue } from "../lib/github-glue.js";
 import { toPrettyJSON } from "../lib/json-util.js";
 import { IGitMailingListMirrorState, stateKey } from "../lib/mail-archive-helper.js";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata.js";
-import { IConfig, loadConfig, setConfig } from "../lib/project-config.js";
-import path from "path";
+import { IConfig } from "../lib/project-config.js";
 
 let commander = new Command();
 const publishRemoteKey = "publishRemote";
@@ -47,9 +45,7 @@ interface ICommanderOptions {
 const commandOptions = commander.opts<ICommanderOptions>();
 
 (async (): Promise<void> => {
-    const config: IConfig = commandOptions.config
-        ? setConfig(await getExternalConfig(commandOptions.config))
-        : getConfig();
+    const config: IConfig = await CIHelper.getConfig(commandOptions.config);
 
     const getGitGitWorkDir = async (): Promise<string> => {
         if (!commandOptions.gitWorkDir) {
@@ -70,7 +66,12 @@ const commandOptions = commander.opts<ICommanderOptions>();
         return commandOptions.gitWorkDir;
     };
 
-    const ci = new CIHelper(await getGitGitWorkDir(), commandOptions.skipUpdate, commandOptions.gitgitgadgetWorkDir);
+    const ci = new CIHelper(
+        await getGitGitWorkDir(),
+        config,
+        commandOptions.skipUpdate,
+        commandOptions.gitgitgadgetWorkDir,
+    );
 
     const configureNotesPushToken = async (): Promise<void> => {
         const token = await gitConfig("gitgitgadget.githubToken");
@@ -488,22 +489,3 @@ const commandOptions = commander.opts<ICommanderOptions>();
     process.stderr.write(`Caught error ${reason}:\n${reason.stack}\n`);
     process.exit(1);
 });
-
-async function getExternalConfig(file: string): Promise<IConfig> {
-    const filePath = path.resolve(file);
-    const newConfig = await loadConfig(filePath);
-
-    if (!Object.prototype.hasOwnProperty.call(newConfig, "project")) {
-        throw new Error(`User configurations must have a 'project:'.  Not found in ${filePath}`);
-    }
-
-    if (!newConfig.repo.owner.match(/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i)) {
-        throw new Error(`Invalid 'owner' ${newConfig.repo.owner} in ${filePath}`);
-    }
-
-    if (!newConfig.repo.baseOwner.match(/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i)) {
-        throw new Error(`Invalid 'baseOwner' ${newConfig.repo.baseOwner} in ${filePath}`);
-    }
-
-    return newConfig;
-}

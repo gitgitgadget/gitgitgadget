@@ -1,0 +1,25 @@
+name: 'Handle PR Comment'
+description: 'Handles slash commands such as /submit and /preview'
+author: 'Johannes Schindelin'
+inputs:
+  gitgitgadget-git-access-token:
+    description: 'The access token to work on gitgitgadget/git'
+    required: true
+  git-git-access-token:
+    description: 'The access token to work on git/git'
+    required: true
+  dscho-git-access-token:
+    description: 'The access token to work on dscho/git'
+    required: true
+  smtp-options:
+    description: 'The SMTP options to use for sending emails'
+    required: true
+  pr-comment-url:
+    description: 'The URL of the PR comment to add a reaction to'
+    required: true
+runs:
+  using: 'node20'
+  main: './index.js'
+branding:
+  icon: 'git-commit'
+  color: 'orange'

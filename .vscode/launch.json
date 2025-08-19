@@ -5,6 +5,32 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Launch `handle-pr-comment`",
+            "type": "node",
+            "request": "launch",
+            "runtimeArgs": [
+                "--inspect-brk",
+                // "--nolazy",
+            ],
+            "args": [
+                "${workspaceFolder}/handle-pr-comment/index.js"
+            ],
+            "stopOnEntry": false,
+            "cwd": "${workspaceFolder}",
+            "runtimeExecutable": null,
+            "env": {
+                "NODE_ENV": "development",
+                "GITGITGADGET_DEBUG": "1",
+            },
+            "console": "integratedTerminal",
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceFolder}/build/**/*.js",
+                "${workspaceFolder}/dist/**/*.js",
+                "${workspaceFolder}/lib/**/*.js"
+            ]
+        },
+        {
             "name": "Tests",
             "type": "node",
             "request": "launch",
@@ -18,7 +44,6 @@
             ],
             "stopOnEntry": false,
             "cwd": "${workspaceFolder}",
-            "preLaunchTask": null,
             "runtimeExecutable": null,
             "env": {
                 "NODE_ENV": "development"
