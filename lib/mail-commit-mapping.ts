@@ -43,9 +43,17 @@ export class MailCommitMapping {
         }
         if (refs.length) {
             console.log(`Updating mail-to-commit/refs: ${refs.join(", ")}`);
-            await git(["fetch", `https://github.com/${this.config.repo.owner}/${this.config.repo.name}`, ...refs], {
-                workDir: this.workDir,
-            });
+            await git(
+                [
+                    "fetch",
+                    "--no-tags",
+                    `https://github.com/${this.config.repo.owner}/${this.config.repo.name}`,
+                    ...refs,
+                ],
+                {
+                    workDir: this.workDir,
+                },
+            );
         }
     }
 }

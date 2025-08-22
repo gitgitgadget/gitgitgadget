@@ -68,15 +68,15 @@ update_gitgit_dir () {
 	git -C "$GITGIT_DIR" fetch $git_remote refs/notes/commit-to-mail:refs/notes/commit-to-mail ||
 	die "Could not update refs/notes/commit-to-mail"
 
-	if git -C "$GITGIT_DIR" rev-parse --verify refs/remotes/gitster/seen >/dev/null 2>&1
+	if git -C "$GITGIT_DIR" rev-parse --verify refs/remotes/upstream/seen >/dev/null 2>&1
 	then
 		# Let's take 'seen' from the official source at git.git.
-		git -C "$GITGIT_DIR" remote set-url gitster https://github.com/git/git
-		git -C "$GITGIT_DIR" fetch gitster ||
-		die "Could not update the 'gitster' remote to $GITGIT_DIR"
+		git -C "$GITGIT_DIR" remote set-url upstream https://github.com/git/git
+		git -C "$GITGIT_DIR" fetch upstream ||
+		die "Could not update the 'upstream' remote to $GITGIT_DIR"
 	else
-		git -C "$GITGIT_DIR" remote add -f gitster https://github.com/git/git ||
-		die "Could not add the 'gitster' remote to $GITGIT_DIR"
+		git -C "$GITGIT_DIR" remote add -f upstream https://github.com/git/git ||
+		die "Could not add the 'upstream' remote to $GITGIT_DIR"
 	fi
 }
 
@@ -182,8 +182,8 @@ test notes != "$mode" || {
 		update_gitgit_dir ||
 		die "Could not update $GITGIT_DIR"
 
-		to="$(git -C "$GITGIT_DIR" rev-parse --verify refs/remotes/gitster/seen)" ||
-		die "Could not determine tip rev of gitster/seen"
+		to="$(git -C "$GITGIT_DIR" rev-parse --verify refs/remotes/upstream/seen)" ||
+		die "Could not determine tip rev of upstream/seen"
 		from="$(git -C "$GITGIT_DIR" show -s --format=%s refs/notes/commit-to-mail^{/Update.from.commit.range} 2>/dev/null | sed -ne 's/"//g' -e 's/^Update from commit range \(.*\.\.\)\?//p')"
 
 		# Already the newest? Skip

@@ -39,7 +39,7 @@ export class GitNotes {
                 // wait a while before trying again to push (after fetching the remote notes ref and merging it)
                 await sleep(backoff);
 
-                const output = await git(["fetch", "--porcelain", url, "--", `${this.notesRef}`], {
+                const output = await git(["fetch", "--porcelain", "--no-tags", url, "--", `${this.notesRef}`], {
                     workDir: this.workDir,
                 });
                 // parse the output to obtain the OID of the remote notes ref
@@ -122,7 +122,7 @@ export class GitNotes {
 
     public async update(url: string): Promise<void> {
         if (this.notesRef.match(/^refs\/notes\/(gitgitgadget|commit-to-mail|mail-to-commit)$/)) {
-            await git(["fetch", url, `+${this.notesRef}:${this.notesRef}`], { workDir: this.workDir });
+            await git(["fetch", "--no-tags", url, `+${this.notesRef}:${this.notesRef}`], { workDir: this.workDir });
         } else {
             throw new Error(`Don't know how to update ${this.notesRef}`);
         }
