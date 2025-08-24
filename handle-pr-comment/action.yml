@@ -1,0 +1,34 @@
+name: 'Handle PR Comment'
+description: 'Handles slash commands such as /submit and /preview'
+author: 'Johannes Schindelin'
+inputs:
+  pr-repo-token:
+    description: 'The access token to work on the repository that holds PRs and state'
+    required: true
+  upstream-repo-token:
+    description: 'The access token to work on PRs in the upstream repository'
+    required: true
+  test-repo-token:
+    description: 'The access token to work on PRs in the test repository'
+    required: true
+  smtp-host:
+    description: 'The SMTP host to use for sending emails'
+    required: true
+  smtp-user:
+    description: 'The SMTP user when sending emails'
+    required: true
+  smtp-opts:
+    description: 'Extra SMTP options in JSON format'
+    required: false
+  smtp-pass:
+    description: 'The SMTP password to use for sending emails'
+    required: true
+  pr-comment-url:
+    description: 'The URL of the PR comment to add a reaction to'
+    required: true
+runs:
+  using: 'node20'
+  main: './index.js'
+branding:
+  icon: 'git-commit'
+  color: 'orange'

@@ -1,0 +1,78 @@
+name: Push GitHub Actions
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**/action.yml'
+      - '**/*.js'
+      - '**/*.ts'
+      - 'package*.json'
+      - 'res/**/*'
+      - 'script/**/*'
+      - '.github/workflows/push-github-actions.yml'
+
+permissions:
+  contents: write
+
+jobs:
+    push-github-action:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v5
+          with:
+            persist-credentials: true
+        - name: Set up Node.js
+          uses: actions/setup-node@v4
+          with:
+            node-version: '20'
+        - name: Install dependencies
+          run: npm ci
+        - name: Build dist/
+          run: npm run build-dist
+        - name: Commit the result
+          id: commit
+          run: |
+            git config --local user.name "GitGitGadget CI" &&
+            git config --local user.email "ci@noreply.github.com" &&
+
+            if ! git fetch --tags origin v1
+            then
+              # Starting from scratch
+              v1=HEAD &&
+              tag_name=v1.0
+            else
+              v1=FETCH_HEAD &&
+              tag_name="$(git name-rev '--refs=refs/tags/v[0-9]*.[0-9]*' $v1)" &&
+              case "$tag_name" in
+              '') tag_name=v1.0;;
+              *) incr="${tag_name#* tags/v1.}"; tag_name="v1.$((incr + 1))";;
+              esac
+            fi &&
+
+            echo '{"type":"module"}' >dist/package.json &&
+            # Include WELCOME.md in the dist/ directory
+            cp -R res dist/ &&
+            # Include the shell scripts for updating the mail-to-commit and commit-to-mail notes
+            mkdir -p dist/script &&
+            cp script/{lookup-commit,update-mail-to-commit-notes}.sh dist/script/ &&
+            # Now, add the generated files
+            git add -A dist/ &&
+            # Remove the rest
+            git rm -r -- \* ':(exclude)dist/' ':(exclude)*/action.yml' ':(exclude)*/index.js' &&
+
+            # Now make that fake merge commit
+            tree=$(git write-tree) &&
+            msg="Sync v1 with ($(git show -s --pretty=reference HEAD))" &&
+            case "$v1" in
+            HEAD) commit=$(git commit-tree -m "$msg" $tree -p HEAD);;
+            *) commit=$(git commit-tree -m "$msg" $tree -p $v1 -p HEAD);;
+            esac &&
+
+            # Now update the v1 branch and tag it
+            git update-ref refs/heads/v1 $commit &&
+            git tag $tag_name $commit &&
+            echo "result=$tag_name" >>$GITHUB_OUTPUT
+        - name: Push to v1
+          run: git push origin v1 ${{ steps.commit.outputs.result }}

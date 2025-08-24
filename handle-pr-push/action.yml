@@ -1,0 +1,22 @@
+name: 'Handle PR Pushes'
+description: 'Handles when a PR was pushed'
+author: 'Johannes Schindelin'
+inputs:
+  pr-repo-token:
+    description: 'The access token to work on the repository that holds PRs and state'
+    required: true
+  upstream-repo-token:
+    description: 'The access token to work on PRs in the upstream repository'
+    required: true
+  test-repo-token:
+    description: 'The access token to work on PRs in the test repository'
+    required: true
+  pr-url:
+    description: 'The URL of the PR that was pushed'
+    required: true
+runs:
+  using: 'node20'
+  main: './index.js'
+branding:
+  icon: 'git-commit'
+  color: 'orange'

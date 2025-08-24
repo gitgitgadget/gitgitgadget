@@ -12,8 +12,9 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
+    "build-dist": "ncc build -s -m ./lib/ci-helper.ts -o dist",
     "cleanbranch": "node ./build/script/delete-test-branches.js",
-    "lint": "eslint \"{lib,script,tests,tests-config}/**/*.{ts,tsx,mjs,js}\"",
+    "lint": "eslint \"{lib,script,tests,tests-config}/**/*.{ts,tsx,mjs,js}\" \"*/index.js\" --ignore-pattern \"dist/**/*\"",
     "start": "node server.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --env=node",
     "test:clean": "jest --clearCache && npm test",
@@ -56,6 +57,7 @@
     "@types/node": "^24.3.0",
     "@types/nodemailer": "^7.0.0",
     "@types/rfc2047": "^2.0.3",
+    "@vercel/ncc": "^0.38.3",
     "eslint": "^9.33.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-jest": "^29.0.1",
@@ -72,6 +74,7 @@
     "typescript-eslint": "8.39.1"
   },
   "dependencies": {
+    "@actions/core": "^1.11.1",
     "@octokit/auth-app": "^8.0.2",
     "@octokit/request-error": "^7.0.0",
     "@octokit/rest": "^22.0.0",
