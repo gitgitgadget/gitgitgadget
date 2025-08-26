@@ -1,0 +1,13 @@
+name: 'Update the mail <-> commit notes'
+description: 'Updates the mapping between commits and patch emails, stored in the `mail-to-commit` and `commit-to-mail` Git notes refs.'
+author: 'Johannes Schindelin'
+inputs:
+  pr-repo-token:
+    description: 'The access token to work on the repository that holds PRs and state'
+    required: true
+runs:
+  using: 'node20'
+  main: './index.js'
+branding:
+  icon: 'git-commit'
+  color: 'orange'
