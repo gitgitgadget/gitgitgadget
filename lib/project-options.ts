@@ -27,7 +27,7 @@ export class ProjectOptions {
         } else if ((await revParse(`${baseCommit}:git-gui.sh`, workDir)) !== undefined) {
             // Git GUI
             to = "--to=git@vger.kernel.org";
-            cc.push("Pratyush Yadav <me@yadavpratyush.com>");
+            cc.push("Johannes Sixt <j6t@kdbg.org>");
             upstreamBranch = "git-gui/master";
         } else if ((await revParse(`${baseCommit}:git.c`, workDir)) !== undefined) {
             // Git
