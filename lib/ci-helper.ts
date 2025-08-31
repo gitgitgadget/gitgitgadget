@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 import * as fs from "fs";
 import * as os from "os";
+import typia from "typia";
 import * as util from "util";
 import { spawnSync } from "child_process";
 import addressparser from "nodemailer/lib/addressparser/index.js";
@@ -53,13 +54,20 @@ export class CIHelper {
         return configFile ? await getExternalConfig(configFile) : getConfig();
     }
 
+    public static validateConfig = typia.createValidate<IConfig>();
+
     protected static getConfigAsGitHubActionInput(): IConfig | undefined {
         if (process.env.GITHUB_ACTIONS !== "true") return undefined;
         const json = core.getInput("config");
         if (!json) return undefined;
         const config = JSON.parse(json) as IConfig | undefined;
-        if (typeof config === "object" && config.project !== undefined) return config;
-        return undefined;
+        const result = CIHelper.validateConfig(config);
+        if (result.success) return config;
+        throw new Error(
+            `Invalid config:\n- ${result.errors
+                .map((e) => `${e.path} (value: ${e.value}, expected: ${e.expected}): ${e.description}`)
+                .join("\n- ")}`,
+        );
     }
 
     public constructor(workDir: string = "pr-repo.git", config?: IConfig, skipUpdate?: boolean, gggConfigDir = ".") {
