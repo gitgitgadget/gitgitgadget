@@ -35,6 +35,8 @@ export interface IConfig {
     mail: {
         author: string;
         sender: string;
+        smtpUser: string;
+        smtpHost: string;
     };
     project?: projectInfo | undefined; // project-options values
     app: {
@@ -51,6 +53,12 @@ export interface IConfig {
     user: {
         allowUserAsLogin: boolean; // use GitHub login as name if name is private
     };
+    syncUpstreamBranches: Array<{
+        sourceRepo: string; // e.g. "gitster/git"
+        targetRepo: string; // e.g. "gitgitgadget/git"
+        sourceRefRegex?: string; // e.g. "^refs/heads/(maint-\\d|[a-z][a-z]/)"
+        targetRefNamespace?: string; // e.g. "git-gui/"
+    }>; // branches to sync from upstream to our repo
 }
 
 let config: IConfig; // singleton
