@@ -2,6 +2,9 @@ name: 'Handle PR Comment'
 description: 'Handles slash commands such as /submit and /preview'
 author: 'Johannes Schindelin'
 inputs:
+  config:
+    description: 'The GitGitGadget configuration to use (see https://github.com/gitgitgadget/gitgitgadget/blob/HEAD/lib/project-config.ts)'
+    required: false # not just yet...
   pr-repo-token:
     description: 'The access token to work on the repository that holds PRs and state'
     required: true

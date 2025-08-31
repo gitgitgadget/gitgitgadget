@@ -53,8 +53,17 @@ export class CIHelper {
         return configFile ? await getExternalConfig(configFile) : getConfig();
     }
 
+    protected static getConfigAsGitHubActionInput(): IConfig | undefined {
+        if (process.env.GITHUB_ACTIONS !== "true") return undefined;
+        const json = core.getInput("config");
+        if (!json) return undefined;
+        const config = JSON.parse(json) as IConfig | undefined;
+        if (typeof config === "object" && config.project !== undefined) return config;
+        return undefined;
+    }
+
     public constructor(workDir: string = "pr-repo.git", config?: IConfig, skipUpdate?: boolean, gggConfigDir = ".") {
-        this.config = config !== undefined ? setConfig(config) : getConfig();
+        this.config = config !== undefined ? setConfig(config) : CIHelper.getConfigAsGitHubActionInput() || getConfig();
         this.gggConfigDir = gggConfigDir;
         this.workDir = workDir;
         this.notes = new GitNotes(workDir);
