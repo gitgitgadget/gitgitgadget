@@ -1110,6 +1110,7 @@ export class CIHelper {
               };
         await this.maybeUpdateGGGNotes();
         const mailArchiveGit = await MailArchiveGitHelper.get(
+            this.config,
             this.notes,
             mailArchiveGitDir,
             this.github,
