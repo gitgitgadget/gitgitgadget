@@ -1,0 +1,20 @@
+name: 'Initialize the Git notes'
+description: 'Creates initial, mostly empty Git notes for GitGitGadget to store its state in.'
+author: 'Johannes Schindelin'
+inputs:
+  config:
+    description: 'The GitGitGadget configuration to use (see https://github.com/gitgitgadget/gitgitgadget/blob/HEAD/lib/project-config.ts)'
+    required: false # not just yet...
+  pr-repo-token:
+    description: 'The access token to work on the repository that holds PRs and state'
+    required: true
+  initial-user:
+    description: 'The user that is initially the only one allowed to use GitGitGadget in the given project'
+    default: ${{ github.actor }}
+    required: true
+runs:
+  using: 'node20'
+  main: './index.js'
+branding:
+  icon: 'git-commit'
+  color: 'orange'
