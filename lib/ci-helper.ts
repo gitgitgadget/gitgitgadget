@@ -21,7 +21,7 @@ import {
     RequestError,
 } from "./github-glue.js";
 import { toPrettyJSON } from "./json-util.js";
-import { MailArchiveGitHelper } from "./mail-archive-helper.js";
+import { MailArchiveGitHelper, stateKey as mailArchiveStateKey } from "./mail-archive-helper.js";
 import { MailCommitMapping } from "./mail-commit-mapping.js";
 import { IMailMetadata } from "./mail-metadata.js";
 import { IPatchSeriesMetadata } from "./patch-series-metadata.js";
@@ -103,6 +103,7 @@ export class CIHelper {
         needsUpstreamBranches?: boolean;
         needsMailToCommitNotes?: boolean;
         createOrUpdateCheckRun?: boolean | "post";
+        createGitNotes?: boolean;
     }): Promise<void> {
         // configure the Git committer information
         process.env.GIT_CONFIG_PARAMETERS = [
@@ -136,6 +137,9 @@ export class CIHelper {
         }
 
         if (setupOptions?.createOrUpdateCheckRun) {
+            if (setupOptions?.createGitNotes) {
+                throw new Error(`Cannot use createOrUpdateCheckRun and createGitNotes at the same time`);
+            }
             return await this.createOrUpdateCheckRun(setupOptions.createOrUpdateCheckRun === "post");
         }
 
@@ -169,6 +173,56 @@ export class CIHelper {
         ]) {
             await git(["config", key, value], { workDir: this.workDir });
         }
+        if (setupOptions?.createGitNotes) {
+            if (
+                setupOptions.needsMailToCommitNotes ||
+                setupOptions.needsUpstreamBranches ||
+                setupOptions.needsMailingListMirror
+            ) {
+                throw new Error("`createGitNotes` cannot be combined with any other options");
+            }
+            const initialUser = core.getInput("initial-user");
+            console.time("Retrieving latest mail repo revision");
+            const fetchLatestMailRepoRevision = await git([
+                "ls-remote",
+                `${this.config.mailrepo.url}/${this.config.mailrepo.public_inbox_epoch ?? 1}`,
+                this.config.mailrepo.branch,
+            ]);
+            const latestMailRepoRevision = fetchLatestMailRepoRevision.split("\t")[0];
+            console.timeEnd("Retrieving latest mail repo revision");
+            console.time("verify that Git notes do not yet exist");
+            const existingNotes = await git(
+                [
+                    "ls-remote",
+                    "origin",
+                    GitNotes.defaultNotesRef,
+                    "refs/notes/mail-to-commit",
+                    "refs/notes/commit-to-mail",
+                ],
+                {
+                    workDir: this.workDir,
+                },
+            );
+            if (existingNotes !== "") {
+                throw new Error(`Git notes already exist in ${this.workDir}:\n${existingNotes}`);
+            }
+            console.timeEnd("verify that Git notes do not yet exist");
+            console.time("create the initial Git notes and push them");
+            for (const key of ["mail-to-commit", "commit-to-mail"]) {
+                const notes = new GitNotes(this.workDir, `refs/notes/${key}`);
+                await notes.initializeWithEmptyCommit();
+                await notes.push(this.urlRepo, this.notesPushToken);
+            }
+            const options: IGitGitGadgetOptions = {
+                allowedUsers: [initialUser],
+            };
+            await this.notes.set("", options, true);
+            await this.notes.set(mailArchiveStateKey, latestMailRepoRevision, false);
+            await this.notes.push(this.urlRepo, this.notesPushToken);
+            console.timeEnd("create the initial Git notes and push them");
+            return;
+        }
+
         console.time("fetch Git notes");
         const notesRefs = [GitNotes.defaultNotesRef];
         if (setupOptions?.needsMailToCommitNotes) {
