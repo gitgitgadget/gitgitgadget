@@ -59,7 +59,7 @@ export class CIHelper {
         this.workDir = workDir;
         this.notes = new GitNotes(workDir);
         this.gggNotesUpdated = !!skipUpdate;
-        this.mail2commit = new MailCommitMapping(this.notes.workDir);
+        this.mail2commit = new MailCommitMapping(this.config, this.notes.workDir);
         this.mail2CommitMapUpdated = !!skipUpdate;
         this.github = new GitHubGlue(workDir, this.config.repo.owner, this.config.repo.name);
         this.testing = false;
