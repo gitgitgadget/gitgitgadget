@@ -10,17 +10,17 @@ import { ILintError, LintCommit } from "./commit-lint.js";
 import { commitExists, git, emptyTreeName, revParse } from "./git.js";
 import { GitNotes } from "./git-notes.js";
 import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget.js";
-import { getConfig } from "./gitgitgadget-config.js";
 import { GitHubGlue, IGitHubUser, IPRComment, IPRCommit, IPullRequestInfo, RequestError } from "./github-glue.js";
 import { toPrettyJSON } from "./json-util.js";
 import { MailArchiveGitHelper } from "./mail-archive-helper.js";
 import { MailCommitMapping } from "./mail-commit-mapping.js";
 import { IMailMetadata } from "./mail-metadata.js";
 import { IPatchSeriesMetadata } from "./patch-series-metadata.js";
-import { IConfig, getExternalConfig, setConfig } from "./project-config.js";
+import { IConfig } from "./project-config.js";
 import { getPullRequestKeyFromURL, pullRequestKey } from "./pullRequestKey.js";
 import { ISMTPOptions } from "./send-mail.js";
 import { fileURLToPath } from "url";
+import defaultConfig from "./gitgitgadget-config.js";
 
 const readFile = util.promisify(fs.readFile);
 type CommentFunction = (comment: string) => Promise<void>;
@@ -50,10 +50,6 @@ export class CIHelper {
     protected maxCommitsExceptions: string[];
     protected mailingListMirror: string | undefined;
 
-    public static async getConfig(configFile?: string): Promise<IConfig> {
-        return configFile ? await getExternalConfig(configFile) : getConfig();
-    }
-
     public static validateConfig = typia.createValidate<IConfig>();
 
     protected static getConfigAsGitHubActionInput(): IConfig | undefined {
@@ -71,7 +67,7 @@ export class CIHelper {
     }
 
     public constructor(workDir: string = "pr-repo.git", config?: IConfig, skipUpdate?: boolean, gggConfigDir = ".") {
-        this.config = config !== undefined ? setConfig(config) : CIHelper.getConfigAsGitHubActionInput() || getConfig();
+        this.config = config || CIHelper.getConfigAsGitHubActionInput() || defaultConfig;
         this.gggConfigDir = gggConfigDir;
         this.workDir = workDir;
         this.notes = new GitNotes(workDir);

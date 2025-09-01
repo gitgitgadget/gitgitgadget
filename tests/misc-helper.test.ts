@@ -1,17 +1,17 @@
 import { expect, jest, test } from "@jest/globals";
 import { fileURLToPath } from "url";
 import { git } from "../lib/git.js";
-import { getConfig } from "../lib/gitgitgadget-config.js";
 import { testCreateRepo, TestRepo } from "./test-lib.js";
 import { execFile } from "child_process";
 import * as util from "util";
+import defaultConfig from "../lib/gitgitgadget-config.js";
 
 const execChild = util.promisify(execFile);
 
 jest.setTimeout(180000);
 const sourceFileName = fileURLToPath(import.meta.url);
 
-const config = getConfig();
+const config = defaultConfig;
 
 // Create three repos.
 // worktree is a local copy for doing updates and has the config

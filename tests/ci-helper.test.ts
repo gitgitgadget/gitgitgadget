@@ -2,11 +2,11 @@ import { afterAll, beforeAll, expect, jest, test } from "@jest/globals";
 import { fileURLToPath } from "url";
 import { CIHelper } from "../lib/ci-helper.js";
 import { GitNotes } from "../lib/git-notes.js";
-import { getConfig } from "../lib/gitgitgadget-config.js";
 import { GitHubGlue, IGitHubUser, IPRComment, IPRCommit, IPullRequestInfo } from "../lib/github-glue.js";
 import { IMailMetadata } from "../lib/mail-metadata.js";
 import { testSmtpServer } from "test-smtp-server";
 import { testCreateRepo, TestRepo } from "./test-lib.js";
+import defaultConfig from "../lib/gitgitgadget-config.js";
 
 const sourceFileName = fileURLToPath(import.meta.url);
 
@@ -32,7 +32,7 @@ function testQ(label: string, fn: AsyncFn) {
     });
 }
 
-const config = getConfig();
+const config = defaultConfig;
 
 const eMailOptions = {
     smtpserver: new testSmtpServer(),

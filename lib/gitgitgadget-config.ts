@@ -1,4 +1,4 @@
-import { IConfig, setConfig } from "./project-config.js";
+import { IConfig } from "./project-config.js";
 
 const defaultConfig: IConfig = {
     repo: {
@@ -59,9 +59,3 @@ const defaultConfig: IConfig = {
 };
 
 export default defaultConfig;
-
-setConfig(defaultConfig);
-
-export function getConfig(): IConfig {
-    return setConfig(defaultConfig);
-}
