@@ -263,12 +263,11 @@ export class CIHelper {
     }
 
     public parsePRURLInput(): { owner: string; repo: string; prNumber: number } {
-        const prCommentUrl = core.getInput("pr-url");
+        const prUrl = core.getInput("pr-url");
 
-        const [, owner, repo, prNumber] =
-            prCommentUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)$/) || [];
+        const [, owner, repo, prNumber] = prUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)$/) || [];
         if (!this.config.repo.owners.includes(owner) || repo !== this.config.repo.name) {
-            throw new Error(`Invalid PR comment URL: ${prCommentUrl}`);
+            throw new Error(`Invalid PR URL: ${prUrl}`);
         }
         return { owner, repo, prNumber: parseInt(prNumber, 10) };
     }
