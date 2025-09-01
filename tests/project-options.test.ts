@@ -27,6 +27,7 @@ test("project options", async () => {
     expect(await repo.commit("C")).not.toEqual("");
 
     const options2 = await ProjectOptions.get(
+        defaultConfig,
         repo.workDir,
         "test-project-options",
         ["Nguyễn Thái Ngọc Duy <pclouds@gmail.com>"],
