@@ -210,6 +210,7 @@ test("generate tag/notes from a Pull Request", async () => {
     await git(["config", "user.email", "gitgitgadget@example.com"], repo.options);
 
     const patches = await PatchSeries.getFromNotes(
+        defaultConfig,
         notes,
         pullRequestURL,
         pullRequestTitle,
@@ -252,6 +253,7 @@ to have included in git.git [https://github.com/git/git].`);
 
     const headCommit2 = await repo.revParse("HEAD");
     const patches2 = await PatchSeries.getFromNotes(
+        defaultConfig,
         notes,
         pullRequestURL,
         pullRequestTitle,

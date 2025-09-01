@@ -302,6 +302,7 @@ export class GitGitGadget {
         options.rfc = pr.draft ?? false;
 
         const series = await PatchSeries.getFromNotes(
+            this.config,
             this.notes,
             pr.pullRequestURL,
             pr.title,
