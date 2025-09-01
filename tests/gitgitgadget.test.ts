@@ -7,6 +7,7 @@ import { getConfig } from "../lib/gitgitgadget-config.js";
 import { PatchSeries } from "../lib/patch-series.js";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata.js";
 import { testCreateRepo } from "./test-lib.js";
+import defaultConfig from "../lib/gitgitgadget-config.js";
 
 // This test script might take quite a while to run
 jest.setTimeout(60000);
@@ -342,7 +343,7 @@ test("allow/disallow", async () => {
     const notes = new GitNotes(remote.workDir);
     await notes.set("", {} as IGitGitGadgetOptions);
 
-    const gitGitGadget = await GitGitGadget.get(workDir);
+    const gitGitGadget = await GitGitGadget.get(defaultConfig, workDir);
 
     // pretend that the notes ref had been changed in the meantime
     await notes.set("", { allowedUsers: ["first-one"] } as IGitGitGadgetOptions, true);
@@ -370,7 +371,7 @@ test("allow/disallow with env vars", async () => {
     const notes = new GitNotes(remote.workDir);
     await notes.set("", {} as IGitGitGadgetOptions);
 
-    const gitGitGadget = await GitGitGadget.get(workDir);
+    const gitGitGadget = await GitGitGadget.get(defaultConfig, workDir);
 
     // pretend that the notes ref had been changed in the meantime
     await notes.set("", { allowedUsers: ["first-one"] } as IGitGitGadgetOptions, true);

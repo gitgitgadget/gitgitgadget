@@ -854,6 +854,7 @@ export class CIHelper {
 
         try {
             const gitGitGadget = await GitGitGadget.get(
+                this.config,
                 this.gggConfigDir,
                 this.workDir,
                 this.urlRepo,
@@ -1071,6 +1072,7 @@ export class CIHelper {
         };
 
         const gitGitGadget = await GitGitGadget.get(
+            this.config,
             this.gggConfigDir,
             this.workDir,
             this.urlRepo,
