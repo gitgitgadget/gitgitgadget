@@ -10,6 +10,7 @@ import { toPrettyJSON } from "../lib/json-util.js";
 import { IGitMailingListMirrorState, stateKey } from "../lib/mail-archive-helper.js";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata.js";
 import { IConfig } from "../lib/project-config.js";
+import defaultConfig from "../lib/gitgitgadget-config.js";
 
 let commander = new Command();
 const publishRemoteKey = "publishRemote";
@@ -30,13 +31,11 @@ commander
             "e.g. for `gitgitgadget.workDir`",
         ".",
     )
-    .option("-c, --config <string>", "Use this configuration when using gitgitgadget with a project other than git", "")
     .option("-s, --skip-update", "Do not update the local refs (useful for debugging)")
     .argument("[args...]", "command arguments (call `list -h` for more information)")
     .parse(process.argv);
 
 interface ICommanderOptions {
-    config: string | undefined;
     gitgitgadgetWorkDir: string | undefined;
     gitWorkDir: string | undefined;
     skipUpdate: boolean | undefined;
@@ -45,7 +44,7 @@ interface ICommanderOptions {
 const commandOptions = commander.opts<ICommanderOptions>();
 
 (async (): Promise<void> => {
-    const config: IConfig = await CIHelper.getConfig(commandOptions.config);
+    const config: IConfig = defaultConfig;
 
     const getGitGitWorkDir = async (): Promise<string> => {
         if (!commandOptions.gitWorkDir) {
