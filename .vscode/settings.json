@@ -115,5 +115,24 @@
     "cSpell.ignorePaths": [
         "node_modules",
         "**/node_modules"
-    ]
+    ],
+    "search.ripgrep.maxThreads": 1,
+    "search.exclude": {
+        "**/.git": true,
+        "**/build": true,
+        "**/dist": true,
+        "**/git.git": true,
+        "**/mailing-list-mirror.git": true,
+        "**/node_modules": true,
+        "**/.test*": true,
+    },
+    "files.watcherExclude": {
+        "**/.git": true,
+        "**/build": true,
+        "**/dist": true,
+        "**/git.git": true,
+        "**/mailing-list-mirror.git": true,
+        "**/node_modules": true,
+        "**/.test*": true,
+    }
 }
