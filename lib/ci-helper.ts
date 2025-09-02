@@ -910,7 +910,7 @@ export class CIHelper {
                     await addComment(
                         `Submitted as [${
                             metadata?.coverLetterMessageId
-                        }](https://${this.config.mailrepo.host}/${this.config.mailrepo.name}/${
+                        }](https://${this.config.mailrepo.url.replace(/\/+$/, "")}/${
                             metadata?.coverLetterMessageId
                         })\n\nTo fetch this version into \`FETCH_HEAD\`:${
                             code
