@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 import * as fs from "fs";
 import * as os from "os";
+import typia from "typia";
 import * as util from "util";
 import { spawnSync } from "child_process";
 import addressparser from "nodemailer/lib/addressparser/index.js";
@@ -9,17 +10,17 @@ import { ILintError, LintCommit } from "./commit-lint.js";
 import { commitExists, git, emptyTreeName, revParse } from "./git.js";
 import { GitNotes } from "./git-notes.js";
 import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget.js";
-import { getConfig } from "./gitgitgadget-config.js";
 import { GitHubGlue, IGitHubUser, IPRComment, IPRCommit, IPullRequestInfo, RequestError } from "./github-glue.js";
 import { toPrettyJSON } from "./json-util.js";
 import { MailArchiveGitHelper } from "./mail-archive-helper.js";
 import { MailCommitMapping } from "./mail-commit-mapping.js";
 import { IMailMetadata } from "./mail-metadata.js";
 import { IPatchSeriesMetadata } from "./patch-series-metadata.js";
-import { IConfig, getExternalConfig, setConfig } from "./project-config.js";
+import { IConfig } from "./project-config.js";
 import { getPullRequestKeyFromURL, pullRequestKey } from "./pullRequestKey.js";
 import { ISMTPOptions } from "./send-mail.js";
 import { fileURLToPath } from "url";
+import defaultConfig from "./gitgitgadget-config.js";
 
 const readFile = util.promisify(fs.readFile);
 type CommentFunction = (comment: string) => Promise<void>;
@@ -49,17 +50,29 @@ export class CIHelper {
     protected maxCommitsExceptions: string[];
     protected mailingListMirror: string | undefined;
 
-    public static async getConfig(configFile?: string): Promise<IConfig> {
-        return configFile ? await getExternalConfig(configFile) : getConfig();
+    public static validateConfig = typia.createValidate<IConfig>();
+
+    protected static getConfigAsGitHubActionInput(): IConfig | undefined {
+        if (process.env.GITHUB_ACTIONS !== "true") return undefined;
+        const json = core.getInput("config");
+        if (!json) return undefined;
+        const config = JSON.parse(json) as IConfig | undefined;
+        const result = CIHelper.validateConfig(config);
+        if (result.success) return config;
+        throw new Error(
+            `Invalid config:\n- ${result.errors
+                .map((e) => `${e.path} (value: ${e.value}, expected: ${e.expected}): ${e.description}`)
+                .join("\n- ")}`,
+        );
     }
 
     public constructor(workDir: string = "pr-repo.git", config?: IConfig, skipUpdate?: boolean, gggConfigDir = ".") {
-        this.config = config !== undefined ? setConfig(config) : getConfig();
+        this.config = config || CIHelper.getConfigAsGitHubActionInput() || defaultConfig;
         this.gggConfigDir = gggConfigDir;
         this.workDir = workDir;
         this.notes = new GitNotes(workDir);
         this.gggNotesUpdated = !!skipUpdate;
-        this.mail2commit = new MailCommitMapping(this.notes.workDir);
+        this.mail2commit = new MailCommitMapping(this.config, this.notes.workDir);
         this.mail2CommitMapUpdated = !!skipUpdate;
         this.github = new GitHubGlue(workDir, this.config.repo.owner, this.config.repo.name);
         this.testing = false;
@@ -72,6 +85,7 @@ export class CIHelper {
         needsMailingListMirror?: boolean;
         needsUpstreamBranches?: boolean;
         needsMailToCommitNotes?: boolean;
+        createGitNotes?: boolean;
     }): Promise<void> {
         // help dugite realize where `git` is...
         const gitExecutable = os.type() === "Windows_NT" ? "git.exe" : "git";
@@ -134,6 +148,47 @@ export class CIHelper {
         ]) {
             await git(["config", key, value], { workDir: this.workDir });
         }
+        if (setupOptions?.createGitNotes) {
+            if (
+                setupOptions.needsMailToCommitNotes ||
+                setupOptions.needsUpstreamBranches ||
+                setupOptions.needsMailingListMirror
+            ) {
+                throw new Error("`createGitNotes` cannot be combined with any other options");
+            }
+            const initialUser = core.getInput("initial-user");
+            console.time("verify that Git notes do not yet exist");
+            const existingNotes = await git(
+                [
+                    "ls-remote",
+                    "origin",
+                    GitNotes.defaultNotesRef,
+                    "refs/notes/mail-to-commit",
+                    "refs/notes/commit-to-mail",
+                ],
+                {
+                    workDir: this.workDir,
+                },
+            );
+            if (existingNotes !== "") {
+                throw new Error(`Git notes already exist in ${this.workDir}:\n${existingNotes}`);
+            }
+            console.timeEnd("verify that Git notes do not yet exist");
+            console.time("create the initial Git notes and push them");
+            for (const key of ["mail-to-commit", "commit-to-mail"]) {
+                const notes = new GitNotes(this.workDir, `refs/notes/${key}`);
+                await notes.initializeWithEmptyCommit();
+                await notes.push(this.urlRepo, this.notesPushToken);
+            }
+            const options: IGitGitGadgetOptions = {
+                allowedUsers: [initialUser],
+            };
+            await this.notes.set("", options, true);
+            await this.notes.push(this.urlRepo, this.notesPushToken);
+            console.timeEnd("create the initial Git notes and push them");
+            return;
+        }
+
         console.time("fetch Git notes");
         const notesRefs = [GitNotes.defaultNotesRef];
         if (setupOptions?.needsMailToCommitNotes) {
@@ -853,6 +908,7 @@ export class CIHelper {
 
         try {
             const gitGitGadget = await GitGitGadget.get(
+                this.config,
                 this.gggConfigDir,
                 this.workDir,
                 this.urlRepo,
@@ -891,7 +947,7 @@ export class CIHelper {
                     await addComment(
                         `Submitted as [${
                             metadata?.coverLetterMessageId
-                        }](https://${this.config.mailrepo.host}/${this.config.mailrepo.name}/${
+                        }](https://${this.config.mailrepo.url.replace(/\/+$/, "")}/${
                             metadata?.coverLetterMessageId
                         })\n\nTo fetch this version into \`FETCH_HEAD\`:${
                             code
@@ -1070,6 +1126,7 @@ export class CIHelper {
         };
 
         const gitGitGadget = await GitGitGadget.get(
+            this.config,
             this.gggConfigDir,
             this.workDir,
             this.urlRepo,
@@ -1107,6 +1164,7 @@ export class CIHelper {
               };
         await this.maybeUpdateGGGNotes();
         const mailArchiveGit = await MailArchiveGitHelper.get(
+            this.config,
             this.notes,
             mailArchiveGitDir,
             this.github,

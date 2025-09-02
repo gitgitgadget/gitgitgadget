@@ -3,16 +3,14 @@ import { fileURLToPath } from "url";
 import { git, gitCommandExists } from "../lib/git.js";
 import { GitNotes } from "../lib/git-notes.js";
 import { GitGitGadget, IGitGitGadgetOptions } from "../lib/gitgitgadget.js";
-import { getConfig } from "../lib/gitgitgadget-config.js";
 import { PatchSeries } from "../lib/patch-series.js";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata.js";
 import { testCreateRepo } from "./test-lib.js";
+import defaultConfig from "../lib/gitgitgadget-config.js";
 
 // This test script might take quite a while to run
 jest.setTimeout(60000);
 const sourceFileName = fileURLToPath(import.meta.url);
-
-getConfig();
 
 const expectedMails = [
     `From 91fba7811291c1064b2603765a2297c34fc843c0 Mon Sep 17 00:00:00 2001
@@ -209,6 +207,7 @@ test("generate tag/notes from a Pull Request", async () => {
     await git(["config", "user.email", "gitgitgadget@example.com"], repo.options);
 
     const patches = await PatchSeries.getFromNotes(
+        defaultConfig,
         notes,
         pullRequestURL,
         pullRequestTitle,
@@ -251,6 +250,7 @@ to have included in git.git [https://github.com/git/git].`);
 
     const headCommit2 = await repo.revParse("HEAD");
     const patches2 = await PatchSeries.getFromNotes(
+        defaultConfig,
         notes,
         pullRequestURL,
         pullRequestTitle,
@@ -342,7 +342,7 @@ test("allow/disallow", async () => {
     const notes = new GitNotes(remote.workDir);
     await notes.set("", {} as IGitGitGadgetOptions);
 
-    const gitGitGadget = await GitGitGadget.get(workDir);
+    const gitGitGadget = await GitGitGadget.get(defaultConfig, workDir);
 
     // pretend that the notes ref had been changed in the meantime
     await notes.set("", { allowedUsers: ["first-one"] } as IGitGitGadgetOptions, true);
@@ -370,7 +370,7 @@ test("allow/disallow with env vars", async () => {
     const notes = new GitNotes(remote.workDir);
     await notes.set("", {} as IGitGitGadgetOptions);
 
-    const gitGitGadget = await GitGitGadget.get(workDir);
+    const gitGitGadget = await GitGitGadget.get(defaultConfig, workDir);
 
     // pretend that the notes ref had been changed in the meantime
     await notes.set("", { allowedUsers: ["first-one"] } as IGitGitGadgetOptions, true);

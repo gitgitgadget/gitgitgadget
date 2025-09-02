@@ -1,16 +1,14 @@
 import { expect, jest, test } from "@jest/globals";
 import { fileURLToPath } from "url";
-import { getConfig } from "../lib/gitgitgadget-config.js";
 import { git } from "../lib/git.js";
 import { GitNotes } from "../lib/git-notes.js";
 import { PatchSeries } from "../lib/patch-series.js";
 import { ProjectOptions } from "../lib/project-options.js";
 import { testCreateRepo } from "./test-lib.js";
+import defaultConfig from "../lib/gitgitgadget-config.js";
 
 jest.setTimeout(60000);
 const sourceFileName = fileURLToPath(import.meta.url);
-
-getConfig();
 
 const mbox1 = `From 38d1082511bb02a709f203481c2787adc6e67c02 Mon Sep 17 00:00:00 2001
 Message-Id: <cover.3.git.author@example.com>
@@ -102,7 +100,15 @@ class PatchSeriesTest extends PatchSeries {
             }
         }
 
-        const x = new PatchSeriesTest(new GitNotes(), {}, new ProjectOptionsTest(), prMeta, undefined, 1);
+        const x = new PatchSeriesTest(
+            defaultConfig,
+            new GitNotes(),
+            {},
+            new ProjectOptionsTest(),
+            prMeta,
+            undefined,
+            1,
+        );
 
         x.insertCcAndFromLines(mails, thisAuthor, senderName);
 
