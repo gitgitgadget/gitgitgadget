@@ -1,0 +1,13 @@
+name: 'Validate a GitGitGadget configuration'
+description: 'Parses and validates a JSON-formatted string containing a GitGitGadget configuration'
+author: 'Johannes Schindelin'
+inputs:
+  config:
+    description: 'The GitGitGadget configuration to use (see https://github.com/gitgitgadget/gitgitgadget/blob/HEAD/lib/project-config.ts)'
+    default: '' # sadly, ${{ vars.CONFIG }} does not work, and documentation about what contexts are permissible here is sorely missing
+runs:
+  using: 'node20'
+  main: './index.js'
+branding:
+  icon: 'git-commit'
+  color: 'orange'

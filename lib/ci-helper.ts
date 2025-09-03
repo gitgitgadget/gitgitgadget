@@ -56,7 +56,7 @@ export class CIHelper {
 
     public static validateConfig = typia.createValidate<IConfig>();
 
-    protected static getConfigAsGitHubActionInput(): IConfig | undefined {
+    public static getConfigAsGitHubActionInput(): IConfig | undefined {
         if (process.env.GITHUB_ACTIONS !== "true") return undefined;
         const json = core.getInput("config");
         if (!json) return undefined;
