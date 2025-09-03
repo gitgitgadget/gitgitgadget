@@ -3,24 +3,25 @@ import { OctokitResponse } from "@octokit/types";
 import { expect, jest, test } from "@jest/globals";
 import { fileURLToPath } from "url";
 import { GitNotes } from "../lib/git-notes.js";
-import { getConfig } from "../lib/gitgitgadget-config.js";
 import { GitHubGlue } from "../lib/github-glue.js";
 import { MailArchiveGitHelper, IGitMailingListMirrorState } from "../lib/mail-archive-helper.js";
 import { IMailMetadata } from "../lib/mail-metadata.js";
-import { setConfig } from "../lib/project-config.js";
 import { testCreateRepo } from "./test-lib.js";
+import defaultConfig from "../lib/gitgitgadget-config.js";
+import { IConfig } from "../lib/project-config.js";
 
 /* eslint max-classes-per-file: ["error", 2] */
 
 class MailArchiveGitHelperProxy extends MailArchiveGitHelper {
     public constructor(
+        config: IConfig,
         gggNotes: GitNotes,
         mailArchiveGitDir: string,
         githubGlue: GitHubGlue,
         state: IGitMailingListMirrorState,
         branch: string,
     ) {
-        super(gggNotes, mailArchiveGitDir, githubGlue, state, branch);
+        super(config, gggNotes, mailArchiveGitDir, githubGlue, state, branch);
     }
 }
 class GitHubProxy extends GitHubGlue {
@@ -96,10 +97,9 @@ interface ICommit {
     parents: [{ sha: string; url: string; html_url?: string }];
 }
 
-const config = getConfig();
+const config = { ...defaultConfig }; // make a copy
 config.repo.owner = "test";
 config.repo.name = "test";
-setConfig(config);
 
 const fromEmail = "I Replied <ireplied@gmail.com>";
 
@@ -205,7 +205,14 @@ This Pull Request contains some ipsum lorem.
     const notes = new GitNotes(repo.workDir);
     await notes.set(mailMeta.messageID, mailMeta, true);
 
-    const mail = new MailArchiveGitHelperProxy(notes, repo.workDir, github, { latestRevision: "HEAD~" }, "master");
+    const mail = new MailArchiveGitHelperProxy(
+        config,
+        notes,
+        repo.workDir,
+        github,
+        { latestRevision: "HEAD~" },
+        "master",
+    );
 
     const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
     await mail.processMails();
@@ -240,7 +247,14 @@ This Pull Request contains some ipsum lorem.
     const notes = new GitNotes(repo.workDir);
     await notes.set(mailMeta.messageID, mailMeta, true);
 
-    const mail = new MailArchiveGitHelperProxy(notes, repo.workDir, github, { latestRevision: "HEAD~" }, "master");
+    const mail = new MailArchiveGitHelperProxy(
+        config,
+        notes,
+        repo.workDir,
+        github,
+        { latestRevision: "HEAD~" },
+        "master",
+    );
 
     const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
     await mail.processMails();
@@ -279,7 +293,14 @@ This Pull Request contains some ipsum lorem.
     const notes = new GitNotes(repo.workDir);
     await notes.set(mailMeta.messageID, mailMeta, true);
 
-    const mail = new MailArchiveGitHelperProxy(notes, repo.workDir, github, { latestRevision: "HEAD~" }, "master");
+    const mail = new MailArchiveGitHelperProxy(
+        config,
+        notes,
+        repo.workDir,
+        github,
+        { latestRevision: "HEAD~" },
+        "master",
+    );
 
     const commitsResponse = getCommitsResponse;
     const fail = false;
@@ -365,7 +386,14 @@ This Pull Request contains some ipsum lorem.
     const notes = new GitNotes(repo.workDir);
     await notes.set(mailMeta.messageID, mailMeta, true);
 
-    const mail = new MailArchiveGitHelperProxy(notes, repo.workDir, github, { latestRevision: "HEAD~~" }, "master");
+    const mail = new MailArchiveGitHelperProxy(
+        config,
+        notes,
+        repo.workDir,
+        github,
+        { latestRevision: "HEAD~~" },
+        "master",
+    );
 
     const commitsResponse = getCommitsResponse;
     const fail = false;
@@ -453,7 +481,14 @@ This Pull Request contains some ipsum lorem.
     const notes = new GitNotes(repo.workDir);
     await notes.set(mailMeta.messageID, mailMeta, true);
 
-    const mail = new MailArchiveGitHelperProxy(notes, repo.workDir, github, { latestRevision: "HEAD~" }, "master");
+    const mail = new MailArchiveGitHelperProxy(
+        config,
+        notes,
+        repo.workDir,
+        github,
+        { latestRevision: "HEAD~" },
+        "master",
+    );
 
     const commitsResponse = getCommitsResponse;
     const fail = true;
@@ -530,7 +565,14 @@ This Pull Request contains some ipsum lorem.
     const notes = new GitNotes(repo.workDir);
     await notes.set(mailMeta.messageID, mailMeta, true);
 
-    const mail = new MailArchiveGitHelperProxy(notes, repo.workDir, github, { latestRevision: "HEAD~" }, "master");
+    const mail = new MailArchiveGitHelperProxy(
+        config,
+        notes,
+        repo.workDir,
+        github,
+        { latestRevision: "HEAD~" },
+        "master",
+    );
 
     const commitsResponse = getCommitsResponse;
     commitsResponse.data[0].sha = mailMeta.originalCommit;

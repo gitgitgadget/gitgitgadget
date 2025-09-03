@@ -6,6 +6,7 @@ import { GitNotes } from "../lib/git-notes.js";
 import { PatchSeries } from "../lib/patch-series.js";
 import { ProjectOptions } from "../lib/project-options.js";
 import { testCreateRepo } from "./test-lib.js";
+import defaultConfig from "../lib/gitgitgadget-config.js";
 
 jest.setTimeout(60000);
 const sourceFileName = fileURLToPath(import.meta.url);
@@ -102,7 +103,15 @@ class PatchSeriesTest extends PatchSeries {
             }
         }
 
-        const x = new PatchSeriesTest(new GitNotes(), {}, new ProjectOptionsTest(), prMeta, undefined, 1);
+        const x = new PatchSeriesTest(
+            defaultConfig,
+            new GitNotes(),
+            {},
+            new ProjectOptionsTest(),
+            prMeta,
+            undefined,
+            1,
+        );
 
         x.insertCcAndFromLines(mails, thisAuthor, senderName);
 

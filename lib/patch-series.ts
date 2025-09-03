@@ -8,7 +8,7 @@ import { IMailMetadata } from "./mail-metadata.js";
 import { md2text } from "./markdown-renderer.js";
 import { IPatchSeriesMetadata } from "./patch-series-metadata.js";
 import { PatchSeriesOptions } from "./patch-series-options.js";
-import { IConfig, getConfig } from "./project-config.js";
+import { IConfig } from "./project-config.js";
 import { ProjectOptions } from "./project-options.js";
 import { getPullRequestKeyFromURL } from "./pullRequestKey.js";
 
@@ -57,6 +57,7 @@ interface IRangeDiff {
 
 export class PatchSeries {
     public static async getFromNotes(
+        config: IConfig,
         notes: GitNotes,
         pullRequestURL: string,
         pullRequestTitle: string,
@@ -144,7 +145,17 @@ export class PatchSeries {
             options.rangeDiff = rangeDiff;
         }
 
-        return new PatchSeries(notes, options, project, metadata, rangeDiffRanges, patchCount, coverLetter, senderName);
+        return new PatchSeries(
+            config,
+            notes,
+            options,
+            project,
+            metadata,
+            rangeDiffRanges,
+            patchCount,
+            coverLetter,
+            senderName,
+        );
     }
 
     protected static async parsePullRequest(
@@ -513,7 +524,7 @@ export class PatchSeries {
         return results;
     }
 
-    public readonly config: IConfig = getConfig();
+    public readonly config: IConfig;
     public readonly notes: GitNotes;
     public readonly options: PatchSeriesOptions;
     public readonly project: ProjectOptions;
@@ -524,6 +535,7 @@ export class PatchSeries {
     public readonly patchCount: number;
 
     protected constructor(
+        config: IConfig,
         notes: GitNotes,
         options: PatchSeriesOptions,
         project: ProjectOptions,
@@ -533,6 +545,7 @@ export class PatchSeries {
         coverLetter?: string,
         senderName?: string,
     ) {
+        this.config = config;
         this.notes = notes;
         this.options = options;
         this.project = project;

@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 import * as fs from "fs";
 import * as os from "os";
+import typia from "typia";
 import * as util from "util";
 import { spawnSync } from "child_process";
 import addressparser from "nodemailer/lib/addressparser/index.js";
@@ -53,13 +54,29 @@ export class CIHelper {
         return configFile ? await getExternalConfig(configFile) : getConfig();
     }
 
+    public static validateConfig = typia.createValidate<IConfig>();
+
+    protected static getConfigAsGitHubActionInput(): IConfig | undefined {
+        if (process.env.GITHUB_ACTIONS !== "true") return undefined;
+        const json = core.getInput("config");
+        if (!json) return undefined;
+        const config = JSON.parse(json) as IConfig | undefined;
+        const result = CIHelper.validateConfig(config);
+        if (result.success) return config;
+        throw new Error(
+            `Invalid config:\n- ${result.errors
+                .map((e) => `${e.path} (value: ${e.value}, expected: ${e.expected}): ${e.description}`)
+                .join("\n- ")}`,
+        );
+    }
+
     public constructor(workDir: string = "pr-repo.git", config?: IConfig, skipUpdate?: boolean, gggConfigDir = ".") {
-        this.config = config !== undefined ? setConfig(config) : getConfig();
+        this.config = config !== undefined ? setConfig(config) : CIHelper.getConfigAsGitHubActionInput() || getConfig();
         this.gggConfigDir = gggConfigDir;
         this.workDir = workDir;
         this.notes = new GitNotes(workDir);
         this.gggNotesUpdated = !!skipUpdate;
-        this.mail2commit = new MailCommitMapping(this.notes.workDir);
+        this.mail2commit = new MailCommitMapping(this.config, this.notes.workDir);
         this.mail2CommitMapUpdated = !!skipUpdate;
         this.github = new GitHubGlue(workDir, this.config.repo.owner, this.config.repo.name);
         this.testing = false;
@@ -853,6 +870,7 @@ export class CIHelper {
 
         try {
             const gitGitGadget = await GitGitGadget.get(
+                this.config,
                 this.gggConfigDir,
                 this.workDir,
                 this.urlRepo,
@@ -891,7 +909,7 @@ export class CIHelper {
                     await addComment(
                         `Submitted as [${
                             metadata?.coverLetterMessageId
-                        }](https://${this.config.mailrepo.host}/${this.config.mailrepo.name}/${
+                        }](https://${this.config.mailrepo.url.replace(/\/+$/, "")}/${
                             metadata?.coverLetterMessageId
                         })\n\nTo fetch this version into \`FETCH_HEAD\`:${
                             code
@@ -1070,6 +1088,7 @@ export class CIHelper {
         };
 
         const gitGitGadget = await GitGitGadget.get(
+            this.config,
             this.gggConfigDir,
             this.workDir,
             this.urlRepo,
@@ -1107,6 +1126,7 @@ export class CIHelper {
               };
         await this.maybeUpdateGGGNotes();
         const mailArchiveGit = await MailArchiveGitHelper.get(
+            this.config,
             this.notes,
             mailArchiveGitDir,
             this.github,

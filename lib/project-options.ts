@@ -1,5 +1,6 @@
 import { commitExists, git, revParse } from "./git.js";
-import { IConfig, getConfig, projectInfo } from "./project-config.js";
+import defaultConfig from "./gitgitgadget-config.js";
+import { IConfig, projectInfo } from "./project-config.js";
 
 // For now, only the Git, Cygwin and BusyBox projects are supported
 export class ProjectOptions {
@@ -11,7 +12,7 @@ export class ProjectOptions {
         publishToRemote?: string,
         baseCommit?: string,
     ): Promise<ProjectOptions> {
-        const config: IConfig = getConfig();
+        const config: IConfig = defaultConfig;
         let upstreamBranch: string;
         let to: string;
         let midUrlPrefix = " Message-ID: ";

@@ -5,7 +5,7 @@ import { IGitGitGadgetOptions } from "./gitgitgadget.js";
 import { GitHubGlue } from "./github-glue.js";
 import { IMailMetadata } from "./mail-metadata.js";
 import { IPatchSeriesMetadata } from "./patch-series-metadata.js";
-import { IConfig, getConfig } from "./project-config.js";
+import { IConfig } from "./project-config.js";
 import { getPullRequestKey } from "./pullRequestKey.js";
 import { IParsedMBox, parseMBox, parseMBoxMessageIDAndReferences } from "./send-mail.js";
 import { SousChef } from "./sous-chef.js";
@@ -19,13 +19,14 @@ export interface IGitMailingListMirrorState {
 
 export class MailArchiveGitHelper {
     public static async get(
+        config: IConfig,
         gggNotes: GitNotes,
         mailArchiveGitDir: string,
         githubGlue: GitHubGlue,
         branch: string,
     ): Promise<MailArchiveGitHelper> {
         const state: IGitMailingListMirrorState = (await gggNotes.get<IGitMailingListMirrorState>(stateKey)) || {};
-        return new MailArchiveGitHelper(gggNotes, mailArchiveGitDir, githubGlue, state, branch);
+        return new MailArchiveGitHelper(config, gggNotes, mailArchiveGitDir, githubGlue, state, branch);
     }
 
     /**
@@ -56,19 +57,21 @@ export class MailArchiveGitHelper {
     }
 
     protected readonly branch: string;
-    protected readonly config: IConfig = getConfig();
+    protected readonly config: IConfig;
     protected readonly state: IGitMailingListMirrorState;
     protected readonly gggNotes: GitNotes;
     protected readonly mailArchiveGitDir: string;
     protected readonly githubGlue: GitHubGlue;
 
     protected constructor(
+        config: IConfig,
         gggNotes: GitNotes,
         mailArchiveGitDir: string,
         githubGlue: GitHubGlue,
         state: IGitMailingListMirrorState,
         branch: string,
     ) {
+        this.config = config;
         this.branch = branch;
         this.gggNotes = gggNotes;
         this.mailArchiveGitDir = mailArchiveGitDir;
