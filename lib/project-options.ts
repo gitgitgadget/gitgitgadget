@@ -1,9 +1,10 @@
 import { commitExists, git, revParse } from "./git.js";
-import { IConfig, getConfig, projectInfo } from "./project-config.js";
+import { IConfig, projectInfo } from "./project-config.js";
 
 // For now, only the Git, Cygwin and BusyBox projects are supported
 export class ProjectOptions {
     public static async get(
+        config: IConfig,
         workDir: string,
         branchName: string,
         cc: string[],
@@ -11,7 +12,6 @@ export class ProjectOptions {
         publishToRemote?: string,
         baseCommit?: string,
     ): Promise<ProjectOptions> {
-        const config: IConfig = getConfig();
         let upstreamBranch: string;
         let to: string;
         let midUrlPrefix = " Message-ID: ";
