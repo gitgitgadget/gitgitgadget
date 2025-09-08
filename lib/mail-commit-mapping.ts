@@ -1,13 +1,14 @@
 import { git } from "./git.js";
 import { GitNotes } from "./git-notes.js";
-import { IConfig, getConfig } from "./project-config.js";
+import { IConfig } from "./project-config.js";
 
 export class MailCommitMapping {
-    public readonly config: IConfig = getConfig();
+    public readonly config: IConfig;
     public readonly workDir?: string;
     public readonly mail2CommitNotes: GitNotes;
 
-    public constructor(workDir?: string) {
+    public constructor(config: IConfig, workDir?: string) {
+        this.config = config;
         this.workDir = workDir;
         this.mail2CommitNotes = new GitNotes(workDir, "refs/notes/mail-to-commit");
     }

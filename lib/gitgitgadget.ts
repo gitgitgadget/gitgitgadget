@@ -5,7 +5,7 @@ import { IGitHubUser, IPullRequestInfo } from "./github-glue.js";
 import { PatchSeries, SendFunction } from "./patch-series.js";
 import { IPatchSeriesMetadata } from "./patch-series-metadata.js";
 import { PatchSeriesOptions } from "./patch-series-options.js";
-import { IConfig, getConfig } from "./project-config.js";
+import { IConfig } from "./project-config.js";
 import { ISMTPOptions, parseHeadersAndSendMail, parseMBox, sendMail } from "./send-mail.js";
 
 export interface IGitGitGadgetOptions {
@@ -37,6 +37,7 @@ export class GitGitGadget {
     }
 
     public static async get(
+        config: IConfig,
         gitGitGadgetDir: string,
         workDir?: string,
         publishTagsAndNotesToRemote?: string,
@@ -90,7 +91,15 @@ export class GitGitGadget {
 
         const [options, allowedUsers] = await GitGitGadget.readOptions(notes);
 
-        return new GitGitGadget(notes, options, allowedUsers, smtpOptions, publishTagsAndNotesToRemote, notesPushToken);
+        return new GitGitGadget(
+            config,
+            notes,
+            options,
+            allowedUsers,
+            smtpOptions,
+            publishTagsAndNotesToRemote,
+            notesPushToken,
+        );
     }
 
     protected static async readOptions(notes: GitNotes): Promise<[IGitGitGadgetOptions, Set<string>]> {
@@ -103,7 +112,7 @@ export class GitGitGadget {
         return [options, allowedUsers];
     }
 
-    public readonly config: IConfig = getConfig();
+    public readonly config: IConfig;
     public readonly workDir: string;
     public readonly notes: GitNotes;
     protected options: IGitGitGadgetOptions;
@@ -115,6 +124,7 @@ export class GitGitGadget {
     private readonly publishToken: string | undefined;
 
     protected constructor(
+        config: IConfig,
         notes: GitNotes,
         options: IGitGitGadgetOptions,
         allowedUsers: Set<string>,
@@ -125,6 +135,7 @@ export class GitGitGadget {
         if (!notes.workDir) {
             throw new Error("Could not determine Git worktree");
         }
+        this.config = config;
         this.workDir = notes.workDir;
         this.notes = notes;
         this.options = options;
@@ -291,6 +302,7 @@ export class GitGitGadget {
         options.rfc = pr.draft ?? false;
 
         const series = await PatchSeries.getFromNotes(
+            this.config,
             this.notes,
             pr.pullRequestURL,
             pr.title,
