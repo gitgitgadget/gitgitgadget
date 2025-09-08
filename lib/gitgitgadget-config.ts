@@ -4,7 +4,7 @@ const defaultConfig: IConfig = {
     repo: {
         name: "git",
         owner: "gitgitgadget",
-        baseOwner: "git",
+        upstreamOwner: "git",
         testOwner: "dscho",
         owners: ["gitgitgadget", "git", "dscho"],
         branches: ["maint", "seen"],
