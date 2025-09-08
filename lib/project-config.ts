@@ -12,7 +12,7 @@ export interface IConfig {
     repo: {
         name: string; // name of the repo
         owner: string; // owner of repo holding the notes (tracking data)
-        baseOwner: string; // owner of upstream ("base") repo
+        upstreamOwner: string; // owner of upstream ("base") repo
         testOwner?: string; // owner of the test repo (if any)
         owners: string[]; // owners of clones being monitored (PR checking)
         branches: string[]; // remote branches to fetch - just use trackingBranches?
@@ -88,8 +88,8 @@ export async function getExternalConfig(file: string): Promise<IConfig> {
         throw new Error(`Invalid 'owner' ${newConfig.repo.owner} in ${filePath}`);
     }
 
-    if (!newConfig.repo.baseOwner.match(/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i)) {
-        throw new Error(`Invalid 'baseOwner' ${newConfig.repo.baseOwner} in ${filePath}`);
+    if (!newConfig.repo.upstreamOwner.match(/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i)) {
+        throw new Error(`Invalid 'upstreamOwner' ${newConfig.repo.upstreamOwner} in ${filePath}`);
     }
 
     return newConfig;

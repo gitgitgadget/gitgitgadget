@@ -101,7 +101,7 @@ export class CIHelper {
 
         // get the access tokens via the inputs of the GitHub Action
         this.setAccessToken(this.config.repo.owner, core.getInput("pr-repo-token"));
-        this.setAccessToken(this.config.repo.baseOwner, core.getInput("upstream-repo-token"));
+        this.setAccessToken(this.config.repo.upstreamOwner, core.getInput("upstream-repo-token"));
         if (this.config.repo.testOwner) {
             this.setAccessToken(this.config.repo.testOwner, core.getInput("test-repo-token"));
         }
@@ -128,7 +128,7 @@ export class CIHelper {
             ["remote.origin.url", `https://github.com/${this.config.repo.owner}/${this.config.repo.name}`],
             ["remote.origin.promisor", "true"],
             ["remote.origin.partialCloneFilter", "blob:none"],
-            ["remote.upstream.url", `https://github.com/${this.config.repo.baseOwner}/${this.config.repo.name}`],
+            ["remote.upstream.url", `https://github.com/${this.config.repo.upstreamOwner}/${this.config.repo.name}`],
             ["remote.upstream.promisor", "true"],
             ["remote.upstream.partialCloneFilter", "blob:none"],
         ]) {
@@ -411,7 +411,7 @@ export class CIHelper {
                 mailMeta.originalCommit,
                 upstreamCommit,
                 this.config.repo.owner,
-                this.config.repo.baseOwner,
+                this.config.repo.upstreamOwner,
             );
         }
 
@@ -654,7 +654,7 @@ export class CIHelper {
 
                 // Add comment on GitHub
                 const comment = `This patch series was integrated into ${branch} via https://github.com/${
-                    this.config.repo.baseOwner
+                    this.config.repo.upstreamOwner
                 }/${this.config.repo.name}/commit/${mergeCommit}.`;
                 const url = await this.github.addPRComment(prKey, comment);
                 console.log(`Added comment ${url.id} about ${branch}: ${url.url}`);

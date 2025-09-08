@@ -16,7 +16,7 @@ const testConfig: IConfig = {
     repo: {
         name: "telescope",
         owner: "webb",
-        baseOwner: "galileo",
+        upstreamOwner: "galileo",
         owners: ["webb", "galileo"],
         branches: ["maint"],
         closingBranches: ["maint", "main"],
@@ -172,7 +172,7 @@ async function setupRepos(instance: string):
     await gggLocal.git([ "config", `url.${gggRemote.workDir}.insteadOf`, url ]);
     // pretend there are two remotes
     await gggLocal.git([ "config", `url.${gggRemote.workDir}.insteadOf`,
-        `https://github.com/${config.repo.baseOwner}/${config.repo.name}` ]);
+        `https://github.com/${config.repo.upstreamOwner}/${config.repo.name}` ]);
 
     // set needed config
     await worktree.git([ "config", "--add", "gitgitgadget.workDir", gggLocal.workDir, ]);

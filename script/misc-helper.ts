@@ -200,7 +200,7 @@ const commandOptions = commander.opts<ICommanderOptions>();
                 originalCommit,
                 gitGitCommit,
                 config.repo.owner,
-                config.repo.baseOwner,
+                config.repo.upstreamOwner,
             );
             console.log(`Created check with id ${id}`);
         });
