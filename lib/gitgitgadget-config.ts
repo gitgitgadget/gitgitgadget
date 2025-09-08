@@ -6,7 +6,6 @@ const defaultConfig: IConfig = {
         owner: "gitgitgadget",
         upstreamOwner: "git",
         testOwner: "dscho",
-        owners: ["gitgitgadget", "git", "dscho"],
         branches: ["maint", "seen"],
         closingBranches: ["maint", "master"],
         trackingBranches: ["maint", "seen", "master", "next"],
@@ -36,6 +35,7 @@ const defaultConfig: IConfig = {
         name: "gitgitgadget",
         displayName: "GitGitGadget",
         altname: "gitgitgadget-git",
+        installedOn: ["gitgitgadget", "git", "dscho"],
     },
     lint: {
         maxCommitsIgnore: ["https://github.com/gitgitgadget/git/pull/923"],

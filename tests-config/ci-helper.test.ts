@@ -17,7 +17,6 @@ const testConfig: IConfig = {
         name: "telescope",
         owner: "webb",
         upstreamOwner: "galileo",
-        owners: ["webb", "galileo"],
         branches: ["maint"],
         closingBranches: ["maint", "main"],
         trackingBranches: ["maint", "main", "hubble"],
@@ -41,7 +40,8 @@ const testConfig: IConfig = {
         installationID: 195971,
         name: "gitgitgadget",
         displayName: "BigScopes",
-        altname: "gitgitgadget-git"
+        altname: "gitgitgadget-git",
+        installedOn: ["webb", "galileo"],
     },
     lint: {
         maxCommitsIgnore: [],

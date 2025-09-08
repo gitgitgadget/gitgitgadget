@@ -175,7 +175,7 @@ export class CIHelper {
             console.time("get open PR head commits");
             const openPRCommits = (
                 await Promise.all(
-                    this.config.repo.owners.map(async (repositoryOwner) => {
+                    this.config.app.installedOn.map(async (repositoryOwner) => {
                         return await this.github.getOpenPRs(repositoryOwner);
                     }),
                 )
@@ -256,7 +256,7 @@ export class CIHelper {
         const prCommentUrl = core.getInput("pr-comment-url");
         const [, owner, repo, prNumber, commentId] =
             prCommentUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)#issuecomment-(\d+)$/) || [];
-        if (!this.config.repo.owners.includes(owner) || repo !== this.config.repo.name) {
+        if (!this.config.app.installedOn.includes(owner) || repo !== this.config.repo.name) {
             throw new Error(`Invalid PR comment URL: ${prCommentUrl}`);
         }
         return { owner, repo, prNumber: parseInt(prNumber, 10), commentId: parseInt(commentId, 10) };
@@ -266,7 +266,7 @@ export class CIHelper {
         const prUrl = core.getInput("pr-url");
 
         const [, owner, repo, prNumber] = prUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)$/) || [];
-        if (!this.config.repo.owners.includes(owner) || repo !== this.config.repo.name) {
+        if (!this.config.app.installedOn.includes(owner) || repo !== this.config.repo.name) {
             throw new Error(`Invalid PR URL: ${prUrl}`);
         }
         return { owner, repo, prNumber: parseInt(prNumber, 10) };
@@ -1137,7 +1137,7 @@ export class CIHelper {
         const handledPRs = new Set<string>();
         const handledMessageIDs = new Set<string>();
 
-        for (const repositoryOwner of this.config.repo.owners) {
+        for (const repositoryOwner of this.config.app.installedOn) {
             const pullRequests = await this.github.getOpenPRs(repositoryOwner);
 
             for (const pr of pullRequests) {
@@ -1195,7 +1195,7 @@ export class CIHelper {
     private async getPRInfo(prKey: pullRequestKey): Promise<IPullRequestInfo> {
         const pr = await this.github.getPRInfo(prKey);
 
-        if (!this.config.repo.owners.includes(pr.baseOwner) || pr.baseRepo !== this.config.repo.name) {
+        if (!this.config.app.installedOn.includes(pr.baseOwner) || pr.baseRepo !== this.config.repo.name) {
             throw new Error(`Unsupported repository: ${pr.pullRequestURL}`);
         }
 
