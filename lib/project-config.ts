@@ -14,7 +14,6 @@ export interface IConfig {
         owner: string; // owner of repo holding the notes (tracking data)
         upstreamOwner: string; // owner of upstream ("base") repo
         testOwner?: string; // owner of the test repo (if any)
-        owners: string[]; // owners of clones being monitored (PR checking)
         branches: string[]; // remote branches to fetch - just use trackingBranches?
         closingBranches: string[]; // close if the pr is added to this branch
         trackingBranches: string[]; // comment if the pr is added to this branch
@@ -44,6 +43,7 @@ export interface IConfig {
         installationID: number;
         name: string;
         displayName: string; // name to use in comments to identify app
+        installedOn: string[]; // owners of clones being monitored (PR checking)
         altname: string | undefined; // is this even needed?
     };
     lint: {
