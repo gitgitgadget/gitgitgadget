@@ -120,7 +120,7 @@ jobs:
       working-directory: gitgitgadget
 
     - name: Clean up two day old branches and PRs
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       id: clean-up
       with:
         github-token: ${{ env.GGG_TOKEN }}
