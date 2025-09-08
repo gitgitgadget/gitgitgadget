@@ -97,7 +97,7 @@ jobs:
         path: ${{ env.GGG_REPOSITORY }}
       if: env.GGG_TOKEN
 
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@v5
       with:
         node-version: '${{ matrix.node-version }}'
 
