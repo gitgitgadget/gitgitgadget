@@ -90,23 +90,6 @@ export class CIHelper {
         needsUpstreamBranches?: boolean;
         needsMailToCommitNotes?: boolean;
     }): Promise<void> {
-        // help dugite realize where `git` is...
-        const gitExecutable = os.type() === "Windows_NT" ? "git.exe" : "git";
-        const stripSuffix = `bin${path.sep}${gitExecutable}`;
-        for (const gitPath of (process.env.PATH || "/")
-            .split(path.delimiter)
-            .map((p) => path.normalize(`${p}${path.sep}${gitExecutable}`))
-            // eslint-disable-next-line security/detect-non-literal-fs-filename
-            .filter((p) => p.endsWith(`${path.sep}${stripSuffix}`) && fs.existsSync(p))) {
-            process.env.LOCAL_GIT_DIRECTORY = gitPath.substring(0, gitPath.length - stripSuffix.length);
-            // need to override GIT_EXEC_PATH, so that Dugite can find the `git-remote-https` executable,
-            // see https://github.com/desktop/dugite/blob/v2.7.1/lib/git-environment.ts#L44-L64
-            // Also: We cannot use `await git(["--exec-path"]);` because that would use Dugite, which would
-            // override `GIT_EXEC_PATH` and then `git --exec-path` would report _that_...
-            process.env.GIT_EXEC_PATH = spawnSync(gitPath, ["--exec-path"]).stdout.toString("utf-8").trimEnd();
-            break;
-        }
-
         // configure the Git committer information
         process.env.GIT_CONFIG_PARAMETERS = [
             process.env.GIT_CONFIG_PARAMETERS,
@@ -136,6 +119,23 @@ export class CIHelper {
             }
         } catch (e) {
             // Ignore, for now
+        }
+
+        // help dugite realize where `git` is...
+        const gitExecutable = os.type() === "Windows_NT" ? "git.exe" : "git";
+        const stripSuffix = `bin${path.sep}${gitExecutable}`;
+        for (const gitPath of (process.env.PATH || "/")
+            .split(path.delimiter)
+            .map((p) => path.normalize(`${p}${path.sep}${gitExecutable}`))
+            // eslint-disable-next-line security/detect-non-literal-fs-filename
+            .filter((p) => p.endsWith(`${path.sep}${stripSuffix}`) && fs.existsSync(p))) {
+            process.env.LOCAL_GIT_DIRECTORY = gitPath.substring(0, gitPath.length - stripSuffix.length);
+            // need to override GIT_EXEC_PATH, so that Dugite can find the `git-remote-https` executable,
+            // see https://github.com/desktop/dugite/blob/v2.7.1/lib/git-environment.ts#L44-L64
+            // Also: We cannot use `await git(["--exec-path"]);` because that would use Dugite, which would
+            // override `GIT_EXEC_PATH` and then `git --exec-path` would report _that_...
+            process.env.GIT_EXEC_PATH = spawnSync(gitPath, ["--exec-path"]).stdout.toString("utf-8").trimEnd();
+            break;
         }
 
         // eslint-disable-next-line security/detect-non-literal-fs-filename
