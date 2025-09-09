@@ -18,7 +18,7 @@ import { MailCommitMapping } from "./mail-commit-mapping.js";
 import { IMailMetadata } from "./mail-metadata.js";
 import { IPatchSeriesMetadata } from "./patch-series-metadata.js";
 import { IConfig, getExternalConfig, setConfig } from "./project-config.js";
-import { getPullRequestKeyFromURL, pullRequestKey } from "./pullRequestKey.js";
+import { getPullRequestCommentKeyFromURL, getPullRequestKeyFromURL, pullRequestKey } from "./pullRequestKey.js";
 import { ISMTPOptions } from "./send-mail.js";
 import { fileURLToPath } from "url";
 
@@ -269,24 +269,12 @@ export class CIHelper {
         }
     }
 
-    public parsePRCommentURLInput(): { owner: string; repo: string; prNumber: number; commentId: number } {
-        const prCommentUrl = core.getInput("pr-comment-url");
-        const [, owner, repo, prNumber, commentId] =
-            prCommentUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)#issuecomment-(\d+)$/) || [];
-        if (!this.config.app.installedOn.includes(owner) || repo !== this.config.repo.name) {
-            throw new Error(`Invalid PR comment URL: ${prCommentUrl}`);
-        }
-        return { owner, repo, prNumber: parseInt(prNumber, 10), commentId: parseInt(commentId, 10) };
+    public parsePRCommentURLInput(): { owner: string; repo: string; pull_number: number; comment_id: number } {
+        return getPullRequestCommentKeyFromURL(core.getInput("pr-comment-url"));
     }
 
-    public parsePRURLInput(): { owner: string; repo: string; prNumber: number } {
-        const prUrl = core.getInput("pr-url");
-
-        const [, owner, repo, prNumber] = prUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)$/) || [];
-        if (!this.config.app.installedOn.includes(owner) || repo !== this.config.repo.name) {
-            throw new Error(`Invalid PR URL: ${prUrl}`);
-        }
-        return { owner, repo, prNumber: parseInt(prNumber, 10) };
+    public parsePRURLInput(): { owner: string; repo: string; pull_number: number } {
+        return getPullRequestKeyFromURL(core.getInput("pr-url"));
     }
 
     public setAccessToken(repositoryOwner: string, token: string): void {
