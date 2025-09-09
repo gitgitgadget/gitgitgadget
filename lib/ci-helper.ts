@@ -102,7 +102,7 @@ export class CIHelper {
         needsMailingListMirror?: boolean;
         needsUpstreamBranches?: boolean;
         needsMailToCommitNotes?: boolean;
-        createOrUpdateCheckRun?: boolean;
+        createOrUpdateCheckRun?: boolean | "post";
     }): Promise<void> {
         // configure the Git committer information
         process.env.GIT_CONFIG_PARAMETERS = [
@@ -135,7 +135,9 @@ export class CIHelper {
             // Ignore, for now
         }
 
-        if (setupOptions?.createOrUpdateCheckRun) return await this.createOrUpdateCheckRun();
+        if (setupOptions?.createOrUpdateCheckRun) {
+            return await this.createOrUpdateCheckRun(setupOptions.createOrUpdateCheckRun === "post");
+        }
 
         // help dugite realize where `git` is...
         const gitExecutable = os.type() === "Windows_NT" ? "git.exe" : "git";
@@ -285,7 +287,7 @@ export class CIHelper {
         }
     }
 
-    protected async createOrUpdateCheckRun(): Promise<void> {
+    protected async createOrUpdateCheckRun(runPost: boolean): Promise<void> {
         type CheckRunParameters = {
             owner: string;
             repo: string;
@@ -299,6 +301,7 @@ export class CIHelper {
             };
             details_url?: string;
             conclusion?: ConclusionType;
+            job_status?: ConclusionType;
         };
         const params = JSON.parse(core.getState("check-run") || "{}") as CheckRunParameters;
 
@@ -314,7 +317,7 @@ export class CIHelper {
         };
         if (Object.keys(params).length) validateCheckRunParameters();
 
-        ["pr-url", "check-run-id", "name", "title", "summary", "text", "details-url", "conclusion"]
+        ["pr-url", "check-run-id", "name", "title", "summary", "text", "details-url", "conclusion", "job-status"]
             .map((name) => [name.replaceAll("-", "_"), core.getInput(name)] as const)
             .forEach(([key, value]) => {
                 if (!value) return;
@@ -326,6 +329,17 @@ export class CIHelper {
                 } else (params as unknown as { [key: string]: string })[key] = value;
             });
         validateCheckRunParameters();
+
+        if (runPost) {
+            if (!params.check_run_id) {
+                core.info("No Check Run ID found in state; doing nothing");
+                return;
+            }
+            if (!params.conclusion) {
+                Object.assign(params, { conclusion: params.job_status });
+                validateCheckRunParameters();
+            }
+        }
 
         if (params.check_run_id === undefined) {
             ({ id: params.check_run_id } = await this.github.createCheckRun(params));

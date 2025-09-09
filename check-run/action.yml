@@ -38,12 +38,16 @@ inputs:
   conclusion:
     description: 'If set, the Check Run will be marked as completed'
     default: ''
+  job-status:
+    description: 'Needed at the end of the job'
+    default: ${{ job.status }}
 outputs:
   check-run-id:
     description: 'The ID of the created or updated Check Run'
 runs:
   using: 'node20'
   main: './index.js'
+  post: './post.js'
 branding:
   icon: 'git-commit'
   color: 'orange'
