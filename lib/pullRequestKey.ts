@@ -17,7 +17,9 @@ export function getPullRequestKey(pullRequest: pullRequestKeyInfo): pullRequestK
 
 export type pullRequestCommentKey = pullRequestKey & { comment_id: number };
 
-function getPullRequestOrCommentKeyFromURL(pullRequestOrCommentURL: string): pullRequestKey & { comment_id?: number } {
+export function getPullRequestOrCommentKeyFromURL(
+    pullRequestOrCommentURL: string,
+): pullRequestKey & { comment_id?: number } {
     const match = pullRequestOrCommentURL.match(/^https:\/\/github.com\/(.*)\/(.*)\/pull\/(\d+)(.*)$/);
     if (!match) {
         throw new Error(`Unrecognized PR URL: "${pullRequestOrCommentURL}`);

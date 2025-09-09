@@ -11,14 +11,27 @@ import { commitExists, git, emptyTreeName, revParse } from "./git.js";
 import { GitNotes } from "./git-notes.js";
 import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget.js";
 import { getConfig } from "./gitgitgadget-config.js";
-import { GitHubGlue, IGitHubUser, IPRComment, IPRCommit, IPullRequestInfo, RequestError } from "./github-glue.js";
+import {
+    ConclusionType,
+    GitHubGlue,
+    IGitHubUser,
+    IPRComment,
+    IPRCommit,
+    IPullRequestInfo,
+    RequestError,
+} from "./github-glue.js";
 import { toPrettyJSON } from "./json-util.js";
 import { MailArchiveGitHelper } from "./mail-archive-helper.js";
 import { MailCommitMapping } from "./mail-commit-mapping.js";
 import { IMailMetadata } from "./mail-metadata.js";
 import { IPatchSeriesMetadata } from "./patch-series-metadata.js";
 import { IConfig, getExternalConfig, setConfig } from "./project-config.js";
-import { getPullRequestCommentKeyFromURL, getPullRequestKeyFromURL, pullRequestKey } from "./pullRequestKey.js";
+import {
+    getPullRequestCommentKeyFromURL,
+    getPullRequestKeyFromURL,
+    getPullRequestOrCommentKeyFromURL,
+    pullRequestKey,
+} from "./pullRequestKey.js";
 import { ISMTPOptions } from "./send-mail.js";
 import { fileURLToPath } from "url";
 
@@ -89,6 +102,7 @@ export class CIHelper {
         needsMailingListMirror?: boolean;
         needsUpstreamBranches?: boolean;
         needsMailToCommitNotes?: boolean;
+        createOrUpdateCheckRun?: boolean;
     }): Promise<void> {
         // configure the Git committer information
         process.env.GIT_CONFIG_PARAMETERS = [
@@ -120,6 +134,8 @@ export class CIHelper {
         } catch (e) {
             // Ignore, for now
         }
+
+        if (setupOptions?.createOrUpdateCheckRun) return await this.createOrUpdateCheckRun();
 
         // help dugite realize where `git` is...
         const gitExecutable = os.type() === "Windows_NT" ? "git.exe" : "git";
@@ -266,6 +282,68 @@ export class CIHelper {
             );
             console.timeEnd(`update from ${this.config.mailrepo.url}`);
             await unshallow(this.mailingListMirror);
+        }
+    }
+
+    protected static validateConclusion = typia.createValidate<ConclusionType>();
+
+    protected async createOrUpdateCheckRun(): Promise<void> {
+        const { owner, repo, pull_number } = getPullRequestOrCommentKeyFromURL(core.getInput("pr-url"));
+        let check_run_id = ((id?: string) => (!id ? undefined : Number.parseInt(id, 10)))(
+            core.getInput("check-run-id"),
+        );
+        const name = core.getInput("name") || undefined;
+        const title = core.getInput("title") || undefined;
+        const summary = core.getInput("summary") || undefined;
+        const text = core.getInput("text") || undefined;
+        const detailsURL = core.getInput("details-url") || undefined;
+        const conclusion = core.getInput("conclusion") || undefined;
+
+        if (!check_run_id) {
+            const problems = [];
+            if (!name) problems.push(`name is required`);
+            if (!title) problems.push(`title is required`);
+            if (!summary) problems.push(`summary is required`);
+            if (conclusion) {
+                const result = CIHelper.validateConclusion(conclusion);
+                if (!result.success) problems.push(result.errors);
+            }
+            if (problems.length) throw new Error(`Could not create Check Run:${JSON.stringify(problems, null, 2)}`);
+
+            ({ id: check_run_id } = await this.github.createCheckRun({
+                owner,
+                repo,
+                pull_number,
+                name: name!,
+                output: {
+                    title: title!,
+                    summary: summary!,
+                    text,
+                },
+                detailsURL,
+                conclusion: conclusion as ConclusionType | undefined,
+            }));
+            core.setOutput("check-run-id", check_run_id);
+        } else {
+            const problems = [];
+            if (name) problems.push(`Specify either check-run-id or name but not both`);
+            if (!summary && (title || text)) problems.push(`title or text require a summary`);
+            if (problems.length) throw new Error(`Could not create Check Run:${JSON.stringify(problems, null, 2)}`);
+
+            await this.github.updateCheckRun({
+                owner,
+                repo,
+                check_run_id,
+                output: summary
+                    ? {
+                          title,
+                          summary,
+                          text,
+                      }
+                    : undefined,
+                detailsURL,
+                conclusion: conclusion as ConclusionType | undefined,
+            });
         }
     }
 
