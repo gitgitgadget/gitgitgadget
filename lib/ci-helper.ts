@@ -300,7 +300,7 @@ export class CIHelper {
             details_url?: string;
             conclusion?: ConclusionType;
         };
-        const params = {} as CheckRunParameters;
+        const params = JSON.parse(core.getState("check-run") || "{}") as CheckRunParameters;
 
         const validateCheckRunParameters = () => {
             const result = typia.createValidate<CheckRunParameters>()(params);
@@ -312,6 +312,7 @@ export class CIHelper {
                 );
             }
         };
+        if (Object.keys(params).length) validateCheckRunParameters();
 
         ["pr-url", "check-run-id", "name", "title", "summary", "text", "details-url", "conclusion"]
             .map((name) => [name.replaceAll("-", "_"), core.getInput(name)] as const)
@@ -336,6 +337,7 @@ export class CIHelper {
                 check_run_id: params.check_run_id,
             });
         }
+        core.exportVariable("STATE_check-run", JSON.stringify(params));
     }
 
     public parsePRCommentURLInput(): { owner: string; repo: string; pull_number: number; comment_id: number } {
