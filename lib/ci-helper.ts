@@ -285,64 +285,56 @@ export class CIHelper {
         }
     }
 
-    protected static validateConclusion = typia.createValidate<ConclusionType>();
-
     protected async createOrUpdateCheckRun(): Promise<void> {
-        const { owner, repo, pull_number } = getPullRequestOrCommentKeyFromURL(core.getInput("pr-url"));
-        let check_run_id = ((id?: string) => (!id ? undefined : Number.parseInt(id, 10)))(
-            core.getInput("check-run-id"),
-        );
-        const name = core.getInput("name") || undefined;
-        const title = core.getInput("title") || undefined;
-        const summary = core.getInput("summary") || undefined;
-        const text = core.getInput("text") || undefined;
-        const detailsURL = core.getInput("details-url") || undefined;
-        const conclusion = core.getInput("conclusion") || undefined;
+        type CheckRunParameters = {
+            owner: string;
+            repo: string;
+            pull_number: number;
+            check_run_id?: number;
+            name: string;
+            output?: {
+                title: string;
+                summary: string;
+                text?: string;
+            };
+            detailsURL?: string;
+            conclusion?: ConclusionType;
+        };
+        const params = {} as CheckRunParameters;
 
-        if (!check_run_id) {
-            const problems = [];
-            if (!name) problems.push(`name is required`);
-            if (!title) problems.push(`title is required`);
-            if (!summary) problems.push(`summary is required`);
-            if (conclusion) {
-                const result = CIHelper.validateConclusion(conclusion);
-                if (!result.success) problems.push(result.errors);
+        const validateCheckRunParameters = () => {
+            const result = typia.createValidate<CheckRunParameters>()(params);
+            if (!result.success) {
+                throw new Error(
+                    `Invalid check-run state:\n- ${result.errors
+                        .map((e) => `${e.path} (value: ${e.value}, expected: ${e.expected}): ${e.description}`)
+                        .join("\n- ")}`,
+                );
             }
-            if (problems.length) throw new Error(`Could not create Check Run:${JSON.stringify(problems, null, 2)}`);
+        };
 
-            ({ id: check_run_id } = await this.github.createCheckRun({
-                owner,
-                repo,
-                pull_number,
-                name: name!,
-                output: {
-                    title: title!,
-                    summary: summary!,
-                    text,
-                },
-                detailsURL,
-                conclusion: conclusion as ConclusionType | undefined,
-            }));
-            core.setOutput("check-run-id", check_run_id);
+        ["pr-url", "check-run-id", "name", "title", "summary", "text", "details-url", "conclusion"]
+            .map((name) => [name.replaceAll("-", "_"), core.getInput(name)] as const)
+            .forEach(([key, value]) => {
+                if (!value) return;
+                if (key === "pr-url") Object.assign(params, getPullRequestOrCommentKeyFromURL(value));
+                else if (key === "check-run-id") params.check_run_id = Number.parseInt(value, 10);
+                else if (key === "details-url") params.detailsURL = value;
+                else if (key === "title" || key === "summary" || key === "text") {
+                    if (!params.output) Object.assign(params, { output: {} });
+                    (params.output as { [key: string]: string })[key] = value;
+                } else (params as unknown as { [key: string]: string })[key.replaceAll("-", "_")] = value;
+            });
+        validateCheckRunParameters();
+
+        if (params.check_run_id === undefined) {
+            ({ id: params.check_run_id } = await this.github.createCheckRun(params));
+            core.setOutput("check-run-id", params.check_run_id);
         } else {
-            const problems = [];
-            if (name) problems.push(`Specify either check-run-id or name but not both`);
-            if (!summary && (title || text)) problems.push(`title or text require a summary`);
-            if (problems.length) throw new Error(`Could not create Check Run:${JSON.stringify(problems, null, 2)}`);
-
             await this.github.updateCheckRun({
-                owner,
-                repo,
-                check_run_id,
-                output: summary
-                    ? {
-                          title,
-                          summary,
-                          text,
-                      }
-                    : undefined,
-                detailsURL,
-                conclusion: conclusion as ConclusionType | undefined,
+                ...params,
+                // needed to pacify TypeScript's concerns about the ID being potentially undefined
+                check_run_id: params.check_run_id,
             });
         }
     }
