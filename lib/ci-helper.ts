@@ -297,7 +297,7 @@ export class CIHelper {
                 summary: string;
                 text?: string;
             };
-            detailsURL?: string;
+            details_url?: string;
             conclusion?: ConclusionType;
         };
         const params = {} as CheckRunParameters;
@@ -317,13 +317,12 @@ export class CIHelper {
             .map((name) => [name.replaceAll("-", "_"), core.getInput(name)] as const)
             .forEach(([key, value]) => {
                 if (!value) return;
-                if (key === "pr-url") Object.assign(params, getPullRequestOrCommentKeyFromURL(value));
-                else if (key === "check-run-id") params.check_run_id = Number.parseInt(value, 10);
-                else if (key === "details-url") params.detailsURL = value;
+                if (key === "pr_url") Object.assign(params, getPullRequestOrCommentKeyFromURL(value));
+                else if (key === "check_run_id") params.check_run_id = Number.parseInt(value, 10);
                 else if (key === "title" || key === "summary" || key === "text") {
                     if (!params.output) Object.assign(params, { output: {} });
                     (params.output as { [key: string]: string })[key] = value;
-                } else (params as unknown as { [key: string]: string })[key.replaceAll("-", "_")] = value;
+                } else (params as unknown as { [key: string]: string })[key] = value;
             });
         validateCheckRunParameters();
 
