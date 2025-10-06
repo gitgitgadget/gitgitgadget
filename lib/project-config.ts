@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import path from "path";
+import { ILintCommitConfig } from "./commit-lint.js";
 
 export type projectInfo = {
     to: string; // email to send patches to
@@ -50,6 +51,7 @@ export interface IAppConfig {
 export interface ILintConfig {
     maxCommitsIgnore?: string[]; // array of pull request urls to skip check
     maxCommits: number; // limit on number of commits in a pull request
+    commitLintOptions?: ILintCommitConfig; // options to pass to commit linter
 }
 
 export interface IUserConfig {
