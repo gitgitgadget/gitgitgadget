@@ -34,7 +34,7 @@ inputs:
     default: ''
   details-url:
     description: 'The details URL of the Check Run (required when creating a new one)'
-    default: ''
+    default: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
   conclusion:
     description: 'If set, the Check Run will be marked as completed'
     default: ''
