@@ -48,9 +48,14 @@ export interface IAppConfig {
     altname: string | undefined; // is this even needed?
 }
 
+export interface ILintCommitConfig {
+    maxColumns?: number | undefined; // max line length
+}
+
 export interface ILintConfig {
     maxCommitsIgnore?: string[]; // array of pull request urls to skip check
     maxCommits: number; // limit on number of commits in a pull request
+    commitLintOptions?: ILintCommitConfig; // options to pass to commit linter
 }
 
 export interface IUserConfig {
