@@ -1019,12 +1019,10 @@ export class CIHelper {
         // if no initial failure, run linting checks
 
         if (result) {
-            const results = await Promise.all(
-                commits.map((commit: IPRCommit) => {
-                    const linter = new LintCommit(commit);
-                    return linter.lint();
-                }),
-            );
+            const results = commits.map((commit: IPRCommit) => {
+                const linter = new LintCommit(commit);
+                return linter.lint();
+            });
 
             for (const lintError of results.filter((el) => el) as ILintError[]) {
                 await addComment(lintError.message);
