@@ -114,7 +114,7 @@ export async function deleteBranches(
     // console.log(result.repository.refs.edges);
 
     await Promise.all(
-        result.repository.refs.edges.map((ref) => {
+        result.repository.refs.edges.map(async (ref) => {
             const br = ref.node;
             const name = br.name;
             const suffix = name.match(/ggg[_-]test-branch-\S+?[-_](.*)/);
