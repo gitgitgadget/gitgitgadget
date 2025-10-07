@@ -120,6 +120,14 @@ export class GitNotes {
         return notes.replace(/^[^]*\n\n/, "");
     }
 
+    public async initializeWithEmptyCommit(): Promise<void> {
+        const emptyTree = await git(["hash-object", "-t", "tree", "--stdin"], { stdin: "", workDir: this.workDir });
+        const emptyCommit = await git(["commit-tree", "-m", "Initial empty commit", emptyTree], {
+            workDir: this.workDir,
+        });
+        await git(["update-ref", this.notesRef, emptyCommit, ""], { workDir: this.workDir });
+    }
+
     public async update(url: string): Promise<void> {
         if (this.notesRef.match(/^refs\/notes\/(gitgitgadget|commit-to-mail|mail-to-commit)$/)) {
             await git(["fetch", "--no-tags", url, `+${this.notesRef}:${this.notesRef}`], { workDir: this.workDir });

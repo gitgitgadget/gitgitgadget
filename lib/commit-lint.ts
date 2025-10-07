@@ -5,7 +5,7 @@ export interface ILintError {
     message: string;
 }
 
-export interface ILintOptions {
+export interface ILintCommitConfig {
     maxColumns?: number | undefined; // max line length
 }
 
@@ -19,7 +19,7 @@ export class LintCommit {
     private messages: string[] = [];
     private maxColumns = 76;
 
-    public constructor(patch: IPRCommit, options?: ILintOptions) {
+    public constructor(patch: IPRCommit, options?: ILintCommitConfig) {
         this.blocked = false;
         this.lines = patch.message.split("\n");
         this.patch = patch;

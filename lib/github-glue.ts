@@ -51,6 +51,17 @@ export interface IGitHubUser {
     type: string;
 }
 
+export type ConclusionType =
+    | "action_required"
+    | "cancelled"
+    | "failure"
+    | "neutral"
+    | "success"
+    | "skipped"
+    | "stale"
+    | "timed_out"
+    | undefined;
+
 export class GitHubGlue {
     public workDir: string;
     protected client: Octokit = new Octokit(); // add { log: console } to debug
@@ -475,6 +486,60 @@ export class GitHubGlue {
 
     public setAccessToken(repositoryOwner: string, token: string): void {
         this.tokens.set(repositoryOwner, token);
+    }
+
+    public async createCheckRun(options: {
+        owner: string;
+        repo: string;
+        pull_number: number;
+        name: string;
+        output?: {
+            title: string;
+            summary: string;
+            text?: string;
+        };
+        details_url?: string;
+        conclusion?: ConclusionType;
+    }): Promise<{ id: number }> {
+        if (process.env.GITGITGADGET_DRY_RUN) {
+            console.log(`Would create Check Run with options ${JSON.stringify(options, null, 2)}`);
+            return { id: -1 }; // debug mode does not actually do anything
+        }
+
+        await this.ensureAuthenticated(options.owner);
+        const prInfo = await this.getPRInfo(options);
+        const { data } = await this.client.checks.create({
+            ...options,
+            head_sha: prInfo.headCommit,
+            status: options.conclusion ? "completed" : "in_progress",
+        });
+        return data;
+    }
+
+    public async updateCheckRun(options: {
+        owner: string;
+        repo: string;
+        check_run_id: number;
+        output?: {
+            title?: string;
+            summary: string;
+            text?: string;
+        };
+        detailsURL?: string;
+        conclusion?: ConclusionType;
+    }): Promise<{ id: number }> {
+        if (process.env.GITGITGADGET_DRY_RUN) {
+            console.log(`Would create Check Run with options ${JSON.stringify(options, null, 2)}`);
+            return { id: -1 }; // debug mode does not actually do anything
+        }
+
+        await this.ensureAuthenticated(options.owner);
+        const { data } = await this.client.checks.update({
+            ...options,
+            conclusion: options.conclusion,
+            status: options.conclusion ? "completed" : "in_progress",
+        });
+        return data;
     }
 
     protected async ensureAuthenticated(repositoryOwner: string): Promise<void> {

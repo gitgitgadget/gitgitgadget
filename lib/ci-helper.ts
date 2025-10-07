@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 import * as fs from "fs";
 import * as os from "os";
+import typia from "typia";
 import * as util from "util";
 import { spawnSync } from "child_process";
 import addressparser from "nodemailer/lib/addressparser/index.js";
@@ -10,14 +11,27 @@ import { commitExists, git, emptyTreeName, revParse } from "./git.js";
 import { GitNotes } from "./git-notes.js";
 import { GitGitGadget, IGitGitGadgetOptions } from "./gitgitgadget.js";
 import { getConfig } from "./gitgitgadget-config.js";
-import { GitHubGlue, IGitHubUser, IPRComment, IPRCommit, IPullRequestInfo, RequestError } from "./github-glue.js";
+import {
+    ConclusionType,
+    GitHubGlue,
+    IGitHubUser,
+    IPRComment,
+    IPRCommit,
+    IPullRequestInfo,
+    RequestError,
+} from "./github-glue.js";
 import { toPrettyJSON } from "./json-util.js";
-import { MailArchiveGitHelper } from "./mail-archive-helper.js";
+import { MailArchiveGitHelper, stateKey as mailArchiveStateKey } from "./mail-archive-helper.js";
 import { MailCommitMapping } from "./mail-commit-mapping.js";
 import { IMailMetadata } from "./mail-metadata.js";
 import { IPatchSeriesMetadata } from "./patch-series-metadata.js";
 import { IConfig, getExternalConfig, setConfig } from "./project-config.js";
-import { getPullRequestKeyFromURL, pullRequestKey } from "./pullRequestKey.js";
+import {
+    getPullRequestCommentKeyFromURL,
+    getPullRequestKeyFromURL,
+    getPullRequestOrCommentKeyFromURL,
+    pullRequestKey,
+} from "./pullRequestKey.js";
 import { ISMTPOptions } from "./send-mail.js";
 import { fileURLToPath } from "url";
 
@@ -53,8 +67,24 @@ export class CIHelper {
         return configFile ? await getExternalConfig(configFile) : getConfig();
     }
 
+    public static validateConfig = typia.createValidate<IConfig>();
+
+    protected static getConfigAsGitHubActionInput(): IConfig | undefined {
+        if (process.env.GITHUB_ACTIONS !== "true") return undefined;
+        const json = core.getInput("config");
+        if (!json) return undefined;
+        const config = JSON.parse(json) as IConfig | undefined;
+        const result = CIHelper.validateConfig(config);
+        if (result.success) return config;
+        throw new Error(
+            `Invalid config:\n- ${result.errors
+                .map((e) => `${e.path} (value: ${e.value}, expected: ${e.expected}): ${e.description}`)
+                .join("\n- ")}`,
+        );
+    }
+
     public constructor(workDir: string = "pr-repo.git", config?: IConfig, skipUpdate?: boolean, gggConfigDir = ".") {
-        this.config = config !== undefined ? setConfig(config) : getConfig();
+        this.config = config !== undefined ? setConfig(config) : CIHelper.getConfigAsGitHubActionInput() || getConfig();
         this.gggConfigDir = gggConfigDir;
         this.workDir = workDir;
         this.notes = new GitNotes(workDir);
@@ -72,24 +102,9 @@ export class CIHelper {
         needsMailingListMirror?: boolean;
         needsUpstreamBranches?: boolean;
         needsMailToCommitNotes?: boolean;
+        createOrUpdateCheckRun?: boolean | "post";
+        createGitNotes?: boolean;
     }): Promise<void> {
-        // help dugite realize where `git` is...
-        const gitExecutable = os.type() === "Windows_NT" ? "git.exe" : "git";
-        const stripSuffix = `bin${path.sep}${gitExecutable}`;
-        for (const gitPath of (process.env.PATH || "/")
-            .split(path.delimiter)
-            .map((p) => path.normalize(`${p}${path.sep}${gitExecutable}`))
-            // eslint-disable-next-line security/detect-non-literal-fs-filename
-            .filter((p) => p.endsWith(`${path.sep}${stripSuffix}`) && fs.existsSync(p))) {
-            process.env.LOCAL_GIT_DIRECTORY = gitPath.substring(0, gitPath.length - stripSuffix.length);
-            // need to override GIT_EXEC_PATH, so that Dugite can find the `git-remote-https` executable,
-            // see https://github.com/desktop/dugite/blob/v2.7.1/lib/git-environment.ts#L44-L64
-            // Also: We cannot use `await git(["--exec-path"]);` because that would use Dugite, which would
-            // override `GIT_EXEC_PATH` and then `git --exec-path` would report _that_...
-            process.env.GIT_EXEC_PATH = spawnSync(gitPath, ["--exec-path"]).stdout.toString("utf-8").trimEnd();
-            break;
-        }
-
         // configure the Git committer information
         process.env.GIT_CONFIG_PARAMETERS = [
             process.env.GIT_CONFIG_PARAMETERS,
@@ -101,7 +116,7 @@ export class CIHelper {
 
         // get the access tokens via the inputs of the GitHub Action
         this.setAccessToken(this.config.repo.owner, core.getInput("pr-repo-token"));
-        this.setAccessToken(this.config.repo.baseOwner, core.getInput("upstream-repo-token"));
+        this.setAccessToken(this.config.repo.upstreamOwner, core.getInput("upstream-repo-token"));
         if (this.config.repo.testOwner) {
             this.setAccessToken(this.config.repo.testOwner, core.getInput("test-repo-token"));
         }
@@ -121,6 +136,30 @@ export class CIHelper {
             // Ignore, for now
         }
 
+        if (setupOptions?.createOrUpdateCheckRun) {
+            if (setupOptions?.createGitNotes) {
+                throw new Error(`Cannot use createOrUpdateCheckRun and createGitNotes at the same time`);
+            }
+            return await this.createOrUpdateCheckRun(setupOptions.createOrUpdateCheckRun === "post");
+        }
+
+        // help dugite realize where `git` is...
+        const gitExecutable = os.type() === "Windows_NT" ? "git.exe" : "git";
+        const stripSuffix = `bin${path.sep}${gitExecutable}`;
+        for (const gitPath of (process.env.PATH || "/")
+            .split(path.delimiter)
+            .map((p) => path.normalize(`${p}${path.sep}${gitExecutable}`))
+            // eslint-disable-next-line security/detect-non-literal-fs-filename
+            .filter((p) => p.endsWith(`${path.sep}${stripSuffix}`) && fs.existsSync(p))) {
+            process.env.LOCAL_GIT_DIRECTORY = gitPath.substring(0, gitPath.length - stripSuffix.length);
+            // need to override GIT_EXEC_PATH, so that Dugite can find the `git-remote-https` executable,
+            // see https://github.com/desktop/dugite/blob/v2.7.1/lib/git-environment.ts#L44-L64
+            // Also: We cannot use `await git(["--exec-path"]);` because that would use Dugite, which would
+            // override `GIT_EXEC_PATH` and then `git --exec-path` would report _that_...
+            process.env.GIT_EXEC_PATH = spawnSync(gitPath, ["--exec-path"]).stdout.toString("utf-8").trimEnd();
+            break;
+        }
+
         // eslint-disable-next-line security/detect-non-literal-fs-filename
         if (!fs.existsSync(this.workDir)) await git(["init", "--bare", "--initial-branch", "unused", this.workDir]);
         for (const [key, value] of [
@@ -128,12 +167,62 @@ export class CIHelper {
             ["remote.origin.url", `https://github.com/${this.config.repo.owner}/${this.config.repo.name}`],
             ["remote.origin.promisor", "true"],
             ["remote.origin.partialCloneFilter", "blob:none"],
-            ["remote.upstream.url", `https://github.com/${this.config.repo.baseOwner}/${this.config.repo.name}`],
+            ["remote.upstream.url", `https://github.com/${this.config.repo.upstreamOwner}/${this.config.repo.name}`],
             ["remote.upstream.promisor", "true"],
             ["remote.upstream.partialCloneFilter", "blob:none"],
         ]) {
             await git(["config", key, value], { workDir: this.workDir });
         }
+        if (setupOptions?.createGitNotes) {
+            if (
+                setupOptions.needsMailToCommitNotes ||
+                setupOptions.needsUpstreamBranches ||
+                setupOptions.needsMailingListMirror
+            ) {
+                throw new Error("`createGitNotes` cannot be combined with any other options");
+            }
+            const initialUser = core.getInput("initial-user");
+            console.time("Retrieving latest mail repo revision");
+            const fetchLatestMailRepoRevision = await git([
+                "ls-remote",
+                `${this.config.mailrepo.url}/${this.config.mailrepo.public_inbox_epoch ?? 1}`,
+                this.config.mailrepo.branch,
+            ]);
+            const latestMailRepoRevision = fetchLatestMailRepoRevision.split("\t")[0];
+            console.timeEnd("Retrieving latest mail repo revision");
+            console.time("verify that Git notes do not yet exist");
+            const existingNotes = await git(
+                [
+                    "ls-remote",
+                    "origin",
+                    GitNotes.defaultNotesRef,
+                    "refs/notes/mail-to-commit",
+                    "refs/notes/commit-to-mail",
+                ],
+                {
+                    workDir: this.workDir,
+                },
+            );
+            if (existingNotes !== "") {
+                throw new Error(`Git notes already exist in ${this.workDir}:\n${existingNotes}`);
+            }
+            console.timeEnd("verify that Git notes do not yet exist");
+            console.time("create the initial Git notes and push them");
+            for (const key of ["mail-to-commit", "commit-to-mail"]) {
+                const notes = new GitNotes(this.workDir, `refs/notes/${key}`);
+                await notes.initializeWithEmptyCommit();
+                await notes.push(this.urlRepo, this.notesPushToken);
+            }
+            const options: IGitGitGadgetOptions = {
+                allowedUsers: [initialUser],
+            };
+            await this.notes.set("", options, true);
+            await this.notes.set(mailArchiveStateKey, latestMailRepoRevision, false);
+            await this.notes.push(this.urlRepo, this.notesPushToken);
+            console.timeEnd("create the initial Git notes and push them");
+            return;
+        }
+
         console.time("fetch Git notes");
         const notesRefs = [GitNotes.defaultNotesRef];
         if (setupOptions?.needsMailToCommitNotes) {
@@ -175,7 +264,7 @@ export class CIHelper {
             console.time("get open PR head commits");
             const openPRCommits = (
                 await Promise.all(
-                    this.config.repo.owners.map(async (repositoryOwner) => {
+                    this.config.app.installedOn.map(async (repositoryOwner) => {
                         return await this.github.getOpenPRs(repositoryOwner);
                     }),
                 )
@@ -252,24 +341,79 @@ export class CIHelper {
         }
     }
 
-    public parsePRCommentURLInput(): { owner: string; repo: string; prNumber: number; commentId: number } {
-        const prCommentUrl = core.getInput("pr-comment-url");
-        const [, owner, repo, prNumber, commentId] =
-            prCommentUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)#issuecomment-(\d+)$/) || [];
-        if (!this.config.repo.owners.includes(owner) || repo !== this.config.repo.name) {
-            throw new Error(`Invalid PR comment URL: ${prCommentUrl}`);
+    protected async createOrUpdateCheckRun(runPost: boolean): Promise<void> {
+        type CheckRunParameters = {
+            owner: string;
+            repo: string;
+            pull_number: number;
+            check_run_id?: number;
+            name: string;
+            output?: {
+                title: string;
+                summary: string;
+                text?: string;
+            };
+            details_url?: string;
+            conclusion?: ConclusionType;
+            job_status?: ConclusionType;
+        };
+        const params = JSON.parse(core.getState("check-run") || "{}") as CheckRunParameters;
+
+        const validateCheckRunParameters = () => {
+            const result = typia.createValidate<CheckRunParameters>()(params);
+            if (!result.success) {
+                throw new Error(
+                    `Invalid check-run state:\n- ${result.errors
+                        .map((e) => `${e.path} (value: ${e.value}, expected: ${e.expected}): ${e.description}`)
+                        .join("\n- ")}`,
+                );
+            }
+        };
+        if (Object.keys(params).length) validateCheckRunParameters();
+
+        ["pr-url", "check-run-id", "name", "title", "summary", "text", "details-url", "conclusion", "job-status"]
+            .map((name) => [name.replaceAll("-", "_"), core.getInput(name)] as const)
+            .forEach(([key, value]) => {
+                if (!value) return;
+                if (key === "pr_url") Object.assign(params, getPullRequestOrCommentKeyFromURL(value));
+                else if (key === "check_run_id") params.check_run_id = Number.parseInt(value, 10);
+                else if (key === "title" || key === "summary" || key === "text") {
+                    if (!params.output) Object.assign(params, { output: {} });
+                    (params.output as { [key: string]: string })[key] = value;
+                } else (params as unknown as { [key: string]: string })[key] = value;
+            });
+        validateCheckRunParameters();
+
+        if (runPost) {
+            if (!params.check_run_id) {
+                core.info("No Check Run ID found in state; doing nothing");
+                return;
+            }
+            if (!params.conclusion) {
+                Object.assign(params, { conclusion: params.job_status });
+                validateCheckRunParameters();
+            }
         }
-        return { owner, repo, prNumber: parseInt(prNumber, 10), commentId: parseInt(commentId, 10) };
+
+        if (params.check_run_id === undefined) {
+            ({ id: params.check_run_id } = await this.github.createCheckRun(params));
+            core.setOutput("check-run-id", params.check_run_id);
+        } else {
+            await this.github.updateCheckRun({
+                ...params,
+                // needed to pacify TypeScript's concerns about the ID being potentially undefined
+                check_run_id: params.check_run_id,
+            });
+        }
+        core.exportVariable("STATE_check-run", JSON.stringify(params));
     }
 
-    public parsePRURLInput(): { owner: string; repo: string; prNumber: number } {
-        const prUrl = core.getInput("pr-url");
+    public parsePRCommentURLInput(): { owner: string; repo: string; pull_number: number; comment_id: number } {
+        return getPullRequestCommentKeyFromURL(core.getInput("pr-comment-url"));
+    }
 
-        const [, owner, repo, prNumber] = prUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)$/) || [];
-        if (!this.config.repo.owners.includes(owner) || repo !== this.config.repo.name) {
-            throw new Error(`Invalid PR URL: ${prUrl}`);
-        }
-        return { owner, repo, prNumber: parseInt(prNumber, 10) };
+    public parsePRURLInput(): { owner: string; repo: string; pull_number: number } {
+        return getPullRequestKeyFromURL(core.getInput("pr-url"));
     }
 
     public setAccessToken(repositoryOwner: string, token: string): void {
@@ -411,7 +555,7 @@ export class CIHelper {
                 mailMeta.originalCommit,
                 upstreamCommit,
                 this.config.repo.owner,
-                this.config.repo.baseOwner,
+                this.config.repo.upstreamOwner,
             );
         }
 
@@ -654,7 +798,7 @@ export class CIHelper {
 
                 // Add comment on GitHub
                 const comment = `This patch series was integrated into ${branch} via https://github.com/${
-                    this.config.repo.baseOwner
+                    this.config.repo.upstreamOwner
                 }/${this.config.repo.name}/commit/${mergeCommit}.`;
                 const url = await this.github.addPRComment(prKey, comment);
                 console.log(`Added comment ${url.id} about ${branch}: ${url.url}`);
@@ -892,7 +1036,7 @@ export class CIHelper {
                     await addComment(
                         `Submitted as [${
                             metadata?.coverLetterMessageId
-                        }](https://${this.config.mailrepo.host}/${this.config.mailrepo.name}/${
+                        }](${this.config.mailrepo.url.replace(/\/+$/, "")}/${
                             metadata?.coverLetterMessageId
                         })\n\nTo fetch this version into \`FETCH_HEAD\`:${
                             code
@@ -1020,7 +1164,7 @@ export class CIHelper {
 
         if (result) {
             const results = commits.map((commit: IPRCommit) => {
-                const linter = new LintCommit(commit);
+                const linter = new LintCommit(commit, this.config.lint.commitLintOptions);
                 return linter.lint();
             });
 
@@ -1137,7 +1281,7 @@ export class CIHelper {
         const handledPRs = new Set<string>();
         const handledMessageIDs = new Set<string>();
 
-        for (const repositoryOwner of this.config.repo.owners) {
+        for (const repositoryOwner of this.config.app.installedOn) {
             const pullRequests = await this.github.getOpenPRs(repositoryOwner);
 
             for (const pr of pullRequests) {
@@ -1195,7 +1339,7 @@ export class CIHelper {
     private async getPRInfo(prKey: pullRequestKey): Promise<IPullRequestInfo> {
         const pr = await this.github.getPRInfo(prKey);
 
-        if (!this.config.repo.owners.includes(pr.baseOwner) || pr.baseRepo !== this.config.repo.name) {
+        if (!this.config.app.installedOn.includes(pr.baseOwner) || pr.baseRepo !== this.config.repo.name) {
             throw new Error(`Unsupported repository: ${pr.pullRequestURL}`);
         }
 
