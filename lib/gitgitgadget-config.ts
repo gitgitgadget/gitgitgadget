@@ -4,9 +4,8 @@ const defaultConfig: IConfig = {
     repo: {
         name: "git",
         owner: "gitgitgadget",
-        baseOwner: "git",
+        upstreamOwner: "git",
         testOwner: "dscho",
-        owners: ["gitgitgadget", "git", "dscho"],
         branches: ["maint", "seen"],
         closingBranches: ["maint", "master"],
         trackingBranches: ["maint", "seen", "master", "next"],
@@ -27,6 +26,8 @@ const defaultConfig: IConfig = {
     mail: {
         author: "GitGitGadget",
         sender: "GitGitGadget",
+        smtpUser: "gitgitgadget@gmail.com",
+        smtpHost: "smtp.gmail.com",
     },
     app: {
         appID: 12836,
@@ -34,6 +35,7 @@ const defaultConfig: IConfig = {
         name: "gitgitgadget",
         displayName: "GitGitGadget",
         altname: "gitgitgadget-git",
+        installedOn: ["gitgitgadget", "git", "dscho"],
     },
     lint: {
         maxCommitsIgnore: ["https://github.com/gitgitgadget/git/pull/923"],
@@ -42,6 +44,18 @@ const defaultConfig: IConfig = {
     user: {
         allowUserAsLogin: false,
     },
+    syncUpstreamBranches: [
+        {
+            sourceRepo: "gitster/git",
+            targetRepo: "gitgitgadget/git",
+            sourceRefRegex: "^refs/heads/(maint-\\d|[a-z][a-z]/)",
+        },
+        {
+            sourceRepo: "j6t/git-gui",
+            targetRepo: "gitgitgadget/git",
+            targetRefNamespace: "git-gui/",
+        },
+    ],
 };
 
 export default defaultConfig;
