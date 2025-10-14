@@ -269,7 +269,7 @@ export class MailArchiveGitHelper {
             throw new Error(
                 [
                     "Mail archive email commit tip not set.  ",
-                    "Please run `misc-helper init-email-commit-tip` to set the value.",
+                    "Please run the `initialize-git-notes` workflow to set the value.",
                 ].join(""),
             );
         }

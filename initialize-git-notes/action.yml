@@ -1,5 +1,5 @@
-name: 'Handle PR Pushes'
-description: 'Handles when a PR was pushed'
+name: 'Initialize the Git notes'
+description: 'Creates initial, mostly empty Git notes for GitGitGadget to store its state in.'
 author: 'Johannes Schindelin'
 inputs:
   config:
@@ -8,14 +8,9 @@ inputs:
   pr-repo-token:
     description: 'The access token to work on the repository that holds PRs and state'
     required: true
-  upstream-repo-token:
-    description: 'The access token to work on PRs in the upstream repository'
-    required: true
-  test-repo-token:
-    description: 'The access token to work on PRs in the test repository'
-    required: true
-  pr-url:
-    description: 'The URL of the PR that was pushed'
+  initial-user:
+    description: 'The user that is initially the only one allowed to use GitGitGadget in the given project'
+    default: ${{ github.actor }}
     required: true
 runs:
   using: 'node20'
