@@ -6,7 +6,7 @@ This project's goal is to make contributions to the Git project (almost) as easy
 
 with a good description of their patch series. Then, the command `/submit`,
 issued via a comment on said PR will tell GitGitGadget to send the patches as
-mail thread to [the Git mailing list](mailto:git@vger.kernel.org), with the
+mail thread to [the Git mailing list](mailto:git@vger.kernel.uorg), with the
 Pull Request's description as cover letter.
 
 As is common, reviewers on the Git mailing list will probably ask for
