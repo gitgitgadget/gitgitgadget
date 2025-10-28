@@ -54,7 +54,7 @@
     "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mailparser": "^3.4.6",
-    "@types/node": "^24.9.0",
+    "@types/node": "^24.9.1",
     "@types/nodemailer": "^7.0.3",
     "@types/rfc2047": "^2.0.3",
     "@vercel/ncc": "^0.38.4",
