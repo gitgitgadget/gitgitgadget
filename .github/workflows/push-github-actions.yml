@@ -12,6 +12,9 @@ on:
       - 'script/**/*'
       - '.github/workflows/push-github-actions.yml'
 
+concurrency:
+  group: ${{ github.workflow }}
+
 permissions:
   contents: write
 
