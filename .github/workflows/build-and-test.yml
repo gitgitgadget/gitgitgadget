@@ -49,7 +49,7 @@ jobs:
 
     steps:
     # Check out repo under sub-dir so other repo can be checked out
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         path: gitgitgadget
 
@@ -90,7 +90,7 @@ jobs:
       if: env.GGG_SMTP_USER || env.GGG_SMTP_PASS || env.GGG_SMTP_HOST
 
     # Check out github-glue.test.ts repo if configured for it
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         repository: ${{ github.repository_owner }}/${{ env.GGG_REPOSITORY }}
         token: ${{ env.GGG_TOKEN }}
