@@ -1,5 +1,5 @@
 import { ChildProcess } from "child_process";
-import { GitProcess, IGitExecutionOptions } from "dugite";
+import { exec as GitProcess } from "dugite";
 
 // For convenience, let's add helpers to call Git:
 
@@ -119,7 +119,7 @@ export function git(args: string[], options?: IGitOptions): Promise<string> {
             };
         }
 
-        GitProcess.exec(args, workDir, options as IGitExecutionOptions)
+        GitProcess(args, workDir, options)
             .then((result) => {
                 if (result.exitCode) {
                     reject(new Error(`git ${args.join(" ")} failed: ${result.exitCode},\n${result.stderr}`));
@@ -158,7 +158,7 @@ export function git(args: string[], options?: IGitOptions): Promise<string> {
  * @returns { string | undefined } the full SHA-1, or undefined
  */
 export async function revParse(argument: string, workDir?: string): Promise<string | undefined> {
-    const result = await GitProcess.exec(["rev-parse", "--verify", "-q", argument], workDir || ".");
+    const result = await GitProcess(["rev-parse", "--verify", "-q", argument], workDir || ".");
     return result.exitCode ? undefined : trimTrailingNewline(result.stdout);
 }
 
@@ -177,7 +177,7 @@ export async function revListCount(rangeArgs: string | string[], workDir = "."):
     } else {
         gitArgs.push(...rangeArgs);
     }
-    const result = await GitProcess.exec(gitArgs, workDir);
+    const result = await GitProcess(gitArgs, workDir);
     if (result.exitCode) {
         throw new Error(`Could not determine count for ${rangeArgs}: ${result.stderr}`);
     }
@@ -196,7 +196,7 @@ export async function commitExists(commit: string, workDir: string): Promise<boo
 }
 
 export async function gitConfig(key: string, workDir?: string): Promise<string | undefined> {
-    const result = await GitProcess.exec(["config", key], workDir || ".");
+    const result = await GitProcess(["config", key], workDir || ".");
     if (result.exitCode !== 0) {
         return undefined;
     }
@@ -208,12 +208,12 @@ export async function gitConfigForEach(
     callbackfn: (value: string) => void,
     workDir?: string,
 ): Promise<void> {
-    const result = await GitProcess.exec(["config", "--get-all", key], workDir || ".");
+    const result = await GitProcess(["config", "--get-all", key], workDir || ".");
     result.stdout.split(/\r?\n/).map(callbackfn);
 }
 
 export async function gitCommandExists(command: string, workDir?: string): Promise<boolean> {
-    const result = await GitProcess.exec([command, "-h"], workDir || ".");
+    const result = await GitProcess([command, "-h"], workDir || ".");
     return result.exitCode === 129;
 }
 
