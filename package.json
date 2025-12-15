@@ -74,7 +74,7 @@
     "typescript-eslint": "8.48.1"
   },
   "dependencies": {
-    "@actions/core": "^1.11.1",
+    "@actions/core": "^2.0.1",
     "@octokit/auth-app": "^8.1.2",
     "@octokit/request-error": "^7.1.0",
     "@octokit/rest": "^22.0.1",
