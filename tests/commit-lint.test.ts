@@ -289,3 +289,29 @@ test("lint options tests", () => {
         { maxColumns: 66 },
     );
 });
+
+test("lint message format uses bullet points", () => {
+    const commit = {
+        author: {
+            email: "ggg@example.com",
+            login: "ggg",
+            name: "e. e. cummings",
+        },
+        commit: "BAD1FEEDBEEF",
+        committer: {
+            email: "ggg@example.com",
+            login: "ggg",
+            name: "e. e. cummings",
+        },
+        message: "Short message",
+        parentCount: 1,
+    };
+
+    lintCheck(commit, (lintError) => {
+        const lines = lintError.message.split("\n");
+        expect(lines[0]).toBe("There are issues in commit BAD1FEEDBEEF:");
+        expect(lines[1]).toBe("`Short message`");
+        expect(lines[2]).toBe("- Commit checks stopped - the message is too short");
+        expect(lines[3]).toBe("- Commit not signed off");
+    });
+});
