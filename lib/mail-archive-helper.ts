@@ -141,6 +141,20 @@ export class MailArchiveGitHelper {
             }
         };
 
+        const extractEmail = (address: string): string => address.match(/<([^>]+)>/)?.[1] ?? address;
+
+        const formatSendEmailCommand = (parsedMbox: IParsedMBox, messageID: string): string => {
+            const toEmail = parsedMbox.from ? extractEmail(parsedMbox.from) : parsedMbox.from;
+            const ccArgs = (parsedMbox.cc ?? []).map((cc) => `    --cc=${extractEmail(cc)}`).join(" \\\n");
+            return (
+                "\nTo reply to this message via `git`:\n\n" +
+                "```\ngit send-email \\\n" +
+                `    --in-reply-to=${messageID} \\\n` +
+                `    --to=${toEmail}${ccArgs ? ` \\\n${ccArgs}` : ""} \\\n` +
+                "    /path/to/YOUR_REPLY\n```\n\n"
+            );
+        };
+
         const mboxHandler = async (mbox: string): Promise<void> => {
             const parsedMbox = await parseMBox(mbox, true);
 
@@ -195,7 +209,8 @@ export class MailArchiveGitHelper {
                 parsedMbox.from ? parsedMbox.from.replace(/ *<.*>/, "") : "Somebody"
             } wrote ([reply to this](${replyToThisURL})):\n\n`;
             const comment = MailArchiveGitHelper.mbox2markdown(parsedMbox);
-            const fullComment = header + comment;
+            const replySendMail = formatSendEmailCommand(parsedMbox, parsed.messageID);
+            const fullComment = header + comment + replySendMail;
             const prKey = getPullRequestKey(pullRequestURL);
 
             if (issueCommentId) {

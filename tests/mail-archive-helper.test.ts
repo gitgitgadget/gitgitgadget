@@ -617,3 +617,103 @@ This Pull Request contains some ipsum lorem.
     expect(data).toBeDefined();
     expect(data?.pullRequestURL).toEqual(mailMeta.pullRequestURL);
 });
+
+test("test git send-email command in comment", async () => {
+    const repo = await testCreateRepo(sourceFileName, "-sendemail");
+    await repo.commit("1", "1", "");
+
+    const mailMeta: IMailMetadata = {
+        messageID: "pull.99999.v1.git.gitgitgadget@example.com",
+        originalCommit: "feeddeadbeef",
+        pullRequestURL: `https://github.com/${config.repo.owner}/${config.repo.name}/pull/1`,
+        firstPatchLine: 5,
+    };
+
+    const replyMessageId = "reply.99999.v1.git@example.com";
+    const replyFrom = "Reviewer Person <reviewer@example.org>";
+    const cc1 = "git@vger.kernel.org";
+    const cc2 = "Another Person <another@example.com>";
+
+    const mbox0 = `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
+Message-Id: <${replyMessageId}>
+From: ${replyFrom}
+Date: Fri Sep 21 12:34:56 2001
+Subject: Re: [PATCH 1/3] Some patch
+Content-Type: text/plain; charset=UTF-8
+References: <${mailMeta.messageID}>
+Cc: ${cc1}, ${cc2}
+To: original-author@example.com
+
+This is a review comment.
+`;
+    await repo.commit("1", "1", mbox0);
+
+    const github = new GitHubProxy(repo.workDir, config.repo.owner, config.repo.name);
+    github.fakeAuthenticated(config.repo.owner);
+    const notes = new GitNotes(repo.workDir);
+    await notes.set(mailMeta.messageID, mailMeta, true);
+
+    const mail = new MailArchiveGitHelperProxy(
+        config,
+        notes,
+        repo.workDir,
+        github,
+        { latestRevision: "HEAD~" },
+        "master",
+    );
+
+    let emailCommentBody = "";
+
+    // eslint-disable-next-line @typescript-eslint/require-await
+    github.octo.hook.wrap("request", async (_request, options) => {
+        if ("/repos/{owner}/{repo}/pulls/{pull_number}" === options.url) {
+            return prListResponse;
+        }
+        if ("/repos/{owner}/{repo}/issues/{issue_number}/comments" === options.url) {
+            const body = options.body as string;
+            if (body.includes("git send-email")) {
+                emailCommentBody = body;
+            }
+            return issueCommentResponse;
+        }
+        if ("/repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies" === options.url) {
+            const body = options.body as string;
+            if (body.includes("git send-email")) {
+                emailCommentBody = body;
+            }
+            return issueCommentResponse;
+        }
+        if ("/repos/{owner}/{repo}/pulls/{pull_number}/comments" === options.url) {
+            const body = options.body as string;
+            if (body.includes("git send-email")) {
+                emailCommentBody = body;
+            }
+            return issueCommentResponse;
+        }
+        if ("/repos/{owner}/{repo}/pulls/{pull_number}/commits" === options.url) {
+            return getCommitsResponse;
+        }
+        return issueCommentResponse;
+    });
+
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    await mail.processMails();
+    logSpy.mockRestore();
+
+    const expectedFullComment =
+        `[On the Git mailing list](${config.mailrepo.url}${replyMessageId}), ` +
+        "Reviewer Person wrote ([reply to this](https://gitgitgadget.github.io/reply-to-this)):\n\n" +
+        "``````````email\n" +
+        "This is a review comment.\n" +
+        "``````````\n\n" +
+        "To reply to this message via `git`:\n\n" +
+        "```\n" +
+        "git send-email \\\n" +
+        `    --in-reply-to=${replyMessageId} \\\n` +
+        "    --to=reviewer@example.org \\\n" +
+        `    --cc=${cc1} \\\n` +
+        "    --cc=another@example.com \\\n" +
+        "    /path/to/YOUR_REPLY\n" +
+        "```\n\n";
+    expect(emailCommentBody).toEqual(expectedFullComment);
+});
