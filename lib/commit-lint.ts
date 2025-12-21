@@ -68,18 +68,17 @@ export class LintCommit {
         }
 
         if (this.messages.length) {
-            this.messages.unshift(`\`${this.lines[0]}\``);
             return {
                 checkFailed: this.blocked,
                 message: `There ${this.messages.length > 1 ? "are issues" : "is an issue"} in commit ${
                     this.patch.commit
-                }:\n${this.messages.join("\n")}`,
+                }:\n\`${this.lines[0]}\``.concat(...this.messages),
             };
         }
     }
 
     private addMessage(message: string): void {
-        this.messages.push(message);
+        this.messages.push(`\n- ${message}`);
     }
 
     private block(message: string): void {
