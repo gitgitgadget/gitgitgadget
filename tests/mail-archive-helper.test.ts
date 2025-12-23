@@ -617,3 +617,109 @@ This Pull Request contains some ipsum lorem.
     expect(data).toBeDefined();
     expect(data?.pullRequestURL).toEqual(mailMeta.pullRequestURL);
 });
+
+test("test comment format with author name and links", async () => {
+    const repo = await testCreateRepo(sourceFileName, "-format");
+    await repo.commit("1", "1", "");
+
+    const mailMeta: IMailMetadata = {
+        messageID: "pull.12345.v1.git.gitgitgadget@example.com",
+        originalCommit: undefined,
+        pullRequestURL: `https://github.com/${config.repo.owner}/${config.repo.name}/pull/1`,
+        firstPatchLine: 5,
+    };
+
+    const replyMessageId = `i${mailMeta.messageID}`;
+    const authorName = "Harald Nordgren";
+
+    const mbox0 = `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
+Message-Id: <${replyMessageId}>
+From:   ${authorName} <harald@example.com>
+Date: Fri Sep 21 12:34:56 2001
+Subject: [PATCH 0/3] My first Pull Request!
+Content-Type: text/plain; charset=UTF-8
+References: <${mailMeta.messageID}>
+To: reviewer@example.com
+
+This is a test message.
+It has multiple lines.
+`;
+    await repo.commit("1", "1", mbox0);
+
+    const github = new GitHubProxy(repo.workDir, config.repo.owner, config.repo.name);
+    github.fakeAuthenticated(config.repo.owner);
+    const notes = new GitNotes(repo.workDir);
+    await notes.set(mailMeta.messageID, mailMeta, true);
+
+    const mail = new MailArchiveGitHelperProxy(
+        config,
+        notes,
+        repo.workDir,
+        github,
+        { latestRevision: "HEAD~" },
+        "master",
+    );
+
+    let commentBody = "";
+
+    // eslint-disable-next-line @typescript-eslint/require-await
+    github.octo.hook.wrap("request", async (_request, options) => {
+        if ("/repos/{owner}/{repo}/pulls/{pull_number}" === options.url) {
+            return prListResponse;
+        }
+        if ("/repos/{owner}/{repo}/issues/{issue_number}/comments" === options.url) {
+            const body =
+                typeof options.body === "object" && options.body !== null && "body" in options.body
+                    ? (options.body as { body: string }).body
+                    : (options.body as string);
+            if (body.includes("**") && body.includes("wrote:")) {
+                commentBody = body;
+            }
+            return issueCommentResponse;
+        }
+        if ("/repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies" === options.url) {
+            const body =
+                typeof options.body === "object" && options.body !== null && "body" in options.body
+                    ? (options.body as { body: string }).body
+                    : (options.body as string);
+            if (body.includes("**") && body.includes("wrote:")) {
+                commentBody = body;
+            }
+            return issueCommentResponse;
+        }
+        if ("/repos/{owner}/{repo}/pulls/{pull_number}/comments" === options.url) {
+            const body =
+                typeof options.body === "object" && options.body !== null && "body" in options.body
+                    ? (options.body as { body: string }).body
+                    : (options.body as string);
+            if (body.includes("**") && body.includes("wrote:")) {
+                commentBody = body;
+            }
+            return issueCommentResponse;
+        }
+        if ("/repos/{owner}/{repo}/pulls/{pull_number}/commits" === options.url) {
+            return getCommitsResponse;
+        }
+        console.log(JSON.stringify(options, null, 2));
+        return issueCommentResponse;
+    });
+
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    await mail.processMails();
+    logSpy.mockRestore();
+
+    expect(commentBody).toBeDefined();
+    const lines = commentBody.split("\n");
+    expect(lines[0]).toBe(`**${authorName}** wrote:`);
+    expect(lines[1]).toBe("");
+    expect(lines[2]).toBe("``````````email");
+    expect(lines[3]).toBe("This is a test message.");
+    expect(lines[4]).toBe("It has multiple lines.");
+    expect(lines[5]).toBe("``````````");
+    expect(lines[6]).toBe("");
+    expect(lines[7]).toBe("");
+    expect(lines[8]).toBe(
+        `Reply via the [Git mailing list](https://lore.kernel.org/git/${replyMessageId}) ` +
+            `(or see [instructions to set up mail](https://gitgitgadget.github.io/reply-to-this))`,
+    );
+});
