@@ -191,9 +191,10 @@ export class MailArchiveGitHelper {
             );
 
             const archiveURL = `${this.config.mailrepo.url}${parsed.messageID}`;
-            const header = `[On the Git mailing list](${archiveURL}), ${
-                parsedMbox.from ? parsedMbox.from.replace(/ *<.*>/, "") : "Somebody"
-            } wrote ([reply to this](${replyToThisURL})):\n\n`;
+            const authorName = parsedMbox.from ? parsedMbox.from.replace(/ *<.*>/, "") : "Somebody";
+            const header =
+                `**${authorName}** wrote [on the Git mailing list](${archiveURL}) ` +
+                `([how to reply to this email](${replyToThisURL})):\n\n`;
             const comment = MailArchiveGitHelper.mbox2markdown(parsedMbox);
             const fullComment = header + comment;
             const prKey = getPullRequestKey(pullRequestURL);
@@ -212,7 +213,7 @@ export class MailArchiveGitHelper {
                     issueCommentId = result.id;
                 } catch (_error) {
                     const commits = await this.githubGlue.getPRCommits(prKey.owner, prKey.pull_number);
-                    const regarding = `${header.slice(0, -3)}, regarding ${originalCommit}${
+                    const regarding = `${header.slice(0, -3)} regarding ${originalCommit}${
                         commits.find((e) => e.commit === originalCommit) ? "" : " (outdated)"
                     }:\n\n`;
                     await this.githubGlue.addPRComment(pullRequestURL, regarding + comment);
