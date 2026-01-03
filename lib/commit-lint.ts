@@ -112,14 +112,16 @@ export class LintCommit {
             this.block("The first line must be separated from the rest by an empty line");
         }
 
-        for (const line of this.lines) {
+        for (const line of this.lines.slice(1)) {
             if (
                 line.length > this.maxColumns &&
                 // Allow long lines if prefixed with whitespace (ex. quoted error messages)
                 !line.match(/^\s+/) &&
                 // Allow long lines if they cannot be wrapped at some white-space character, e.g. URLs. To allow a
                 // short preamble such as `ref [1] <URL>` lines, we skip the first 10 (arbitrary) characters.
-                line.slice(10).match(/\s/)
+                line.slice(10).match(/\s/) &&
+                // Allow trailers ('Signed-off-by: ', 'Based-on: ', etc.) to be longer than max columns
+                !line.match(/^[A-Z][A-Za-z]+-[-A-Za-z]+: /)
             ) {
                 this.block(
                     `Lines in the body of the commit messages should be wrapped between 60 and ${
