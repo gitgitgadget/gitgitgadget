@@ -186,6 +186,27 @@ blah http://www.github.com\n\nSigned-off-by: x`;
         "Signed-off-by: x}",
     ].join("\n");
     lintCheck(commit);
+
+    commit.message = [
+        "contains a correctly formatted message with long trailers",
+        "",
+        "Hello, we have a long names",
+        "",
+        "Signed-off-by: mynametakesmanycharacters <mynametakesmanycharacters@somemail.com>",
+        "Reviewed-by: mynameisevenlongerthanyours <mynameisevenlongerthanyours@somemail.com>",
+    ].join("\n");
+    lintCheck(commit);
+
+    commit.message = [
+        "commit-lint: long trailer-like titles are still forbidden from being too long by the commit lint",
+        "",
+        "Signed-off-by: x",
+    ].join("\n");
+    lintCheck(commit, (lintError) => {
+        expect(lintError.checkFailed).toBe(true);
+        expect(lintError.message).toMatch(/too long/);
+        expect(lintError.message).not.toMatch(/should be wrapped/);
+    });
 });
 
 test("combo lint tests", () => {
