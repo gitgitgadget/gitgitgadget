@@ -495,6 +495,26 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
             expect(parsed.cc).toEqual([]);
 
             expect(parsed.coverLetter).toEqual(expectedCover1);
+
+            // Markdown-formatted Cc test (copy/pasted from GitHub)
+            prBody = [
+                "some description",
+                "",
+                "Cc: Junio C Hamano [gitster@pobox.com](mailto:gitster@pobox.com)",
+                "Cc: Another User [another@example.com](mailto:another@example.com), " +
+                    "Third Person [third@test.org](mailto:third@test.org)",
+                "Cc: Mixed Format <mixed@normal.com>, Markdown [md@format.com](mailto:md@format.com)",
+            ].join("\r\n");
+
+            parsed = await PatchSeries.parsePullRequest(repo.workDir, prTitle, prBody, 76, "");
+
+            expect(parsed.cc).toEqual([
+                "Junio C Hamano <gitster@pobox.com>",
+                "Another User <another@example.com>",
+                "Third Person <third@test.org>",
+                "Mixed Format <mixed@normal.com>",
+                "Markdown <md@format.com>",
+            ]);
         });
     }
 }

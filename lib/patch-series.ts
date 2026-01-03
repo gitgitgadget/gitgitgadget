@@ -230,8 +230,10 @@ export class PatchSeries {
                             }
                             basedOn = match2[2];
                             break;
-                        case "cc:":
-                            addressparser(match2[2], { flatten: true }).forEach((e: addressparser.Address) => {
+                        case "cc:": {
+                            // Convert markdown-formatted emails [email](mailto:email) to <email>
+                            const ccValue = match2[2].replace(/\[([^\]@]+@[^\]]+)\]\(mailto:\1\)/g, "<$1>");
+                            addressparser(ccValue, { flatten: true }).forEach((e: addressparser.Address) => {
                                 if (e.name) {
                                     cc.push(`${e.name} <${e.address}>`);
                                 } else {
@@ -239,6 +241,7 @@ export class PatchSeries {
                                 }
                             });
                             break;
+                        }
                         case "range-diff:":
                             if (rangeDiff) {
                                 throw new Error(`Duplicate Range-Diff`);
