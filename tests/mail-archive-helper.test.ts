@@ -617,3 +617,70 @@ This Pull Request contains some ipsum lorem.
     expect(data).toBeDefined();
     expect(data?.pullRequestURL).toEqual(mailMeta.pullRequestURL);
 });
+
+test("test comment format with author name and links", async () => {
+    const repo = await testCreateRepo(sourceFileName, "-format");
+    await repo.commit("1", "1", "");
+
+    const mailMeta: IMailMetadata = {
+        messageID: "pull.12345.v1.git.gitgitgadget@example.com",
+        originalCommit: undefined,
+        pullRequestURL: `https://github.com/${config.repo.owner}/${config.repo.name}/pull/1`,
+        firstPatchLine: 5,
+    };
+
+    const replyMessageId = `i${mailMeta.messageID}`;
+    const authorName = "Harald Nordgren";
+
+    const mbox0 = `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
+Message-Id: <${replyMessageId}>
+From:   ${authorName} <harald@example.com>
+Date: Fri Sep 21 12:34:56 2001
+Subject: [PATCH 0/3] My first Pull Request!
+Content-Type: text/plain; charset=UTF-8
+References: <${mailMeta.messageID}>
+To: reviewer@example.com
+
+This is a test message.
+It has multiple lines.
+`;
+    await repo.commit("1", "1", mbox0);
+
+    const github = new GitHubProxy(repo.workDir, config.repo.owner, config.repo.name);
+    github.fakeAuthenticated(config.repo.owner);
+    const notes = new GitNotes(repo.workDir);
+    await notes.set(mailMeta.messageID, mailMeta, true);
+
+    const mail = new MailArchiveGitHelperProxy(
+        config,
+        notes,
+        repo.workDir,
+        github,
+        { latestRevision: "HEAD~" },
+        "master",
+    );
+
+    const commentBodies: string[] = [];
+
+    // eslint-disable-next-line @typescript-eslint/require-await
+    github.octo.hook.wrap("request", async (_request, options) => {
+        if ("/repos/{owner}/{repo}/pulls/{pull_number}" === options.url) {
+            return prListResponse;
+        }
+        if ("/repos/{owner}/{repo}/issues/{issue_number}/comments" === options.url) {
+            commentBodies.push(options.body as string);
+            return issueCommentResponse;
+        }
+        return issueCommentResponse;
+    });
+
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    await mail.processMails();
+    logSpy.mockRestore();
+
+    const commentBody = commentBodies[0];
+    expect(commentBody).toContain(`**${authorName}** wrote`);
+    expect(commentBody).toContain("[on the Git mailing list]");
+    expect(commentBody).toContain("[how to reply to this email]");
+    expect(commentBody).toContain(":");
+});
