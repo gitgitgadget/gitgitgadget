@@ -48,7 +48,7 @@
     "testRegex": "/tests/.*\\.test\\.(ts|tsx|js)$"
   },
   "devDependencies": {
-    "@stylistic/eslint-plugin": "^5.6.1",
+    "@stylistic/eslint-plugin": "^5.7.0",
     "@types/html-to-text": "^9.0.4",
     "@types/imap-simple": "^4.2.10",
     "@types/jest": "^30.0.0",
