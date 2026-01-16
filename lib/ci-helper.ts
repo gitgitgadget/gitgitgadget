@@ -557,6 +557,19 @@ export class CIHelper {
         return result;
     }
 
+    private getBranchExplanation(branch: string): string | undefined {
+        const explanations: { [key: string]: string } = {
+            seen:
+                "This is the experimental integration branch where patches are first tested " +
+                "before moving to `next`, and eventually to `master`. Patches typically flow " +
+                "from `seen` to `next` to `master`.",
+            next:
+                "This is the integration branch where patches are tested before being merged " +
+                "into `master`. Patches typically flow `next` to `master`.",
+        };
+        return explanations[branch];
+    }
+
     /**
      * Handles one PR, i.e. looks whether an upstream commit has been
      * created/updated that corresponds to the tip commit of the PR, whether it
@@ -653,9 +666,15 @@ export class CIHelper {
                 prLabelsToAdd.push(branch);
 
                 // Add comment on GitHub
-                const comment = `This patch series was integrated into ${branch} via https://github.com/${
+                let comment = `This patch series was integrated into \`${branch}\` via https://github.com/${
                     this.config.repo.baseOwner
                 }/${this.config.repo.name}/commit/${mergeCommit}.`;
+
+                const branchExplanation = this.getBranchExplanation(branch);
+                if (branchExplanation) {
+                    comment += `\n\n${branchExplanation}`;
+                }
+
                 const url = await this.github.addPRComment(prKey, comment);
                 console.log(`Added comment ${url.id} about ${branch}: ${url.url}`);
             }
