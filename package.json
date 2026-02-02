@@ -55,7 +55,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mailparser": "^3.4.6",
     "@types/node": "^25.0.10",
-    "@types/nodemailer": "^7.0.5",
+    "@types/nodemailer": "^7.0.9",
     "@types/rfc2047": "^2.0.3",
     "@vercel/ncc": "^0.38.4",
     "eslint": "^9.39.2",
@@ -85,7 +85,7 @@
     "jsonwebtoken": "^9.0.3",
     "mailparser": "^3.9.1",
     "marked": "^17.0.1",
-    "nodemailer": "^7.0.12",
+    "nodemailer": "^7.0.13",
     "rfc2047": "^4.0.1"
   },
   "engines": {
