@@ -75,7 +75,7 @@
   },
   "dependencies": {
     "@actions/core": "^3.0.0",
-    "@octokit/auth-app": "^8.1.2",
+    "@octokit/auth-app": "^8.2.0",
     "@octokit/request-error": "^7.1.0",
     "@octokit/rest": "^22.0.1",
     "commander": "^14.0.3",
