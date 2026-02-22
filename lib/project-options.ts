@@ -29,7 +29,14 @@ export class ProjectOptions {
             to = "--to=git@vger.kernel.org";
             cc.push("Johannes Sixt <j6t@kdbg.org>");
             upstreamBranch = "git-gui/master";
-        } else if ((await revParse(`${baseCommit}:git.c`, workDir)) !== undefined) {
+        } else if (
+            (await revParse(`${baseCommit}:git.c`, workDir)) !== undefined
+            || (
+                // gitster/git's `todo` branch, see https://github.com/git/git/pull/2209
+                (await revParse(`${baseCommit}:README.cooking`, workDir)) !== undefined
+                && (await revParse(`${baseCommit}:jc.png`, workDir)) !== undefined
+            )
+        ) {
             // Git
             to = "--to=git@vger.kernel.org";
             // Do *not* Cc: Junio Hamano by default
