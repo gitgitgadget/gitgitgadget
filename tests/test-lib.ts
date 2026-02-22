@@ -141,6 +141,13 @@ export async function testCreateRepo(name: string, suffix?: string): Promise<Tes
     delete process.env.GIT_DIR;
     delete process.env.GIT_WORK_TREE;
 
+    // Prevent git from discovering the enclosing repository
+    const ceilings = [];
+    for (let dir = tmp, parent; (parent = path.dirname(dir)) !== dir; dir = parent) {
+        ceilings.push(parent);
+    }
+    process.env.GIT_CEILING_DIRECTORIES = ceilings.join(path.delimiter);
+
     // eslint-disable-next-line security/detect-unsafe-regex
     const match = name.match(/^(.*[\\/])?(.*?)(\.test)?\.ts$/);
     if (match) {
