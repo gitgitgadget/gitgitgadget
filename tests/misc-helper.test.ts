@@ -69,6 +69,8 @@ const helperEnv = {
     GIT_COMMITTER_NAME: "J Doe",
     GIT_COMMITTER_EMAIL: "jdoe@example.com",
     ...process.env,
+    GIT_DIR: undefined,
+    GIT_WORK_TREE: undefined,
 };
 
 async function getNote(reg: RegExp, workDir: string): Promise<string> {
