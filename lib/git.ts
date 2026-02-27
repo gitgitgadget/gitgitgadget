@@ -1,4 +1,5 @@
 import { ChildProcess } from "child_process";
+import * as path from "path";
 import { exec as GitProcess } from "dugite";
 
 // For convenience, let's add helpers to call Git:
@@ -15,6 +16,18 @@ export interface IGitOptions {
 
 export const emptyBlobName = "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391";
 export const emptyTreeName = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
+
+function validateWorkDir(workDir: string): void {
+    const prefix = process.env.GIT_WORK_DIR_PREFIX;
+    if (!prefix) return;
+    const gitDir = process.env.GIT_DIR;
+    if (gitDir) {
+        throw new Error(`GIT_DIR is set to '${gitDir}'; This should not happen in tests`);
+    }
+    if (!path.resolve(workDir).startsWith(prefix)) {
+        throw new Error(`workDir '${workDir}' is not inside '${prefix}'`);
+    }
+}
 
 function trimTrailingNewline(str: string): string {
     return str.replace(/\r?\n$/, "");
@@ -42,6 +55,44 @@ export function git(args: string[], options?: IGitOptions): Promise<string> {
     if (options?.workDir?.endsWith(".git")) {
         args = [`--git-dir=${options.workDir}`, ...args];
         workDir = ".";
+    }
+    const prefix = process.env.GIT_WORK_DIR_PREFIX;
+    if (prefix) {
+        let cmdStart = 0;
+
+        // --git-dir=<path> must be the very first argument (prepended by the bare-repo handling above)
+        if (args[0]?.startsWith("--git-dir=")) {
+            validateWorkDir(args[0].substring("--git-dir=".length));
+            cmdStart = 1;
+        }
+
+        if (args[cmdStart] === "init") {
+            // Strictly parse: init [--bare] [--initial-branch <name>] <directory>
+            let i = cmdStart + 1;
+            while (i < args.length) {
+                if (args[i] === "--bare") {
+                    i++;
+                } else if (args[i] === "--initial-branch" || args[i] === "-b") {
+                    if (i + 1 >= args.length) throw new Error(`git init: '${args[i]}' requires a value`);
+                    i += 2;
+                } else if (args[i].startsWith("-")) {
+                    throw new Error(`git init: unexpected option '${args[i]}'`);
+                } else {
+                    break;
+                }
+            }
+            if (i >= args.length) {
+                throw new Error(`git init without an explicit target directory is not allowed in tests`);
+            }
+            if (i + 1 < args.length) {
+                throw new Error(`git init: unexpected trailing argument '${args[i + 1]}'`);
+            }
+            validateWorkDir(args[i]);
+        } else if (cmdStart === 0) {
+            // No --git-dir, not init: validate workDir
+            validateWorkDir(workDir);
+        }
+        // If --git-dir was present and subcommand is not init, it was already validated above
     }
     if (options && options.trace) {
         process.stderr.write(`Called 'git ${args.join(" ")}' in '${workDir}':\n${new Error().stack}\n`);
@@ -158,7 +209,9 @@ export function git(args: string[], options?: IGitOptions): Promise<string> {
  * @returns { string | undefined } the full SHA-1, or undefined
  */
 export async function revParse(argument: string, workDir?: string): Promise<string | undefined> {
-    const result = await GitProcess(["rev-parse", "--verify", "-q", argument], workDir || ".");
+    const dir = workDir || ".";
+    validateWorkDir(dir);
+    const result = await GitProcess(["rev-parse", "--verify", "-q", argument], dir);
     return result.exitCode ? undefined : trimTrailingNewline(result.stdout);
 }
 
@@ -171,6 +224,7 @@ export async function revParse(argument: string, workDir?: string): Promise<stri
  * @returns number the number of commits in the commit range
  */
 export async function revListCount(rangeArgs: string | string[], workDir = "."): Promise<number> {
+    validateWorkDir(workDir);
     const gitArgs: string[] = ["rev-list", "--count"];
     if (typeof rangeArgs === "string") {
         gitArgs.push(rangeArgs);
@@ -196,7 +250,9 @@ export async function commitExists(commit: string, workDir: string): Promise<boo
 }
 
 export async function gitConfig(key: string, workDir?: string): Promise<string | undefined> {
-    const result = await GitProcess(["config", key], workDir || ".");
+    const dir = workDir || ".";
+    validateWorkDir(dir);
+    const result = await GitProcess(["config", key], dir);
     if (result.exitCode !== 0) {
         return undefined;
     }
@@ -208,12 +264,16 @@ export async function gitConfigForEach(
     callbackfn: (value: string) => void,
     workDir?: string,
 ): Promise<void> {
-    const result = await GitProcess(["config", "--get-all", key], workDir || ".");
+    const dir = workDir || ".";
+    validateWorkDir(dir);
+    const result = await GitProcess(["config", "--get-all", key], dir);
     result.stdout.split(/\r?\n/).map(callbackfn);
 }
 
 export async function gitCommandExists(command: string, workDir?: string): Promise<boolean> {
-    const result = await GitProcess([command, "-h"], workDir || ".");
+    const dir = workDir || ".";
+    validateWorkDir(dir);
+    const result = await GitProcess([command, "-h"], dir);
     return result.exitCode === 129;
 }
 
