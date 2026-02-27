@@ -136,6 +136,11 @@ export async function testCreateRepo(name: string, suffix?: string): Promise<Tes
     }
     tmp = await realpath(tmp);
 
+    // Prevent git from discovering or operating on the enclosing repository.
+    // GIT_DIR/GIT_WORK_TREE are set e.g. by `git rebase --exec` in worktrees.
+    delete process.env.GIT_DIR;
+    delete process.env.GIT_WORK_TREE;
+
     // eslint-disable-next-line security/detect-unsafe-regex
     const match = name.match(/^(.*[\\/])?(.*?)(\.test)?\.ts$/);
     if (match) {
