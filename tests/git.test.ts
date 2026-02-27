@@ -18,8 +18,8 @@ const sleep = async (ms: number) => {
     });
 };
 
-test("finds core.bare", async () => {
-    expect(await gitConfig("core.bare")).toMatch(/true|false/);
+test("reads config", async () => {
+    expect(await gitConfig("TEST.TS.case0")).toMatch("test.case0 value");
 });
 
 test("serialization", async () => {
