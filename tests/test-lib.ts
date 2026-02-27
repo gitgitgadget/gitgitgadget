@@ -148,6 +148,9 @@ export async function testCreateRepo(name: string, suffix?: string): Promise<Tes
     }
     process.env.GIT_CEILING_DIRECTORIES = ceilings.join(path.delimiter);
 
+    // Suspend the workDir guard during repo setup (git init, git config --global)
+    delete process.env.GIT_WORK_DIR_PREFIX;
+
     // eslint-disable-next-line security/detect-unsafe-regex
     const match = name.match(/^(.*[\\/])?(.*?)(\.test)?\.ts$/);
     if (match) {
@@ -191,6 +194,10 @@ export async function testCreateRepo(name: string, suffix?: string): Promise<Tes
         workDir: dir,
     };
     await git(["commit-tree", "-m", "Test commit", "4b825dc642cb6eb9a060e54bf8d69288fbee4904"], opts);
+
+    // From now on, ensure that all git() calls use a workDir inside tmp
+    process.env.GIT_WORK_DIR_PREFIX = tmp;
+
     const gitOpts: ITestCommitOptions = { workDir: dir };
 
     return new TestRepo(gitOpts);
