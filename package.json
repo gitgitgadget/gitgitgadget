@@ -45,7 +45,10 @@
         }
       ]
     },
-    "testRegex": "/tests/.*\\.test\\.(ts|tsx|js)$"
+    "testRegex": "/tests/.*\\.test\\.(ts|tsx|js)$",
+    "testPathIgnorePatterns": [
+      "\\.test-dir/"
+    ]
   },
   "devDependencies": {
     "@stylistic/eslint-plugin": "^5.8.0",
