@@ -1,6 +1,7 @@
 import { expect, jest, test } from "@jest/globals";
-import { ILintError, ILintOptions, LintCommit } from "../lib/commit-lint.js";
+import { ILintError, LintCommit } from "../lib/commit-lint.js";
 import { IPRCommit } from "../lib/github-glue.js";
+import { ILintCommitConfig } from "../lib/project-config.js";
 
 jest.setTimeout(180000);
 
@@ -15,7 +16,7 @@ jest.setTimeout(180000);
  * @param check a function to verify the lint result
  * @param options extra linter options, if any
  */
-function lintCheck(commit: IPRCommit, check?: (error: ILintError) => void, options?: ILintOptions) {
+function lintCheck(commit: IPRCommit, check?: (error: ILintError) => void, options?: ILintCommitConfig) {
     const linter = new LintCommit(commit, options);
     const lintError = linter.lint();
     if (!check) {

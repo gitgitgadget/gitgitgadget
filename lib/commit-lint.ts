@@ -1,12 +1,9 @@
 import { IPRCommit } from "./github-glue.js";
+import { ILintCommitConfig } from "./project-config.js";
 
 export interface ILintError {
     checkFailed: boolean; // true if check failed
     message: string;
-}
-
-export interface ILintOptions {
-    maxColumns?: number | undefined; // max line length
 }
 
 /*
@@ -19,7 +16,7 @@ export class LintCommit {
     private messages: string[] = [];
     private maxColumns = 76;
 
-    public constructor(patch: IPRCommit, options?: ILintOptions) {
+    public constructor(patch: IPRCommit, options?: ILintCommitConfig) {
         this.blocked = false;
         this.lines = patch.message.split("\n");
         this.patch = patch;

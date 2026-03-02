@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 import * as fs from "fs";
 import * as os from "os";
+import typia from "typia";
 import * as util from "util";
 import { spawnSync } from "child_process";
 import addressparser from "nodemailer/lib/addressparser/index.js";
@@ -53,8 +54,24 @@ export class CIHelper {
         return configFile ? await getExternalConfig(configFile) : getConfig();
     }
 
+    public static validateConfig = typia.createValidate<IConfig>();
+
+    protected static getConfigAsGitHubActionInput(): IConfig | undefined {
+        if (process.env.GITHUB_ACTIONS !== "true") return undefined;
+        const json = core.getInput("config");
+        if (!json) return undefined;
+        const config = JSON.parse(json) as IConfig | undefined;
+        const result = CIHelper.validateConfig(config);
+        if (result.success) return config;
+        throw new Error(
+            `Invalid config:\n- ${result.errors
+                .map((e) => `${e.path} (value: ${e.value}, expected: ${e.expected}): ${e.description}`)
+                .join("\n- ")}`,
+        );
+    }
+
     public constructor(workDir: string = "pr-repo.git", config?: IConfig, skipUpdate?: boolean, gggConfigDir = ".") {
-        this.config = config !== undefined ? setConfig(config) : getConfig();
+        this.config = config !== undefined ? setConfig(config) : CIHelper.getConfigAsGitHubActionInput() || getConfig();
         this.gggConfigDir = gggConfigDir;
         this.workDir = workDir;
         this.notes = new GitNotes(workDir);
@@ -101,7 +118,7 @@ export class CIHelper {
 
         // get the access tokens via the inputs of the GitHub Action
         this.setAccessToken(this.config.repo.owner, core.getInput("pr-repo-token"));
-        this.setAccessToken(this.config.repo.baseOwner, core.getInput("upstream-repo-token"));
+        this.setAccessToken(this.config.repo.upstreamOwner, core.getInput("upstream-repo-token"));
         if (this.config.repo.testOwner) {
             this.setAccessToken(this.config.repo.testOwner, core.getInput("test-repo-token"));
         }
@@ -128,7 +145,7 @@ export class CIHelper {
             ["remote.origin.url", `https://github.com/${this.config.repo.owner}/${this.config.repo.name}`],
             ["remote.origin.promisor", "true"],
             ["remote.origin.partialCloneFilter", "blob:none"],
-            ["remote.upstream.url", `https://github.com/${this.config.repo.baseOwner}/${this.config.repo.name}`],
+            ["remote.upstream.url", `https://github.com/${this.config.repo.upstreamOwner}/${this.config.repo.name}`],
             ["remote.upstream.promisor", "true"],
             ["remote.upstream.partialCloneFilter", "blob:none"],
         ]) {
@@ -175,7 +192,7 @@ export class CIHelper {
             console.time("get open PR head commits");
             const openPRCommits = (
                 await Promise.all(
-                    this.config.repo.owners.map(async (repositoryOwner) => {
+                    this.config.app.installedOn.map(async (repositoryOwner) => {
                         return await this.github.getOpenPRs(repositoryOwner);
                     }),
                 )
@@ -256,7 +273,7 @@ export class CIHelper {
         const prCommentUrl = core.getInput("pr-comment-url");
         const [, owner, repo, prNumber, commentId] =
             prCommentUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)#issuecomment-(\d+)$/) || [];
-        if (!this.config.repo.owners.includes(owner) || repo !== this.config.repo.name) {
+        if (!this.config.app.installedOn.includes(owner) || repo !== this.config.repo.name) {
             throw new Error(`Invalid PR comment URL: ${prCommentUrl}`);
         }
         return { owner, repo, prNumber: parseInt(prNumber, 10), commentId: parseInt(commentId, 10) };
@@ -266,7 +283,7 @@ export class CIHelper {
         const prUrl = core.getInput("pr-url");
 
         const [, owner, repo, prNumber] = prUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)$/) || [];
-        if (!this.config.repo.owners.includes(owner) || repo !== this.config.repo.name) {
+        if (!this.config.app.installedOn.includes(owner) || repo !== this.config.repo.name) {
             throw new Error(`Invalid PR URL: ${prUrl}`);
         }
         return { owner, repo, prNumber: parseInt(prNumber, 10) };
@@ -411,7 +428,7 @@ export class CIHelper {
                 mailMeta.originalCommit,
                 upstreamCommit,
                 this.config.repo.owner,
-                this.config.repo.baseOwner,
+                this.config.repo.upstreamOwner,
             );
         }
 
@@ -654,7 +671,7 @@ export class CIHelper {
 
                 // Add comment on GitHub
                 const comment = `This patch series was integrated into ${branch} via https://github.com/${
-                    this.config.repo.baseOwner
+                    this.config.repo.upstreamOwner
                 }/${this.config.repo.name}/commit/${mergeCommit}.`;
                 const url = await this.github.addPRComment(prKey, comment);
                 console.log(`Added comment ${url.id} about ${branch}: ${url.url}`);
@@ -892,7 +909,7 @@ export class CIHelper {
                     await addComment(
                         `Submitted as [${
                             metadata?.coverLetterMessageId
-                        }](https://${this.config.mailrepo.host}/${this.config.mailrepo.name}/${
+                        }](${this.config.mailrepo.url.replace(/\/+$/, "")}/${
                             metadata?.coverLetterMessageId
                         })\n\nTo fetch this version into \`FETCH_HEAD\`:${
                             code
@@ -1020,7 +1037,7 @@ export class CIHelper {
 
         if (result) {
             const results = commits.map((commit: IPRCommit) => {
-                const linter = new LintCommit(commit);
+                const linter = new LintCommit(commit, this.config.lint.commitLintOptions);
                 return linter.lint();
             });
 
@@ -1137,7 +1154,7 @@ export class CIHelper {
         const handledPRs = new Set<string>();
         const handledMessageIDs = new Set<string>();
 
-        for (const repositoryOwner of this.config.repo.owners) {
+        for (const repositoryOwner of this.config.app.installedOn) {
             const pullRequests = await this.github.getOpenPRs(repositoryOwner);
 
             for (const pr of pullRequests) {
@@ -1195,7 +1212,7 @@ export class CIHelper {
     private async getPRInfo(prKey: pullRequestKey): Promise<IPullRequestInfo> {
         const pr = await this.github.getPRInfo(prKey);
 
-        if (!this.config.repo.owners.includes(pr.baseOwner) || pr.baseRepo !== this.config.repo.name) {
+        if (!this.config.app.installedOn.includes(pr.baseOwner) || pr.baseRepo !== this.config.repo.name) {
             throw new Error(`Unsupported repository: ${pr.pullRequestURL}`);
         }
 

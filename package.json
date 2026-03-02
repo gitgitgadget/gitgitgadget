@@ -20,7 +20,8 @@
     "test:clean": "jest --clearCache && npm test",
     "test:config": "npm run test -- --testRegex=/tests-config/.*\\.test\\.ts",
     "test:watch": "jest --watch --notify --notifyMode=change --coverage",
-    "ci": "npm run lint && npm run test -- --ci --reporters=default --reporters=jest-junit"
+    "ci": "npm run lint && npm run test -- --ci --reporters=default --reporters=jest-junit",
+    "prepare": "ts-patch install"
   },
   "bugs": {
     "url": "https://github.com/gitgitgadget/gitgitgadget/issues"
@@ -41,6 +42,13 @@
       "\\.(ts|tsx)$": [
         "ts-jest",
         {
+          "compiler": "ts-patch/compiler",
+          "diagnostics": {
+            "ignoreCodes": [151002]
+          },
+          "tsconfig": {
+            "isolatedModules": false
+          },
           "useESM": true
         }
       ]
@@ -70,8 +78,10 @@
     "ts-jest": "^29.4.6",
     "ts-jest-resolver": "^2.0.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "8.56.1"
+    "ts-patch": "^3.3.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "8.56.1",
+    "typia": "^11.0.3"
   },
   "dependencies": {
     "@actions/core": "^3.0.0",
