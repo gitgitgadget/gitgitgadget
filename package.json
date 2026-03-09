@@ -59,7 +59,7 @@
     ]
   },
   "devDependencies": {
-    "@stylistic/eslint-plugin": "^5.9.0",
+    "@stylistic/eslint-plugin": "^5.10.0",
     "@types/html-to-text": "^9.0.4",
     "@types/imap-simple": "^4.2.10",
     "@types/jest": "^30.0.0",
