@@ -1,27 +1,31 @@
-import eslint from "@eslint/js"
+import js from "@eslint/js"
 import stylistic from "@stylistic/eslint-plugin"
 import jsdoc from "eslint-plugin-jsdoc"
+import { defineConfig } from "eslint/config"
 import eslintConfigPrettier from "eslint-config-prettier"
 import eslintPluginPrettier from "eslint-plugin-prettier"
 import eslintPluginSecurity from "eslint-plugin-security"
 import globals from "globals"
 import tseslint from "typescript-eslint"
 
-export default tseslint.config(
+export default defineConfig([
   {
     // ignore these directories and files (not included on command line)
     ignores: ["**/build/**"],
+    ignores: ["**/tests-config/**"],
   },
-  eslint.configs.recommended,
+  tseslint.configs.recommended,
   eslintPluginSecurity.configs.recommended,
   {
     plugins: {
+      js,
       jsdoc,
       "@stylistic": stylistic,
       ...eslintConfigPrettier.plugins,
       prettier: eslintPluginPrettier,
     },
 
+    extends: ["js/recommended"],
     languageOptions: {
       globals: {
         ...globals.node,
@@ -121,6 +125,7 @@ export default tseslint.config(
       "object-shorthand": "error",
       "one-var": ["error", "never"],
       "prefer-arrow-callback": "off",
+      "preserve-caught-error": "off",
       "prettier/prettier": "warn",
       radix: "error",
       "use-isnan": "error",
@@ -193,4 +198,4 @@ export default tseslint.config(
     },
   },
   // eslintPluginPrettierRecommended,
-)
+])
