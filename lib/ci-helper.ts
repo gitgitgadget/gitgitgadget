@@ -858,9 +858,9 @@ export class CIHelper {
         const pullRequestURL = `https://github.com/${repositoryOwner}/${
             this.config.repo.name
         }/pull/${comment.prNumber}`;
-        console.log(
-            `Handling command ${command} with argument ${argument} at ${pullRequestURL}#issuecomment-${commentID}`,
-        );
+        const arg = argument ? ` with argument ${argument}` : "";
+        const at = `${pullRequestURL}#issuecomment-${commentID}`;
+        console.log(`Handling command ${command}${arg} at ${at}`);
 
         const addComment = async (body: string): Promise<void> => {
             const redacted = CIHelper.redactGitHubToken(body);
