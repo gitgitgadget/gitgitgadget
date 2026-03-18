@@ -496,6 +496,15 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
 
             expect(parsed.coverLetter).toEqual(expectedCover1);
 
+            // test with empty body and gitgitgadget added cc's
+            const cc = "Some Person <shout@out.loud>";
+            prBody = ["", "", `Cc: ${cc}`].join("\r\n");
+
+            parsed = await PatchSeries.parsePullRequest(repo.workDir, prTitle, prBody, 76, "");
+
+            expect(parsed.coverLetter.length).toEqual(prTitle.length);
+            expect(parsed.cc).toEqual([cc]);
+
             // Markdown-formatted Cc test (copy/pasted from GitHub)
             prBody = [
                 "some description",

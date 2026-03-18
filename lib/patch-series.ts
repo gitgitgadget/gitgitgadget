@@ -208,7 +208,7 @@ export class PatchSeries {
         let rangeDiff: string | undefined;
 
         // parse the footers of the pullRequestDescription
-        let match = prBody.match(/^([^]+)\n\n([^]+)$/);
+        let match = prBody.match(/^([^]*)\n\n([^]+)$/);
 
         if (!match && !prBody.match(/\n\n/)) {
             // handle PR descriptions that have no body, just footers
