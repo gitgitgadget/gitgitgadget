@@ -99,7 +99,7 @@ test("pull requests", async () => {
             });
 
             if (pullRequestURL.length) {
-                await github.closePR(pullRequestURL, "Not merged");
+                await github.closePRAsMerged(pullRequestURL, "Not merged");
             }
 
             try {
@@ -212,7 +212,7 @@ test("pull requests", async () => {
 
         await github.addPRLabels(prData.html_url, ["bug"]);
 
-        const cNumber = await github.closePR(prData.html_url, "Not merged");
+        const cNumber = await github.closePRAsMerged(prData.html_url, "Not merged");
         expect(cNumber).toBeGreaterThan(id);
 
         // delete local and remote branches

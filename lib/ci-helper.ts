@@ -647,7 +647,7 @@ export class CIHelper {
             }
         }
 
-        let closePR: string | undefined;
+        let upstreamMergeCommit: string | undefined;
         const prLabelsToAdd: string[] = [];
         for (const branch of this.config.repo.trackingBranches) {
             const mergeCommit = await this.identifyMergeCommit(branch, tipCommitInGitGit);
@@ -656,7 +656,7 @@ export class CIHelper {
             }
 
             if (this.config.repo.closingBranches.includes(branch)) {
-                closePR = mergeCommit;
+                upstreamMergeCommit = mergeCommit;
             }
 
             if (!prMeta.mergedIntoUpstream) {
@@ -683,7 +683,7 @@ export class CIHelper {
         }
 
         let optionsUpdated = false;
-        if (closePR) {
+        if (upstreamMergeCommit) {
             if (options.openPRs) {
                 delete options.openPRs[pullRequestURL];
                 optionsUpdated = true;
@@ -697,7 +697,7 @@ export class CIHelper {
                 optionsUpdated = true;
             }
 
-            await this.github.closePR(prKey, closePR);
+            await this.github.closePRAsMerged(prKey, upstreamMergeCommit);
         }
 
         if (notesUpdated) {

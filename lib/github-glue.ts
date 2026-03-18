@@ -289,7 +289,7 @@ export class GitHubGlue {
         return result.data.map((res: { id: number }) => `${res.id}`);
     }
 
-    public async closePR(pullRequest: pullRequestKeyInfo, viaMergeCommit: string): Promise<number> {
+    public async closePRAsMerged(pullRequest: pullRequestKeyInfo, mergeCommit: string): Promise<number> {
         const prKey = getPullRequestKey(pullRequest);
 
         await this.ensureAuthenticated(prKey.owner);
@@ -298,8 +298,16 @@ export class GitHubGlue {
             ...prKey,
         });
 
+        const body =
+            "Congratulations! 🎉 Your patch series was merged" +
+            ` into upstream via ${mergeCommit}.\n\n` +
+            "Note: this pull request will show as" +
+            ' "Closed" rather than "Merged" because the' +
+            " merge happened in the upstream repository," +
+            " not on GitHub. This is expected —" +
+            " your contribution has been accepted!";
         const result = await this.client.rest.issues.createComment({
-            body: `Closed via ${viaMergeCommit}.`,
+            body,
             issue_number: prKey.pull_number,
             owner: prKey.owner,
             repo: prKey.repo,
