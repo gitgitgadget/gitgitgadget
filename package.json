@@ -80,7 +80,7 @@
     "jest": "^30.3.0",
     "jest-junit": "^16.0.0",
     "test-smtp-server": "0.9.11",
-    "ts-jest": "^29.4.6",
+    "ts-jest": "^29.4.9",
     "ts-jest-resolver": "^2.0.1",
     "ts-node": "^10.9.2",
     "ts-patch": "^3.3.0",
