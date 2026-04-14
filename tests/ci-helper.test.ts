@@ -622,6 +622,93 @@ testQ("handle comment submit email success", async () => {
     }
 });
 
+testQ("handle comment submit with cover letter override", async () => {
+    const { worktree, gggLocal, gggRemote } = await setupRepos("s3clo");
+
+    const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
+    const prNumber = 59;
+
+    const template = "fine template\r\nnew line";
+    // add template to master repo
+    await gggRemote.commit("temple", ".github//PULL_REQUEST_TEMPLATE.md", template);
+    const commitA = await gggRemote.revParse("HEAD");
+    expect(commitA).not.toBeUndefined();
+
+    // Now come up with a local change
+    await worktree.git(["pull", gggRemote.workDir, "master"]);
+    const commitB = await worktree.commit("b");
+
+    // get the pr refs in place
+    const pullRequestRef = `refs/pull/${prNumber}`;
+    await gggRemote.git([
+        "fetch",
+        worktree.workDir,
+        `refs/heads/master:${pullRequestRef}/head`,
+        `refs/heads/master:${pullRequestRef}/merge`,
+    ]); // fake merge
+
+    // GitHubGlue Responses — comment body has cover letter after two newlines
+    const comment = {
+        author: "ggg",
+        body: "/submit\n\nThis is my custom cover letter.\nIt replaces the PR description.",
+        prNumber,
+    };
+    const user = {
+        email: "ggg@example.com",
+        login: "ggg",
+        name: "e. e. cummings",
+        type: "basic",
+    };
+    const commits = [
+        {
+            author: {
+                email: "ggg@example.com",
+                login: "ggg",
+                name: "e. e. cummings",
+            },
+            commit: "BA55FEEDBEEF",
+            committer: {
+                email: "ggg@example.com",
+                login: "ggg",
+                name: "e. e. cummings",
+            },
+            message: "Submit ok\n\nSuccinct message\n\nSigned-off-by: x",
+            parentCount: 1,
+        },
+    ];
+    const prInfo = {
+        author: "ggg",
+        baseCommit: commitA,
+        baseLabel: "gitgitgadget:next",
+        baseOwner: "gitgitgadget",
+        baseRepo: "git",
+        body: "Original PR body that should be ignored",
+        hasComments: true,
+        headCommit: commitB,
+        headLabel: "somebody:master",
+        mergeable: true,
+        number: prNumber,
+        pullRequestURL: "https://github.com/gitgitgadget/git/pull/59",
+        title: "Submit a fun fix",
+        draft: false,
+    };
+
+    ci.setGHGetPRInfo(prInfo);
+    ci.setGHGetPRComment(comment);
+    ci.setGHGetPRCommits(commits);
+    ci.setGHGetGitHubUserInfo(user);
+
+    await ci.handleComment("gitgitgadget", 433865360);
+    expect(ci.addPRCommentCalls[0][1]).toMatch(/Submitted as/);
+
+    // Verify the email contains the override cover letter, not the PR body
+    const mails = eMailOptions.smtpserver.getEmails();
+    const lastMail = mails[mails.length - 1];
+    const parsed = await lastMail.getParsed();
+    expect(parsed.text).toMatch(/custom cover letter/);
+    expect(parsed.text).not.toMatch(/Original PR body/);
+});
+
 testQ("handle comment preview email success", async () => {
     const { worktree, gggLocal, gggRemote } = await setupRepos("p1");
 

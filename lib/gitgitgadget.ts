@@ -211,7 +211,11 @@ export class GitGitGadget {
     }
 
     // Send emails out for review
-    public async submit(pr: IPullRequestInfo, userInfo: IGitHubUser): Promise<IPatchSeriesMetadata | undefined> {
+    public async submit(
+        pr: IPullRequestInfo,
+        userInfo: IGitHubUser,
+        coverLetterOverride?: string,
+    ): Promise<IPatchSeriesMetadata | undefined> {
         const smtpOptions = this.smtpOptions;
         if (!smtpOptions) {
             throw new Error("No SMTP options configured");
@@ -220,7 +224,7 @@ export class GitGitGadget {
             return await parseHeadersAndSendMail(mail, smtpOptions);
         };
 
-        return await this.genAndSend(pr, userInfo, {}, send);
+        return await this.genAndSend(pr, userInfo, {}, send, coverLetterOverride);
     }
 
     protected async updateNotesAndPullRef(
@@ -293,6 +297,7 @@ export class GitGitGadget {
         userInfo: IGitHubUser,
         options: PatchSeriesOptions,
         send: SendFunction,
+        coverLetterOverride?: string,
     ): Promise<IPatchSeriesMetadata | undefined> {
         // get metadata in work repo
         const metadata = await this.notes.get<IPatchSeriesMetadata>(pr.pullRequestURL);
@@ -306,7 +311,7 @@ export class GitGitGadget {
             this.notes,
             pr.pullRequestURL,
             pr.title,
-            pr.body,
+            coverLetterOverride ?? pr.body,
             pr.baseLabel,
             pr.baseCommit,
             pr.headLabel,

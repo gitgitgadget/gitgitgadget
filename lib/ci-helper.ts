@@ -842,13 +842,14 @@ export class CIHelper {
             }
         }
 
-        const match = comment.body.trim().match(/^(\/[-a-z]+)\s*(.*)$/);
+        const match = comment.body.trim().match(/^(\/[-a-z]+)\s*(.*?)(\n\n[^]*)?$/);
         if (!match) {
             console.log(`Not a command; doing nothing: '${comment.body}'`);
             return; /* nothing to do */
         }
         const command = match[1];
         const argument = match[2].trim();
+        const body = match[3] ? match[3].slice(2) : undefined; // strip leading \n\n
         const prKey = {
             owner: repositoryOwner,
             repo: this.config.repo.name,
@@ -904,7 +905,7 @@ export class CIHelper {
                     const extraComment =
                         userInfo.email === null ? `\n\n${this.warnOnMissingPublicEmail(comment.author)}` : "";
 
-                    const metadata = await gitGitGadget.submit(pr, userInfo);
+                    const metadata = await gitGitGadget.submit(pr, userInfo, body);
                     const code = "\n```";
                     await addComment(
                         `Submitted as [${
