@@ -331,6 +331,84 @@ Submitted-As: https://dummy.com/?mid=${coverMid}
 In-Reply-To: https://dummy.com/?mid=${refMid}`);
 });
 
+test("range-diff rebases old series onto new base", async () => {
+    const repo = await testCreateRepo(sourceFileName, "-range-diff-rebase");
+    const notes = new GitNotes(repo.workDir);
+    await notes.set("", { allowedUsers: ["somebody"] } as IGitGitGadgetOptions);
+
+    await repo.git(["config", "user.name", "Test H. Dev"]);
+    await repo.git(["config", "user.email", "dev@example.com"]);
+
+    expect(await repo.commit("initial")).not.toEqual("");
+    const baseCommit1 = await repo.revParse("HEAD");
+    expect(await repo.newBranch("test-branch")).toEqual("");
+    expect(await repo.commit("A")).not.toEqual("");
+    const headCommit1 = await repo.revParse("HEAD");
+
+    const pullRequestURL = "https://github.com/gitgitgadget/git/pull/2";
+    const pullRequestTitle = "Rebased PR!";
+    const pullRequestBody = "A simple change.\n\nCc: Some Body <somebody@example.com>";
+
+    await git(["config", "user.name", "GitGitGadget"], repo.options);
+    await git(["config", "user.email", "gitgitgadget@example.com"], repo.options);
+
+    const logger = { log: (): void => {} };
+    const mails: string[] = [];
+    // eslint-disable-next-line @typescript-eslint/require-await
+    async function send(mail: string): Promise<string> {
+        mails.push(mail);
+        return "Message-ID";
+    }
+
+    const patches1 = await PatchSeries.getFromNotes(
+        defaultConfig,
+        notes,
+        pullRequestURL,
+        pullRequestTitle,
+        pullRequestBody,
+        "gitgitgadget:next",
+        baseCommit1,
+        "somebody:test-branch",
+        headCommit1,
+        {},
+        "GitHub User",
+        undefined,
+    );
+    await patches1.generateAndSend(logger, send, undefined, pullRequestURL);
+
+    await repo.git(["checkout", baseCommit1]);
+    expect(await repo.commit("upstream-change")).not.toEqual("");
+    const baseCommit2 = await repo.revParse("HEAD");
+
+    await git(["cherry-pick", headCommit1], { workDir: repo.workDir });
+    expect(await repo.commit("A-v2", "A.t", "A modified")).not.toEqual("");
+    await git(["reset", "--soft", "HEAD~2"], { workDir: repo.workDir });
+    await git(["commit", "-m", "A"], { workDir: repo.workDir });
+    const headCommit2 = await repo.revParse("HEAD");
+
+    const patches2 = await PatchSeries.getFromNotes(
+        defaultConfig,
+        notes,
+        pullRequestURL,
+        pullRequestTitle,
+        pullRequestBody,
+        "gitgitgadget:next",
+        baseCommit2,
+        "somebody:test-branch",
+        headCommit2,
+        {},
+        "GitHub User",
+        undefined,
+    );
+    mails.splice(0);
+    await patches2.generateAndSend(logger, send, undefined, pullRequestURL);
+
+    if (await gitCommandExists("range-diff", repo.workDir)) {
+        expect(mails[0]).toMatch(/Range-diff vs v1:/);
+        expect(mails[0]).not.toMatch(/upstream-change/);
+    }
+});
+
 test("allow/disallow", async () => {
     const repo = await testCreateRepo(sourceFileName);
     const workDir = repo.workDir;

@@ -51,8 +51,10 @@ const singletonHeaders: ISingletonHeader[] = [
 interface IRangeDiff {
     previousRange: string;
     currentRange: string;
-    baseCommit: string;
-    headCommit: string;
+    oldBaseCommit: string;
+    oldHeadCommit: string;
+    newBaseCommit: string;
+    newHeadCommit: string;
 }
 
 export class PatchSeries {
@@ -102,7 +104,14 @@ export class PatchSeries {
             }
 
             const previousRange = `${metadata.baseCommit}..${metadata.headCommit}`;
-            rangeDiffRanges = { previousRange, currentRange, baseCommit: metadata.baseCommit, headCommit };
+            rangeDiffRanges = {
+                previousRange,
+                currentRange,
+                oldBaseCommit: metadata.baseCommit,
+                oldHeadCommit: metadata.headCommit,
+                newBaseCommit: baseCommit,
+                newHeadCommit: headCommit,
+            };
 
             metadata.iteration++;
             metadata.baseCommit = baseCommit;
@@ -710,19 +719,15 @@ export class PatchSeries {
                 };
 
                 footers.push(`Contributor requested no range-diff. You can review it using these commands:
-   git fetch https://github.com/gitgitgadget/git ${gitShortHash(this.rangeDiff.baseCommit)} ${gitShortHash(
-       this.rangeDiff.headCommit,
+   git fetch https://github.com/gitgitgadget/git ${gitShortHash(this.rangeDiff.oldBaseCommit)} ${gitShortHash(
+       this.rangeDiff.newHeadCommit,
    )}
    git range-diff <options> ${getRange(this.rangeDiff.previousRange)} ${getRange(this.rangeDiff.currentRange)}`);
             } else {
+                const previousRange = await this.rebaseOldSeriesIfNeeded();
+
                 const rangeDiff = await git(
-                    [
-                        "range-diff",
-                        "--no-color",
-                        "--creation-factor=95",
-                        this.rangeDiff.previousRange,
-                        this.rangeDiff.currentRange,
-                    ],
+                    ["range-diff", "--no-color", "--creation-factor=95", previousRange, this.rangeDiff.currentRange],
                     { workDir: this.project.workDir },
                 );
                 // split the range-diff and prefix with a space
@@ -859,6 +864,38 @@ export class PatchSeries {
         }
 
         return this.metadata;
+    }
+
+    protected async rebaseOldSeriesIfNeeded(): Promise<string> {
+        if (!this.rangeDiff || this.rangeDiff.oldBaseCommit === this.rangeDiff.newBaseCommit) {
+            return this.rangeDiff!.previousRange;
+        }
+
+        const workDir = this.project.workDir;
+        const origHead = (await git(["rev-parse", "HEAD"], { workDir })).trim();
+        try {
+            await git(
+                [
+                    "rebase",
+                    "--onto",
+                    this.rangeDiff.newBaseCommit,
+                    this.rangeDiff.oldBaseCommit,
+                    this.rangeDiff.oldHeadCommit,
+                ],
+                { workDir },
+            );
+            const rebasedHead = (await git(["rev-parse", "HEAD"], { workDir })).trim();
+            return `${this.rangeDiff.newBaseCommit}..${rebasedHead}`;
+        } catch (_) {
+            try {
+                await git(["rebase", "--abort"], { workDir });
+            } catch (__) {
+                // Just ignore it
+            }
+            return this.rangeDiff.previousRange;
+        } finally {
+            await git(["checkout", origHead], { workDir });
+        }
     }
 
     protected async generateMBox(): Promise<string> {
