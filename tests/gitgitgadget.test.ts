@@ -352,7 +352,12 @@ test("range-diff rebases old series onto new base", async () => {
     await git(["config", "user.name", "GitGitGadget"], repo.options);
     await git(["config", "user.email", "gitgitgadget@example.com"], repo.options);
 
-    const logger = { log: (): void => {} };
+    const logs: string[] = [];
+    const logger = {
+        log: (message: string): void => {
+            logs.push(message);
+        },
+    };
     const mails: string[] = [];
     // eslint-disable-next-line @typescript-eslint/require-await
     async function send(mail: string): Promise<string> {
@@ -401,11 +406,97 @@ test("range-diff rebases old series onto new base", async () => {
         undefined,
     );
     mails.splice(0);
+    logs.splice(0);
     await patches2.generateAndSend(logger, send, undefined, pullRequestURL);
 
     if (await gitCommandExists("range-diff", repo.workDir)) {
         expect(mails[0]).toMatch(/Range-diff vs v1:/);
         expect(mails[0]).not.toMatch(/upstream-change/);
+        expect(logs).toContain("Rebased old series onto new base for range-diff");
+        expect(logs).not.toContain(expect.stringMatching(/warning:/));
+    }
+});
+
+test("range-diff falls back when rebase conflicts", async () => {
+    const repo = await testCreateRepo(sourceFileName, "-range-diff-conflict");
+    const notes = new GitNotes(repo.workDir);
+    await notes.set("", { allowedUsers: ["somebody"] } as IGitGitGadgetOptions);
+
+    await repo.git(["config", "user.name", "Test H. Dev"]);
+    await repo.git(["config", "user.email", "dev@example.com"]);
+
+    expect(await repo.commit("initial", "shared.t", "original content")).not.toEqual("");
+    const baseCommit1 = await repo.revParse("HEAD");
+    expect(await repo.newBranch("test-branch")).toEqual("");
+    expect(await repo.commit("A", "shared.t", "v1 change")).not.toEqual("");
+    const headCommit1 = await repo.revParse("HEAD");
+
+    const pullRequestURL = "https://github.com/gitgitgadget/git/pull/3";
+    const pullRequestTitle = "Conflicting PR!";
+    const pullRequestBody = "A conflicting change.\n\nCc: Some Body <somebody@example.com>";
+
+    await git(["config", "user.name", "GitGitGadget"], repo.options);
+    await git(["config", "user.email", "gitgitgadget@example.com"], repo.options);
+
+    const logs: string[] = [];
+    const logger = {
+        log: (message: string): void => {
+            logs.push(message);
+        },
+    };
+    const mails: string[] = [];
+    // eslint-disable-next-line @typescript-eslint/require-await
+    async function send(mail: string): Promise<string> {
+        mails.push(mail);
+        return "Message-ID";
+    }
+
+    const patches1 = await PatchSeries.getFromNotes(
+        defaultConfig,
+        notes,
+        pullRequestURL,
+        pullRequestTitle,
+        pullRequestBody,
+        "gitgitgadget:next",
+        baseCommit1,
+        "somebody:test-branch",
+        headCommit1,
+        {},
+        "GitHub User",
+        undefined,
+    );
+    await patches1.generateAndSend(logger, send, undefined, pullRequestURL);
+
+    await repo.git(["checkout", baseCommit1]);
+    expect(await repo.commit("upstream-conflict", "shared.t", "conflicting upstream change")).not.toEqual("");
+    const baseCommit2 = await repo.revParse("HEAD");
+
+    expect(await repo.commit("A-v2", "shared.t", "v2 resolved change")).not.toEqual("");
+    const headCommit2 = await repo.revParse("HEAD");
+
+    const patches2 = await PatchSeries.getFromNotes(
+        defaultConfig,
+        notes,
+        pullRequestURL,
+        pullRequestTitle,
+        pullRequestBody,
+        "gitgitgadget:next",
+        baseCommit2,
+        "somebody:test-branch",
+        headCommit2,
+        {},
+        "GitHub User",
+        undefined,
+    );
+    mails.splice(0);
+    logs.splice(0);
+    await patches2.generateAndSend(logger, send, undefined, pullRequestURL);
+
+    if (await gitCommandExists("range-diff", repo.workDir)) {
+        expect(mails[0]).toMatch(/Range-diff vs v1:/);
+        expect(logs).toContain(
+            "warning: could not rebase old series onto new base, falling back to cross-base range-diff",
+        );
     }
 });
 

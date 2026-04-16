@@ -724,7 +724,7 @@ export class PatchSeries {
    )}
    git range-diff <options> ${getRange(this.rangeDiff.previousRange)} ${getRange(this.rangeDiff.currentRange)}`);
             } else {
-                const previousRange = await this.rebaseOldSeriesIfNeeded();
+                const previousRange = await this.rebaseOldSeriesIfNeeded(logger);
 
                 const rangeDiff = await git(
                     ["range-diff", "--no-color", "--creation-factor=95", previousRange, this.rangeDiff.currentRange],
@@ -866,7 +866,7 @@ export class PatchSeries {
         return this.metadata;
     }
 
-    protected async rebaseOldSeriesIfNeeded(): Promise<string> {
+    protected async rebaseOldSeriesIfNeeded(logger: ILogger): Promise<string> {
         if (!this.rangeDiff || this.rangeDiff.oldBaseCommit === this.rangeDiff.newBaseCommit) {
             return this.rangeDiff!.previousRange;
         }
@@ -885,6 +885,7 @@ export class PatchSeries {
                 { workDir },
             );
             const rebasedHead = (await git(["rev-parse", "HEAD"], { workDir })).trim();
+            logger.log("Rebased old series onto new base for range-diff");
             return `${this.rangeDiff.newBaseCommit}..${rebasedHead}`;
         } catch (_) {
             try {
@@ -892,6 +893,7 @@ export class PatchSeries {
             } catch (__) {
                 // Just ignore it
             }
+            logger.log("warning: could not rebase old series onto new base, falling back to cross-base range-diff");
             return this.rangeDiff.previousRange;
         } finally {
             await git(["checkout", origHead], { workDir });
