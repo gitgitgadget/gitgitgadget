@@ -315,9 +315,12 @@ export class GitHubGlue {
         return result.data.id;
     }
 
-    // The following public methods do not require authentication
+    // The following public methods do not require authentication, but we
+    // authenticate anyway to avoid the unauthenticated rate limit (60 req/hr
+    // per IP), which is easily exceeded on shared CI runners.
 
     public async getOpenPRs(repositoryOwner: string): Promise<IPullRequestInfo[]> {
+        await this.ensureAuthenticated(repositoryOwner);
         const result: IPullRequestInfo[] = [];
         const response = await this.client.rest.pulls.list({
             owner: repositoryOwner,
@@ -358,6 +361,7 @@ export class GitHubGlue {
      * @returns information about that Pull Request
      */
     public async getPRInfo(prKey: pullRequestKey): Promise<IPullRequestInfo> {
+        await this.ensureAuthenticated(prKey.owner);
         const response = await this.client.rest.pulls.get({ ...prKey });
 
         const pullRequest = response.data;
@@ -393,6 +397,7 @@ export class GitHubGlue {
      * @returns the text in the comment
      */
     public async getPRComment(repositoryOwner: string, commentID: number): Promise<IPRComment> {
+        await this.ensureAuthenticated(repositoryOwner);
         const response = await this.client.rest.issues.getComment({
             comment_id: commentID,
             owner: repositoryOwner,
@@ -422,6 +427,7 @@ export class GitHubGlue {
      * @returns the set of commits
      */
     public async getPRCommits(repositoryOwner: string, prNumber: number): Promise<IPRCommit[]> {
+        await this.ensureAuthenticated(repositoryOwner);
         const response = await this.client.rest.pulls.listCommits({
             owner: repositoryOwner,
             pull_number: prNumber,
