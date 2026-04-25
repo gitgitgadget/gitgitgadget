@@ -906,6 +906,11 @@ export class CIHelper {
 
                     const metadata = await gitGitGadget.submit(pr, userInfo);
                     const code = "\n```";
+                    const aliasSection = metadata?.latestBranch
+                        ? `\n\nTo always fetch the latest iteration into \`FETCH_HEAD\`:${
+                              code
+                          }\ngit fetch ${this.urlRepo} ${metadata.latestBranch}${code}`
+                        : "";
                     await addComment(
                         `Submitted as [${
                             metadata?.coverLetterMessageId
@@ -917,7 +922,9 @@ export class CIHelper {
                             code
                         }\n\nTo fetch this version to local tag \`${metadata?.latestTag}\`:${
                             code
-                        }\ngit fetch --no-tags ${this.urlRepo} tag ${metadata?.latestTag}${code}${extraComment}`,
+                        }\ngit fetch --no-tags ${this.urlRepo} tag ${metadata?.latestTag}${code}${
+                            aliasSection
+                        }${extraComment}`,
                     );
                 }
             } else if (command === "/preview") {

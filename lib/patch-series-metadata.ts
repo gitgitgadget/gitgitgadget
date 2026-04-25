@@ -7,6 +7,7 @@ export interface IPatchSeriesMetadata {
     iteration: number;
     coverLetterMessageId?: string;
     latestTag?: string;
+    latestBranch?: string;
     referencesMessageIds?: string[];
     tipCommitInGitGit?: string;
     branchNameInGitsterGit?: string;

@@ -649,6 +649,7 @@ export class PatchSeries {
             this.metadata.referencesMessageIds,
         );
         let tagName: string | undefined;
+        let latestBranch: string | undefined;
         if (!this.metadata.pullRequestURL) {
             tagName = `${this.project.branchName}-v${this.metadata.iteration}`;
         } else {
@@ -656,9 +657,11 @@ export class PatchSeries {
             const branch = this.metadata.headLabel.replace(/:/g, "/");
             const tagPrefix = prKey.owner === this.config.repo.owner ? "pr-" : `pr-${prKey.owner}-`;
             tagName = `${tagPrefix}${prKey.pull_number}/${branch}-v${this.metadata.iteration}`;
+            latestBranch = `${tagPrefix}${prKey.pull_number}/${branch}-latest`;
         }
 
         this.metadata.latestTag = tagName;
+        this.metadata.latestBranch = latestBranch;
 
         if (this.project.publishToRemote) {
             const url = await gitConfig(`remote.${this.project.publishToRemote}.url`, this.project.workDir);
@@ -852,7 +855,11 @@ export class PatchSeries {
                 }
 
                 logger.log("Publishing tag");
-                await git([...auth, "push", publishTagsAndNotesToRemote, `refs/tags/${tagName}`], {
+                const refspecs = [`refs/tags/${tagName}`];
+                if (latestBranch) {
+                    refspecs.push(`+${this.metadata.headCommit}:refs/heads/${latestBranch}`);
+                }
+                await git([...auth, "push", publishTagsAndNotesToRemote, ...refspecs], {
                     workDir: this.notes.workDir,
                 });
             }

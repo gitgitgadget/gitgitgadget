@@ -292,6 +292,7 @@ to have included in git.git [https://github.com/git/git].`);
         headLabel: "somebody:master",
         iteration: 2,
         latestTag: "pr-1/somebody/master-v2",
+        latestBranch: "pr-1/somebody/master-latest",
         pullRequestURL,
         referencesMessageIds: [refMid],
     } as IPatchSeriesMetadata);
