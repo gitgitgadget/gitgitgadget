@@ -78,7 +78,7 @@
     "eslint-plugin-security": "^4.0.0",
     "globals": "^17.5.0",
     "jest": "^30.3.0",
-    "jest-junit": "^16.0.0",
+    "jest-junit": "^17.0.0",
     "test-smtp-server": "0.9.11",
     "ts-jest": "^29.4.9",
     "ts-jest-resolver": "^2.0.1",
