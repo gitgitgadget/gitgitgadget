@@ -95,7 +95,7 @@
     "@octokit/rest": "^22.0.1",
     "commander": "^14.0.3",
     "dugite": "^3.2.2",
-    "html-to-text": "^9.0.5",
+    "html-to-text": "^10.0.0",
     "json-stable-stringify": "^1.3.0",
     "jsonwebtoken": "^9.0.3",
     "mailparser": "^3.9.8",
