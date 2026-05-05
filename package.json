@@ -83,7 +83,7 @@
     "ts-jest": "^29.4.9",
     "ts-jest-resolver": "^2.0.1",
     "ts-node": "^10.9.2",
-    "ts-patch": "^3.3.0",
+    "ts-patch": "^4.0.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "8.58.1",
     "typia": "^12.1.0"
