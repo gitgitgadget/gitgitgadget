@@ -39,15 +39,18 @@ test("project options", async () => {
     expect(options2.midUrlPrefix).toEqual("https://dummy.com/?mid=");
 
     await class X extends PatchSeries {
-        public static async test(): Promise<void> {
+        protected constructor(notes: GitNotes, project: ProjectOptions, patchCount: number) {
             const prMeta = {
-                baseCommit: options2.baseCommit,
-                baseLabel: options2.upstreamBranch,
-                headCommit: options2.branchName,
-                headLabel: options2.branchName,
+                baseCommit: project.baseCommit,
+                baseLabel: project.upstreamBranch,
+                headCommit: project.branchName,
+                headLabel: project.branchName,
                 iteration: 1,
             };
-            const x = new X(defaultConfig, new GitNotes(repo.workDir), {}, options2, prMeta, undefined, 1);
+            super(defaultConfig, notes, {}, project, prMeta, undefined, patchCount);
+        }
+        public static async test(): Promise<void> {
+            const x = new X(new GitNotes(repo.workDir), options2, 1);
             const mbox = await x.generateMBox();
             const needle = "=?UTF-8?Q?Nguy=E1=BB=85n_Th=C3=A1i_Ng=E1=BB=8Dc?= Duy";
             expect(mbox).toEqual(expect.stringContaining(needle));
