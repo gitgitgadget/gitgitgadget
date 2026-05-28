@@ -15,7 +15,7 @@ inputs:
     description: 'The access token to work on PRs in the test repository'
     required: true
 runs:
-  using: 'node20'
+  using: 'node24'
   main: './index.js'
 branding:
   icon: 'git-commit'
