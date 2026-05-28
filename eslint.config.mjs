@@ -182,6 +182,7 @@ export default defineConfig([
       "@typescript-eslint/no-unused-vars": "off",
       "@typescript-eslint/prefer-for-of": "error",
       "@typescript-eslint/prefer-function-type": "error",
+      "@typescript-eslint/prefer-promise-reject-errors": ["error", { allowThrowingUnknown: true }],
       "@typescript-eslint/prefer-regexp-exec": "off",
       "@typescript-eslint/restrict-template-expressions": "off",
 

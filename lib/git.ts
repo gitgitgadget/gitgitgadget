@@ -126,12 +126,12 @@ export function git(args: string[], options?: IGitOptions): Promise<string> {
                                 return lineHandler(line);
                             });
                         }
-                        linePromise.catch((reason) => {
-                            reject(reason as Error);
+                        linePromise.catch((reason: unknown) => {
+                            reject(reason);
                             process.kill();
                         });
                     } catch (reason) {
-                        reject(reason as Error);
+                        reject(reason);
                         process.kill();
                         return false;
                     }
