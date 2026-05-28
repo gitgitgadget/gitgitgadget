@@ -30,7 +30,7 @@ inputs:
     description: 'The URL of the PR comment to add a reaction to'
     required: true
 runs:
-  using: 'node20'
+  using: 'node24'
   main: './index.js'
 branding:
   icon: 'git-commit'
