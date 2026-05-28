@@ -9,7 +9,7 @@ inputs:
     description: 'The access token to work on the repository that holds PRs and state'
     required: true
 runs:
-  using: 'node20'
+  using: 'node24'
   main: './index.js'
 branding:
   icon: 'git-commit'
