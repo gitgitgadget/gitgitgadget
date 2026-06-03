@@ -662,19 +662,25 @@ export class CIHelper {
             if (!prMeta.mergedIntoUpstream) {
                 prMeta.mergedIntoUpstream = {};
             }
-            if (prMeta.mergedIntoUpstream[branch] !== mergeCommit) {
+            const previousMergeCommit = prMeta.mergedIntoUpstream[branch];
+            if (previousMergeCommit !== mergeCommit) {
                 prMeta.mergedIntoUpstream[branch] = mergeCommit;
                 notesUpdated = true;
 
                 // Add label on GitHub
                 prLabelsToAdd.push(branch);
 
-                // Add comment on GitHub
-                const comment = `This patch series was integrated into ${branch} via https://github.com/${
-                    this.config.repo.upstreamOwner
-                }/${this.config.repo.name}/commit/${mergeCommit}.`;
-                const url = await this.github.addPRComment(prKey, comment);
-                console.log(`Added comment ${url.id} about ${branch}: ${url.url}`);
+                // Only comment when the branch is newly integrated, i.e. when
+                // the label is not there yet. When the merge commit merely
+                // changes (e.g. due to a rebase), the label is already present,
+                // so we update the notes silently.
+                if (previousMergeCommit === undefined) {
+                    const comment = `This patch series was integrated into ${branch} via https://github.com/${
+                        this.config.repo.upstreamOwner
+                    }/${this.config.repo.name}/commit/${mergeCommit}.`;
+                    const url = await this.github.addPRComment(prKey, comment);
+                    console.log(`Added comment ${url.id} about ${branch}: ${url.url}`);
+                }
             }
         }
 
