@@ -649,9 +649,23 @@ export class CIHelper {
 
         let upstreamMergeCommit: string | undefined;
         const prLabelsToAdd: string[] = [];
+        const prLabelsToRemove: string[] = [];
         for (const branch of this.config.repo.trackingBranches) {
             const mergeCommit = await this.identifyMergeCommit(branch, tipCommitInGitGit);
+            const previousMergeCommit = prMeta.mergedIntoUpstream?.[branch];
             if (!mergeCommit) {
+                // The patch series used to be in this branch but no
+                // longer is (e.g., `seen` was rewound and ejected it):
+                // drop the label and inform the PR author.
+                if (previousMergeCommit !== undefined && prMeta.mergedIntoUpstream) {
+                    delete prMeta.mergedIntoUpstream[branch];
+                    notesUpdated = true;
+                    prLabelsToRemove.push(branch);
+
+                    const comment = `This patch series is no longer integrated into ${branch}.`;
+                    const url = await this.github.addPRComment(prKey, comment);
+                    console.log(`Added comment ${url.id} about ${branch} drop-out: ${url.url}`);
+                }
                 continue;
             }
 
@@ -662,7 +676,6 @@ export class CIHelper {
             if (!prMeta.mergedIntoUpstream) {
                 prMeta.mergedIntoUpstream = {};
             }
-            const previousMergeCommit = prMeta.mergedIntoUpstream[branch];
             if (previousMergeCommit !== mergeCommit) {
                 prMeta.mergedIntoUpstream[branch] = mergeCommit;
                 notesUpdated = true;
@@ -686,6 +699,9 @@ export class CIHelper {
 
         if (prLabelsToAdd.length) {
             await this.github.addPRLabels(prKey, prLabelsToAdd);
+        }
+        for (const label of prLabelsToRemove) {
+            await this.github.removePRLabel(prKey, label);
         }
 
         let optionsUpdated = false;
