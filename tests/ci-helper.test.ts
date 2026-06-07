@@ -5,6 +5,7 @@ import { GitNotes } from "../lib/git-notes.js";
 import { getConfig } from "../lib/gitgitgadget-config.js";
 import { GitHubGlue, IGitHubUser, IPRComment, IPRCommit, IPullRequestInfo } from "../lib/github-glue.js";
 import { IMailMetadata } from "../lib/mail-metadata.js";
+import { IPatchSeriesMetadata } from "../lib/patch-series-metadata.js";
 import { testSmtpServer } from "test-smtp-server";
 import { testCreateRepo, TestRepo } from "./test-lib.js";
 
@@ -59,6 +60,7 @@ class TestCIHelper extends CIHelper {
     public addPRCommentCalls: string[][]; // reference mock.calls
     public updatePRCalls: string[][]; // reference mock.calls
     public addPRLabelsCalls: Array<[_: string, labels: string[]]>;
+    public removePRLabelCalls: Array<[_: string, label: string]>;
 
     public constructor(workDir: string, debug = false, gggDir = ".") {
         super(workDir, config, debug, gggDir);
@@ -80,6 +82,11 @@ class TestCIHelper extends CIHelper {
         const addPRLabels = jest.fn(async (_: string, labels: string[]): Promise<string[]> => labels);
         this.ghGlue.addPRLabels = addPRLabels;
         this.addPRLabelsCalls = addPRLabels.mock.calls;
+
+        // eslint-disable-next-line @typescript-eslint/require-await
+        const removePRLabel = jest.fn(async (_: string, _label: string): Promise<void> => undefined);
+        this.ghGlue.removePRLabel = removePRLabel;
+        this.removePRLabelCalls = removePRLabel.mock.calls;
 
         // need keys to authenticate
         // this.ghGlue.ensureAuthenticated = async (): Promise<void> => {};
@@ -263,6 +270,67 @@ testQ("identify upstream commit", async () => {
     expect(bMetaNew?.originalCommit).toEqual(commitB);
     expect(bMetaNew?.commitInGitGit).toEqual(commitBNew);
 });
+
+testQ("handlePR comments when a branch first integrates a PR", async () => {
+    const { ci, pullRequestURL } = await mockHandlePR("-mi-new");
+    await ci.handlePR(pullRequestURL, { allowedUsers: [] });
+    expect(ci.addPRCommentCalls.some(([, body]) => /integrated into seen/.test(body))).toBe(true);
+});
+
+testQ("handlePR does not re-comment when an integration merge commit changes", async () => {
+    const { ci, pullRequestURL } = await mockHandlePR("-mi-old", { seen: "0".repeat(40) });
+    await ci.handlePR(pullRequestURL, { allowedUsers: [] });
+    expect(ci.addPRCommentCalls.some(([, body]) => /integrated into seen/.test(body))).toBe(false);
+});
+
+testQ("handlePR comments and removes the label when a PR drops out of a branch", async () => {
+    const { ci, pullRequestURL } = await mockHandlePR("-mi-out", { seen: "0".repeat(40) });
+    // eslint-disable-next-line @typescript-eslint/require-await
+    ci.identifyMergeCommit = async (): Promise<string | undefined> => undefined;
+    await ci.handlePR(pullRequestURL, { allowedUsers: [] });
+    expect(ci.removePRLabelCalls.map(([, label]) => label)).toContain("seen");
+    expect(ci.addPRCommentCalls.some(([, body]) => /no longer integrated into seen/.test(body))).toBe(true);
+    // The branch entry must actually be dropped from the persisted notes,
+    // not just labelled/commented; otherwise we would re-comment forever.
+    expect((await ci.getPRMetadata(pullRequestURL))?.mergedIntoUpstream?.seen).toBeUndefined();
+});
+
+async function mockHandlePR(
+    suffix: string,
+    mergedIntoUpstream?: { [branch: string]: string },
+): Promise<{ ci: TestCIHelper; pullRequestURL: string }> {
+    const repo = await testCreateRepo(sourceFileName, suffix);
+    const remote = await testCreateRepo(sourceFileName, `${suffix}-rmt`);
+    await repo.git(["config", `url.${remote.workDir}.insteadOf`, "https://github.com/gitgitgadget/git"]);
+
+    const pullRequestURL = "https://github.com/gitgitgadget/git/pull/1";
+    const messageID = "msg@example.com";
+    const commitInGitGit = "cafef00d".repeat(5);
+
+    await new GitNotes(repo.workDir).set<IPatchSeriesMetadata>(pullRequestURL, {
+        pullRequestURL,
+        baseCommit: "0".repeat(40),
+        baseLabel: "x:master",
+        headCommit: "0".repeat(40),
+        headLabel: "y:branch",
+        iteration: 1,
+        coverLetterMessageId: messageID,
+        ...(mergedIntoUpstream ? { mergedIntoUpstream } : {}),
+    });
+
+    // skipUpdate=true skips all the git plumbing (notes fetch, branch
+    // fetch); stub the lookups that handlePR depends on so we only
+    // exercise the "previous integration" decision.
+    const ci = new TestCIHelper(repo.workDir, true);
+    /* eslint-disable @typescript-eslint/require-await */
+    ci.getMessageIdForOriginalCommit = async (): Promise<string> => messageID;
+    ci.getMailMetadata = async (): Promise<IMailMetadata> => ({ messageID, commitInGitGit });
+    ci.identifyMergeCommit = async (b: string): Promise<string | undefined> =>
+        b === "seen" ? "deadbeef".repeat(5) : undefined;
+    /* eslint-enable @typescript-eslint/require-await */
+
+    return { ci, pullRequestURL };
+}
 
 testQ("handle comment allow basic test", async () => {
     const { worktree, gggLocal } = await setupRepos("a1");

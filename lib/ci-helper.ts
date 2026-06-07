@@ -649,9 +649,23 @@ export class CIHelper {
 
         let upstreamMergeCommit: string | undefined;
         const prLabelsToAdd: string[] = [];
+        const prLabelsToRemove: string[] = [];
         for (const branch of this.config.repo.trackingBranches) {
             const mergeCommit = await this.identifyMergeCommit(branch, tipCommitInGitGit);
+            const previousMergeCommit = prMeta.mergedIntoUpstream?.[branch];
             if (!mergeCommit) {
+                // The patch series used to be in this branch but no
+                // longer is (e.g., `seen` was rewound and ejected it):
+                // drop the label and inform the PR author.
+                if (previousMergeCommit !== undefined && prMeta.mergedIntoUpstream) {
+                    delete prMeta.mergedIntoUpstream[branch];
+                    notesUpdated = true;
+                    prLabelsToRemove.push(branch);
+
+                    const comment = `This patch series is no longer integrated into ${branch}.`;
+                    const url = await this.github.addPRComment(prKey, comment);
+                    console.log(`Added comment ${url.id} about ${branch} drop-out: ${url.url}`);
+                }
                 continue;
             }
 
@@ -662,24 +676,32 @@ export class CIHelper {
             if (!prMeta.mergedIntoUpstream) {
                 prMeta.mergedIntoUpstream = {};
             }
-            if (prMeta.mergedIntoUpstream[branch] !== mergeCommit) {
+            if (previousMergeCommit !== mergeCommit) {
                 prMeta.mergedIntoUpstream[branch] = mergeCommit;
                 notesUpdated = true;
 
                 // Add label on GitHub
                 prLabelsToAdd.push(branch);
 
-                // Add comment on GitHub
-                const comment = `This patch series was integrated into ${branch} via https://github.com/${
-                    this.config.repo.upstreamOwner
-                }/${this.config.repo.name}/commit/${mergeCommit}.`;
-                const url = await this.github.addPRComment(prKey, comment);
-                console.log(`Added comment ${url.id} about ${branch}: ${url.url}`);
+                // Only comment when the branch is newly integrated, i.e. when
+                // the label is not there yet. When the merge commit merely
+                // changes (e.g. due to a rebase), the label is already present,
+                // so we update the notes silently.
+                if (previousMergeCommit === undefined) {
+                    const comment = `This patch series was integrated into ${branch} via https://github.com/${
+                        this.config.repo.upstreamOwner
+                    }/${this.config.repo.name}/commit/${mergeCommit}.`;
+                    const url = await this.github.addPRComment(prKey, comment);
+                    console.log(`Added comment ${url.id} about ${branch}: ${url.url}`);
+                }
             }
         }
 
         if (prLabelsToAdd.length) {
             await this.github.addPRLabels(prKey, prLabelsToAdd);
+        }
+        for (const label of prLabelsToRemove) {
+            await this.github.removePRLabel(prKey, label);
         }
 
         let optionsUpdated = false;

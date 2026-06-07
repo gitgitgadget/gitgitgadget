@@ -1,5 +1,6 @@
 import addressparser from "nodemailer/lib/addressparser/index.js";
 import { Octokit } from "@octokit/rest";
+import { RequestError } from "@octokit/request-error";
 import { git, gitConfig } from "./git.js";
 import { getPullRequestKey, pullRequestKeyInfo, pullRequestKey } from "./pullRequestKey.js";
 export { RequestError } from "@octokit/request-error";
@@ -287,6 +288,25 @@ export class GitHubGlue {
             repo: prKey.repo,
         });
         return result.data.map((res: { id: number }) => `${res.id}`);
+    }
+
+    public async removePRLabel(pullRequest: pullRequestKeyInfo, label: string): Promise<void> {
+        const prKey = getPullRequestKey(pullRequest);
+
+        await this.ensureAuthenticated(prKey.owner);
+        try {
+            await this.client.rest.issues.removeLabel({
+                issue_number: prKey.pull_number,
+                name: label,
+                owner: prKey.owner,
+                repo: prKey.repo,
+            });
+        } catch (e) {
+            // Tolerate the label already being absent so that handlePR
+            // can still persist the updated notes on a retry.
+            if (e instanceof RequestError && e.status === 404) return;
+            throw e;
+        }
     }
 
     public async closePRAsMerged(pullRequest: pullRequestKeyInfo, mergeCommit: string): Promise<number> {
