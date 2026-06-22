@@ -75,7 +75,7 @@
     "eslint-plugin-jest": "^29.15.2",
     "eslint-plugin-jsdoc": "^63.0.2",
     "eslint-plugin-prettier": "^5.5.6",
-    "eslint-plugin-security": "^4.0.0",
+    "eslint-plugin-security": "^4.0.1",
     "globals": "^17.6.0",
     "jest": "^30.4.2",
     "jest-junit": "^17.0.0",
