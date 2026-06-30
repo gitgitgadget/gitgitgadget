@@ -67,7 +67,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mailparser": "^3.4.6",
     "@types/node": "^26.0.1",
-    "@types/nodemailer": "^8.0.0",
+    "@types/nodemailer": "^8.0.1",
     "@types/rfc2047": "^2.0.3",
     "@vercel/ncc": "^0.44.0",
     "eslint": "^10.6.0",
