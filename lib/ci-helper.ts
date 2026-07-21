@@ -87,6 +87,7 @@ export class CIHelper {
 
     public async setupGitHubAction(setupOptions?: {
         needsMailingListMirror?: boolean;
+        needsOpenPRHeads?: boolean;
         needsUpstreamBranches?: boolean;
         needsMailToCommitNotes?: boolean;
     }): Promise<void> {
@@ -189,6 +190,8 @@ export class CIHelper {
                 },
             );
             console.timeEnd("fetch upstream branches");
+        }
+        if (setupOptions?.needsOpenPRHeads) {
             console.time("get open PR head commits");
             const openPRCommits = (
                 await Promise.all(
