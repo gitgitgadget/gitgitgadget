@@ -4,6 +4,7 @@ async function run() {
   const ci = new CIHelper()
 
   await ci.setupGitHubAction({
+    needsOpenPRHeads: true,
     needsUpstreamBranches: true,
   })
   await ci.updateOpenPrs()
