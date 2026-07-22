@@ -168,6 +168,46 @@ async function setupRepos(instance: string): Promise<{ worktree: TestRepo; gggLo
     return { worktree, gggLocal, gggRemote };
 }
 
+testQ("setup GitHub Action only fetches open PR heads when requested", async () => {
+    const gitConfigParameters = process.env.GIT_CONFIG_PARAMETERS;
+    const withoutOpenPRHeads = await setupRepos("setup-no-pr-heads");
+    const withOpenPRHeads = await setupRepos("setup-pr-heads");
+    const ciWithoutOpenPRHeads = new TestCIHelper(
+        withoutOpenPRHeads.gggLocal.workDir,
+        false,
+        withoutOpenPRHeads.worktree.workDir,
+    );
+    const getOpenPRsWithoutOpenPRHeads = jest.fn((_repositoryOwner: string) => Promise.resolve<IPullRequestInfo[]>([]));
+    ciWithoutOpenPRHeads.ghGlue.getOpenPRs = getOpenPRsWithoutOpenPRHeads;
+
+    await ciWithoutOpenPRHeads.setupGitHubAction({ needsUpstreamBranches: true });
+
+    expect(getOpenPRsWithoutOpenPRHeads).not.toHaveBeenCalled();
+    expect(await withoutOpenPRHeads.gggLocal.revParse("refs/remotes/upstream/seen")).toEqual(
+        await withoutOpenPRHeads.gggRemote.revParse("seen"),
+    );
+
+    const ciWithOpenPRHeads = new TestCIHelper(
+        withOpenPRHeads.gggLocal.workDir,
+        false,
+        withOpenPRHeads.worktree.workDir,
+    );
+    const getOpenPRsWithOpenPRHeads = jest.fn((_repositoryOwner: string) => Promise.resolve<IPullRequestInfo[]>([]));
+    ciWithOpenPRHeads.ghGlue.getOpenPRs = getOpenPRsWithOpenPRHeads;
+
+    await ciWithOpenPRHeads.setupGitHubAction({
+        needsOpenPRHeads: true,
+        needsUpstreamBranches: true,
+    });
+
+    expect(getOpenPRsWithOpenPRHeads.mock.calls.map(([owner]) => owner)).toEqual(config.app.installedOn);
+    if (gitConfigParameters === undefined) {
+        delete process.env.GIT_CONFIG_PARAMETERS;
+    } else {
+        process.env.GIT_CONFIG_PARAMETERS = gitConfigParameters;
+    }
+});
+
 /**
  * Check the mail server for an email.
  *
