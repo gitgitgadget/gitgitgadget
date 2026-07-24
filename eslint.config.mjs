@@ -12,7 +12,6 @@ export default defineConfig([
   {
     // ignore these directories and files (not included on command line)
     ignores: ["**/build/**"],
-    ignores: ["**/tests-config/**"],
   },
   tseslint.configs.recommended,
   eslintPluginSecurity.configs.recommended,
