@@ -1,4 +1,4 @@
-import { expect, jest, test } from "@jest/globals";
+import { expect, test } from "vitest";
 import { fileURLToPath } from "url";
 import { git } from "../lib/git.js";
 import { getConfig } from "../lib/gitgitgadget-config.js";
@@ -8,7 +8,6 @@ import * as util from "util";
 
 const execChild = util.promisify(execFile);
 
-jest.setTimeout(180000);
 const sourceFileName = fileURLToPath(import.meta.url);
 
 const config = getConfig();

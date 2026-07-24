@@ -1,6 +1,6 @@
 import { Octokit } from "@octokit/rest";
 import { OctokitResponse } from "@octokit/types";
-import { expect, jest, test } from "@jest/globals";
+import { expect, test, vi } from "vitest";
 import { fileURLToPath } from "url";
 import { GitNotes } from "../lib/git-notes.js";
 import { GitHubGlue } from "../lib/github-glue.js";
@@ -36,7 +36,6 @@ class GitHubProxy extends GitHubGlue {
     }
 }
 
-jest.setTimeout(180000);
 const sourceFileName = fileURLToPath(import.meta.url);
 
 // Minimal interfaces for github responses
@@ -214,7 +213,7 @@ This Pull Request contains some ipsum lorem.
         "master",
     );
 
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     await mail.processMails();
     expect(logSpy).toHaveBeenCalledTimes(1); // verify no more errors
     logSpy.mockRestore();
@@ -256,7 +255,7 @@ This Pull Request contains some ipsum lorem.
         "master",
     );
 
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     await mail.processMails();
     expect(logSpy).toHaveBeenCalledTimes(2); // verify no more errors
     expect(logSpy.mock.calls[1][0]).toMatch(/Already handled:/);
@@ -329,7 +328,7 @@ This Pull Request contains some ipsum lorem.
         return issueCommentResponse; // dummy
     });
 
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     await mail.processMails();
     expect(logSpy).toHaveBeenCalledTimes(2); // verify no more errors
     logSpy.mockRestore();
@@ -427,7 +426,7 @@ This Pull Request contains some ipsum lorem.
         return issueCommentResponse; // dummy
     });
 
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     await mail.processMails();
     expect(logSpy).toHaveBeenCalledTimes(3); // verify no more errors
     logSpy.mockRestore();
@@ -522,7 +521,7 @@ This Pull Request contains some ipsum lorem.
         return issueCommentResponse; // dummy
     });
 
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     await mail.processMails();
     expect(logSpy).toHaveBeenCalledTimes(2); // verify no more errors
     logSpy.mockRestore();
@@ -607,7 +606,7 @@ This Pull Request contains some ipsum lorem.
         return issueCommentResponse; // dummy
     });
 
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     await mail.processMails();
     expect(logSpy).toHaveBeenCalledTimes(2); // verify no more errors
     logSpy.mockRestore();
@@ -674,7 +673,7 @@ It has multiple lines.
         return issueCommentResponse;
     });
 
-    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     await mail.processMails();
     logSpy.mockRestore();
 

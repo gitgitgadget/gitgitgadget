@@ -1,4 +1,4 @@
-import { expect, test } from "@jest/globals";
+import { expect, test } from "vitest";
 import { MailArchiveGitHelper } from "../lib/mail-archive-helper.js";
 import { parseMBox, parseMBoxMessageIDAndReferences } from "../lib/send-mail.js";
 

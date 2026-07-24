@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, expect, jest, test } from "@jest/globals";
+import { afterAll, beforeAll, expect, test, vi } from "vitest";
 import { fileURLToPath } from "url";
 import { CIHelper } from "../lib/ci-helper.js";
 import { GitNotes } from "../lib/git-notes.js";
@@ -11,14 +11,12 @@ import { testCreateRepo, TestRepo } from "./test-lib.js";
 
 const sourceFileName = fileURLToPath(import.meta.url);
 
-jest.setTimeout(180000);
-
 // Only show the `console.log()` output when a test failed
 declare type AsyncFn = () => Promise<void>;
 function testQ(label: string, fn: AsyncFn) {
     test(label, async () => {
         const originalConsoleLog = console.log;
-        const mockLog = jest.fn();
+        const mockLog = vi.fn();
         try {
             console.log = mockLog;
             await fn();
@@ -69,22 +67,22 @@ class TestCIHelper extends CIHelper {
 
         const commentInfo = { id: 1, url: "ok" };
         // eslint-disable-next-line @typescript-eslint/require-await
-        const addPRComment = jest.fn(async (): Promise<{ id: number; url: string }> => commentInfo);
+        const addPRComment = vi.fn(async (): Promise<{ id: number; url: string }> => commentInfo);
         this.ghGlue.addPRComment = addPRComment;
         this.addPRCommentCalls = addPRComment.mock.calls;
 
         // eslint-disable-next-line @typescript-eslint/require-await
-        const updatePR = jest.fn(async (): Promise<number> => 1);
+        const updatePR = vi.fn(async (): Promise<number> => 1);
         this.ghGlue.updatePR = updatePR;
         this.updatePRCalls = updatePR.mock.calls;
 
         // eslint-disable-next-line @typescript-eslint/require-await
-        const addPRLabels = jest.fn(async (_: string, labels: string[]): Promise<string[]> => labels);
+        const addPRLabels = vi.fn(async (_: string, labels: string[]): Promise<string[]> => labels);
         this.ghGlue.addPRLabels = addPRLabels;
         this.addPRLabelsCalls = addPRLabels.mock.calls;
 
         // eslint-disable-next-line @typescript-eslint/require-await
-        const removePRLabel = jest.fn(async (_: string, _label: string): Promise<void> => undefined);
+        const removePRLabel = vi.fn(async (_: string, _label: string): Promise<void> => undefined);
         this.ghGlue.removePRLabel = removePRLabel;
         this.removePRLabelCalls = removePRLabel.mock.calls;
 
@@ -94,22 +92,22 @@ class TestCIHelper extends CIHelper {
 
     public setGHGetPRInfo(o: IPullRequestInfo): void {
         // eslint-disable-next-line @typescript-eslint/require-await
-        this.ghGlue.getPRInfo = jest.fn(async (): Promise<IPullRequestInfo> => o);
+        this.ghGlue.getPRInfo = vi.fn(async (): Promise<IPullRequestInfo> => o);
     }
 
     public setGHGetPRComment(o: IPRComment): void {
         // eslint-disable-next-line @typescript-eslint/require-await
-        this.ghGlue.getPRComment = jest.fn(async (): Promise<IPRComment> => o);
+        this.ghGlue.getPRComment = vi.fn(async (): Promise<IPRComment> => o);
     }
 
     public setGHGetPRCommits(o: IPRCommit[]): void {
         // eslint-disable-next-line @typescript-eslint/require-await
-        this.ghGlue.getPRCommits = jest.fn(async (): Promise<IPRCommit[]> => o);
+        this.ghGlue.getPRCommits = vi.fn(async (): Promise<IPRCommit[]> => o);
     }
 
     public setGHGetGitHubUserInfo(o: IGitHubUser): void {
         // eslint-disable-next-line @typescript-eslint/require-await
-        this.ghGlue.getGitHubUserInfo = jest.fn(async (): Promise<IGitHubUser> => o);
+        this.ghGlue.getGitHubUserInfo = vi.fn(async (): Promise<IGitHubUser> => o);
     }
 
     public addMaxCommitsException(pullRequestURL: string): void {
@@ -177,7 +175,7 @@ testQ("setup GitHub Action only fetches open PR heads when requested", async () 
         false,
         withoutOpenPRHeads.worktree.workDir,
     );
-    const getOpenPRsWithoutOpenPRHeads = jest.fn((_repositoryOwner: string) => Promise.resolve<IPullRequestInfo[]>([]));
+    const getOpenPRsWithoutOpenPRHeads = vi.fn((_repositoryOwner: string) => Promise.resolve<IPullRequestInfo[]>([]));
     ciWithoutOpenPRHeads.ghGlue.getOpenPRs = getOpenPRsWithoutOpenPRHeads;
 
     await ciWithoutOpenPRHeads.setupGitHubAction({ needsUpstreamBranches: true });
@@ -192,7 +190,7 @@ testQ("setup GitHub Action only fetches open PR heads when requested", async () 
         false,
         withOpenPRHeads.worktree.workDir,
     );
-    const getOpenPRsWithOpenPRHeads = jest.fn((_repositoryOwner: string) => Promise.resolve<IPullRequestInfo[]>([]));
+    const getOpenPRsWithOpenPRHeads = vi.fn((_repositoryOwner: string) => Promise.resolve<IPullRequestInfo[]>([]));
     ciWithOpenPRHeads.ghGlue.getOpenPRs = getOpenPRsWithOpenPRHeads;
 
     await ciWithOpenPRHeads.setupGitHubAction({

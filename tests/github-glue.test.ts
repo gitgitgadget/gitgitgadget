@@ -1,6 +1,6 @@
 import { Octokit } from "@octokit/rest";
 import { OctokitResponse } from "@octokit/types";
-import { beforeAll, expect, jest, test } from "@jest/globals";
+import { beforeAll, expect, test, vi } from "vitest";
 import { git, gitConfig } from "../lib/git.js";
 import { GitHubGlue, IGitHubUser, IPullRequestInfo } from "../lib/github-glue.js";
 import { pullRequestKey } from "../lib/pullRequestKey.js";
@@ -46,8 +46,6 @@ class GitHubProxy extends GitHubGlue {
         this.authenticated = repositoryOwner;
     }
 }
-
-jest.setTimeout(180000);
 
 let owner: string;
 let repo: string;
@@ -252,10 +250,10 @@ test("add PR cc requests", async () => {
 
     const commentInfo = { id: 1, url: "ok" };
     // eslint-disable-next-line @typescript-eslint/require-await
-    github.addPRComment = jest.fn(async (): Promise<{ id: number; url: string }> => commentInfo);
+    github.addPRComment = vi.fn(async (): Promise<{ id: number; url: string }> => commentInfo);
 
     // eslint-disable-next-line @typescript-eslint/require-await
-    const updatePR = jest.fn(async (_prKey, body: string): Promise<number> => {
+    const updatePR = vi.fn(async (_prKey, body: string): Promise<number> => {
         prInfo.body = body; // set new body for next test
         return 1;
     });
@@ -263,7 +261,7 @@ test("add PR cc requests", async () => {
     github.updatePR = updatePR;
 
     // eslint-disable-next-line @typescript-eslint/require-await
-    github.getPRInfo = jest.fn(async (): Promise<IPullRequestInfo> => prInfo);
+    github.getPRInfo = vi.fn(async (): Promise<IPullRequestInfo> => prInfo);
 
     const ghUser = {
         email: "joe_kerr@example.org",
@@ -273,7 +271,7 @@ test("add PR cc requests", async () => {
     };
 
     // eslint-disable-next-line @typescript-eslint/require-await
-    github.getGitHubUserInfo = jest.fn(async (): Promise<IGitHubUser> => ghUser);
+    github.getGitHubUserInfo = vi.fn(async (): Promise<IGitHubUser> => ghUser);
 
     // Test cc update to PR
     const prCc = "Not Real <ReallyNot@saturn.cosmos>";

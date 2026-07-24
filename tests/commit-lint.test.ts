@@ -1,9 +1,7 @@
-import { expect, jest, test } from "@jest/globals";
+import { expect, test } from "vitest";
 import { ILintError, LintCommit } from "../lib/commit-lint.js";
 import { IPRCommit } from "../lib/github-glue.js";
 import { ILintCommitConfig } from "../lib/project-config.js";
-
-jest.setTimeout(180000);
 
 /**
  * Check one commit's linter result
