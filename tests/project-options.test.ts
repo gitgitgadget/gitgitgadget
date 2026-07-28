@@ -1,4 +1,4 @@
-import { expect, jest, test } from "@jest/globals";
+import { expect, test } from "vitest";
 import { fileURLToPath } from "url";
 import { isDirectory } from "../lib/fs-util.js";
 import { GitNotes } from "../lib/git-notes.js";
@@ -8,8 +8,6 @@ import { ProjectOptions } from "../lib/project-options.js";
 import { testCreateRepo } from "./test-lib.js";
 import defaultConfig from "../lib/gitgitgadget-config.js";
 
-// This test script might take quite a while to run
-jest.setTimeout(20000);
 const sourceFileName = fileURLToPath(import.meta.url);
 
 getConfig();

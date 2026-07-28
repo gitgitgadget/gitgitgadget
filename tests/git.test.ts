@@ -1,8 +1,6 @@
-import { expect, jest, test } from "@jest/globals";
+import { expect, test } from "vitest";
 import { git, gitConfig } from "../lib/git.js";
 import logger from "./logger.js";
-
-jest.setTimeout(180000);
 
 // init config in env
 const configCount = 20;
@@ -53,12 +51,12 @@ test("sequencing", async () => {
 
     const lineHandler = async (line: string): Promise<void> => {
         waitTime--;
-        await sleep(waitTime * 50 + (waitTime % 2) * 60); // odd/even have different waits
+        await sleep(Math.abs(waitTime * 50 + (waitTime % 2) * 60)); // odd/even have different waits
         buffer += `${line}\n`;
     };
 
-    expect(await git(["config", "--get-regexp", "TEST"], { lineHandler })).toMatch("");
-    expect(await git(["config", "--get-regexp", "TEST"], { trimTrailingNewline: false })).toEqual(buffer);
+    expect(await git(["config", "--get-regexp", "^TEST"], { lineHandler })).toMatch("");
+    expect(await git(["config", "--get-regexp", "^TEST"], { trimTrailingNewline: false })).toEqual(buffer);
 });
 
 test("slow stdout", async () => {

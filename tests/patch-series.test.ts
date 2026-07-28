@@ -1,4 +1,4 @@
-import { expect, jest, test } from "@jest/globals";
+import { expect, test, vi } from "vitest";
 import { fileURLToPath } from "url";
 import { getConfig } from "../lib/gitgitgadget-config.js";
 import { git } from "../lib/git.js";
@@ -8,7 +8,6 @@ import { ProjectOptions } from "../lib/project-options.js";
 import { testCreateRepo } from "./test-lib.js";
 import defaultConfig from "../lib/gitgitgadget-config.js";
 
-jest.setTimeout(60000);
 const sourceFileName = fileURLToPath(import.meta.url);
 
 getConfig();
@@ -236,7 +235,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("different MIME-Version headers write to log", () => {
             const mails1 = [mimeBox2];
-            const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+            const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
             PatchSeries.cleanUpHeaders(mails1);
 
@@ -276,7 +275,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("different Content-Type headers write to log", () => {
             const mails1 = [contentTypeBox2];
-            const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+            const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
             PatchSeries.cleanUpHeaders(mails1);
 
@@ -331,7 +330,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("different Content-Transfer-Encoding headers write to log", () => {
             const mails1 = [contentTransferEncodingBox2];
-            const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+            const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
             PatchSeries.cleanUpHeaders(mails1);
 
@@ -370,7 +369,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("different Content-Description headers write to log", () => {
             const mails1 = [contentDescriptionBox2];
-            const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+            const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
             PatchSeries.cleanUpHeaders(mails1);
 
@@ -409,7 +408,7 @@ Fetch-It-Via: git fetch ${repoUrl} my-series-v1
         ].join("\n");
         test("different Content-ID headers write to log", () => {
             const mails1 = [contentIDBox2];
-            const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+            const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
             PatchSeries.cleanUpHeaders(mails1);
 

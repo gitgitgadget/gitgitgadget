@@ -1,4 +1,4 @@
-import { expect, jest, test } from "@jest/globals";
+import { expect, test } from "vitest";
 import { fileURLToPath } from "url";
 import { isDirectory } from "../lib/fs-util.js";
 import { emptyBlobName, git, revParse } from "../lib/git.js";
@@ -6,8 +6,6 @@ import { GitNotes, POJO } from "../lib/git-notes.js";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata.js";
 import { testCreateRepo } from "./test-lib.js";
 
-// This test script might take quite a while to run
-jest.setTimeout(60000);
 const sourceFileName = fileURLToPath(import.meta.url);
 
 test("set/get notes", async () => {
