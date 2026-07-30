@@ -1,3 +1,5 @@
+import { access } from "node:fs/promises";
+import path from "node:path";
 import { afterAll, beforeAll, expect, test, vi } from "vitest";
 import { fileURLToPath } from "url";
 import { CIHelper } from "../lib/ci-helper.js";
@@ -1377,4 +1379,42 @@ testQ("Handle comment cc", async () => {
 
     expect(ci.updatePRCalls[0][ci.updatePRCalls[0].length - 1]).toMatch(/S Body/);
     expect(ci.updatePRCalls).toHaveLength(1);
+});
+
+testQ("Test run the ncc compiled file", async () => {
+    const dirName = path.dirname(fileURLToPath(import.meta.url)); // set path to ncc generated index.js
+    const index = path.join(dirName, "..", "dist", "index.js");
+
+    let found = true;
+    try {
+        await access(index);
+    } catch {
+        console.log(`NCC build not found at ${index}`);
+        found = false;
+    }
+
+    if (found) {
+        process.env.LOCAL_GIT_DIRECTORY = "./node_modules/dugite/git";
+        const { worktree, gggLocal } = await setupRepos("action1");
+
+        /* eslint-disable-next-line @typescript-eslint/naming-convention,
+            @typescript-eslint/no-unsafe-assignment,
+            no-shadow
+        */
+        const { CIHelper } = await import(index);
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+        const ci = new CIHelper(gggLocal.workDir, config, false, worktree.workDir);
+
+        const gitConfigParameters = process.env.GIT_CONFIG_PARAMETERS;
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+        await ci.setupGitHubAction();
+
+        if (gitConfigParameters === undefined) {
+            delete process.env.GIT_CONFIG_PARAMETERS;
+        } else {
+            process.env.GIT_CONFIG_PARAMETERS = gitConfigParameters;
+        }
+    }
 });

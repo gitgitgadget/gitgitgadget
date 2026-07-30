@@ -12,9 +12,11 @@
   "type": "module",
   "scripts": {
     "build": "npm run build:dev && npm run build:test",
+    "build:all": "npm run build:dev && npm run build:test && npm run build:dist",
     "build:dev": "ttsc",
+    "build:dist": "ncc build -s -m ./build/lib/ci-helper.js -o dist",
     "build:test": "ttsc --tsconfig tests/tsconfig.json",
-    "build-dist": "ncc build -s -m ./lib/ci-helper.ts -o dist",
+    "build-dist": "npm run build:dev && npm run build:dist",
     "cleanbranch": "node ./build/script/delete-test-branches.js",
     "lint": "eslint \"{lib,script,tests}/**/*.{ts,tsx,mjs,js}\" \"*/index.js\" --ignore-pattern \"dist/**/*\"",
     "start": "node server.js",
