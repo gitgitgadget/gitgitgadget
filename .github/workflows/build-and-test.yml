@@ -110,7 +110,7 @@ jobs:
       working-directory: gitgitgadget
 
     - name: Run build
-      run: npm run build
+      run: npm run build:all
       working-directory: gitgitgadget
 
     - name: Run tests
