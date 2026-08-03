@@ -1,6 +1,7 @@
 import { access } from "node:fs/promises";
 import path from "node:path";
 import { afterAll, beforeAll, expect, test, vi } from "vitest";
+import { ParsedMail } from "mailparser";
 import { fileURLToPath } from "url";
 import { CIHelper } from "../lib/ci-helper.js";
 import { GitNotes } from "../lib/git-notes.js";
@@ -224,6 +225,25 @@ async function checkMsgId(messageId: string): Promise<boolean> {
     }
 
     return false;
+}
+
+/**
+ * Get a parsed email from the mail server.
+ *
+ * @param messageId string to search for
+ * @returns ParsedMail
+ */
+async function getMail(messageId: string): Promise<ParsedMail> {
+    const mails = eMailOptions.smtpserver.getEmails();
+
+    for (const mail of mails) {
+        const parsed = await mail.getParsed();
+        if (parsed.messageId?.match(messageId)) {
+            return parsed;
+        }
+    }
+
+    throw new Error(`Message ${messageId} not found`);
 }
 
 testQ("identify merge that integrated some commit", async () => {
@@ -643,21 +663,21 @@ testQ("handle comment submit not mergeable", async () => {
     expect(ci.addPRCommentCalls[0][1]).toMatch(/does not merge cleanly/);
 });
 
-testQ("handle comment submit email success", async () => {
+testQ("handle multiple submit comments with email success", async () => {
     const { worktree, gggLocal, gggRemote } = await setupRepos("s3");
 
     const ci = new TestCIHelper(gggLocal.workDir, false, worktree.workDir);
     const prNumber = 59;
 
     const template = "fine template\r\nnew line";
-    // add template to master repo
+    // add template to master repo and establish base
     await gggRemote.commit("temple", ".github//PULL_REQUEST_TEMPLATE.md", template);
-    const commitA = await gggRemote.revParse("HEAD");
-    expect(commitA).not.toBeUndefined();
+    const commitBase = await gggRemote.revParse("HEAD");
+    expect(commitBase).not.toBeUndefined();
 
     // Now come up with a local change
     await worktree.git(["pull", gggRemote.workDir, "master"]);
-    const commitB = await worktree.commit("b");
+    const commitV1 = await worktree.commit("version1_part1");
 
     // get the pr refs in place
     const pullRequestRef = `refs/pull/${prNumber}`;
@@ -699,13 +719,13 @@ testQ("handle comment submit email success", async () => {
     ];
     const prInfo = {
         author: "ggg",
-        baseCommit: commitA,
+        baseCommit: commitBase,
         baseLabel: "gitgitgadget:next",
         baseOwner: "gitgitgadget",
         baseRepo: "git",
         body: `Super body\r\n${template}\r\nCc: Copy One <copy@cat.com>\r\nCc: Copy Two <copycat@cat.com>`,
         hasComments: true,
-        headCommit: commitB,
+        headCommit: commitV1,
         headLabel: "somebody:master",
         mergeable: true,
         number: prNumber,
@@ -724,9 +744,64 @@ testQ("handle comment submit email success", async () => {
 
     const msgId = ci.addPRCommentCalls[0][1].match(/\[(.*)\]/);
     expect(msgId).not.toBeUndefined();
+    let firstMsgId = "";
+
     if (msgId && msgId[1]) {
         const msgFound = await checkMsgId(msgId[1]);
         expect(msgFound).toBeTruthy();
+        firstMsgId = msgId[1];
+    }
+
+    prInfo.headCommit = await worktree.commit("version2_part1"); // add a version and part
+    ci.setGHGetPRInfo(prInfo);
+
+    await gggRemote.git([
+        "fetch",
+        worktree.workDir,
+        `refs/heads/master:${pullRequestRef}/head`,
+        `refs/heads/master:${pullRequestRef}/merge`,
+    ]); // add to remote
+
+    await ci.handleComment("gitgitgadget", 433865360);
+
+    // Add a new version and two parts
+    await worktree.commit("version3_part1");
+    prInfo.headCommit = await worktree.commit("version3_part2");
+    ci.setGHGetPRInfo(prInfo);
+
+    await gggRemote.git([
+        "fetch",
+        worktree.workDir,
+        `refs/heads/master:${pullRequestRef}/head`,
+        `refs/heads/master:${pullRequestRef}/merge`,
+    ]); // add to remote
+
+    await ci.handleComment("gitgitgadget", 433865360);
+
+    // verify the two submits are replying to the original email
+
+    const msgId2 = ci.addPRCommentCalls[1][1].match(/\[(.*)\]/);
+    expect(msgId2).not.toBeUndefined();
+    const msgId3 = ci.addPRCommentCalls[2][1].match(/\[(.*)\]/);
+    expect(msgId3).not.toBeUndefined();
+
+    if (msgId2 && msgId2[1] && msgId3 && msgId3[1]) {
+        expect((await getMail(msgId2[1])).inReplyTo).toMatch(firstMsgId);
+        expect((await getMail(msgId3[1])).inReplyTo).toMatch(firstMsgId);
+    } else {
+        const mails = eMailOptions.smtpserver.getEmails();
+
+        for (const mail of mails) {
+            // print some diagnostics
+            const parsed = await mail.getParsed();
+            console.log("subject: ", parsed.subject);
+            console.log("messageId: ", parsed.messageId);
+            console.log("inReplyTo: ", parsed.inReplyTo);
+            console.log("references: ", parsed.references);
+            console.log("text: ", parsed.text);
+        }
+
+        throw new Error(`Messages not found`);
     }
 });
 
