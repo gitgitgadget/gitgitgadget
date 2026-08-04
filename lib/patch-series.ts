@@ -879,9 +879,7 @@ export class PatchSeries {
             args.push("--cc=" + PatchSeries.encodeSender(email));
         });
         if (this.metadata.referencesMessageIds) {
-            this.metadata.referencesMessageIds.map((email) => {
-                args.push("--in-reply-to=" + email);
-            });
+            args.push("--in-reply-to=" + this.metadata.referencesMessageIds[0]);
         }
         const subjectPrefix = this.subjectPrefix();
         if (subjectPrefix) {
