@@ -105,6 +105,28 @@ jobs:
       run: npm ci
       working-directory: gitgitgadget
 
+    - name: Gen version string
+      uses: actions/github-script@v9
+      id: cache-id
+      with:
+        script: |
+            const packageJson = require('./gitgitgadget/package.json');
+            const tsc = packageJson.devDependencies["@typescript/native"];
+            const ttsc = packageJson.devDependencies["ttsc"];
+            const typia = packageJson.devDependencies["typia"];
+
+            return tsc + ttsc + typia;
+
+    # Restore and prepare ttsc cache
+    - uses: actions/cache@v4
+      with:
+        path: ./gitgitgadget/node_modules/.cache/ttsc
+        key: ${{ runner.os }}-${{ runner.arch }}-ttsc-${{steps.cache-id.outputs.result}}
+        restore-keys: |
+          ${{ runner.os }}-${{ runner.arch }}-ttsc-
+    - run: npx ttsc prepare
+      working-directory: gitgitgadget
+
     - name: Run linter
       run: npm run lint
       working-directory: gitgitgadget
