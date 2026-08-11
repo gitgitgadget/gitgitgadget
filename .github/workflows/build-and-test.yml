@@ -118,7 +118,7 @@ jobs:
             return tsc + ttsc + typia;
 
     # Restore and prepare ttsc cache
-    - uses: actions/cache@v4
+    - uses: actions/cache@v6
       with:
         path: ./gitgitgadget/node_modules/.cache/ttsc
         key: ${{ runner.os }}-${{ runner.arch }}-ttsc-${{steps.cache-id.outputs.result}}
