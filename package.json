@@ -49,7 +49,7 @@
     "eslint-plugin-security": "^4.0.1",
     "globals": "^17.9.0",
     "test-smtp-server": "0.9.11",
-    "ttsc": "^0.21.0",
+    "ttsc": "^0.25.0",
     "typescript": "npm:@typescript/typescript6@6.0.2",
     "typescript-eslint": "8.66.0",
     "typia": "^13.2.0",
