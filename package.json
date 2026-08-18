@@ -37,7 +37,7 @@
     "@types/imap-simple": "^4.2.10",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mailparser": "^3.4.6",
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.2.0",
     "@types/nodemailer": "^8.0.1",
     "@types/rfc2047": "^2.0.3",
     "@typescript/native": "npm:typescript@7.0.2",
