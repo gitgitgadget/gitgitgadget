@@ -6,6 +6,29 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    groups:
+      build-tools:
+        patterns:
+          - "ttsc"
+          - "@ttsc/*"
+          - "typia"
+          - "typescript"
+          - "@typescript/native"
+          - "@vercel/ncc"
+    ignore:
+      - dependency-name: "*eslint*"
+  - package-ecosystem: "npm"
+    allow:
+      - dependency-name: "*eslint*"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 10
+    target-branch: main
+    groups:
+      lint:
+        patterns:
+          - "*eslint*"
   # https://docs.github.com/en/code-security/dependabot/working-with-dependabot/keeping-your-actions-up-to-date-with-dependabot#enabling-dependabot-version-updates-for-actions
   - package-ecosystem: "github-actions" # See documentation for possible values
     directory: "/" # Location of package manifests
