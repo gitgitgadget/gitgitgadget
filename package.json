@@ -42,7 +42,7 @@
     "@types/rfc2047": "^2.0.3",
     "@typescript/native": "npm:typescript@7.0.2",
     "@vercel/ncc": "^0.45.0",
-    "eslint": "^10.8.1",
+    "eslint": "^10.9.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-jsdoc": "^63.3.3",
     "eslint-plugin-prettier": "^5.5.6",
