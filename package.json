@@ -32,7 +32,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@stylistic/eslint-plugin": "^5.10.0",
-    "@ttsc/unplugin": "^0.27.0",
+    "@ttsc/unplugin": "^0.28.3",
     "@types/html-to-text": "^9.0.4",
     "@types/imap-simple": "^4.2.10",
     "@types/jsonwebtoken": "^9.0.10",
