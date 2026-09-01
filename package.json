@@ -52,7 +52,7 @@
     "ttsc": "^0.27.0",
     "typescript": "npm:@typescript/typescript6@6.0.2",
     "typescript-eslint": "8.68.0",
-    "typia": "^14.0.1",
+    "typia": "^14.0.4",
     "vitest": "^4.1.11"
   },
   "dependencies": {
