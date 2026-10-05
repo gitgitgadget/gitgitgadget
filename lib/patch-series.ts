@@ -1,6 +1,6 @@
 /* eslint-disable security/detect-unsafe-regex */
 import addressparser from "nodemailer/lib/addressparser/index.js";
-import mimeFuncs from "nodemailer/lib/mime-funcs/index.js";
+import { encodeWords } from "nodemailer/lib/mime-funcs/index.js";
 import { commitExists, git, gitConfig, gitShortHash, revListCount, revParse } from "./git.js";
 import { GitNotes } from "./git-notes.js";
 import { IGitGitGadgetOptions } from "./gitgitgadget.js";
@@ -337,7 +337,7 @@ export class PatchSeries {
     }
 
     protected static encodeSender(sender: string): string {
-        const encoded = mimeFuncs.encodeWords(sender);
+        const encoded = encodeWords(sender);
 
         /* Don't quote if already quoted */
         if (encoded.startsWith('"') && encoded.match(/"\s*</)) {
