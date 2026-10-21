@@ -23,6 +23,7 @@ Fcc: Sent
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 MIME-Version: 1.0
+Reply-To: GitHub User <dev@example.com>
 To: reviewer@example.com
 Cc: Some Body <somebody@example.com>
 
@@ -65,9 +66,9 @@ Fcc: Sent
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 MIME-Version: 1.0
+Reply-To: GitHub User <dev@example.com>
 To: reviewer@example.com
-Cc: Some Body <somebody@example.com>,
-    "Test H. Dev" <dev@example.com>
+Cc: Some Body <somebody@example.com>
 
 From: "Test H. Dev" <dev@example.com>
 
@@ -99,6 +100,7 @@ Fcc: Sent
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 MIME-Version: 1.0
+Reply-To: GitHub User <dev@example.com>
 To: reviewer@example.com
 Cc: Some Body <somebody@example.com>,
     Contributor <contributor@example.com>
@@ -133,6 +135,7 @@ Fcc: Sent
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 MIME-Version: 1.0
+Reply-To: GitHub User <dev@example.com>
 To: reviewer@example.com
 Cc: Some Body <somebody@example.com>,
     Developer <developer@example.com>
@@ -219,7 +222,7 @@ test("generate tag/notes from a Pull Request", async () => {
         headCommit,
         {},
         "GitHub User",
-        undefined,
+        "dev@example.com",
     );
 
     expect(patches.coverLetter).toEqual(`My first Pull Request!
