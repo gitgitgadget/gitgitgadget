@@ -155,6 +155,13 @@ class PatchSeriesTest extends PatchSeries {
             );
         });
 
+        test("submitter is not Cc:ed on their own patches", () => {
+            const ownMails = PatchSeries.splitMails(mbox1);
+            x.insertCcAndFromLines(ownMails, thisAuthor, "Some One Else", "Some@One-El.se");
+            expect(ownMails[1]).not.toMatch(/\nCc: /);
+            expect(ownMails[1]).toMatch(/\n\nFrom: Some One Else <some@one-el\.se>\n\n/);
+        });
+
         const coverLetter = PatchSeries.adjustCoverLetter(mails[0]);
         test("Subject: header in cover letter is adjusted", () => {
             expect(coverLetter).toMatch(/\nSubject: .*This is the subject/);
