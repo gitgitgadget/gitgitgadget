@@ -129,11 +129,6 @@ export class PatchSeries {
             indentCoverLetter,
         );
 
-        // if known, add submitter to email chain
-        if (senderEmail) {
-            cc.push(`${senderName} <${senderEmail}>`);
-        }
-
         if (basedOn && !(await revParse(basedOn, workDir))) {
             throw new Error(`Cannot find base branch ${basedOn}`);
         }
@@ -155,6 +150,7 @@ export class PatchSeries {
             patchCount,
             coverLetter,
             senderName,
+            senderEmail || undefined,
         );
     }
 
@@ -352,7 +348,12 @@ export class PatchSeries {
         return `"${match[1].replace(/["\\\\]/g, "\\$&")}"${match[2]}${match[3]}`;
     }
 
-    protected insertCcAndFromLines(mails: string[], thisAuthor: string, senderName?: string): void {
+    protected insertCcAndFromLines(
+        mails: string[],
+        thisAuthor: string,
+        senderName?: string,
+        senderEmail?: string,
+    ): void {
         const isGitGitGadget = thisAuthor.match(`^${this.config.mail.author} (<.*)$`);
 
         mails.map((mail, i) => {
@@ -386,11 +387,17 @@ export class PatchSeries {
                 return;
             }
 
-            const ccMatch = header.match(/^([^]*\nCc: [^]*?)(|\n(?![ \t])[^]*)$/);
-            if (ccMatch) {
-                header = ccMatch[1] + ",\n    " + authorMatch[2] + ccMatch[2];
-            } else {
-                header += "\nCc: " + authorMatch[2];
+            // the submitter is in Reply-To:, so they do not need a copy of their own patches
+            const authorEmail = authorMatch[2].match(/<([^>]*)>\s*$/);
+            const isSubmitter =
+                senderEmail && authorEmail && authorEmail[1].toLowerCase() === senderEmail.toLowerCase();
+            if (!isSubmitter) {
+                const ccMatch = header.match(/^([^]*\nCc: [^]*?)(|\n(?![ \t])[^]*)$/);
+                if (ccMatch) {
+                    header = ccMatch[1] + ",\n    " + authorMatch[2] + ccMatch[2];
+                } else {
+                    header += "\nCc: " + authorMatch[2];
+                }
             }
 
             mails[i] = header + "\n\nFrom: " + authorMatch[2] + match[2];
@@ -535,6 +542,7 @@ export class PatchSeries {
     public readonly rangeDiff: IRangeDiff | undefined;
     public readonly coverLetter?: string;
     public readonly senderName?: string;
+    public readonly senderEmail?: string;
     public readonly patchCount: number;
 
     protected constructor(
@@ -547,6 +555,7 @@ export class PatchSeries {
         patchCount: number,
         coverLetter?: string,
         senderName?: string,
+        senderEmail?: string,
     ) {
         this.config = config;
         this.notes = notes;
@@ -556,6 +565,7 @@ export class PatchSeries {
         this.rangeDiff = rangeDiff;
         this.coverLetter = coverLetter;
         this.senderName = senderName;
+        this.senderEmail = senderEmail;
         this.patchCount = patchCount;
     }
 
@@ -596,7 +606,7 @@ export class PatchSeries {
         }
 
         logger.log("Adding Cc: and explicit From: lines for other authors, if needed");
-        this.insertCcAndFromLines(mails, thisAuthor, this.senderName);
+        this.insertCcAndFromLines(mails, thisAuthor, this.senderName, this.senderEmail);
         if (mails.length > 1) {
             if (this.coverLetter) {
                 const match2 = mails[0].match(/^([^]*?\n\*\*\* BLURB HERE \*\*\*\n\n)([^]*)/);
@@ -878,6 +888,10 @@ export class PatchSeries {
         this.project.cc.map((email) => {
             args.push("--cc=" + PatchSeries.encodeSender(email));
         });
+        if (this.senderEmail) {
+            // let reply-all reach the submitter without sending them a copy of every mail
+            args.push("--add-header=Reply-To: " + PatchSeries.encodeSender(`${this.senderName} <${this.senderEmail}>`));
+        }
         if (this.metadata.referencesMessageIds) {
             args.push("--in-reply-to=" + this.metadata.referencesMessageIds[0]);
         }
