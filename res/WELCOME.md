@@ -51,6 +51,11 @@ curl -g --user "<EMailAddress>:<Password>" \
     --url "imaps://imap.gmail.com/INBOX" -T /path/to/raw.txt
 ```
 
+You can also reply to a mirrored mailing-list email directly from your PR by
+commenting with `/reply <message-id>` on the first line and the reply text
+below it. Only the PR owner can use this command, and the message must already
+be associated with the PR.
+
 To iterate on your change, i.e. send a revised patch or patch series, you will first want to (force-)push to the same branch. You probably also want to modify your Pull Request description (or title). It is a good idea to summarize the revision by adding something like this to the cover letter (read: by editing the first comment on the PR, i.e. the PR description):
 
 ```
