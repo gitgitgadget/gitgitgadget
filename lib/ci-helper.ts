@@ -220,56 +220,59 @@ export class CIHelper {
         await unshallow(this.workDir);
 
         if (setupOptions?.needsMailingListMirror) {
-            this.mailingListMirror = "mailing-list-mirror.git";
-            const epoch = this.config.mailrepo.public_inbox_epoch ?? 1;
-
-            // eslint-disable-next-line security/detect-non-literal-fs-filename
-            if (!fs.existsSync(this.mailingListMirror)) {
-                await git(["init", "--bare", "--initial-branch", this.config.mailrepo.branch, this.mailingListMirror]);
-            }
-
-            // First fetch from GitGitGadget's mirror, which supports partial clones
-            for (const [key, value] of [
-                ["remote.mirror.url", this.config.mailrepo.mirrorURL || this.config.mailrepo.url],
-                ["remote.mirror.promisor", "true"],
-                ["remote.mirror.partialCloneFilter", "blob:none"],
-            ]) {
-                await git(["config", key, value], { workDir: this.mailingListMirror });
-            }
-            console.time("fetch mailing list mirror");
-            await git(
-                [
-                    "-c",
-                    "remote.mirror.promisor=false", // let's fetch the mails with all of their contents
-                    "fetch",
-                    "mirror",
-                    `--depth=${setupOptions?.needsMailToCommitNotes ? 5000 : 50}`,
-                    "+REF:REF".replace("REF", this.config.mailrepo.mirrorRef || `refs/heads/lore-${epoch}`),
-                ],
-                {
-                    workDir: this.mailingListMirror,
-                },
-            );
-            console.timeEnd("fetch mailing list mirror");
-
-            // Now update the head branch from the authoritative repository
-            console.time(`update from ${this.config.mailrepo.url}`);
-            await git(["config", "remote.origin.url", `${this.config.mailrepo.url.replace(/\/*$/, "")}/${epoch}`], {
-                workDir: this.mailingListMirror,
-            });
-            await git(
-                [
-                    "fetch",
-                    "origin",
-                    `+refs/heads/${this.config.mailrepo.branch}:refs/heads/${this.config.mailrepo.branch}`,
-                ],
-                {
-                    workDir: this.mailingListMirror,
-                },
-            );
-            console.timeEnd(`update from ${this.config.mailrepo.url}`);
-            await unshallow(this.mailingListMirror);
+            await this.setupMailingListMirror(setupOptions.needsMailToCommitNotes);
         }
+    }
+
+    protected async setupMailingListMirror(needsMailToCommitNotes = false): Promise<void> {
+        this.mailingListMirror = "mailing-list-mirror.git";
+        const epoch = this.config.mailrepo.public_inbox_epoch ?? 1;
+        const mirrorRef = this.config.mailrepo.mirrorRef || `refs/heads/lore-${epoch}`;
+
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
+        if (!fs.existsSync(this.mailingListMirror)) {
+            await git(["init", "--bare", "--initial-branch", this.config.mailrepo.branch, this.mailingListMirror]);
+        }
+
+        // First fetch from GitGitGadget's mirror, which supports partial clones
+        for (const [key, value] of [
+            ["remote.mirror.url", this.config.mailrepo.mirrorURL || this.config.mailrepo.url],
+            ["remote.mirror.promisor", "true"],
+            ["remote.mirror.partialCloneFilter", "blob:none"],
+        ]) {
+            await git(["config", key, value], { workDir: this.mailingListMirror });
+        }
+        console.time("fetch mailing list mirror");
+        await git(
+            [
+                "-c",
+                "remote.mirror.promisor=false", // let's fetch the mails with all of their contents
+                "fetch",
+                "mirror",
+                `--depth=${needsMailToCommitNotes ? 5000 : 50}`,
+                `+${mirrorRef}:${mirrorRef}`,
+            ],
+            { workDir: this.mailingListMirror },
+        );
+        console.timeEnd("fetch mailing list mirror");
+
+        // Now update the head branch from the authoritative repository
+        console.time(`update from ${this.config.mailrepo.url}`);
+        await git(["config", "remote.origin.url", `${this.config.mailrepo.url.replace(/\/*$/, "")}/${epoch}`], {
+            workDir: this.mailingListMirror,
+        });
+        await git(
+            ["fetch", "origin", `+refs/heads/${this.config.mailrepo.branch}:refs/heads/${this.config.mailrepo.branch}`],
+            { workDir: this.mailingListMirror },
+        );
+        console.timeEnd(`update from ${this.config.mailrepo.url}`);
+        console.time(`Making ${this.mailingListMirror} non-shallow`);
+        console.log(
+            await git(["fetch", "--filter=tree:0", "origin", "--unshallow"], {
+                workDir: this.mailingListMirror,
+            }),
+        );
+        console.timeEnd(`Making ${this.mailingListMirror} non-shallow`);
     }
 
     public parsePRCommentURLInput(): { owner: string; repo: string; prNumber: number; commentId: number } {
