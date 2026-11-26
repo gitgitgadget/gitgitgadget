@@ -19,7 +19,7 @@ import { IMailMetadata } from "./mail-metadata.js";
 import { IPatchSeriesMetadata } from "./patch-series-metadata.js";
 import { IConfig, getExternalConfig, setConfig } from "./project-config.js";
 import { getPullRequestKeyFromURL, pullRequestKey } from "./pullRequestKey.js";
-import { ISMTPOptions } from "./send-mail.js";
+import { ISMTPOptions, parseMBox } from "./send-mail.js";
 import { fileURLToPath } from "url";
 
 const readFile = util.promisify(fs.readFile);
@@ -224,7 +224,7 @@ export class CIHelper {
         }
     }
 
-    protected async setupMailingListMirror(needsMailToCommitNotes = false): Promise<void> {
+    protected async setupMailingListMirror(needsMailToCommitNotes = false, unshallowHistory = true): Promise<void> {
         this.mailingListMirror = "mailing-list-mirror.git";
         const epoch = this.config.mailrepo.public_inbox_epoch ?? 1;
         const mirrorRef = this.config.mailrepo.mirrorRef || `refs/heads/lore-${epoch}`;
@@ -266,13 +266,15 @@ export class CIHelper {
             { workDir: this.mailingListMirror },
         );
         console.timeEnd(`update from ${this.config.mailrepo.url}`);
-        console.time(`Making ${this.mailingListMirror} non-shallow`);
-        console.log(
-            await git(["fetch", "--filter=tree:0", "origin", "--unshallow"], {
-                workDir: this.mailingListMirror,
-            }),
-        );
-        console.timeEnd(`Making ${this.mailingListMirror} non-shallow`);
+        if (unshallowHistory) {
+            console.time(`Making ${this.mailingListMirror} non-shallow`);
+            console.log(
+                await git(["fetch", "--filter=tree:0", "origin", "--unshallow"], {
+                    workDir: this.mailingListMirror,
+                }),
+            );
+            console.timeEnd(`Making ${this.mailingListMirror} non-shallow`);
+        }
     }
 
     public parsePRCommentURLInput(): { owner: string; repo: string; prNumber: number; commentId: number } {
@@ -870,7 +872,7 @@ export class CIHelper {
             }
         }
 
-        const match = comment.body.trim().match(/^(\/[-a-z]+)\s*([\s\S]*)$/);
+        const match = comment.body.trim().match(/^(\/[-a-z]+)\s*([^]*)$/);
         if (!match) {
             console.log(`Not a command; doing nothing: '${comment.body}'`);
             return; /* nothing to do */
@@ -966,6 +968,41 @@ export class CIHelper {
                     const metadata = await gitGitGadget.preview(pr, userInfo);
                     await addComment(`Preview email sent as ${metadata?.coverLetterMessageId}`);
                 }
+            } else if (command === "/reply") {
+                if ((await getPRAuthor()).toLowerCase() !== comment.author.toLowerCase()) {
+                    throw new Error("Only the owner of a PR can reply to the mailing list");
+                }
+                await this.setupMailingListMirror(false, false);
+                if (!this.mailingListMirror) throw new Error("Mailing list mirror is unavailable");
+                const separator = argument.search(/\s/);
+                if (separator < 0) {
+                    throw new Error("Usage: /reply <message-id> followed by the reply text on the next line");
+                }
+                const token = argument.slice(0, separator);
+                const messageId = token.startsWith("<") && token.endsWith(">") ? token.slice(1, -1) : token;
+                const replyBody = argument.slice(separator).replace(/^\s+/, "").replace(/\r/g, "").trim();
+                const source = await this.getMailMetadata(messageId);
+                if (!source || source.pullRequestURL !== pullRequestURL) {
+                    throw new Error("That mail is not recorded as part of this pull request");
+                }
+                if (!source.mailBlobOID) {
+                    throw new Error(`No archive mapping for ${messageId}; run the mail metadata backfill`);
+                }
+                const originalMail = await parseMBox(
+                    await git(["cat-file", "blob", source.mailBlobOID], { workDir: this.mailingListMirror }),
+                );
+                const sentAs = await gitGitGadget.reply(
+                    pullRequestURL,
+                    await getPRAuthor(),
+                    comment.author,
+                    commentID,
+                    messageId,
+                    replyBody,
+                    originalMail,
+                );
+                await addComment(
+                    `Reply sent to the mailing list as [<${sentAs}>](${this.config.mailrepo.url}${sentAs}).`,
+                );
             } else if (command === "/allow") {
                 const accountName = argument || (await getPRAuthor());
                 let extraComment = "";

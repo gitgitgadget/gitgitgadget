@@ -1,5 +1,5 @@
 name: 'Handle PR Comment'
-description: 'Handles slash commands such as /submit and /preview'
+description: 'Handles slash commands such as /submit, /preview, and /reply'
 author: 'Johannes Schindelin'
 inputs:
   config:
