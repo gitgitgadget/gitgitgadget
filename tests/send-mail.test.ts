@@ -1,6 +1,17 @@
-import { expect, test } from "vitest";
+import { afterAll, beforeAll, expect, test } from "vitest";
 import { MailArchiveGitHelper } from "../lib/mail-archive-helper.js";
-import { parseMBox, parseMBoxMessageIDAndReferences } from "../lib/send-mail.js";
+import { parseMBox, parseMBoxMessageIDAndReferences, sendReplyMail } from "../lib/send-mail.js";
+import { testSmtpServer } from "test-smtp-server";
+
+const smtpServer = new testSmtpServer({ smtpPort: 1026 });
+let smtpOpts: string;
+
+beforeAll(() => {
+    smtpServer.startServer();
+    smtpOpts = JSON.stringify({ port: smtpServer.getPort(), secure: true, tls: { rejectUnauthorized: false } });
+});
+
+afterAll(() => smtpServer.stopServer());
 
 const mbox0 = `From 566155e00ab72541ff0ac21eab84d087b0e882a5 Mon Sep 17 00:00:00 2001
 Message-Id: <pull.12345.v17.git.gitgitgadget@example.com>
@@ -203,4 +214,68 @@ To: reviewer@example.com
 `;
     const parsed = await parseMBox(mbox);
     expect(parsed.messageId).toEqual("<pull.12345.v17.git.gitgitgadget@example.com>");
+});
+
+test("encoded subjects are decoded", async () => {
+    const parsed = await parseMBox(`From: Author <author@example.com>
+To: git@example.com
+Subject: =?utf-8?Q?R=C3=A9view?=
+
+Body
+`);
+    expect(parsed.subject).toEqual("Réview");
+});
+
+test("reply-all preserves the mailing-list thread and recipients", async () => {
+    const original = await parseMBox(`From: Author <author@example.com>
+To: git@vger.kernel.org, Reviewer <reviewer@example.com>
+Cc: Other Reviewer <other@example.com>, Reviewer <reviewer@example.com>
+Subject: [PATCH] Example
+Message-ID: <target@example.com>
+References: <root@example.com>
+In-Reply-To: <parent@example.com>
+
+Original body
+`);
+    const replyMessageID =
+        "reply.pull.2425.v11.git.git.1795611175.1795611200.0123456789abcdef" +
+        "0123456789abcdef.gitgitgadget@gmail.com";
+    await sendReplyMail(
+        original,
+        "Thanks for the review",
+        {
+            smtpHost: "localhost",
+            smtpUser: "gitgitgadget@example.com",
+            smtpPass: "secret",
+            smtpOpts,
+        },
+        {
+            author: "pr-owner",
+            from: "gitgitgadget@example.com",
+            list: "git@vger.kernel.org",
+            messageID: replyMessageID,
+            sender: "GitGitGadget",
+        },
+    );
+    const [mail] = smtpServer.getEmails();
+    const parsed = await mail.getParsed();
+    expect(parsed.messageId).toEqual(`<${replyMessageID}>`);
+    expect(parsed.subject).toEqual("Re: [PATCH] Example");
+    expect(parsed.inReplyTo).toEqual("<target@example.com>");
+    expect(parsed.references).toEqual(["<root@example.com>", "<parent@example.com>", "<target@example.com>"]);
+    const cc = Array.isArray(parsed.cc) ? parsed.cc.flatMap(({ value }) => value) : parsed.cc?.value || [];
+    expect(cc.map(({ address }) => address)).toEqual([
+        "author@example.com",
+        "reviewer@example.com",
+        "other@example.com",
+    ]);
+    expect(parsed.from?.text).toContain("pr-owner via GitGitGadget");
+    expect(mail.envelope).toMatchObject({
+        rcptTo: [
+            { address: "git@vger.kernel.org" },
+            { address: "author@example.com" },
+            { address: "reviewer@example.com" },
+            { address: "other@example.com" },
+        ],
+    });
 });

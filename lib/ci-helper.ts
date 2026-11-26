@@ -870,7 +870,7 @@ export class CIHelper {
             }
         }
 
-        const match = comment.body.trim().match(/^(\/[-a-z]+)\s*(.*)$/);
+        const match = comment.body.trim().match(/^(\/[-a-z]+)\s*([\s\S]*)$/);
         if (!match) {
             console.log(`Not a command; doing nothing: '${comment.body}'`);
             return; /* nothing to do */

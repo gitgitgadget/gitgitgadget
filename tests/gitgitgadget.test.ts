@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { fileURLToPath } from "url";
 import { git, gitCommandExists } from "../lib/git.js";
 import { GitNotes } from "../lib/git-notes.js";
-import { GitGitGadget, IGitGitGadgetOptions } from "../lib/gitgitgadget.js";
+import { createReplyMessageID, GitGitGadget, IGitGitGadgetOptions } from "../lib/gitgitgadget.js";
 import { getConfig } from "../lib/gitgitgadget-config.js";
 import { PatchSeries } from "../lib/patch-series.js";
 import { IPatchSeriesMetadata } from "../lib/patch-series-metadata.js";
@@ -12,6 +12,16 @@ import defaultConfig from "../lib/gitgitgadget-config.js";
 const sourceFileName = fileURLToPath(import.meta.url);
 
 getConfig();
+
+test("reply Message-IDs follow the mailing-list format", () => {
+    const parent = "pull.2425.v11.git.git.1795611175.gitgitgadget@gmail.com";
+    const first = createReplyMessageID(parent);
+    const second = createReplyMessageID(parent);
+    expect(first).toMatch(
+        /^reply\.pull\.2425\.v11\.git\.git\.1795611175\.gitgitgadget\.\d+\.[a-f0-9]{32}\.gitgitgadget@gmail\.com$/,
+    );
+    expect(second).not.toEqual(first);
+});
 
 const expectedMails = [
     `From 91fba7811291c1064b2603765a2297c34fc843c0 Mon Sep 17 00:00:00 2001

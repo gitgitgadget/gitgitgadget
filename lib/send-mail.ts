@@ -1,11 +1,13 @@
 import { simpleParser, SimpleParserOptions } from "mailparser";
 import { createTransport, SendMailOptions } from "nodemailer";
+import addressparser from "nodemailer/lib/addressparser/index.js";
 import SMTPTransport from "nodemailer/lib/smtp-transport/index.js";
 import rfc2047 from "rfc2047";
 
 export interface IParsedMBox {
     body: string;
     cc?: string[];
+    ccHeader?: string;
     date?: string;
     from?: string;
     headers?: Array<{ key: string; value: string }>;
@@ -41,6 +43,11 @@ function createSMTPTransport(smtpOptions: ISMTPOptions) {
     return createTransport(transportOpts);
 }
 
+/** Validate static transport configuration before reserving a send attempt. */
+export function validateSMTPOptions(smtpOptions: ISMTPOptions): void {
+    createSMTPTransport(smtpOptions);
+}
+
 export async function parseHeadersAndSendMail(mbox: string, smtpOptions: ISMTPOptions): Promise<string> {
     return await sendMail(await parseMBox(mbox), smtpOptions);
 }
@@ -56,6 +63,7 @@ export async function parseHeadersAndSendMail(mbox: string, smtpOptions: ISMTPOp
  */
 export async function parseMBox(mbox: string, gentle?: boolean): Promise<IParsedMBox> {
     let cc: string[] | undefined;
+    let ccHeader: string | undefined;
     let date: string | undefined;
     let from: string | undefined;
     const headers = new Array<{ key: string; value: string }>();
@@ -85,6 +93,7 @@ export async function parseMBox(mbox: string, gentle?: boolean): Promise<IParsed
 
         switch (entry.key) {
             case "cc":
+                ccHeader = [ccHeader, value.replace(/\r?\n/g, " ").trim()].filter(Boolean).join(", ");
                 cc = (cc || []).concat(
                     value
                         .replace(/\r?\n/g, " ")
@@ -104,7 +113,7 @@ export async function parseMBox(mbox: string, gentle?: boolean): Promise<IParsed
                 messageId = value;
                 break;
             case "subject":
-                subject = value;
+                subject = parsed.subject || value;
                 break;
             case "to":
                 to = value;
@@ -121,6 +130,7 @@ export async function parseMBox(mbox: string, gentle?: boolean): Promise<IParsed
     return {
         body: parsed.text || "",
         cc,
+        ccHeader,
         date,
         from,
         headers,
@@ -197,4 +207,67 @@ export async function sendMail(mail: IParsedMBox, smtpOptions: ISMTPOptions): Pr
             }
         });
     });
+}
+
+/** Reply to a mirrored mailing-list message, keeping the list as To and copying its participants. */
+export async function sendReplyMail(
+    original: IParsedMBox,
+    body: string,
+    smtpOptions: ISMTPOptions,
+    options: { author: string; from: string; list: string; messageID: string; sender: string },
+): Promise<void> {
+    if (!original.messageId) throw new Error("The original mail has no Message-ID");
+    const listAddress = addressparser(options.list, { flatten: true })[0]?.address;
+    if (!listAddress) throw new Error("Invalid mailing list recipient");
+    const excluded = new Set([listAddress, options.from].map((address) => address.toLowerCase()));
+    const participants = [original.from, original.to, original.ccHeader || original.cc?.join(", ")]
+        .filter((address): address is string => !!address)
+        .flatMap((header) => addressparser(header, { flatten: true }))
+        .filter((address) => address.address && !excluded.has(address.address.toLowerCase()));
+    const seen = new Set<string>();
+    const cc = participants
+        .filter(({ address }) => {
+            const key = address.toLowerCase();
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        })
+        .map(({ name, address }) => (name ? `"${name.replace(/["\\]/g, "\\$&")}" <${address}>` : address));
+    const cleanHeader = (value: string): string =>
+        value
+            .split("")
+            .map((character) => {
+                const code = character.charCodeAt(0);
+                return code < 0x20 || code === 0x7f ? " " : character;
+            })
+            .join("");
+    const subject = cleanHeader(original.subject || "[PATCH]").trim();
+    const fromName = cleanHeader(`${options.author} via ${options.sender}`).replace(/["\\]/g, " ");
+    const messageID = original.messageId.replace(/^<|>$/g, "");
+    const references = (original.headers || [])
+        .filter(({ key }) => /^(In-Reply-To|References)$/i.test(key))
+        .flatMap(({ value }) => value.match(/<[^>]+>/g) || []);
+    references.push(`<${messageID}>`);
+    const uniqueReferences = [...new Set(references)];
+    const raw = [
+        `From: "${fromName}" <${options.from}>`,
+        `To: ${listAddress}`,
+        ...(cc.length ? [`Cc: ${cc.join(", ")}`] : []),
+        `Subject: ${rfc2047.encode(/^re:/i.test(subject) ? subject : `Re: ${subject}`)}`,
+        `Date: ${new Date().toUTCString()}`,
+        `Message-ID: <${options.messageID}>`,
+        `In-Reply-To: <${messageID}>`,
+        `References: ${uniqueReferences.join(" ")}`,
+        "MIME-Version: 1.0",
+        "Content-Type: text/plain; charset=UTF-8",
+        "Content-Transfer-Encoding: 8bit",
+        "",
+        body,
+        "",
+    ].join("\r\n");
+    const mail = await parseMBox(raw);
+    mail.from = options.from;
+    mail.to = listAddress;
+    mail.cc = cc;
+    await sendMail(mail, smtpOptions);
 }
