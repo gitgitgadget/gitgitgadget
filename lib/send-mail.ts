@@ -22,6 +22,25 @@ export interface ISMTPOptions {
     smtpPass: string;
 }
 
+function createSMTPTransport(smtpOptions: ISMTPOptions) {
+    const transportOpts: SMTPTransport.Options = {
+        auth: {
+            pass: smtpOptions.smtpPass,
+            user: smtpOptions.smtpUser,
+        },
+        host: smtpOptions.smtpHost,
+        secure: true,
+    };
+
+    if (smtpOptions.smtpOpts) {
+        // Add quoting for JSON.parse
+        const smtpOpts = smtpOptions.smtpOpts.replace(/([ {])([a-zA-Z0-9.]+?) *?:/g, '$1"$2":');
+        Object.assign(transportOpts, JSON.parse(smtpOpts));
+    }
+
+    return createTransport(transportOpts);
+}
+
 export async function parseHeadersAndSendMail(mbox: string, smtpOptions: ISMTPOptions): Promise<string> {
     return await sendMail(await parseMBox(mbox), smtpOptions);
 }
@@ -157,23 +176,8 @@ export function parseMBoxMessageIDAndReferences(parsed: IParsedMBox): { messageI
 }
 
 export async function sendMail(mail: IParsedMBox, smtpOptions: ISMTPOptions): Promise<string> {
-    const transportOpts: SMTPTransport.Options = {
-        auth: {
-            pass: smtpOptions.smtpPass,
-            user: smtpOptions.smtpUser,
-        },
-        host: smtpOptions.smtpHost,
-        secure: true,
-    };
-
-    if (smtpOptions.smtpOpts) {
-        // Add quoting for JSON.parse
-        const smtpOpts = smtpOptions.smtpOpts.replace(/([ {])([a-zA-Z0-9.]+?) *?:/g, '$1"$2":');
-        Object.assign(transportOpts, JSON.parse(smtpOpts));
-    }
-
     return new Promise<string>((resolve, reject) => {
-        const transporter = createTransport(transportOpts);
+        const transporter = createSMTPTransport(smtpOptions);
 
         // setup email data with unicode symbols
         const mailOptions: SendMailOptions = {
