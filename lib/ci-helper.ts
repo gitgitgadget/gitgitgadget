@@ -19,7 +19,7 @@ import { IMailMetadata } from "./mail-metadata.js";
 import { IPatchSeriesMetadata } from "./patch-series-metadata.js";
 import { IConfig, getExternalConfig, setConfig } from "./project-config.js";
 import { getPullRequestKeyFromURL, pullRequestKey } from "./pullRequestKey.js";
-import { ISMTPOptions } from "./send-mail.js";
+import { ISMTPOptions, parseMBox } from "./send-mail.js";
 import { fileURLToPath } from "url";
 
 const readFile = util.promisify(fs.readFile);
@@ -220,55 +220,60 @@ export class CIHelper {
         await unshallow(this.workDir);
 
         if (setupOptions?.needsMailingListMirror) {
-            this.mailingListMirror = "mailing-list-mirror.git";
-            const epoch = this.config.mailrepo.public_inbox_epoch ?? 1;
+            await this.setupMailingListMirror(setupOptions.needsMailToCommitNotes);
+        }
+    }
 
-            // eslint-disable-next-line security/detect-non-literal-fs-filename
-            if (!fs.existsSync(this.mailingListMirror)) {
-                await git(["init", "--bare", "--initial-branch", this.config.mailrepo.branch, this.mailingListMirror]);
-            }
+    protected async setupMailingListMirror(needsMailToCommitNotes = false, unshallowHistory = true): Promise<void> {
+        this.mailingListMirror = "mailing-list-mirror.git";
+        const epoch = this.config.mailrepo.public_inbox_epoch ?? 1;
+        const mirrorRef = this.config.mailrepo.mirrorRef || `refs/heads/lore-${epoch}`;
 
-            // First fetch from GitGitGadget's mirror, which supports partial clones
-            for (const [key, value] of [
-                ["remote.mirror.url", this.config.mailrepo.mirrorURL || this.config.mailrepo.url],
-                ["remote.mirror.promisor", "true"],
-                ["remote.mirror.partialCloneFilter", "blob:none"],
-            ]) {
-                await git(["config", key, value], { workDir: this.mailingListMirror });
-            }
-            console.time("fetch mailing list mirror");
-            await git(
-                [
-                    "-c",
-                    "remote.mirror.promisor=false", // let's fetch the mails with all of their contents
-                    "fetch",
-                    "mirror",
-                    `--depth=${setupOptions?.needsMailToCommitNotes ? 5000 : 50}`,
-                    "+REF:REF".replace("REF", this.config.mailrepo.mirrorRef || `refs/heads/lore-${epoch}`),
-                ],
-                {
+        // eslint-disable-next-line security/detect-non-literal-fs-filename
+        if (!fs.existsSync(this.mailingListMirror)) {
+            await git(["init", "--bare", "--initial-branch", this.config.mailrepo.branch, this.mailingListMirror]);
+        }
+
+        // First fetch from GitGitGadget's mirror, which supports partial clones
+        for (const [key, value] of [
+            ["remote.mirror.url", this.config.mailrepo.mirrorURL || this.config.mailrepo.url],
+            ["remote.mirror.promisor", "true"],
+            ["remote.mirror.partialCloneFilter", "blob:none"],
+        ]) {
+            await git(["config", key, value], { workDir: this.mailingListMirror });
+        }
+        console.time("fetch mailing list mirror");
+        await git(
+            [
+                "-c",
+                "remote.mirror.promisor=false", // let's fetch the mails with all of their contents
+                "fetch",
+                "mirror",
+                `--depth=${needsMailToCommitNotes ? 5000 : 50}`,
+                `+${mirrorRef}:${mirrorRef}`,
+            ],
+            { workDir: this.mailingListMirror },
+        );
+        console.timeEnd("fetch mailing list mirror");
+
+        // Now update the head branch from the authoritative repository
+        console.time(`update from ${this.config.mailrepo.url}`);
+        await git(["config", "remote.origin.url", `${this.config.mailrepo.url.replace(/\/*$/, "")}/${epoch}`], {
+            workDir: this.mailingListMirror,
+        });
+        await git(
+            ["fetch", "origin", `+refs/heads/${this.config.mailrepo.branch}:refs/heads/${this.config.mailrepo.branch}`],
+            { workDir: this.mailingListMirror },
+        );
+        console.timeEnd(`update from ${this.config.mailrepo.url}`);
+        if (unshallowHistory) {
+            console.time(`Making ${this.mailingListMirror} non-shallow`);
+            console.log(
+                await git(["fetch", "--filter=tree:0", "origin", "--unshallow"], {
                     workDir: this.mailingListMirror,
-                },
+                }),
             );
-            console.timeEnd("fetch mailing list mirror");
-
-            // Now update the head branch from the authoritative repository
-            console.time(`update from ${this.config.mailrepo.url}`);
-            await git(["config", "remote.origin.url", `${this.config.mailrepo.url.replace(/\/*$/, "")}/${epoch}`], {
-                workDir: this.mailingListMirror,
-            });
-            await git(
-                [
-                    "fetch",
-                    "origin",
-                    `+refs/heads/${this.config.mailrepo.branch}:refs/heads/${this.config.mailrepo.branch}`,
-                ],
-                {
-                    workDir: this.mailingListMirror,
-                },
-            );
-            console.timeEnd(`update from ${this.config.mailrepo.url}`);
-            await unshallow(this.mailingListMirror);
+            console.timeEnd(`Making ${this.mailingListMirror} non-shallow`);
         }
     }
 
@@ -867,7 +872,7 @@ export class CIHelper {
             }
         }
 
-        const match = comment.body.trim().match(/^(\/[-a-z]+)\s*(.*)$/);
+        const match = comment.body.trim().match(/^(\/[-a-z]+)\s*([^]*)$/);
         if (!match) {
             console.log(`Not a command; doing nothing: '${comment.body}'`);
             return; /* nothing to do */
@@ -963,6 +968,41 @@ export class CIHelper {
                     const metadata = await gitGitGadget.preview(pr, userInfo);
                     await addComment(`Preview email sent as ${metadata?.coverLetterMessageId}`);
                 }
+            } else if (command === "/reply") {
+                if ((await getPRAuthor()).toLowerCase() !== comment.author.toLowerCase()) {
+                    throw new Error("Only the owner of a PR can reply to the mailing list");
+                }
+                await this.setupMailingListMirror(false, false);
+                if (!this.mailingListMirror) throw new Error("Mailing list mirror is unavailable");
+                const separator = argument.search(/\s/);
+                if (separator < 0) {
+                    throw new Error("Usage: /reply <message-id> followed by the reply text on the next line");
+                }
+                const token = argument.slice(0, separator);
+                const messageId = token.startsWith("<") && token.endsWith(">") ? token.slice(1, -1) : token;
+                const replyBody = argument.slice(separator).replace(/^\s+/, "").replace(/\r/g, "").trim();
+                const source = await this.getMailMetadata(messageId);
+                if (!source || source.pullRequestURL !== pullRequestURL) {
+                    throw new Error("That mail is not recorded as part of this pull request");
+                }
+                if (!source.mailBlobOID) {
+                    throw new Error(`No archive mapping for ${messageId}; run the mail metadata backfill`);
+                }
+                const originalMail = await parseMBox(
+                    await git(["cat-file", "blob", source.mailBlobOID], { workDir: this.mailingListMirror }),
+                );
+                const sentAs = await gitGitGadget.reply(
+                    pullRequestURL,
+                    await getPRAuthor(),
+                    comment.author,
+                    commentID,
+                    messageId,
+                    replyBody,
+                    originalMail,
+                );
+                await addComment(
+                    `Reply sent to the mailing list as [<${sentAs}>](${this.config.mailrepo.url}${sentAs}).`,
+                );
             } else if (command === "/allow") {
                 const accountName = argument || (await getPRAuthor());
                 let extraComment = "";

@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import { isDirectory } from "./fs-util.js";
 import { git, gitConfig } from "./git.js";
 import { GitNotes } from "./git-notes.js";
@@ -6,7 +7,15 @@ import { PatchSeries, SendFunction } from "./patch-series.js";
 import { IPatchSeriesMetadata } from "./patch-series-metadata.js";
 import { PatchSeriesOptions } from "./patch-series-options.js";
 import { IConfig } from "./project-config.js";
-import { ISMTPOptions, parseHeadersAndSendMail, parseMBox, sendMail } from "./send-mail.js";
+import {
+    ISMTPOptions,
+    parseHeadersAndSendMail,
+    parseMBox,
+    sendMail,
+    sendReplyMail,
+    validateSMTPOptions,
+} from "./send-mail.js";
+import { IMailMetadata } from "./mail-metadata.js";
 
 export interface IGitGitGadgetOptions {
     allowedUsers: string[];
@@ -16,6 +25,16 @@ export interface IGitGitGadgetOptions {
 
     // maps to the original commit
     activeMessageIDs?: { [messageID: string]: string };
+}
+
+export function createReplyMessageID(parentMessageID: string): string {
+    const idPrefix = parentMessageID
+        .slice(0, parentMessageID.lastIndexOf("@"))
+        .replace(/[^a-zA-Z0-9.-]/g, "-")
+        .slice(0, 80);
+    const timestamp = Math.floor(Date.now() / 1000);
+    const random = randomBytes(16).toString("hex");
+    return `reply.${idPrefix}.${timestamp}.${random}.gitgitgadget@gmail.com`;
 }
 
 export async function getVar(key: string, configDir: string | undefined): Promise<string | undefined> {
@@ -221,6 +240,75 @@ export class GitGitGadget {
         };
 
         return await this.genAndSend(pr, userInfo, {}, send);
+    }
+
+    /** Send a reply to a mail recorded as part of this PR. */
+    public async reply(
+        pullRequestURL: string,
+        pullRequestAuthor: string,
+        author: string,
+        commentID: number,
+        messageID: string,
+        body: string,
+        originalMail: import("./send-mail.js").IParsedMBox,
+    ): Promise<string> {
+        if (author.toLowerCase() !== pullRequestAuthor.toLowerCase()) {
+            throw new Error("Only the owner of a PR can reply to the mailing list");
+        }
+        if (!this.smtpOptions) throw new Error("No SMTP options configured");
+        if (
+            this.smtpOptions.smtpUser.toLowerCase() !== this.config.mail.smtpUser.toLowerCase() ||
+            this.smtpOptions.smtpHost.toLowerCase() !== this.config.mail.smtpHost.toLowerCase()
+        ) {
+            throw new Error("SMTP must use the configured GitGitGadget account and host");
+        }
+        validateSMTPOptions(this.smtpOptions);
+        if (!body.trim()) throw new Error("Reply text is required after /reply <message-id>");
+        if (body.length > 10_000) throw new Error("Reply text exceeds 10000 characters");
+        if (!/^[^<>\s]+@[^<>\s]+$/.test(messageID)) throw new Error("Invalid Message-ID");
+        const recipient =
+            this.config.project?.to || (this.config.repo.name === "git" ? "git@vger.kernel.org" : undefined);
+        if (!recipient) throw new Error("No mailing list recipient is configured");
+        const target = await this.notes.get<IMailMetadata>(messageID);
+        if (!target || target.pullRequestURL !== pullRequestURL) {
+            throw new Error("That mail is not recorded as part of this pull request");
+        }
+        if (originalMail.messageId?.replace(/^<|>$/g, "") !== messageID) {
+            throw new Error("The mailing-list archive did not return the requested email");
+        }
+        const key = `reply-command:${commentID}`;
+        const previous = await this.notes.get<{ status: string; messageID?: string }>(key);
+        if (previous) {
+            if (previous.status === "sent" && previous.messageID) return previous.messageID;
+            throw new Error("This reply command has already been processed; check the mailing-list archive");
+        }
+        const outboundID = createReplyMessageID(messageID);
+        await this.notes.set(key, { status: "sending", messageID: outboundID }, false);
+        await this.notes.set(
+            outboundID,
+            {
+                messageID: outboundID,
+                pullRequestURL,
+            } satisfies IMailMetadata,
+            false,
+        );
+        await this.pushNotesRef();
+        try {
+            await sendReplyMail(originalMail, body.replace(/\r/g, "").trim(), this.smtpOptions, {
+                author,
+                from: this.config.mail.smtpUser,
+                list: recipient,
+                messageID: outboundID,
+                sender: this.config.mail.sender,
+            });
+        } catch (error) {
+            await this.notes.set(key, { status: "uncertain", messageID: outboundID }, true);
+            await this.pushNotesRef();
+            throw error;
+        }
+        await this.notes.set(key, { status: "sent", messageID: outboundID }, true);
+        await this.pushNotesRef();
+        return outboundID;
     }
 
     protected async updateNotesAndPullRef(

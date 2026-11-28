@@ -158,6 +158,14 @@ export class MailArchiveGitHelper {
 
             if (seen(parsed.messageID)) {
                 console.log(`Already handled: ${parsed.messageID}`);
+                const metadata = await this.gggNotes.get<IMailMetadata>(parsed.messageID);
+                if (metadata && !metadata.mailBlobOID) {
+                    metadata.mailBlobOID = await git(["hash-object", "-w", "--stdin"], {
+                        stdin: mbox,
+                        workDir: this.mailArchiveGitDir,
+                    });
+                    await this.gggNotes.set(parsed.messageID, metadata, true);
+                }
                 return;
             }
 
@@ -232,6 +240,10 @@ export class MailArchiveGitHelper {
             await this.gggNotes.set(parsed.messageID, {
                 issueCommentId,
                 messageID: parsed.messageID,
+                mailBlobOID: await git(["hash-object", "-w", "--stdin"], {
+                    stdin: mbox,
+                    workDir: this.mailArchiveGitDir,
+                }),
                 originalCommit,
                 pullRequestURL,
             });
